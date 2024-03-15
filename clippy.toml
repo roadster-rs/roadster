@@ -1,0 +1,9 @@
+disallowed-macros = [
+    { path = "std::println", reason = "Use tracing macros instead" },
+    { path = "log::log", reason = "Use tracing instead" },
+    { path = "log::trace", reason = "Use tracing::trace instead" },
+    { path = "log::debug", reason = "Use tracing::debug instead" },
+    { path = "log::info", reason = "Use tracing::info instead" },
+    { path = "log::warn", reason = "Use tracing::warn instead" },
+    { path = "log::error", reason = "Use tracing::error instead" },
+]
