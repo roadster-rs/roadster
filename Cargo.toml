@@ -17,5 +17,9 @@ strum_macros = "0.26.1"
 config = "0.14.0"
 dotenvy = "0.15.7"
 
+# Tracing
+tracing = { version = "0.1.40", features = ["async-await"] }
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+
 [dev-dependencies]
 cargo-husky = { version = "1.5.0", features = ["default", "run-cargo-check", "run-cargo-clippy", "run-cargo-fmt", "run-cargo-test"] }
