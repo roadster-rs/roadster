@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 
+use crate::app_context::AppContext;
 use crate::config::app_config::AppConfig;
-use crate::context::{AppContext, FromAppContextRef, GetAppContextFromRef};
 use crate::tracing::init_tracing;
 
 pub async fn start<A>() -> anyhow::Result<()>
@@ -21,7 +21,7 @@ where
 
 #[async_trait]
 pub trait App {
-    type State: FromAppContextRef + GetAppContextFromRef;
+    type State: From<AppContext>;
 
     fn init_tracing(&self, config: &AppConfig) -> anyhow::Result<()> {
         init_tracing(config)?;
@@ -29,8 +29,13 @@ pub trait App {
         Ok(())
     }
 
+    /// Convert the [AppContext] to the custom [Self::State] that will be used throughout the app.
+    /// The conversion should mostly happen in a [From<AppContext>] implementation, but this
+    /// method is provided in case there's any additional work that needs to be done that the
+    /// consumer doesn't want to put in a [From<AppContext>] implementation. For example, any
+    /// configuration that needs to happen in an async method.
     async fn context_to_state(&self, app_context: &AppContext) -> anyhow::Result<Self::State> {
-        let state = Self::State::from_app_context_ref(app_context).await?;
-        Ok(*state)
+        let state = Self::State::from(app_context.clone());
+        Ok(state)
     }
 }
