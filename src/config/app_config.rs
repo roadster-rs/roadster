@@ -8,6 +8,7 @@ use crate::config::environment::Environment;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
     pub server: Server,
+    pub tracing: Tracing,
 }
 
 impl AppConfig {
@@ -31,6 +32,11 @@ impl AppConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Server {
-    host: String,
-    port: u32,
+    pub host: String,
+    pub port: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Tracing {
+    pub level: String,
 }
