@@ -7,6 +7,7 @@ use tracing_subscriber::EnvFilter;
 
 use crate::config::app_config::AppConfig;
 
+// Todo: make this configurable
 pub fn init_tracing(app_config: &AppConfig) -> anyhow::Result<()> {
     // Stdout Layer
     let stdout_layer = tracing_subscriber::fmt::layer();
