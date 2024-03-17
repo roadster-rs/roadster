@@ -24,10 +24,12 @@ impl Middleware for SensitiveRequestHeadersMiddleware {
         "sensitive-request-headers".to_string()
     }
 
-    fn install(&self, router: Router, _context: &AppContext) -> Router {
-        router.layer(SetSensitiveRequestHeadersLayer::from_shared(
+    fn install(&self, router: Router, _context: &AppContext) -> anyhow::Result<Router> {
+        let router = router.layer(SetSensitiveRequestHeadersLayer::from_shared(
             SENSITIVE_HEADERS.clone(),
-        ))
+        ));
+
+        Ok(router)
     }
 }
 
@@ -38,9 +40,11 @@ impl Middleware for SensitiveResponseHeadersMiddleware {
         "sensitive-response-headers".to_string()
     }
 
-    fn install(&self, router: Router, _context: &AppContext) -> Router {
-        router.layer(SetSensitiveResponseHeadersLayer::from_shared(
+    fn install(&self, router: Router, _context: &AppContext) -> anyhow::Result<Router> {
+        let router = router.layer(SetSensitiveResponseHeadersLayer::from_shared(
             SENSITIVE_HEADERS.clone(),
-        ))
+        ));
+
+        Ok(router)
     }
 }

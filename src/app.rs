@@ -41,7 +41,7 @@ where
 
     let router = BulkMiddleware::default()
         .append_all(A::middleware(&context))
-        .install(router, &context);
+        .install(router, &context)?;
 
     A::serve(&context, router).await?;
 

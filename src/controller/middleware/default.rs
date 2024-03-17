@@ -12,7 +12,7 @@ impl Middleware for DefaultMiddleware {
         "roadster-defaults".to_string()
     }
 
-    fn install(&self, router: Router, context: &AppContext) -> Router {
+    fn install(&self, router: Router, context: &AppContext) -> anyhow::Result<Router> {
         let middleware: Vec<Box<dyn Middleware>> = vec![
             Box::new(SensitiveRequestHeadersMiddleware),
             Box::new(SensitiveResponseHeadersMiddleware),

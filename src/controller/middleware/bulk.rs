@@ -39,12 +39,15 @@ impl Middleware for BulkMiddleware {
         "bulk".to_string()
     }
 
-    fn install(&self, router: Router, context: &AppContext) -> Router {
-        self.middleware
+    fn install(&self, router: Router, context: &AppContext) -> anyhow::Result<Router> {
+        let router = self
+            .middleware
             .iter()
             .rev()
-            .fold(router, |router, middleware| {
+            .try_fold(router, |router, middleware| {
                 middleware.install(router, context)
-            })
+            })?;
+
+        Ok(router)
     }
 }
