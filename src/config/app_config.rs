@@ -10,6 +10,7 @@ pub struct AppConfig {
     pub app: App,
     pub server: Server,
     pub tracing: Tracing,
+    pub environment: Environment,
 }
 
 impl AppConfig {

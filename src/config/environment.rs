@@ -5,7 +5,7 @@ use anyhow::anyhow;
 use serde_derive::{Deserialize, Serialize};
 use strum_macros::{EnumString, IntoStaticStr};
 
-#[derive(Debug, Serialize, Deserialize, EnumString, IntoStaticStr)]
+#[derive(Debug, Clone, Serialize, Deserialize, EnumString, IntoStaticStr)]
 #[serde(rename_all = "camelCase")]
 #[strum(serialize_all = "camelCase")]
 pub enum Environment {
