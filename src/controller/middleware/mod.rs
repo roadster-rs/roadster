@@ -2,6 +2,7 @@ pub(crate) mod bulk;
 pub mod default;
 pub mod request_id;
 pub mod sensitive_headers;
+pub mod tracing;
 
 use crate::app_context::AppContext;
 use axum::Router;
