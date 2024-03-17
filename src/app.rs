@@ -43,7 +43,7 @@ where
 
 #[async_trait]
 pub trait App {
-    type State: From<Arc<AppContext>> + Clone + Send + Sync + 'static;
+    type State: From<Arc<AppContext>> + Into<Arc<AppContext>> + Clone + Send + Sync + 'static;
 
     fn init_tracing(config: &AppConfig) -> anyhow::Result<()> {
         init_tracing(config)?;
