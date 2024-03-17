@@ -8,6 +8,9 @@ use tracing::{info, instrument};
 
 use crate::app_context::AppContext;
 use crate::config::app_config::AppConfig;
+use crate::controller::middleware::bulk::BulkMiddleware;
+use crate::controller::middleware::default::DefaultMiddleware;
+use crate::controller::middleware::Middleware;
 use crate::tracing::init_tracing;
 
 pub async fn start<A>() -> anyhow::Result<()>
@@ -35,6 +38,10 @@ where
     let context = Arc::new(context);
     let state = A::context_to_state(context.clone()).await?;
     let router = router.with_state::<()>(state);
+
+    let router = BulkMiddleware::default()
+        .append_all(A::middleware(&context))
+        .install(router, &context);
 
     A::serve(&context, router).await?;
 
@@ -65,6 +72,10 @@ pub trait App {
 
     fn api_docs(api: TransformOpenApi) -> TransformOpenApi {
         api
+    }
+
+    fn middleware(_context: &AppContext) -> Vec<Box<dyn Middleware>> {
+        vec![Box::new(DefaultMiddleware)]
     }
 
     #[instrument(skip_all)]

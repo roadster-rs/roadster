@@ -19,6 +19,7 @@ tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 axum = "0.7.4"
 aide = { version = "0.13.2", features = ["axum", "redoc", "scalar", "macros"] }
 schemars = "0.8.16"
+tower-http = { version = "0.5.1", features = ["trace", "timeout", "request-id", "util", "normalize-path", "sensitive-headers"] }
 
 # Others
 anyhow = "1.0.81"
@@ -31,6 +32,7 @@ async-trait = "0.1.77"
 tokio = { version = "1.35.1", features = ["full", "macros"] }
 itertools = "0.12.1"
 serde_json = "1.0.114"
+lazy_static = "1.4.0"
 
 [dev-dependencies]
 cargo-husky = { version = "1.5.0", features = ["default", "run-cargo-check", "run-cargo-clippy", "run-cargo-fmt", "run-cargo-test"] }
