@@ -2,7 +2,8 @@ use aide::axum::ApiRouter;
 use axum::Router;
 use itertools::Itertools;
 
-mod ping;
+pub mod middleware;
+pub mod ping;
 
 pub fn build_path(parent: &str, child: &str) -> String {
     // Clean the path to make sure it is valid:
