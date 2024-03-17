@@ -1,5 +1,8 @@
 use crate::app_context::AppContext;
 use crate::controller::middleware::bulk::BulkMiddleware;
+use crate::controller::middleware::request_id::{
+    PropagateRequestIdMiddleware, SetRequestIdMiddleware,
+};
 use crate::controller::middleware::sensitive_headers::{
     SensitiveRequestHeadersMiddleware, SensitiveResponseHeadersMiddleware,
 };
@@ -15,6 +18,8 @@ impl Middleware for DefaultMiddleware {
     fn install(&self, router: Router, context: &AppContext) -> anyhow::Result<Router> {
         let middleware: Vec<Box<dyn Middleware>> = vec![
             Box::new(SensitiveRequestHeadersMiddleware),
+            Box::new(SetRequestIdMiddleware),
+            Box::new(PropagateRequestIdMiddleware),
             Box::new(SensitiveResponseHeadersMiddleware),
         ];
 
