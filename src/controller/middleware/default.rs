@@ -6,6 +6,7 @@ use crate::controller::middleware::request_id::{
 use crate::controller::middleware::sensitive_headers::{
     SensitiveRequestHeadersMiddleware, SensitiveResponseHeadersMiddleware,
 };
+use crate::controller::middleware::tracing::TracingMiddleware;
 use crate::controller::middleware::Middleware;
 use axum::Router;
 
@@ -19,6 +20,7 @@ impl Middleware for DefaultMiddleware {
         let middleware: Vec<Box<dyn Middleware>> = vec![
             Box::new(SensitiveRequestHeadersMiddleware),
             Box::new(SetRequestIdMiddleware),
+            Box::new(TracingMiddleware),
             Box::new(PropagateRequestIdMiddleware),
             Box::new(SensitiveResponseHeadersMiddleware),
         ];
