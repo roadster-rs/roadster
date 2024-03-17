@@ -7,5 +7,5 @@ use axum::Router;
 
 pub trait Middleware {
     fn name(&self) -> String;
-    fn install(&self, router: Router, context: &AppContext) -> Router;
+    fn install(&self, router: Router, context: &AppContext) -> anyhow::Result<Router>;
 }
