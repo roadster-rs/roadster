@@ -9,8 +9,8 @@ use schemars::JsonSchema;
 use serde_derive::{Deserialize, Serialize};
 use tracing::instrument;
 
-const BASE: &str = "/health-check";
-const TAG: &str = "Health Check";
+const BASE: &str = "/_ping";
+const TAG: &str = "Ping";
 
 pub fn routes<S>(parent: &str) -> (Router<S>, ApiRouter<S>)
 where
