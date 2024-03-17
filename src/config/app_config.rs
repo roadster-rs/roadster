@@ -36,6 +36,12 @@ pub struct Server {
     pub port: u32,
 }
 
+impl Server {
+    pub fn url(&self) -> String {
+        format!("{}:{}", self.host, self.port)
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Tracing {
     pub level: String,
