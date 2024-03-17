@@ -7,6 +7,7 @@ use crate::config::environment::Environment;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
+    pub app: App,
     pub server: Server,
     pub tracing: Tracing,
 }
@@ -28,6 +29,11 @@ impl AppConfig {
             .try_deserialize()
             .map_err(|err| anyhow!("Unable to deserialize app config: {err:?}"))
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct App {
+    pub name: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

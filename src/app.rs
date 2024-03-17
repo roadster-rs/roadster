@@ -2,7 +2,9 @@ use aide::axum::ApiRouter;
 use aide::openapi::OpenApi;
 use aide::transform::TransformOpenApi;
 use async_trait::async_trait;
+
 use axum::{Extension, Router};
+
 use std::sync::Arc;
 use tracing::{info, instrument};
 
@@ -28,7 +30,7 @@ where
         RouterType::AxumRouter(router) => router,
         RouterType::AideRouter(router) => {
             let mut api = OpenApi::default();
-            let router = router.finish_api_with(&mut api, A::api_docs);
+            let router = router.finish_api_with(&mut api, A::api_docs(&context));
             // Arc is very important here or we will face massive memory and performance issues
             let api = Arc::new(api);
             context.api = Some(api.clone());
@@ -63,15 +65,18 @@ pub trait App {
     /// method is provided in case there's any additional work that needs to be done that the
     /// consumer doesn't want to put in a [From<AppContext>] implementation. For example, any
     /// configuration that needs to happen in an async method.
-    async fn context_to_state(app_context: Arc<AppContext>) -> anyhow::Result<Self::State> {
-        let state = Self::State::from(app_context);
+    async fn context_to_state(context: Arc<AppContext>) -> anyhow::Result<Self::State> {
+        let state = Self::State::from(context);
         Ok(state)
     }
 
     fn router(_context: &AppContext) -> RouterType<Self::State>;
 
-    fn api_docs(api: TransformOpenApi) -> TransformOpenApi {
-        api
+    fn api_docs(context: &AppContext) -> impl Fn(TransformOpenApi) -> TransformOpenApi {
+        |api| {
+            api.title(&context.config.app.name)
+                .description(&format!("# {}", context.config.app.name))
+        }
     }
 
     fn middleware(_context: &AppContext) -> Vec<Box<dyn Middleware>> {
