@@ -1,5 +1,4 @@
 use crate::app_context::AppContext;
-use crate::controller::middleware::request_id::REQUEST_ID_HEADER_NAME;
 use crate::controller::middleware::Middleware;
 use axum::extract::MatchedPath;
 use axum::http::{Request, Response};
@@ -7,9 +6,14 @@ use axum::Router;
 use opentelemetry_semantic_conventions::trace::{
     HTTP_REQUEST_METHOD, HTTP_RESPONSE_STATUS_CODE, HTTP_ROUTE, URL_PATH,
 };
+use serde_derive::{Deserialize, Serialize};
 use std::time::Duration;
 use tower_http::trace::{DefaultOnResponse, MakeSpan, OnRequest, OnResponse, TraceLayer};
 use tracing::{event, field, info_span, Level, Span, Value};
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case", default)]
+pub struct TracingConfig {}
 
 pub struct TracingMiddleware;
 impl Middleware for TracingMiddleware {
@@ -17,10 +21,26 @@ impl Middleware for TracingMiddleware {
         "tracing".to_string()
     }
 
+    fn enabled(&self, context: &AppContext) -> bool {
+        context.config.middleware.tracing.common.enabled(context)
+    }
+
+    fn priority(&self, context: &AppContext) -> i32 {
+        context.config.middleware.tracing.common.priority
+    }
+
     fn install(&self, router: Router, _context: &AppContext) -> anyhow::Result<Router> {
+        let request_id_header_name = &_context
+            .config
+            .middleware
+            .set_request_id
+            .custom
+            .common
+            .header_name;
+
         let router = router.layer(
             TraceLayer::new_for_http()
-                .make_span_with(CustomMakeSpan)
+                .make_span_with(CustomMakeSpan::new(request_id_header_name.clone()))
                 .on_request(CustomOnRequest)
                 .on_response(CustomOnResponse::new()),
         );
@@ -29,13 +49,23 @@ impl Middleware for TracingMiddleware {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
-pub struct CustomMakeSpan;
+#[derive(Debug, Clone)]
+pub struct CustomMakeSpan {
+    pub request_id_header_name: String,
+}
+
+impl CustomMakeSpan {
+    pub fn new(request_id_header_name: String) -> Self {
+        Self {
+            request_id_header_name,
+        }
+    }
+}
 
 impl<B> MakeSpan<B> for CustomMakeSpan {
     fn make_span(&mut self, request: &Request<B>) -> Span {
         let path = get_path(request);
-        let request_id = get_request_id(request);
+        let request_id = get_request_id(&self.request_id_header_name, request);
         info_span!("request",
             { HTTP_REQUEST_METHOD } = %request.method(),
             { HTTP_ROUTE } = optional_trace_field(path),
@@ -54,11 +84,13 @@ fn get_path<B>(request: &Request<B>) -> Option<&str> {
         .map(|path| path.as_str())
 }
 
-fn get_request_id<B>(request: &Request<B>) -> Option<&str> {
+fn get_request_id<'a, B>(
+    request_id_header_name: &'a str,
+    request: &'a Request<B>,
+) -> Option<&'a str> {
     request
         .headers()
-        // TODO: Is there a built-in way to get this header?
-        .get(REQUEST_ID_HEADER_NAME)
+        .get(request_id_header_name)
         .and_then(|v| v.to_str().ok())
 }
 
