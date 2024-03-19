@@ -5,13 +5,13 @@ use async_trait::async_trait;
 
 use axum::{Extension, Router};
 
+use itertools::Itertools;
 use std::sync::Arc;
-use tracing::{info, instrument};
+use tracing::{debug, info, instrument};
 
 use crate::app_context::AppContext;
 use crate::config::app_config::AppConfig;
-use crate::controller::middleware::bulk::BulkMiddleware;
-use crate::controller::middleware::default::DefaultMiddleware;
+use crate::controller::middleware::default::default_middleware;
 use crate::controller::middleware::Middleware;
 use crate::tracing::init_tracing;
 
@@ -22,6 +22,8 @@ where
     let config = AppConfig::new()?;
 
     A::init_tracing(&config)?;
+
+    debug!("{config:?}");
 
     let mut context = AppContext::new(config).await?;
 
@@ -41,9 +43,15 @@ where
     let state = A::context_to_state(context.clone()).await?;
     let router = router.with_state::<()>(state);
 
-    let router = BulkMiddleware::default()
-        .append_all(A::middleware(&context))
-        .install(router, &context)?;
+    let router = A::middleware(&context)
+        .iter()
+        .filter(|middleware| middleware.enabled(&context))
+        .sorted_by(|a, b| Ord::cmp(&a.priority(&context), &b.priority(&context)))
+        // Reverse due to how Axum's `Router#layer` method adds middleware.
+        .rev()
+        .try_fold(router, |router, middleware| {
+            middleware.install(router, &context)
+        })?;
 
     A::serve(&context, router).await?;
 
@@ -80,7 +88,7 @@ pub trait App {
     }
 
     fn middleware(_context: &AppContext) -> Vec<Box<dyn Middleware>> {
-        vec![Box::new(DefaultMiddleware)]
+        default_middleware()
     }
 
     #[instrument(skip_all)]
