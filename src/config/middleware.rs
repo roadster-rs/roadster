@@ -5,6 +5,8 @@ use crate::controller::middleware::sensitive_headers::{
 };
 use crate::controller::middleware::tracing::TracingConfig;
 use serde_derive::{Deserialize, Serialize};
+use std::collections::BTreeMap;
+use toml::Value;
 
 pub const PRIORITY_FIRST: i32 = -10_000;
 pub const PRIORITY_LAST: i32 = 10_000;
@@ -18,6 +20,36 @@ pub struct Middleware {
     pub set_request_id: MiddlewareConfig<SetRequestIdConfig>,
     pub propagate_request_id: MiddlewareConfig<PropagateRequestIdConfig>,
     pub tracing: MiddlewareConfig<TracingConfig>,
+    /// Allows providing configs for custom middleware. Any configs that aren't pre-defined above
+    /// will be collected here.
+    ///
+    /// # Examples
+    ///
+    /// ```toml
+    /// [middleware.foo]
+    /// enable = true
+    /// priority = 10
+    /// x = "y"
+    /// ```
+    ///
+    /// This will be parsed as:
+    /// ```raw
+    /// Middleware#custom: {
+    ///     "foo": {
+    ///         MiddlewareConfig#common: {
+    ///             enable: true,
+    ///             priority: 10
+    ///         },
+    ///         MiddlewareConfig<CustomMiddlewareConfig>#custom: {
+    ///             config: {
+    ///                 "x": "y"
+    ///             }
+    ///         }
+    ///     }
+    /// }
+    /// ```
+    #[serde(flatten)]
+    pub custom: BTreeMap<String, MiddlewareConfig<CustomMiddlewareConfig>>,
 }
 
 impl Default for Middleware {
@@ -52,6 +84,7 @@ impl Default for Middleware {
             set_request_id,
             propagate_request_id,
             tracing,
+            custom: Default::default(),
         }
     }
 }
@@ -92,5 +125,41 @@ impl<T: Default> MiddlewareConfig<T> {
     pub fn set_priority(mut self, priority: i32) -> Self {
         self.common = self.common.set_priority(priority);
         self
+    }
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case", default)]
+pub struct CustomMiddlewareConfig {
+    #[serde(flatten)]
+    pub config: BTreeMap<String, Value>,
+}
+
+#[cfg(test)]
+mod test {
+    use toml::Value;
+
+    #[test]
+    fn test_custom_config() {
+        // Note: since we're parsing into a Middleware config struct directly, we don't
+        // need to prefix `foo` with `middleware`. If we want to actually provide custom middleware
+        // configs, the table key will need to be `[middleware.foo]`.
+        let config = r#"
+        [foo]
+        enable = true
+        priority = 10
+        x = "y"
+        "#;
+        let config: crate::config::middleware::Middleware = toml::from_str(config).unwrap();
+
+        assert!(config.custom.contains_key("foo"));
+
+        let config = config.custom.get("foo").unwrap();
+        assert_eq!(config.common.enable, Some(true));
+        assert_eq!(config.common.priority, 10);
+
+        assert!(config.custom.config.contains_key("x"));
+        let x = config.custom.config.get("x").unwrap();
+        assert_eq!(x, &Value::String("y".to_string()));
     }
 }
