@@ -10,9 +10,9 @@ use crate::controller::middleware::Middleware;
 pub fn default_middleware() -> Vec<Box<dyn Middleware>> {
     vec![
         Box::new(SensitiveRequestHeadersMiddleware),
-        Box::new(SetRequestIdMiddleware),
-        Box::new(TracingMiddleware),
-        Box::new(PropagateRequestIdMiddleware),
         Box::new(SensitiveResponseHeadersMiddleware),
+        Box::new(SetRequestIdMiddleware),
+        Box::new(PropagateRequestIdMiddleware),
+        Box::new(TracingMiddleware),
     ]
 }
