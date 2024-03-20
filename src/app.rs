@@ -43,8 +43,12 @@ where
     let state = A::context_to_state(context.clone()).await?;
     let router = router.with_state::<()>(state);
 
-    let router = A::middleware(&context)
+    let mut middleware = default_middleware();
+    middleware.append(&mut A::middleware(&context));
+    let middleware = middleware;
+    let router = middleware
         .iter()
+        .unique_by(|middleware| middleware.name())
         .filter(|middleware| middleware.enabled(&context))
         .sorted_by(|a, b| Ord::cmp(&a.priority(&context), &b.priority(&context)))
         // Reverse due to how Axum's `Router#layer` method adds middleware.
@@ -88,7 +92,7 @@ pub trait App {
     }
 
     fn middleware(_context: &AppContext) -> Vec<Box<dyn Middleware>> {
-        default_middleware()
+        Default::default()
     }
 
     #[instrument(skip_all)]
