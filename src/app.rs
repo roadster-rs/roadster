@@ -69,9 +69,9 @@ pub trait App {
     }
 
     /// Convert the [AppContext] to the custom [Self::State] that will be used throughout the app.
-    /// The conversion should mostly happen in a [From<AppContext>] implementation, but this
+    /// The conversion should mostly happen in a [`From<AppContext>`] implementation, but this
     /// method is provided in case there's any additional work that needs to be done that the
-    /// consumer doesn't want to put in a [From<AppContext>] implementation. For example, any
+    /// consumer doesn't want to put in a [`From<AppContext>`] implementation. For example, any
     /// configuration that needs to happen in an async method.
     async fn context_to_state(context: Arc<AppContext>) -> anyhow::Result<Self::State> {
         let state = Self::State::from(context);
