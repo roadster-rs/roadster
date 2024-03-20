@@ -43,11 +43,10 @@ where
     let state = A::context_to_state(context.clone()).await?;
     let router = router.with_state::<()>(state);
 
-    let mut middleware = default_middleware();
-    middleware.append(&mut A::middleware(&context));
-    let middleware = middleware;
-    let router = middleware
-        .iter()
+    // Install middleware, both the default middleware and any provided by the consumer.
+    let router = default_middleware()
+        .into_iter()
+        .chain(A::middleware(&context).into_iter())
         .unique_by(|middleware| middleware.name())
         .filter(|middleware| middleware.enabled(&context))
         .sorted_by(|a, b| Ord::cmp(&a.priority(&context), &b.priority(&context)))
