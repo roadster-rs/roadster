@@ -1,6 +1,8 @@
 use crate::app_context::AppContext;
 use crate::initializer::normalize_path::NormalizePathConfig;
 use serde_derive::{Deserialize, Serialize};
+use std::collections::BTreeMap;
+use toml::Value;
 
 pub const PRIORITY_FIRST: i32 = -10_000;
 pub const PRIORITY_LAST: i32 = 10_000;
@@ -10,6 +12,37 @@ pub const PRIORITY_LAST: i32 = 10_000;
 pub struct Initializer {
     pub default_enable: bool,
     pub normalize_path: InitializerConfig<NormalizePathConfig>,
+    /// Allows providing configs for custom initializers. Any configs that aren't pre-defined above
+    /// will be collected here.
+    ///
+    /// # Examples
+    ///
+    /// ```toml
+    /// [initializer.foo]
+    /// enable = true
+    /// priority = 10
+    /// x = "y"
+    /// ```
+    ///
+    /// This will be parsed as:
+    /// ```raw
+    /// Initializer#custom: {
+    ///     "foo": {
+    ///         InitializerConfig#common: {
+    ///             enable: true,
+    ///             priority: 10
+    ///         },
+    ///         InitializerConfig<CustomInitializerConfig>#custom: {
+    ///             config: {
+    ///                 "x": "y"
+    ///             }
+    ///         }
+    ///     }
+    /// }
+    /// ```
+    // Todo: consolidate custom settings for both middleware an initializers?
+    #[serde(flatten)]
+    pub custom: BTreeMap<String, InitializerConfig<CustomInitializerConfig>>,
 }
 
 impl Default for Initializer {
@@ -20,6 +53,7 @@ impl Default for Initializer {
         Self {
             default_enable: true,
             normalize_path,
+            custom: Default::default(),
         }
     }
 }
@@ -60,5 +94,41 @@ impl<T: Default> InitializerConfig<T> {
     pub fn set_priority(mut self, priority: i32) -> Self {
         self.common = self.common.set_priority(priority);
         self
+    }
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case", default)]
+pub struct CustomInitializerConfig {
+    #[serde(flatten)]
+    pub config: BTreeMap<String, Value>,
+}
+
+#[cfg(test)]
+mod test {
+    use toml::Value;
+
+    #[test]
+    fn test_custom_config() {
+        // Note: since we're parsing into a Initializer config struct directly, we don't
+        // need to prefix `foo` with `initializer`. If we want to actually provide custom initializer
+        // configs, the table key will need to be `[initializer.foo]`.
+        let config = r#"
+        [foo]
+        enable = true
+        priority = 10
+        x = "y"
+        "#;
+        let config: crate::config::initializer::Initializer = toml::from_str(config).unwrap();
+
+        assert!(config.custom.contains_key("foo"));
+
+        let config = config.custom.get("foo").unwrap();
+        assert_eq!(config.common.enable, Some(true));
+        assert_eq!(config.common.priority, 10);
+
+        assert!(config.custom.config.contains_key("x"));
+        let x = config.custom.config.get("x").unwrap();
+        assert_eq!(x, &Value::String("y".to_string()));
     }
 }

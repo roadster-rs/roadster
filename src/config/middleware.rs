@@ -48,6 +48,7 @@ pub struct Middleware {
     ///     }
     /// }
     /// ```
+    // Todo: consolidate custom settings for both middleware an initializers?
     #[serde(flatten)]
     pub custom: BTreeMap<String, MiddlewareConfig<CustomMiddlewareConfig>>,
 }
