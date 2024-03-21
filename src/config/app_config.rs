@@ -4,6 +4,7 @@ use dotenvy::dotenv;
 use serde_derive::{Deserialize, Serialize};
 
 use crate::config::environment::Environment;
+use crate::config::initializer::Initializer;
 use crate::config::middleware::Middleware;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -15,6 +16,8 @@ pub struct AppConfig {
     pub environment: Environment,
     #[serde(default)]
     pub middleware: Middleware,
+    #[serde(default)]
+    pub initializer: Initializer,
 }
 
 impl AppConfig {
