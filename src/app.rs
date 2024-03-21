@@ -13,6 +13,8 @@ use crate::app_context::AppContext;
 use crate::config::app_config::AppConfig;
 use crate::controller::middleware::default::default_middleware;
 use crate::controller::middleware::Middleware;
+use crate::initializer::default::default_initializers;
+use crate::initializer::Initializer;
 use crate::tracing::init_tracing;
 
 pub async fn start<A>() -> anyhow::Result<()>
@@ -26,6 +28,14 @@ where
     debug!("{config:?}");
 
     let mut context = AppContext::new(config).await?;
+
+    let initializers = default_initializers()
+        .into_iter()
+        .chain(A::initializers(&context))
+        .filter(|initializer| initializer.enabled(&context))
+        .unique_by(|initializer| initializer.name())
+        .sorted_by(|a, b| Ord::cmp(&a.priority(&context), &b.priority(&context)))
+        .collect_vec();
 
     let router = A::router(&context);
     let router = match router {
@@ -43,17 +53,41 @@ where
     let state = A::context_to_state(context.clone()).await?;
     let router = router.with_state::<()>(state);
 
+    let router = initializers
+        .iter()
+        .try_fold(router, |router, initializer| {
+            initializer.after_router(router, &context)
+        })?;
+
+    let router = initializers
+        .iter()
+        .try_fold(router, |router, initializer| {
+            initializer.before_middleware(router, &context)
+        })?;
+
     // Install middleware, both the default middleware and any provided by the consumer.
     let router = default_middleware()
         .into_iter()
         .chain(A::middleware(&context).into_iter())
-        .unique_by(|middleware| middleware.name())
         .filter(|middleware| middleware.enabled(&context))
+        .unique_by(|middleware| middleware.name())
         .sorted_by(|a, b| Ord::cmp(&a.priority(&context), &b.priority(&context)))
         // Reverse due to how Axum's `Router#layer` method adds middleware.
         .rev()
         .try_fold(router, |router, middleware| {
             middleware.install(router, &context)
+        })?;
+
+    let router = initializers
+        .iter()
+        .try_fold(router, |router, initializer| {
+            initializer.after_middleware(router, &context)
+        })?;
+
+    let router = initializers
+        .iter()
+        .try_fold(router, |router, initializer| {
+            initializer.before_serve(router, &context)
         })?;
 
     A::serve(&context, router).await?;
@@ -91,6 +125,10 @@ pub trait App {
     }
 
     fn middleware(_context: &AppContext) -> Vec<Box<dyn Middleware>> {
+        Default::default()
+    }
+
+    fn initializers(_context: &AppContext) -> Vec<Box<dyn Initializer>> {
         Default::default()
     }
 
