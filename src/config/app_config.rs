@@ -1,7 +1,11 @@
+use std::time::Duration;
+
 use anyhow::anyhow;
-use config::Config;
+use config::{Case, Config};
 use dotenvy::dotenv;
 use serde_derive::{Deserialize, Serialize};
+use serde_with::serde_as;
+use url::Url;
 
 use crate::config::environment::Environment;
 use crate::config::initializer::Initializer;
@@ -14,6 +18,7 @@ pub struct AppConfig {
     pub server: Server,
     pub tracing: Tracing,
     pub environment: Environment,
+    pub database: Database,
     #[serde(default)]
     pub middleware: Middleware,
     #[serde(default)]
@@ -32,7 +37,12 @@ impl AppConfig {
             .add_source(config::File::with_name(&format!(
                 "config/{environment}.toml"
             )))
-            .add_source(config::Environment::default())
+            .add_source(
+                config::Environment::default()
+                    .prefix("roadster")
+                    .convert_case(Case::Kebab)
+                    .separator("."),
+            )
             .build()?
             .try_deserialize()
             .map_err(|err| anyhow!("Unable to deserialize app config: {err:?}"))?;
@@ -77,4 +87,35 @@ impl Server {
 #[serde(rename_all = "kebab-case")]
 pub struct Tracing {
     pub level: String,
+}
+
+#[serde_as]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct Database {
+    /// This can be overridden with an environment variable, e.g. `ROADSTER.DATABASE.URI=postgres://example:example@example:1234/example_app`
+    pub uri: Url,
+    #[serde(default = "Database::default_connect_timeout")]
+    #[serde_as(as = "serde_with::DurationMilliSeconds")]
+    pub connect_timeout: Duration,
+    #[serde(default = "Database::default_acquire_timeout")]
+    #[serde_as(as = "serde_with::DurationMilliSeconds")]
+    pub acquire_timeout: Duration,
+    #[serde_as(as = "Option<serde_with::DurationSeconds>")]
+    pub idle_timeout: Option<Duration>,
+    #[serde_as(as = "Option<serde_with::DurationSeconds>")]
+    pub max_lifetime: Option<Duration>,
+    #[serde(default)]
+    pub min_connections: u32,
+    pub max_connections: u32,
+}
+
+impl Database {
+    fn default_connect_timeout() -> Duration {
+        Duration::from_millis(1000)
+    }
+
+    fn default_acquire_timeout() -> Duration {
+        Duration::from_millis(1000)
+    }
 }

@@ -18,9 +18,12 @@ impl Environment {
     pub fn new() -> anyhow::Result<Self> {
         // Get the stage, and validate it by parsing to the Environment enum
         // Todo: allow specifying the environment via a CLI arg as well
-        let environment = env::var("ENVIRONMENT").expect("Env var `ENVIRONMENT` not defined.");
+        let environment =
+            env::var("ROADSTER.ENVIRONMENT").expect("Env var `ROADSTER.ENVIRONMENT` not defined.");
         let environment = Environment::from_str(&environment).map_err(|err| {
-            anyhow!("Unable to parse `ENVIRONMENT` env var with value `{environment}`: {err}")
+            anyhow!(
+                "Unable to parse `ROADSTER.ENVIRONMENT` env var with value `{environment}`: {err}"
+            )
         })?;
         Ok(environment)
     }
