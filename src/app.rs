@@ -7,6 +7,7 @@ use async_trait::async_trait;
 use axum::{Extension, Router};
 use itertools::Itertools;
 use sea_orm::{ConnectOptions, Database};
+use sea_orm_migration::MigratorTrait;
 use tracing::{debug, info, instrument};
 
 use crate::app_context::AppContext;
@@ -17,9 +18,11 @@ use crate::initializer::default::default_initializers;
 use crate::initializer::Initializer;
 use crate::tracing::init_tracing;
 
-pub async fn start<A>() -> anyhow::Result<()>
+// todo: this method is getting unweildy, we should break it up
+pub async fn start<A, M>() -> anyhow::Result<()>
 where
     A: App + Default + Send + Sync,
+    M: MigratorTrait,
 {
     let config = AppConfig::new()?;
 
@@ -28,6 +31,11 @@ where
     debug!("{config:?}");
 
     let db = Database::connect(A::db_connection_options(&config)?).await?;
+
+    // Todo: enable manual migrations
+    if config.database.auto_migrate {
+        M::up(&db, None).await?;
+    }
 
     let mut context = AppContext::new(config, db).await?;
 
