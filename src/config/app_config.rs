@@ -95,6 +95,7 @@ pub struct Tracing {
 pub struct Database {
     /// This can be overridden with an environment variable, e.g. `ROADSTER.DATABASE.URI=postgres://example:example@example:1234/example_app`
     pub uri: Url,
+    pub auto_migrate: bool,
     #[serde(default = "Database::default_connect_timeout")]
     #[serde_as(as = "serde_with::DurationMilliSeconds")]
     pub connect_timeout: Duration,

@@ -24,7 +24,8 @@ tower-http = { version = "0.5.1", features = ["trace", "timeout", "request-id", 
 tower = "0.4.13"
 
 # DB
-sea-orm = { version = "0.12.15", features = ["debug-print", "runtime-tokio-rustls", "sqlx-postgres", "macros"] }
+sea-orm = { version = "1.0.0-rc.2", features = ["debug-print", "runtime-tokio-rustls", "sqlx-postgres", "macros"] }
+sea-orm-migration = { version = "1.0.0-rc.2", features = ["runtime-tokio-rustls", "sqlx-postgres"] }
 
 # Others
 anyhow = "1.0.81"
