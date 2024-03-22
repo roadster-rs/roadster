@@ -1,9 +1,13 @@
-use crate::app_context::AppContext;
+use std::sync::Arc;
+
 use aide::axum::ApiRouter;
 use axum::Router;
 use itertools::Itertools;
 
+use crate::app_context::AppContext;
+
 pub mod docs;
+mod health;
 pub mod middleware;
 pub mod ping;
 
@@ -20,12 +24,15 @@ pub fn build_path(parent: &str, child: &str) -> String {
 
 pub fn default_routes<S>(parent: &str, context: &AppContext) -> (Router<S>, ApiRouter<S>)
 where
-    S: Clone + Send + Sync + 'static,
+    S: Clone + Send + Sync + 'static + Into<Arc<AppContext>>,
 {
-    let router = Router::new().merge(ping::routes(parent).0);
+    let router = Router::new()
+        .merge(ping::routes(parent).0)
+        .merge(health::routes(parent).0);
 
     let api_router = ApiRouter::new()
         .merge(ping::routes(parent).1)
+        .merge(health::routes(parent).1)
         // The docs route is only available when using Aide
         .merge(docs::routes(parent, context));
 
