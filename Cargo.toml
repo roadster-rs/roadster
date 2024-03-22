@@ -23,10 +23,14 @@ schemars = "0.8.16"
 tower-http = { version = "0.5.1", features = ["trace", "timeout", "request-id", "util", "normalize-path", "sensitive-headers"] }
 tower = "0.4.13"
 
+# DB
+sea-orm = { version = "0.12.15", features = ["debug-print", "runtime-tokio-rustls", "sqlx-postgres", "macros"] }
+
 # Others
 anyhow = "1.0.81"
 serde = "1.0.197"
 serde_derive = "1.0.197"
+serde_with = { version = "3.7.0", features = ["macros"] }
 strum = "0.26.1"
 strum_macros = "0.26.1"
 async-trait = "0.1.77"
@@ -36,6 +40,7 @@ itertools = "0.12.1"
 serde_json = "1.0.114"
 toml = "0.8.12"
 lazy_static = "1.4.0"
+url = { version = "2.5.0", features = ["serde"] }
 
 [dev-dependencies]
 cargo-husky = { version = "1.5.0", features = ["default", "run-cargo-check", "run-cargo-clippy", "run-cargo-fmt", "run-cargo-test"] }

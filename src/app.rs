@@ -1,12 +1,12 @@
+use std::sync::Arc;
+
 use aide::axum::ApiRouter;
 use aide::openapi::OpenApi;
 use aide::transform::TransformOpenApi;
 use async_trait::async_trait;
-
 use axum::{Extension, Router};
-
 use itertools::Itertools;
-use std::sync::Arc;
+use sea_orm::{ConnectOptions, Database};
 use tracing::{debug, info, instrument};
 
 use crate::app_context::AppContext;
@@ -27,7 +27,9 @@ where
 
     debug!("{config:?}");
 
-    let mut context = AppContext::new(config).await?;
+    let db = Database::connect(A::db_connection_options(&config)?).await?;
+
+    let mut context = AppContext::new(config, db).await?;
 
     let initializers = default_initializers()
         .into_iter()
@@ -103,6 +105,23 @@ pub trait App {
         init_tracing(config)?;
 
         Ok(())
+    }
+
+    fn db_connection_options(config: &AppConfig) -> anyhow::Result<ConnectOptions> {
+        let mut options = ConnectOptions::new(config.database.uri.to_string());
+        options
+            .connect_timeout(config.database.connect_timeout)
+            .acquire_timeout(config.database.acquire_timeout)
+            .min_connections(config.database.min_connections)
+            .max_connections(config.database.max_connections)
+            .sqlx_logging(false);
+        if let Some(idle_timeout) = config.database.idle_timeout {
+            options.idle_timeout(idle_timeout);
+        }
+        if let Some(max_lifetime) = config.database.max_lifetime {
+            options.max_lifetime(max_lifetime);
+        }
+        Ok(options)
     }
 
     /// Convert the [AppContext] to the custom [Self::State] that will be used throughout the app.
