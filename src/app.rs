@@ -43,10 +43,14 @@ where
         M::up(&db, None).await?;
     }
 
-    let redis = config.worker.as_ref().map(|worker| &worker.redis);
-    let redis = if let Some(redis) = redis {
-        let redis = sidekiq::RedisConnectionManager::new(redis.uri.to_string())?;
-        let redis = bb8::Pool::builder().build(redis).await?;
+    let redis_config = config.worker.as_ref().map(|worker| &worker.redis);
+    let redis = if let Some(redis_config) = redis_config {
+        let redis = sidekiq::RedisConnectionManager::new(redis_config.uri.to_string())?;
+        let redis = bb8::Pool::builder()
+            .min_idle(redis_config.min_idle)
+            .max_size(redis_config.max_connections)
+            .build(redis)
+            .await?;
         Some(redis)
     } else {
         None

@@ -8,9 +8,9 @@ use axum::extract::State;
 use axum::routing::get;
 use axum::{Json, Router};
 use schemars::JsonSchema;
+use sea_orm::DatabaseConnection;
 use serde_derive::{Deserialize, Serialize};
 use sidekiq::redis_rs::cmd;
-
 use tracing::instrument;
 
 use crate::app_context::AppContext;
@@ -52,7 +52,7 @@ where
     S: Clone + Send + Sync + 'static + Into<Arc<AppContext>>,
 {
     let state: Arc<AppContext> = state.into();
-    let db = if state.db.ping().await.is_ok() {
+    let db = if ping_db(&state.db).await.is_ok() {
         Status::Ok
     } else {
         Status::Err
@@ -68,6 +68,13 @@ where
     Ok(Json(HeathCheckResponse { db, redis }))
 }
 
+#[instrument(skip_all)]
+async fn ping_db(db: &DatabaseConnection) -> anyhow::Result<()> {
+    db.ping().await?;
+    Ok(())
+}
+
+#[instrument(skip_all)]
 async fn ping_redis(redis: &sidekiq::RedisPool) -> anyhow::Result<()> {
     let mut conn = redis.get().await?;
     let msg = uuid::Uuid::new_v4().to_string();
