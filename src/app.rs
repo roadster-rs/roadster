@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::time::Duration;
 
 use aide::axum::ApiRouter;
 use aide::openapi::OpenApi;
@@ -9,7 +8,7 @@ use axum::{Extension, Router};
 use itertools::Itertools;
 use sea_orm::{ConnectOptions, Database};
 use sea_orm_migration::MigratorTrait;
-use sidekiq::{Processor, Worker};
+use sidekiq::{periodic, Processor};
 use tracing::{debug, info, instrument};
 
 use crate::app_context::AppContext;
@@ -40,10 +39,7 @@ where
         M::up(&db, None).await?;
     }
 
-    let redis = config
-        .worker
-        .as_ref()
-        .and_then(|worker| worker.redis.as_ref());
+    let redis = config.worker.as_ref().map(|worker| &worker.redis);
     let redis = if let Some(redis) = redis {
         let redis = sidekiq::RedisConnectionManager::new(redis.uri.to_string())?;
         let redis = bb8::Pool::builder().build(redis).await?;
@@ -115,7 +111,10 @@ where
             initializer.before_serve(router, &context)
         })?;
 
-    let mut processor = redis.map(|redis| {
+    let processor = if let Some(redis) = redis {
+        // Periodic jobs are not removed automatically. Remove any periodic jobs that were
+        // previously added. They should be re-added by `App::worker`.
+        periodic::destroy_all(redis.clone()).await?;
         let custom_queue_names = context
             .config
             .worker
@@ -126,11 +125,12 @@ where
             .chain(A::worker_queues(&context, &state))
             .collect();
         let queue_names = queue_names(&custom_queue_names);
-        Processor::new(redis, queue_names)
-    });
-    if let Some(processor) = &mut processor {
-        A::workers(processor, &context, &state);
-    }
+        let mut processor = Processor::new(redis, queue_names);
+        A::workers(&mut processor, &context, &state);
+        Some(processor)
+    } else {
+        None
+    };
     let processor = || {
         Box::pin(async {
             if let Some(processor) = processor {
