@@ -1,4 +1,5 @@
 pub mod catch_panic;
+pub mod compression;
 pub mod default;
 pub mod request_id;
 pub mod sensitive_headers;

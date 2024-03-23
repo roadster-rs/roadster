@@ -1,3 +1,5 @@
+use crate::controller::middleware::catch_panic::CatchPanicMiddleware;
+use crate::controller::middleware::compression::CompressionMiddleware;
 use crate::controller::middleware::request_id::{
     PropagateRequestIdMiddleware, SetRequestIdMiddleware,
 };
@@ -14,5 +16,7 @@ pub fn default_middleware() -> Vec<Box<dyn Middleware>> {
         Box::new(SetRequestIdMiddleware),
         Box::new(PropagateRequestIdMiddleware),
         Box::new(TracingMiddleware),
+        Box::new(CatchPanicMiddleware),
+        Box::new(CompressionMiddleware),
     ]
 }
