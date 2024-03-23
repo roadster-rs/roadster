@@ -141,6 +141,9 @@ where
     let sidekiq_cancellation_token = processor
         .as_ref()
         .map(|processor| processor.get_cancellation_token());
+    let _sidekiq_cancellation_token_drop_guard = sidekiq_cancellation_token
+        .as_ref()
+        .map(|token| token.clone().drop_guard());
     let processor = || {
         Box::pin(async {
             if let Some(processor) = processor {
@@ -248,6 +251,9 @@ pub trait App {
         Ok(())
     }
 
+    /// Perform additional shutdown logic. The `default` parameter is provided to gracefully shut
+    /// down the resources created by roadster. If overriding, it's strongly recommended to call
+    /// `default.await` before running any custom shutdown logic.
     async fn graceful_shutdown<F>(default: F, _context: Arc<AppContext>, _state: Arc<Self::State>)
     where
         F: Future<Output = ()> + Send + 'static,
