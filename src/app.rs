@@ -92,6 +92,7 @@ where
         })?;
 
     // Install middleware, both the default middleware and any provided by the consumer.
+    info!("Installing middleware. Note: the order of installation is the inverse of the order middleware will run when handling a request.");
     let router = default_middleware()
         .into_iter()
         .chain(A::middleware(&context, &state).into_iter())
@@ -101,6 +102,7 @@ where
         // Reverse due to how Axum's `Router#layer` method adds middleware.
         .rev()
         .try_fold(router, |router, middleware| {
+            info!("Installing middleware: `{}`", middleware.name());
             middleware.install(router, &context)
         })?;
 
