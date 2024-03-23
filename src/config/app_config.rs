@@ -69,6 +69,15 @@ impl AppConfig {
 #[serde(rename_all = "kebab-case")]
 pub struct App {
     pub name: String,
+    /// Shutdown the whole app if an error occurs in one of the app's top-level tasks (API, workers, etc).
+    #[serde(default = "App::default_shutdown_on_error")]
+    pub shutdown_on_error: bool,
+}
+
+impl App {
+    fn default_shutdown_on_error() -> bool {
+        true
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

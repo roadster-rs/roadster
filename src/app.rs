@@ -1,10 +1,11 @@
+use std::future;
 use std::future::Future;
-
 use std::sync::Arc;
 
 use aide::axum::ApiRouter;
 use aide::openapi::OpenApi;
 use aide::transform::TransformOpenApi;
+
 use async_trait::async_trait;
 use axum::{Extension, Router};
 
@@ -12,7 +13,9 @@ use itertools::Itertools;
 use sea_orm::{ConnectOptions, Database};
 use sea_orm_migration::MigratorTrait;
 use sidekiq::{periodic, Processor};
+
 use tokio_util::sync::CancellationToken;
+use tokio_util::task::TaskTracker;
 use tracing::{debug, error, info, instrument};
 
 use crate::app_context::AppContext;
@@ -144,24 +147,48 @@ where
     let _sidekiq_cancellation_token_drop_guard = sidekiq_cancellation_token
         .as_ref()
         .map(|token| token.clone().drop_guard());
-    let processor = || {
-        Box::pin(async {
-            if let Some(processor) = processor {
-                processor.run().await;
-            }
-            Ok(())
-        })
-    };
 
-    let graceful_shutdown_signal = graceful_shutdown_signal(
-        A::graceful_shutdown(context.clone(), state.clone()),
-        sidekiq_cancellation_token,
+    let cancel_token = CancellationToken::new();
+    let tracker = TaskTracker::new();
+    // Task to serve the app.
+    tracker.spawn(cancel_on_error(
+        cancel_token.clone(),
         context.clone(),
+        A::serve(
+            router,
+            token_shutdown_signal(cancel_token.clone()),
+            context.clone(),
+            state.clone(),
+        ),
+    ));
+    // Task to run the sidekiq processor
+    processor.map(|processor| tracker.spawn(processor.run()));
+    // Task to clean up resources when gracefully shutting down.
+    tracker.spawn(cancel_on_error(
+        cancel_token.clone(),
+        context.clone(),
+        graceful_shutdown(
+            token_shutdown_signal(cancel_token.clone()),
+            A::graceful_shutdown(context.clone(), state.clone()),
+            sidekiq_cancellation_token,
+            context.clone(),
+        ),
+    ));
+    // Task to listen for the signal to gracefully shutdown, and trigger other tasks to stop.
+    let graceful_shutdown_signal = graceful_shutdown_signal(
+        cancel_token.clone(),
+        A::graceful_shutdown_signal(context.clone(), state.clone()),
     );
-    tokio::try_join!(
-        A::serve(router, graceful_shutdown_signal, &context, &state),
-        processor()
-    )?;
+    tracker.spawn(cancel_token_on_signal_received(
+        graceful_shutdown_signal,
+        cancel_token.clone(),
+    ));
+
+    // Wait for all the tasks to complete.
+    tracker.close();
+    tracker.wait().await;
+
+    info!("Shut down complete");
 
     Ok(())
 }
@@ -233,8 +260,8 @@ pub trait App {
     async fn serve<F>(
         router: Router,
         shutdown_signal: F,
-        context: &AppContext,
-        _state: &Self::State,
+        context: Arc<AppContext>,
+        _state: Arc<Self::State>,
     ) -> anyhow::Result<()>
     where
         F: Future<Output = ()> + Send + 'static,
@@ -250,16 +277,22 @@ pub trait App {
         Ok(())
     }
 
-    async fn graceful_shutdown(_context: Arc<AppContext>, _state: Arc<Self::State>) {}
+    async fn graceful_shutdown_signal(_context: Arc<AppContext>, _state: Arc<Self::State>) {
+        let _output: () = future::pending().await;
+    }
+
+    #[instrument(skip_all)]
+    async fn graceful_shutdown(
+        _context: Arc<AppContext>,
+        _state: Arc<Self::State>,
+    ) -> anyhow::Result<()> {
+        Ok(())
+    }
 }
 
-// Todo: Move to a separate file?
 #[instrument(skip_all)]
-async fn graceful_shutdown_signal<F>(
-    app_graceful_shutdown: F,
-    sidekiq_cancellation_token: Option<CancellationToken>,
-    context: Arc<AppContext>,
-) where
+async fn graceful_shutdown_signal<F>(cancellation_token: CancellationToken, app_shutdown_signal: F)
+where
     F: Future<Output = ()> + Send + 'static,
 {
     let ctrl_c = async {
@@ -280,16 +313,77 @@ async fn graceful_shutdown_signal<F>(
     let sigterm = std::future::pending::<()>();
 
     tokio::select! {
-        _ = ctrl_c => {},
-        _ = sigterm => {},
+        _ = ctrl_c => {
+            info!("Shutting down due to ctrl-c signal received");
+        },
+        _ = sigterm => {
+            info!("Shutting down due to sigterm signal received");
+        },
+        _ = cancellation_token.cancelled() => {
+            info!("Shutting down due to cancellation token cancelled");
+        }
+        _ = app_shutdown_signal => {
+            info!("Shutting down due to app's custom shutdown signal received");
+        }
     }
+}
+
+async fn cancel_token_on_signal_received<F>(
+    shutdown_signal: F,
+    cancellation_token: CancellationToken,
+) where
+    F: Future<Output = ()> + Send + 'static,
+{
+    shutdown_signal.await;
+    cancellation_token.cancel();
+}
+
+async fn token_shutdown_signal(cancellation_token: CancellationToken) {
+    cancellation_token.cancelled().await
+}
+
+#[instrument(skip_all)]
+async fn cancel_on_error<T, F>(
+    cancellation_token: CancellationToken,
+    context: Arc<AppContext>,
+    f: F,
+) -> anyhow::Result<T>
+where
+    F: Future<Output = anyhow::Result<T>> + Send + 'static,
+{
+    let result = f.await;
+    if let Err(err) = &result {
+        if context.config.app.shutdown_on_error {
+            error!(
+                "An error occurred in one of the app's tasks, shutting down. Error: {}",
+                err
+            );
+            cancellation_token.cancel();
+        } else {
+            error!("An error occurred in one of the app's tasks: {}", err);
+        }
+    }
+    result
+}
+
+#[instrument(skip_all)]
+async fn graceful_shutdown<F1, F2>(
+    shutdown_signal: F1,
+    app_graceful_shutdown: F2,
+    sidekiq_cancellation_token: Option<CancellationToken>,
+    context: Arc<AppContext>,
+) -> anyhow::Result<()>
+where
+    F1: Future<Output = ()> + Send + 'static,
+    F2: Future<Output = anyhow::Result<()>> + Send + 'static,
+{
+    shutdown_signal.await;
 
     info!("Received shutdown signal. Shutting down gracefully.");
+
     info!("Closing the DB connection pool.");
-    let db_result = context.as_ref().clone().db.close().await;
-    if let Err(err) = db_result {
-        error!("An error occurred when closing the DB connection pool: {err}");
-    }
+    context.as_ref().clone().db.close().await?;
+
     if let Some(token) = sidekiq_cancellation_token {
         info!("Cancelling sidekiq workers.");
         token.cancel();
@@ -298,7 +392,9 @@ async fn graceful_shutdown_signal<F>(
     // Futures are lazy -- the custom `app_graceful_shutdown` future won't run until we call `await` on it.
     // https://rust-lang.github.io/async-book/03_async_await/01_chapter.html
     info!("Running app's custom shutdown logic.");
-    app_graceful_shutdown.await;
+    app_graceful_shutdown.await?;
+
+    Ok(())
 }
 
 #[derive(Debug)]
