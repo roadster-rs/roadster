@@ -153,12 +153,11 @@ where
         })
     };
 
-    let graceful_shutdown_signal = A::graceful_shutdown(
-        graceful_shutdown_signal(sidekiq_cancellation_token, context.clone()),
+    let graceful_shutdown_signal = graceful_shutdown_signal(
+        A::graceful_shutdown(context.clone(), state.clone()),
+        sidekiq_cancellation_token,
         context.clone(),
-        state.clone(),
     );
-
     tokio::try_join!(
         A::serve(router, graceful_shutdown_signal, &context, &state),
         processor()
@@ -251,23 +250,18 @@ pub trait App {
         Ok(())
     }
 
-    /// Perform additional shutdown logic. The `default` parameter is provided to gracefully shut
-    /// down the resources created by roadster. If overriding, it's strongly recommended to call
-    /// `default.await` before running any custom shutdown logic.
-    async fn graceful_shutdown<F>(default: F, _context: Arc<AppContext>, _state: Arc<Self::State>)
-    where
-        F: Future<Output = ()> + Send + 'static,
-    {
-        default.await;
-    }
+    async fn graceful_shutdown(_context: Arc<AppContext>, _state: Arc<Self::State>) {}
 }
 
 // Todo: Move to a separate file?
 #[instrument(skip_all)]
-async fn graceful_shutdown_signal(
+async fn graceful_shutdown_signal<F>(
+    app_graceful_shutdown: F,
     sidekiq_cancellation_token: Option<CancellationToken>,
     context: Arc<AppContext>,
-) {
+) where
+    F: Future<Output = ()> + Send + 'static,
+{
     let ctrl_c = async {
         tokio::signal::ctrl_c()
             .await
@@ -300,6 +294,11 @@ async fn graceful_shutdown_signal(
         info!("Cancelling sidekiq workers.");
         token.cancel();
     }
+
+    // Futures are lazy -- the custom `app_graceful_shutdown` future won't run until we call `await` on it.
+    // https://rust-lang.github.io/async-book/03_async_await/01_chapter.html
+    info!("Running app's custom shutdown logic.");
+    app_graceful_shutdown.await;
 }
 
 #[derive(Debug)]
