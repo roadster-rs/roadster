@@ -5,15 +5,12 @@ use std::sync::Arc;
 use aide::axum::ApiRouter;
 use aide::openapi::OpenApi;
 use aide::transform::TransformOpenApi;
-
 use async_trait::async_trait;
 use axum::{Extension, Router};
-
 use itertools::Itertools;
 use sea_orm::{ConnectOptions, Database};
 use sea_orm_migration::MigratorTrait;
 use sidekiq::{periodic, Processor};
-
 use tokio_util::sync::CancellationToken;
 use tokio_util::task::TaskTracker;
 use tracing::{debug, error, info, instrument};
@@ -342,7 +339,6 @@ async fn token_shutdown_signal(cancellation_token: CancellationToken) {
     cancellation_token.cancelled().await
 }
 
-#[instrument(skip_all)]
 async fn cancel_on_error<T, F>(
     cancellation_token: CancellationToken,
     context: Arc<AppContext>,
