@@ -9,14 +9,20 @@ use crate::config::app_config::AppConfig;
 pub struct AppContext {
     pub config: AppConfig,
     pub db: DatabaseConnection,
+    pub redis: Option<sidekiq::RedisPool>,
     pub api: Option<Arc<OpenApi>>,
 }
 
 impl AppContext {
-    pub async fn new(config: AppConfig, db: DatabaseConnection) -> anyhow::Result<Self> {
+    pub async fn new(
+        config: AppConfig,
+        db: DatabaseConnection,
+        redis: Option<sidekiq::RedisPool>,
+    ) -> anyhow::Result<Self> {
         let context = Self {
             config,
             db,
+            redis,
             api: None,
         };
         Ok(context)

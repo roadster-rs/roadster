@@ -8,6 +8,7 @@ use axum::{Extension, Router};
 use itertools::Itertools;
 use sea_orm::{ConnectOptions, Database};
 use sea_orm_migration::MigratorTrait;
+use sidekiq::{Processor, Worker};
 use tracing::{debug, info, instrument};
 
 use crate::app_context::AppContext;
@@ -17,6 +18,17 @@ use crate::controller::middleware::Middleware;
 use crate::initializer::default::default_initializers;
 use crate::initializer::Initializer;
 use crate::tracing::init_tracing;
+use crate::worker::queue_names;
+
+pub struct Foo;
+#[async_trait]
+impl Worker<()> for Foo {
+    #[instrument(skip_all)]
+    async fn perform(&self, _args: ()) -> sidekiq::Result<()> {
+        info!("foo");
+        Ok(())
+    }
+}
 
 // todo: this method is getting unweildy, we should break it up
 pub async fn start<A, M>() -> anyhow::Result<()>
@@ -37,7 +49,19 @@ where
         M::up(&db, None).await?;
     }
 
-    let mut context = AppContext::new(config, db).await?;
+    let redis = config
+        .worker
+        .as_ref()
+        .and_then(|worker| worker.redis.as_ref());
+    let redis = if let Some(redis) = redis {
+        let redis = sidekiq::RedisConnectionManager::new(redis.uri.to_string())?;
+        let redis = bb8::Pool::builder().build(redis).await?;
+        Some(redis)
+    } else {
+        None
+    };
+
+    let mut context = AppContext::new(config, db, redis.clone()).await?;
 
     let initializers = default_initializers()
         .into_iter()
@@ -61,7 +85,7 @@ where
     };
     let context = Arc::new(context);
     let state = A::context_to_state(context.clone()).await?;
-    let router = router.with_state::<()>(state);
+    let router = router.with_state::<()>(state.clone());
 
     let router = initializers
         .iter()
@@ -78,7 +102,7 @@ where
     // Install middleware, both the default middleware and any provided by the consumer.
     let router = default_middleware()
         .into_iter()
-        .chain(A::middleware(&context).into_iter())
+        .chain(A::middleware(&context, &state).into_iter())
         .filter(|middleware| middleware.enabled(&context))
         .unique_by(|middleware| middleware.name())
         .sorted_by(|a, b| Ord::cmp(&a.priority(&context), &b.priority(&context)))
@@ -100,7 +124,32 @@ where
             initializer.before_serve(router, &context)
         })?;
 
-    A::serve(&context, router).await?;
+    let mut processor = redis.map(|redis| {
+        let custom_queue_names = context
+            .config
+            .worker
+            .as_ref()
+            .map(|worker| worker.queue_names.clone())
+            .unwrap_or_else(Vec::new)
+            .into_iter()
+            .chain(A::worker_queues(&context, &state))
+            .collect();
+        let queue_names = queue_names(&custom_queue_names);
+        Processor::new(redis, queue_names)
+    });
+    if let Some(processor) = &mut processor {
+        A::workers(processor, &context, &state);
+    }
+    let processor = || {
+        Box::pin(async {
+            if let Some(processor) = processor {
+                processor.run().await;
+            }
+            Ok(())
+        })
+    };
+
+    tokio::try_join!(A::serve(&context, router), processor())?;
 
     Ok(())
 }
@@ -151,12 +200,23 @@ pub trait App {
         }
     }
 
-    fn middleware(_context: &AppContext) -> Vec<Box<dyn Middleware>> {
+    fn middleware(_context: &AppContext, _state: &Self::State) -> Vec<Box<dyn Middleware>> {
         Default::default()
     }
 
     fn initializers(_context: &AppContext) -> Vec<Box<dyn Initializer>> {
         Default::default()
+    }
+
+    /// Worker queue names can either be provided here, or as config values. If provided here
+    /// the consumer is able to use string constants, which can be used when creating a worker
+    /// instance. This can reduce the risk of copy/paste errors and typos.
+    fn worker_queues(_context: &AppContext, _state: &Self::State) -> Vec<String> {
+        vec![]
+    }
+
+    fn workers(_processor: &mut Processor, _context: &AppContext, _state: &Self::State) {
+        _processor.register(Foo);
     }
 
     #[instrument(skip_all)]

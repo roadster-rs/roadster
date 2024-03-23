@@ -19,6 +19,7 @@ pub struct AppConfig {
     pub tracing: Tracing,
     pub environment: Environment,
     pub database: Database,
+    pub worker: Option<Worker>,
     #[serde(default)]
     pub middleware: Middleware,
     #[serde(default)]
@@ -119,4 +120,17 @@ impl Database {
     fn default_acquire_timeout() -> Duration {
         Duration::from_millis(1000)
     }
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case", default)]
+pub struct Worker {
+    pub redis: Option<Redis>,
+    pub queue_names: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct Redis {
+    pub uri: Url,
 }
