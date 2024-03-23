@@ -1,4 +1,3 @@
-use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
 use aide::axum::routing::get_with;
@@ -10,8 +9,8 @@ use axum::routing::get;
 use axum::{Json, Router};
 use schemars::JsonSchema;
 use serde_derive::{Deserialize, Serialize};
-use sidekiq::redis_rs::{cmd, RedisResult};
-use sidekiq::Worker;
+use sidekiq::redis_rs::cmd;
+
 use tracing::instrument;
 
 use crate::app_context::AppContext;

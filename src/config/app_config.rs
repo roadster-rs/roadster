@@ -122,10 +122,12 @@ impl Database {
     }
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case", default)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub struct Worker {
-    pub redis: Option<Redis>,
+    // Todo: Make Redis optional for workers?
+    pub redis: Redis,
+    #[serde(default)]
     pub queue_names: Vec<String>,
 }
 
