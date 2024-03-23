@@ -7,3 +7,4 @@ pub mod controller;
 pub mod initializer;
 pub mod tracing;
 pub mod view;
+mod worker;

@@ -27,6 +27,10 @@ tower = "0.4.13"
 sea-orm = { version = "1.0.0-rc.2", features = ["debug-print", "runtime-tokio-rustls", "sqlx-postgres", "macros"] }
 sea-orm-migration = { version = "1.0.0-rc.2", features = ["runtime-tokio-rustls", "sqlx-postgres"] }
 
+# Workers
+# Todo: the default `rss-stats` feature has a dependency that currently can't be satisfied (memchr: ~2.3)
+rusty-sidekiq = { version = "0.10.0", default-features = false }
+
 # Others
 anyhow = "1.0.81"
 serde = "1.0.197"
@@ -42,6 +46,7 @@ serde_json = "1.0.114"
 toml = "0.8.12"
 lazy_static = "1.4.0"
 url = { version = "2.5.0", features = ["serde"] }
+bb8 = "0.8.3"
 
 [dev-dependencies]
 cargo-husky = { version = "1.5.0", features = ["default", "run-cargo-check", "run-cargo-clippy", "run-cargo-fmt", "run-cargo-test"] }

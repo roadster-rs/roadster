@@ -1,15 +1,19 @@
+use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
-use aide::axum::routing::get_with;
 use aide::axum::{ApiRouter, IntoApiResponse};
+use aide::axum::routing::get_with;
 use aide::transform::TransformOperation;
+use axum::{Json, Router};
 use axum::extract::State;
 use axum::routing::get;
-use axum::{Json, Router};
 use schemars::JsonSchema;
 use serde_derive::{Deserialize, Serialize};
+use sidekiq::redis_rs::cmd;
+use sidekiq::Worker;
 use tracing::instrument;
 
+use crate::app::Foo;
 use crate::app_context::AppContext;
 use crate::controller::build_path;
 use crate::view::app_error::AppError;
@@ -33,6 +37,7 @@ where
 #[serde(rename_all = "camelCase")]
 pub struct HeathCheckResponse {
     pub db: Status,
+    pub redis: Option<Status>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -48,18 +53,31 @@ where
     S: Clone + Send + Sync + 'static + Into<Arc<AppContext>>,
 {
     let state: Arc<AppContext> = state.into();
+    // Foo::perform_async(state.redis.as_ref().unwrap(), ()).await?;
     let db = if state.db.ping().await.is_ok() {
         Status::Ok
     } else {
         Status::Err
     };
-    Ok(Json(HeathCheckResponse { db }))
+    let redis = if let Some(redis) = state.redis.as_ref() {
+        let mut conn = redis.get().await?;
+        let pong = cmd("PING")
+            .query_async(conn.unnamespaced_borrow_mut())
+            .await?;
+        Some(Status::Ok)
+    } else {
+        None
+    };
+    Ok(Json(HeathCheckResponse { db, redis }))
 }
 
 fn health_get_docs(op: TransformOperation) -> TransformOperation {
     op.description("Check the health of the server and its resources.")
         .tag(TAG)
         .response_with::<200, Json<HeathCheckResponse>, _>(|res| {
-            res.example(HeathCheckResponse { db: Status::Ok })
+            res.example(HeathCheckResponse {
+                db: Status::Ok,
+                redis: Status::Ok,
+            })
         })
 }
