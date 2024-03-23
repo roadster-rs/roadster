@@ -274,10 +274,15 @@ pub trait App {
         Ok(())
     }
 
+    /// Override to provide a custom shutdown signal. Roadster provides some default shutdown
+    /// signals, but it may be desirable to provide a custom signal in order to, e.g., shutdown the
+    /// server when a particular API is called.
     async fn graceful_shutdown_signal(_context: Arc<AppContext>, _state: Arc<Self::State>) {
         let _output: () = future::pending().await;
     }
 
+    /// Override to provide custom graceful shutdown logic to clean up any resources created by
+    /// the app. Roadster will take care of cleaning up the resources it created.
     #[instrument(skip_all)]
     async fn graceful_shutdown(
         _context: Arc<AppContext>,
@@ -378,7 +383,7 @@ where
     info!("Received shutdown signal. Shutting down gracefully.");
 
     info!("Closing the DB connection pool.");
-    context.as_ref().clone().db.close().await?;
+    let db_close_result = context.as_ref().clone().db.close().await;
 
     if let Some(token) = sidekiq_cancellation_token {
         info!("Cancelling sidekiq workers.");
@@ -388,7 +393,10 @@ where
     // Futures are lazy -- the custom `app_graceful_shutdown` future won't run until we call `await` on it.
     // https://rust-lang.github.io/async-book/03_async_await/01_chapter.html
     info!("Running app's custom shutdown logic.");
-    app_graceful_shutdown.await?;
+    let app_graceful_shutdown_result = app_graceful_shutdown.await;
+
+    db_close_result?;
+    app_graceful_shutdown_result?;
 
     Ok(())
 }
