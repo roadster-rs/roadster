@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use aide::axum::ApiRouter;
 use aide::openapi::OpenApi;
@@ -19,16 +20,6 @@ use crate::initializer::default::default_initializers;
 use crate::initializer::Initializer;
 use crate::tracing::init_tracing;
 use crate::worker::queue_names;
-
-pub struct Foo;
-#[async_trait]
-impl Worker<()> for Foo {
-    #[instrument(skip_all)]
-    async fn perform(&self, _args: ()) -> sidekiq::Result<()> {
-        info!("foo");
-        Ok(())
-    }
-}
 
 // todo: this method is getting unweildy, we should break it up
 pub async fn start<A, M>() -> anyhow::Result<()>
@@ -215,9 +206,7 @@ pub trait App {
         vec![]
     }
 
-    fn workers(_processor: &mut Processor, _context: &AppContext, _state: &Self::State) {
-        _processor.register(Foo);
-    }
+    fn workers(_processor: &mut Processor, _context: &AppContext, _state: &Self::State) {}
 
     #[instrument(skip_all)]
     async fn serve(context: &AppContext, router: Router) -> anyhow::Result<()> {

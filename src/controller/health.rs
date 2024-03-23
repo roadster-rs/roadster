@@ -1,19 +1,19 @@
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
-use aide::axum::{ApiRouter, IntoApiResponse};
 use aide::axum::routing::get_with;
+use aide::axum::{ApiRouter, IntoApiResponse};
 use aide::transform::TransformOperation;
-use axum::{Json, Router};
+use anyhow::bail;
 use axum::extract::State;
 use axum::routing::get;
+use axum::{Json, Router};
 use schemars::JsonSchema;
 use serde_derive::{Deserialize, Serialize};
-use sidekiq::redis_rs::cmd;
+use sidekiq::redis_rs::{cmd, RedisResult};
 use sidekiq::Worker;
 use tracing::instrument;
 
-use crate::app::Foo;
 use crate::app_context::AppContext;
 use crate::controller::build_path;
 use crate::view::app_error::AppError;
@@ -53,22 +53,34 @@ where
     S: Clone + Send + Sync + 'static + Into<Arc<AppContext>>,
 {
     let state: Arc<AppContext> = state.into();
-    // Foo::perform_async(state.redis.as_ref().unwrap(), ()).await?;
     let db = if state.db.ping().await.is_ok() {
         Status::Ok
     } else {
         Status::Err
     };
     let redis = if let Some(redis) = state.redis.as_ref() {
-        let mut conn = redis.get().await?;
-        let pong = cmd("PING")
-            .query_async(conn.unnamespaced_borrow_mut())
-            .await?;
-        Some(Status::Ok)
+        match ping_redis(redis).await {
+            Ok(_) => Some(Status::Ok),
+            _ => Some(Status::Err),
+        }
     } else {
         None
     };
     Ok(Json(HeathCheckResponse { db, redis }))
+}
+
+async fn ping_redis(redis: &sidekiq::RedisPool) -> anyhow::Result<()> {
+    let mut conn = redis.get().await?;
+    let msg = uuid::Uuid::new_v4().to_string();
+    let pong: String = cmd("PING")
+        .arg(&msg)
+        .query_async(conn.unnamespaced_borrow_mut())
+        .await?;
+    if pong == msg {
+        Ok(())
+    } else {
+        bail!("Ping response does not match input.")
+    }
 }
 
 fn health_get_docs(op: TransformOperation) -> TransformOperation {
@@ -77,7 +89,7 @@ fn health_get_docs(op: TransformOperation) -> TransformOperation {
         .response_with::<200, Json<HeathCheckResponse>, _>(|res| {
             res.example(HeathCheckResponse {
                 db: Status::Ok,
-                redis: Status::Ok,
+                redis: Some(Status::Ok),
             })
         })
 }
