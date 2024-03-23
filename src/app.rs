@@ -185,7 +185,7 @@ where
     tracker.close();
     tracker.wait().await;
 
-    info!("Shut down complete");
+    info!("Shutdown complete");
 
     Ok(())
 }
