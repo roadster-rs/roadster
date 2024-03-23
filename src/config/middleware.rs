@@ -1,4 +1,5 @@
 use crate::app_context::AppContext;
+use crate::controller::middleware::catch_panic::CatchPanicConfig;
 use crate::controller::middleware::request_id::{PropagateRequestIdConfig, SetRequestIdConfig};
 use crate::controller::middleware::sensitive_headers::{
     SensitiveRequestHeadersConfig, SensitiveResponseHeadersConfig,
@@ -20,6 +21,7 @@ pub struct Middleware {
     pub set_request_id: MiddlewareConfig<SetRequestIdConfig>,
     pub propagate_request_id: MiddlewareConfig<PropagateRequestIdConfig>,
     pub tracing: MiddlewareConfig<TracingConfig>,
+    pub catch_panic: MiddlewareConfig<CatchPanicConfig>,
     /// Allows providing configs for custom middleware. Any configs that aren't pre-defined above
     /// will be collected here.
     ///
@@ -67,6 +69,7 @@ impl Default for Middleware {
 
         // Somewhere in the middle, order doesn't particularly matter
         let tracing: MiddlewareConfig<TracingConfig> = Default::default();
+        let catch_panic: MiddlewareConfig<CatchPanicConfig> = Default::default();
 
         // Before response middlewares
         let mut priority = PRIORITY_LAST;
@@ -85,6 +88,7 @@ impl Default for Middleware {
             set_request_id,
             propagate_request_id,
             tracing,
+            catch_panic,
             custom: Default::default(),
         }
     }
