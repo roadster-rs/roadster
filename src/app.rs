@@ -251,7 +251,6 @@ pub trait App {
         F: Future<Output = ()> + Send + 'static,
     {
         default.await;
-        info!("foo");
     }
 }
 
