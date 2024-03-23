@@ -1,3 +1,5 @@
+use std::future::Future;
+
 use std::sync::Arc;
 
 use aide::axum::ApiRouter;
@@ -5,11 +7,13 @@ use aide::openapi::OpenApi;
 use aide::transform::TransformOpenApi;
 use async_trait::async_trait;
 use axum::{Extension, Router};
+
 use itertools::Itertools;
 use sea_orm::{ConnectOptions, Database};
 use sea_orm_migration::MigratorTrait;
 use sidekiq::{periodic, Processor};
-use tracing::{debug, info, instrument};
+use tokio_util::sync::CancellationToken;
+use tracing::{debug, error, info, instrument};
 
 use crate::app_context::AppContext;
 use crate::config::app_config::AppConfig;
@@ -23,7 +27,7 @@ use crate::worker::queue_names;
 // todo: this method is getting unweildy, we should break it up
 pub async fn start<A, M>() -> anyhow::Result<()>
 where
-    A: App + Default + Send + Sync,
+    A: App + Default + Send + Sync + 'static,
     M: MigratorTrait,
 {
     let config = AppConfig::new()?;
@@ -73,6 +77,7 @@ where
     let context = Arc::new(context);
     let state = A::context_to_state(context.clone()).await?;
     let router = router.with_state::<()>(state.clone());
+    let state = Arc::new(state);
 
     let router = initializers
         .iter()
@@ -131,6 +136,9 @@ where
     } else {
         None
     };
+    let sidekiq_cancellation_token = processor
+        .as_ref()
+        .map(|processor| processor.get_cancellation_token());
     let processor = || {
         Box::pin(async {
             if let Some(processor) = processor {
@@ -140,7 +148,16 @@ where
         })
     };
 
-    tokio::try_join!(A::serve(&context, router), processor())?;
+    let graceful_shutdown_signal = A::graceful_shutdown(
+        graceful_shutdown_signal(sidekiq_cancellation_token, context.clone()),
+        context.clone(),
+        state.clone(),
+    );
+
+    tokio::try_join!(
+        A::serve(router, graceful_shutdown_signal, &context, &state),
+        processor()
+    )?;
 
     Ok(())
 }
@@ -209,14 +226,72 @@ pub trait App {
     fn workers(_processor: &mut Processor, _context: &AppContext, _state: &Self::State) {}
 
     #[instrument(skip_all)]
-    async fn serve(context: &AppContext, router: Router) -> anyhow::Result<()> {
+    async fn serve<F>(
+        router: Router,
+        shutdown_signal: F,
+        context: &AppContext,
+        _state: &Self::State,
+    ) -> anyhow::Result<()>
+    where
+        F: Future<Output = ()> + Send + 'static,
+    {
         let server_addr = context.config.server.url();
         info!("Server will start at {server_addr}");
 
         let app_listener = tokio::net::TcpListener::bind(server_addr).await?;
-        axum::serve(app_listener, router).await?;
+        axum::serve(app_listener, router)
+            .with_graceful_shutdown(shutdown_signal)
+            .await?;
 
         Ok(())
+    }
+
+    async fn graceful_shutdown<F>(default: F, _context: Arc<AppContext>, _state: Arc<Self::State>)
+    where
+        F: Future<Output = ()> + Send + 'static,
+    {
+        default.await;
+        info!("foo");
+    }
+}
+
+// Todo: Move to a separate file?
+#[instrument(skip_all)]
+async fn graceful_shutdown_signal(
+    sidekiq_cancellation_token: Option<CancellationToken>,
+    context: Arc<AppContext>,
+) {
+    let ctrl_c = async {
+        tokio::signal::ctrl_c()
+            .await
+            .expect("Failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let sigterm = async {
+        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+            .expect("Failed to install SIGTERM handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let sigterm = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = sigterm => {},
+    }
+
+    info!("Received shutdown signal. Shutting down gracefully.");
+    info!("Closing the DB connection pool.");
+    let db_result = context.as_ref().clone().db.close().await;
+    if let Err(err) = db_result {
+        error!("An error occurred when closing the DB connection pool: {err}");
+    }
+    if let Some(token) = sidekiq_cancellation_token {
+        info!("Cancelling sidekiq workers.");
+        token.cancel();
     }
 }
 
