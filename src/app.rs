@@ -136,6 +136,11 @@ where
             .chain(A::worker_queues(&context, &state))
             .collect();
         let queue_names = queue_names(&custom_queue_names);
+        info!(
+            "Creating Sidekiq.rs (rusty-sidekiq) processor with {} queues",
+            queue_names.len()
+        );
+        debug!("Sidekiq.rs queues: {queue_names:?}");
         let mut processor = Processor::new(redis, queue_names);
         A::workers(&mut processor, &context, &state);
         Some(processor)
