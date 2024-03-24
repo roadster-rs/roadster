@@ -10,12 +10,14 @@ use url::Url;
 use crate::config::environment::Environment;
 use crate::config::initializer::Initializer;
 use crate::config::middleware::Middleware;
+use crate::util::serde_util::UriOrString;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct AppConfig {
     pub app: App,
     pub server: Server,
+    pub auth: Auth,
     pub tracing: Tracing,
     pub environment: Environment,
     pub database: Database,
@@ -91,6 +93,29 @@ impl Server {
     pub fn url(&self) -> String {
         format!("{}:{}", self.host, self.port)
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct Auth {
+    pub jwt: Jwt,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct Jwt {
+    pub secret: String,
+    #[serde(default)]
+    pub claims: JwtClaims,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct JwtClaims {
+    // Todo: Default to the server URL?
+    pub audience: Vec<UriOrString>,
+    /// Claim names to require, in addition to the default-required `exp` claim.
+    pub required_claims: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
