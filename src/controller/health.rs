@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use aide::axum::routing::get_with;
 use aide::axum::{ApiRouter, IntoApiResponse};
@@ -35,8 +36,16 @@ where
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct HeathCheckResponse {
-    pub db: Status,
-    pub redis: Option<Status>,
+    pub ping_latency: u128,
+    pub db: ResourceHealth,
+    pub redis: Option<ResourceHealth>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ResourceHealth {
+    status: Status,
+    ping_latency: u128,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -51,21 +60,39 @@ async fn health_get<S>(State(state): State<S>) -> Result<impl IntoApiResponse, A
 where
     S: Clone + Send + Sync + 'static + Into<Arc<AppContext>>,
 {
+    let timer = Instant::now();
     let state: Arc<AppContext> = state.into();
-    let db = if ping_db(&state.db).await.is_ok() {
+    let db_timer = Instant::now();
+    let db_status = if ping_db(&state.db).await.is_ok() {
         Status::Ok
     } else {
         Status::Err
     };
+    let db_timer = db_timer.elapsed();
+    let db = ResourceHealth {
+        status: db_status,
+        ping_latency: db_timer.as_millis(),
+    };
+
     let redis = if let Some(redis) = state.redis.as_ref() {
-        match ping_redis(redis).await {
-            Ok(_) => Some(Status::Ok),
-            _ => Some(Status::Err),
-        }
+        let redis_timer = Instant::now();
+        let redis_status = match ping_redis(redis).await {
+            Ok(_) => Status::Ok,
+            _ => Status::Err,
+        };
+        let redis_timer = redis_timer.elapsed();
+        Some(ResourceHealth {
+            status: redis_status,
+            ping_latency: redis_timer.as_millis(),
+        })
     } else {
         None
     };
-    Ok(Json(HeathCheckResponse { db, redis }))
+    Ok(Json(HeathCheckResponse {
+        ping_latency: timer.elapsed().as_millis(),
+        db,
+        redis,
+    }))
 }
 
 #[instrument(skip_all)]
@@ -94,8 +121,15 @@ fn health_get_docs(op: TransformOperation) -> TransformOperation {
         .tag(TAG)
         .response_with::<200, Json<HeathCheckResponse>, _>(|res| {
             res.example(HeathCheckResponse {
-                db: Status::Ok,
-                redis: Some(Status::Ok),
+                ping_latency: Duration::from_millis(20).as_millis(),
+                db: ResourceHealth {
+                    status: Status::Ok,
+                    ping_latency: Duration::from_millis(10).as_millis(),
+                },
+                redis: Some(ResourceHealth {
+                    status: Status::Ok,
+                    ping_latency: Duration::from_millis(10).as_millis(),
+                }),
             })
         })
 }
