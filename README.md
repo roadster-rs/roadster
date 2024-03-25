@@ -9,7 +9,7 @@ docker run -d -p 5432:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=myapp_dev -e
 docker run -d -p 5433:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=myapp_test -e POSTGRES_PASSWORD=roadster postgres:15.3-alpine
 ```
 
-# Start local Redis instance (for Sidekiq.rs ([rusty-sidekiq](https://crates.io/crates/rusty-sidekiq)))
+# Start local Redis instance (for [Sidekiq.rs](https://crates.io/crates/rusty-sidekiq))
 
 ```shell
 # Dev
@@ -22,9 +22,9 @@ docker run -d -p 6380:6379 redis:7.2-alpine
 
 There are a few different ways we can implement background/async jobs.
 
-## Sidekiq.rs ([rusty-sidekiq](https://crates.io/crates/rusty-sidekiq))
+## [Sidekiq.rs](https://crates.io/crates/rusty-sidekiq)
 
-This crate a rust implementation of [Sidekiq](https://sidekiq.org/) that's usually used with Ruby on Rails. All we need
+This crate is a rust implementation of [Sidekiq](https://sidekiq.org/), which is usually used with Ruby on Rails. All we need
 to use this is a Redis instance.
 
 ## [Faktory](https://crates.io/crates/faktory)
