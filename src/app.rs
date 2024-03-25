@@ -5,14 +5,16 @@ use std::sync::Arc;
 use aide::axum::ApiRouter;
 use aide::openapi::OpenApi;
 use aide::transform::TransformOpenApi;
+
 use async_trait::async_trait;
 use axum::{Extension, Router};
 use itertools::Itertools;
 use sea_orm::{ConnectOptions, Database};
 use sea_orm_migration::MigratorTrait;
 use sidekiq::{periodic, Processor};
+use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
-use tokio_util::task::TaskTracker;
+
 use tracing::{debug, error, info, instrument};
 
 use crate::app_context::AppContext;
@@ -155,9 +157,9 @@ where
         .map(|token| token.clone().drop_guard());
 
     let cancel_token = CancellationToken::new();
-    let tracker = TaskTracker::new();
+    let mut join_set = JoinSet::new();
     // Task to serve the app.
-    tracker.spawn(cancel_on_error(
+    join_set.spawn(cancel_on_error(
         cancel_token.clone(),
         context.clone(),
         A::serve(
@@ -168,9 +170,14 @@ where
         ),
     ));
     // Task to run the sidekiq processor
-    processor.map(|processor| tracker.spawn(processor.run()));
+    processor.map(|processor| {
+        join_set.spawn(Box::pin(async {
+            processor.run().await;
+            Ok(())
+        }))
+    });
     // Task to clean up resources when gracefully shutting down.
-    tracker.spawn(cancel_on_error(
+    join_set.spawn(cancel_on_error(
         cancel_token.clone(),
         context.clone(),
         graceful_shutdown(
@@ -185,14 +192,26 @@ where
         cancel_token.clone(),
         A::graceful_shutdown_signal(context.clone(), state.clone()),
     );
-    tracker.spawn(cancel_token_on_signal_received(
+    join_set.spawn(cancel_token_on_signal_received(
         graceful_shutdown_signal,
         cancel_token.clone(),
     ));
 
     // Wait for all the tasks to complete.
-    tracker.close();
-    tracker.wait().await;
+    while let Some(result) = join_set.join_next().await {
+        match result {
+            Ok(join_ok) => {
+                if let Err(err) = join_ok {
+                    error!("An error occurred in one of the app's tasks. Error: {err}");
+                }
+            }
+            Err(join_err) => {
+                error!(
+                    "An error occurred when trying to join on one of the app's tasks. Error: {join_err}"
+                );
+            }
+        }
+    }
 
     info!("Shutdown complete");
 
@@ -342,11 +361,13 @@ where
 async fn cancel_token_on_signal_received<F>(
     shutdown_signal: F,
     cancellation_token: CancellationToken,
-) where
+) -> anyhow::Result<()>
+where
     F: Future<Output = ()> + Send + 'static,
 {
     shutdown_signal.await;
     cancellation_token.cancel();
+    Ok(())
 }
 
 async fn token_shutdown_signal(cancellation_token: CancellationToken) {
@@ -362,16 +383,8 @@ where
     F: Future<Output = anyhow::Result<T>> + Send + 'static,
 {
     let result = f.await;
-    if let Err(err) = &result {
-        if context.config.app.shutdown_on_error {
-            error!(
-                "An error occurred in one of the app's tasks, shutting down. Error: {}",
-                err
-            );
-            cancellation_token.cancel();
-        } else {
-            error!("An error occurred in one of the app's tasks: {}", err);
-        }
+    if result.is_err() && context.config.app.shutdown_on_error {
+        cancellation_token.cancel();
     }
     result
 }
