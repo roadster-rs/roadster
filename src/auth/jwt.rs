@@ -1,3 +1,4 @@
+use aide::OperationInput;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
@@ -24,24 +25,30 @@ use crate::view::app_error::AppError;
 
 type BearerAuthHeader = TypedHeader<Authorization<Bearer>>;
 
-pub struct Jwt {
+pub struct Jwt<C = Claims>
+where
+    C: for<'de> serde::Deserialize<'de>,
+{
     pub header: Header,
     // Todo: Other Claims types?
-    // Todo: Make Claims type generic?
-    pub claims: Claims,
+    pub claims: C,
 }
 
+// Required in order to use `Jwt` in an Aide route.
+impl OperationInput for Jwt {}
+
 #[async_trait]
-impl<S> FromRequestParts<S> for Jwt
+impl<S, C> FromRequestParts<S> for Jwt<C>
 where
     S: Into<Arc<AppContext>> + Clone + Send + Sync,
+    C: for<'de> serde::Deserialize<'de>,
 {
     type Rejection = AppError;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let auth_header = parts.extract::<BearerAuthHeader>().await?;
         let state: Arc<AppContext> = state.clone().into();
-        let token = decode_auth_token(
+        let token: TokenData<C> = decode_auth_token(
             auth_header.0.token(),
             &state.config.auth.jwt.secret,
             &state.config.auth.jwt.claims.audience,
@@ -55,15 +62,16 @@ where
     }
 }
 
-fn decode_auth_token<T1, T2>(
+fn decode_auth_token<T1, T2, C>(
     token: &str,
     jwt_secret: &str,
     audience: &[T1],
     required_claims: &[T2],
-) -> anyhow::Result<TokenData<Claims>>
+) -> anyhow::Result<TokenData<C>>
 where
     T1: ToString,
     T2: ToString,
+    C: for<'de> serde::Deserialize<'de>,
 {
     let mut validation = Validation::default();
     validation.set_audience(audience);
@@ -77,7 +85,7 @@ where
             .collect_vec();
         validation.set_required_spec_claims(&required_claims);
     }
-    let token_data = decode::<Claims>(
+    let token_data: TokenData<C> = decode(
         token,
         &DecodingKey::from_secret(jwt_secret.as_ref()),
         &validation,
@@ -154,7 +162,7 @@ mod tests {
     use std::str::FromStr;
 
     use chrono::{TimeDelta, Utc};
-    use jsonwebtoken::{encode, EncodingKey, Header};
+    use jsonwebtoken::{encode, EncodingKey, Header, TokenData};
     use serde_derive::{Deserialize, Serialize};
     use serde_json::from_str;
     use url::Url;
@@ -170,7 +178,7 @@ mod tests {
     fn test_decode_token() {
         let jwt = build_token(false, None);
 
-        let decoded =
+        let decoded: TokenData<Claims> =
             decode_auth_token(&jwt.1, TEST_JWT_SECRET, AUDIENCE, REQUIRED_CLAIMS).unwrap();
 
         assert_eq!(decoded.claims.subject, jwt.0.subject);
@@ -180,7 +188,8 @@ mod tests {
     fn test_decode_token_expired() {
         let (_, jwt) = build_token(true, None);
 
-        let decoded = decode_auth_token(&jwt, TEST_JWT_SECRET, AUDIENCE, REQUIRED_CLAIMS);
+        let decoded: anyhow::Result<TokenData<Claims>> =
+            decode_auth_token(&jwt, TEST_JWT_SECRET, AUDIENCE, REQUIRED_CLAIMS);
 
         assert!(decoded.is_err());
     }
@@ -189,7 +198,8 @@ mod tests {
     fn test_decode_token_wrong_audience() {
         let (_, jwt) = build_token(false, Some("different-audience".to_string()));
 
-        let decoded = decode_auth_token(&jwt, TEST_JWT_SECRET, AUDIENCE, REQUIRED_CLAIMS);
+        let decoded: anyhow::Result<TokenData<Claims>> =
+            decode_auth_token(&jwt, TEST_JWT_SECRET, AUDIENCE, REQUIRED_CLAIMS);
 
         assert!(decoded.is_err());
     }
