@@ -50,6 +50,9 @@ crate is not quite ready to be used in production. Some reasons why we're not us
 - The provided methods of enqueuing jobs decouple the queue name from the job handler. We would need (want) to create a
   custom method of enqueueing jobs that automates providing the correct queue name.
 
+## [Apalis](https://crates.io/crates/apalis)
+Todo: [Evaluate using this](https://github.com/MassDissent/roadster/issues/3)
+
 ## External/managed queues
 
 Todo: Evaluate using these instead of a self-hosted queue.
