@@ -1,0 +1,59 @@
+use crate::app_context::AppContext;
+use crate::controller::middleware::Middleware;
+use anyhow::anyhow;
+use axum::Router;
+use byte_unit::rust_decimal::prelude::ToPrimitive;
+use byte_unit::Byte;
+use byte_unit::Unit::MB;
+use serde_derive::{Deserialize, Serialize};
+use tower_http::limit::RequestBodyLimitLayer;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case", default)]
+pub struct SizeLimitConfig {
+    pub limit: Byte,
+}
+
+impl Default for SizeLimitConfig {
+    fn default() -> Self {
+        Self {
+            limit: Byte::from_u64_with_unit(5, MB).unwrap(),
+        }
+    }
+}
+
+pub struct RequestBodyLimitMiddleware;
+impl Middleware for RequestBodyLimitMiddleware {
+    fn name(&self) -> String {
+        "request-body-size-limit".to_string()
+    }
+
+    fn enabled(&self, context: &AppContext) -> bool {
+        context.config.middleware.size_limit.common.enabled(context)
+    }
+
+    fn priority(&self, context: &AppContext) -> i32 {
+        context.config.middleware.size_limit.common.priority
+    }
+
+    fn install(&self, router: Router, context: &AppContext) -> anyhow::Result<Router> {
+        let limit = &context
+            .config
+            .middleware
+            .size_limit
+            .custom
+            .limit
+            .as_u64()
+            .to_usize();
+
+        // Todo: is there a cleaner way to write this?
+        let limit = match limit {
+            Some(limit) => limit,
+            None => return Err(anyhow!("Unable to convert bytes from u64 to usize")),
+        };
+
+        let router = router.layer(RequestBodyLimitLayer::new(*limit));
+
+        Ok(router)
+    }
+}

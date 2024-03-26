@@ -3,6 +3,7 @@ pub mod compression;
 pub mod default;
 pub mod request_id;
 pub mod sensitive_headers;
+pub mod size_limit;
 pub mod timeout;
 pub mod tracing;
 

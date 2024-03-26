@@ -5,6 +5,7 @@ use crate::controller::middleware::request_id::{PropagateRequestIdConfig, SetReq
 use crate::controller::middleware::sensitive_headers::{
     SensitiveRequestHeadersConfig, SensitiveResponseHeadersConfig,
 };
+use crate::controller::middleware::size_limit::SizeLimitConfig;
 use crate::controller::middleware::timeout::TimeoutConfig;
 use crate::controller::middleware::tracing::TracingConfig;
 use serde_derive::{Deserialize, Serialize};
@@ -26,6 +27,7 @@ pub struct Middleware {
     pub catch_panic: MiddlewareConfig<CatchPanicConfig>,
     pub compression: MiddlewareConfig<CompressionConfig>,
     pub timeout: MiddlewareConfig<TimeoutConfig>,
+    pub size_limit: MiddlewareConfig<SizeLimitConfig>,
     /// Allows providing configs for custom middleware. Any configs that aren't pre-defined above
     /// will be collected here.
     ///
@@ -76,6 +78,7 @@ impl Default for Middleware {
         let catch_panic: MiddlewareConfig<CatchPanicConfig> = Default::default();
         let compression: MiddlewareConfig<CompressionConfig> = Default::default();
         let timeout: MiddlewareConfig<TimeoutConfig> = Default::default();
+        let size_limit: MiddlewareConfig<SizeLimitConfig> = Default::default();
 
         // Before response middlewares
         let mut priority = PRIORITY_LAST;
@@ -97,6 +100,7 @@ impl Default for Middleware {
             catch_panic,
             compression,
             timeout,
+            size_limit,
             custom: Default::default(),
         }
     }

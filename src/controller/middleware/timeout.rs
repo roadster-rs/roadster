@@ -25,20 +25,15 @@ impl Default for TimeoutConfig {
 pub struct TimeoutMiddleware;
 impl Middleware for TimeoutMiddleware {
     fn name(&self) -> String {
-        "set-request-id".to_string()
+        "timeout".to_string()
     }
 
     fn enabled(&self, context: &AppContext) -> bool {
-        context
-            .config
-            .middleware
-            .set_request_id
-            .common
-            .enabled(context)
+        context.config.middleware.timeout.common.enabled(context)
     }
 
     fn priority(&self, context: &AppContext) -> i32 {
-        context.config.middleware.set_request_id.common.priority
+        context.config.middleware.timeout.common.priority
     }
 
     fn install(&self, router: Router, context: &AppContext) -> anyhow::Result<Router> {
