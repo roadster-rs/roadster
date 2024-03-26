@@ -6,6 +6,7 @@ use crate::controller::middleware::request_id::{
 use crate::controller::middleware::sensitive_headers::{
     SensitiveRequestHeadersMiddleware, SensitiveResponseHeadersMiddleware,
 };
+use crate::controller::middleware::size_limit::RequestBodyLimitMiddleware;
 use crate::controller::middleware::timeout::TimeoutMiddleware;
 use crate::controller::middleware::tracing::TracingMiddleware;
 use crate::controller::middleware::Middleware;
@@ -20,5 +21,6 @@ pub fn default_middleware() -> Vec<Box<dyn Middleware>> {
         Box::new(CatchPanicMiddleware),
         Box::new(CompressionMiddleware),
         Box::new(TimeoutMiddleware),
+        Box::new(RequestBodyLimitMiddleware),
     ]
 }

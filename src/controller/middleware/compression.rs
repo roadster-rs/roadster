@@ -11,20 +11,20 @@ pub struct CompressionConfig {}
 pub struct CompressionMiddleware;
 impl Middleware for CompressionMiddleware {
     fn name(&self) -> String {
-        "catch-panic".to_string()
+        "compression".to_string()
     }
 
     fn enabled(&self, context: &AppContext) -> bool {
         context
             .config
             .middleware
-            .catch_panic
+            .compression
             .common
             .enabled(context)
     }
 
     fn priority(&self, context: &AppContext) -> i32 {
-        context.config.middleware.catch_panic.common.priority
+        context.config.middleware.compression.common.priority
     }
 
     fn install(&self, router: Router, _context: &AppContext) -> anyhow::Result<Router> {
