@@ -2,12 +2,17 @@ use std::future;
 use std::future::Future;
 use std::sync::Arc;
 
+#[cfg(feature = "open-api")]
 use aide::axum::ApiRouter;
+#[cfg(feature = "open-api")]
 use aide::openapi::OpenApi;
+#[cfg(feature = "open-api")]
 use aide::transform::TransformOpenApi;
 
 use async_trait::async_trait;
-use axum::{Extension, Router};
+#[cfg(feature = "open-api")]
+use axum::Extension;
+use axum::Router;
 use itertools::Itertools;
 #[cfg(feature = "db-sql")]
 use sea_orm::DatabaseConnection;
@@ -92,14 +97,31 @@ where
             .await?
     };
 
-    let mut context = AppContext::new(
+    let router = A::router(&config);
+    #[cfg(feature = "open-api")]
+    let (router, api) = {
+        let mut api = OpenApi::default();
+        let router = router.finish_api_with(&mut api, A::api_docs(&config));
+        // Arc is very important here or we will face massive memory and performance issues
+        let api = Arc::new(api);
+        let router = router.layer(Extension(api.clone()));
+        (router, api)
+    };
+    let context = AppContext::new(
         config,
         #[cfg(feature = "db-sql")]
         db,
         #[cfg(feature = "sidekiq")]
         redis.clone(),
+        #[cfg(feature = "open-api")]
+        api,
     )
     .await?;
+
+    let context = Arc::new(context);
+    let state = A::context_to_state(context.clone()).await?;
+    let router = router.with_state::<()>(state.clone());
+    let state = Arc::new(state);
 
     let initializers = default_initializers()
         .into_iter()
@@ -108,23 +130,6 @@ where
         .unique_by(|initializer| initializer.name())
         .sorted_by(|a, b| Ord::cmp(&a.priority(&context), &b.priority(&context)))
         .collect_vec();
-
-    let router = A::router(&context);
-    let router = match router {
-        RouterType::AxumRouter(router) => router,
-        RouterType::AideRouter(router) => {
-            let mut api = OpenApi::default();
-            let router = router.finish_api_with(&mut api, A::api_docs(&context));
-            // Arc is very important here or we will face massive memory and performance issues
-            let api = Arc::new(api);
-            context.api = Some(api.clone());
-            router.layer(Extension(api))
-        }
-    };
-    let context = Arc::new(context);
-    let state = A::context_to_state(context.clone()).await?;
-    let router = router.with_state::<()>(state.clone());
-    let state = Arc::new(state);
 
     let router = initializers
         .iter()
@@ -293,12 +298,17 @@ pub trait App {
         Ok(state)
     }
 
-    fn router(_context: &AppContext) -> RouterType<Self::State>;
+    #[cfg(not(feature = "open-api"))]
+    fn router(_config: &AppConfig) -> Router<Self::State>;
 
-    fn api_docs(context: &AppContext) -> impl Fn(TransformOpenApi) -> TransformOpenApi {
+    #[cfg(feature = "open-api")]
+    fn router(_config: &AppConfig) -> ApiRouter<Self::State>;
+
+    #[cfg(feature = "open-api")]
+    fn api_docs(config: &AppConfig) -> impl Fn(TransformOpenApi) -> TransformOpenApi {
         |api| {
-            api.title(&context.config.app.name)
-                .description(&format!("# {}", context.config.app.name))
+            api.title(&config.app.name)
+                .description(&format!("# {}", config.app.name))
         }
     }
 
@@ -466,10 +476,4 @@ where
     app_graceful_shutdown_result?;
 
     Ok(())
-}
-
-#[derive(Debug)]
-pub enum RouterType<S> {
-    AxumRouter(Router<S>),
-    AideRouter(ApiRouter<S>),
 }

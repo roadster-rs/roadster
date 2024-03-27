@@ -1,5 +1,7 @@
+#[cfg(feature = "open-api")]
 use std::sync::Arc;
 
+#[cfg(feature = "open-api")]
 use aide::openapi::OpenApi;
 #[cfg(feature = "db-sql")]
 use sea_orm::DatabaseConnection;
@@ -14,7 +16,8 @@ pub struct AppContext {
     pub db: DatabaseConnection,
     #[cfg(feature = "sidekiq")]
     pub redis: sidekiq::RedisPool,
-    pub api: Option<Arc<OpenApi>>,
+    #[cfg(feature = "open-api")]
+    pub api: Arc<OpenApi>,
     // Prevent consumers from directly creating an AppContext
     _private: (),
 }
@@ -24,6 +27,7 @@ impl AppContext {
         config: AppConfig,
         #[cfg(feature = "db-sql")] db: DatabaseConnection,
         #[cfg(feature = "sidekiq")] redis: sidekiq::RedisPool,
+        #[cfg(feature = "open-api")] api: Arc<OpenApi>,
     ) -> anyhow::Result<Self> {
         let context = Self {
             config,
@@ -31,14 +35,10 @@ impl AppContext {
             db,
             #[cfg(feature = "sidekiq")]
             redis,
-            api: None,
+            #[cfg(feature = "open-api")]
+            api,
             _private: (),
         };
         Ok(context)
-    }
-
-    pub fn add_api(&mut self, api: Arc<OpenApi>) -> &mut Self {
-        self.api = Some(api);
-        self
     }
 }
