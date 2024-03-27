@@ -7,8 +7,9 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["sidekiq"]
+default = ["sidekiq", "db-sql"]
 sidekiq = ["dep:rusty-sidekiq", "dep:bb8", "dep:num_cpus"]
+db-sql = ["dep:sea-orm", "dep:sea-orm-migration"]
 
 [dependencies]
 # Config
@@ -29,8 +30,8 @@ tower-http = { version = "0.5.1", features = ["trace", "timeout", "request-id", 
 tower = "0.4.13"
 
 # DB
-sea-orm = { version = "1.0.0-rc.2", features = ["debug-print", "runtime-tokio-rustls", "sqlx-postgres", "macros"] }
-sea-orm-migration = { version = "1.0.0-rc.2", features = ["runtime-tokio-rustls", "sqlx-postgres"] }
+sea-orm = { version = "1.0.0-rc.2", features = ["debug-print", "runtime-tokio-rustls", "sqlx-postgres", "macros"], optional = true }
+sea-orm-migration = { version = "1.0.0-rc.2", features = ["runtime-tokio-rustls", "sqlx-postgres"], optional = true }
 
 # Workers
 # Todo: the default `rss-stats` feature has a dependency that currently can't be satisfied (memchr: ~2.3)

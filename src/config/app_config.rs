@@ -1,10 +1,13 @@
+#[cfg(feature = "db-sql")]
 use std::time::Duration;
 
 use anyhow::anyhow;
 use config::{Case, Config};
 use dotenvy::dotenv;
 use serde_derive::{Deserialize, Serialize};
+#[cfg(feature = "db-sql")]
 use serde_with::serde_as;
+#[cfg(any(feature = "db-sql", feature = "sidekiq"))]
 use url::Url;
 
 use crate::config::environment::Environment;
@@ -20,6 +23,7 @@ pub struct AppConfig {
     pub auth: Auth,
     pub tracing: Tracing,
     pub environment: Environment,
+    #[cfg(feature = "db-sql")]
     pub database: Database,
     #[cfg(feature = "sidekiq")]
     pub worker: Worker,
@@ -125,6 +129,7 @@ pub struct Tracing {
     pub level: String,
 }
 
+#[cfg(feature = "db-sql")]
 #[serde_as]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -147,6 +152,7 @@ pub struct Database {
     pub max_connections: u32,
 }
 
+#[cfg(feature = "db-sql")]
 impl Database {
     fn default_connect_timeout() -> Duration {
         Duration::from_millis(1000)
@@ -157,6 +163,7 @@ impl Database {
     }
 }
 
+#[cfg(feature = "sidekiq")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Worker {
