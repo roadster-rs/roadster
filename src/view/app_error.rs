@@ -1,7 +1,9 @@
 //! Mostly copied from <https://github.com/tamasfe/aide/blob/6a3ca0107409797baf31f0ebf30724b39e880f7e/examples/example-axum/src/errors.rs#L9>
 
+#[cfg(feature = "open-api")]
 use aide::OperationIo;
 use axum::{http::StatusCode, response::IntoResponse};
+#[cfg(feature = "open-api")]
 use schemars::JsonSchema;
 use serde::Serialize;
 use serde_derive::Deserialize;
@@ -11,7 +13,8 @@ use tracing::error;
 
 /// A default error response for most API errors.
 /// Todo: Helpers for various status codes.
-#[derive(Debug, Serialize, Deserialize, JsonSchema, OperationIo)]
+#[derive(Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "open-api", derive(OperationIo, JsonSchema))]
 pub struct AppError {
     /// An error message.
     pub error: String,

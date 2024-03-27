@@ -9,14 +9,14 @@ use aide::scalar::Scalar;
 use axum::response::IntoResponse;
 use axum::{Extension, Json};
 
-use crate::app_context::AppContext;
+use crate::config::app_config::AppConfig;
 use crate::controller::build_path;
 
 const BASE: &str = "/_docs";
 const TAG: &str = "Docs";
 
 /// This API is only available when using Aide.
-pub fn routes<S>(parent: &str, context: &AppContext) -> ApiRouter<S>
+pub fn routes<S>(parent: &str, config: &AppConfig) -> ApiRouter<S>
 where
     S: Clone + Send + Sync + 'static,
 {
@@ -28,7 +28,7 @@ where
             &root,
             get_with(
                 Scalar::new(&open_api_schema_path)
-                    .with_title(&context.config.app.name)
+                    .with_title(&config.app.name)
                     .axum_handler(),
                 |op| op.description("Documentation page.").tag(TAG),
             ),
@@ -38,7 +38,7 @@ where
             &build_path(&root, "/redoc"),
             get_with(
                 Redoc::new(&open_api_schema_path)
-                    .with_title(&context.config.app.name)
+                    .with_title(&config.app.name)
                     .axum_handler(),
                 |op| op.description("Redoc documentation page.").tag(TAG),
             ),
