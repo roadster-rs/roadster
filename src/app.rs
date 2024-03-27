@@ -9,7 +9,11 @@ use aide::transform::TransformOpenApi;
 use async_trait::async_trait;
 use axum::{Extension, Router};
 use itertools::Itertools;
+#[cfg(feature = "db-sql")]
+use sea_orm::DatabaseConnection;
+#[cfg(feature = "db-sql")]
 use sea_orm::{ConnectOptions, Database};
+#[cfg(feature = "db-sql")]
 use sea_orm_migration::MigratorTrait;
 #[cfg(feature = "sidekiq")]
 use sidekiq::{periodic, Processor};
@@ -28,11 +32,37 @@ use crate::tracing::init_tracing;
 #[cfg(feature = "sidekiq")]
 use crate::worker::queue_names;
 
-// todo: this method is getting unweildy, we should break it up
+#[cfg(not(feature = "db-sql"))]
+pub async fn start<A>() -> anyhow::Result<()>
+where
+    A: App + Default + Send + Sync + 'static,
+{
+    let config = get_app_config::<A>()?;
+    run_app::<A>(config).await
+}
+
+#[cfg(feature = "db-sql")]
 pub async fn start<A, M>() -> anyhow::Result<()>
 where
     A: App + Default + Send + Sync + 'static,
     M: MigratorTrait,
+{
+    let config = get_app_config::<A>()?;
+
+    #[cfg(feature = "db-sql")]
+    let db = Database::connect(A::db_connection_options(&config)?).await?;
+    // Todo: enable manual migrations
+    #[cfg(feature = "db-sql")]
+    if config.database.auto_migrate {
+        M::up(&db, None).await?;
+    }
+
+    run_app::<A>(config, db).await
+}
+
+fn get_app_config<A>() -> anyhow::Result<AppConfig>
+where
+    A: App + Default + Send + Sync + 'static,
 {
     let config = AppConfig::new()?;
 
@@ -40,27 +70,36 @@ where
 
     debug!("{config:?}");
 
-    let db = Database::connect(A::db_connection_options(&config)?).await?;
+    Ok(config)
+}
 
-    // Todo: enable manual migrations
-    if config.database.auto_migrate {
-        M::up(&db, None).await?;
-    }
-
+// todo: this method is getting unweildy, we should break it up
+async fn run_app<A>(
+    config: AppConfig,
+    #[cfg(feature = "db-sql")] db: DatabaseConnection,
+) -> anyhow::Result<()>
+where
+    A: App + Default + Send + Sync + 'static,
+{
     #[cfg(feature = "sidekiq")]
-    let (mut context, redis) = {
+    let redis = {
         let redis_config = &config.worker.sidekiq.redis;
         let redis = sidekiq::RedisConnectionManager::new(redis_config.uri.to_string())?;
-        let redis = bb8::Pool::builder()
+        bb8::Pool::builder()
             .min_idle(redis_config.min_idle)
             .max_size(redis_config.max_connections)
             .build(redis)
-            .await?;
-
-        (AppContext::new(config, db, redis.clone()).await?, redis)
+            .await?
     };
-    #[cfg(not(feature = "sidekiq"))]
-    let mut context = { AppContext::new(config, db).await? };
+
+    let mut context = AppContext::new(
+        config,
+        #[cfg(feature = "db-sql")]
+        db,
+        #[cfg(feature = "sidekiq")]
+        redis.clone(),
+    )
+    .await?;
 
     let initializers = default_initializers()
         .into_iter()
@@ -179,6 +218,7 @@ where
         graceful_shutdown(
             token_shutdown_signal(cancel_token.clone()),
             A::graceful_shutdown(context.clone(), state.clone()),
+            #[cfg(feature = "db-sql")]
             context.clone(),
             #[cfg(feature = "sidekiq")]
             sidekiq_cancellation_token,
@@ -225,6 +265,7 @@ pub trait App {
         Ok(())
     }
 
+    #[cfg(feature = "db-sql")]
     fn db_connection_options(config: &AppConfig) -> anyhow::Result<ConnectOptions> {
         let mut options = ConnectOptions::new(config.database.uri.to_string());
         options
@@ -392,7 +433,7 @@ where
 async fn graceful_shutdown<F1, F2>(
     shutdown_signal: F1,
     app_graceful_shutdown: F2,
-    context: Arc<AppContext>,
+    #[cfg(feature = "db-sql")] context: Arc<AppContext>,
     #[cfg(feature = "sidekiq")] sidekiq_cancellation_token: CancellationToken,
 ) -> anyhow::Result<()>
 where
@@ -403,8 +444,11 @@ where
 
     info!("Received shutdown signal. Shutting down gracefully.");
 
-    info!("Closing the DB connection pool.");
-    let db_close_result = context.as_ref().clone().db.close().await;
+    #[cfg(feature = "db-sql")]
+    let db_close_result = {
+        info!("Closing the DB connection pool.");
+        context.as_ref().clone().db.close().await
+    };
 
     #[cfg(feature = "sidekiq")]
     {
@@ -417,6 +461,7 @@ where
     info!("Running app's custom shutdown logic.");
     let app_graceful_shutdown_result = app_graceful_shutdown.await;
 
+    #[cfg(feature = "db-sql")]
     db_close_result?;
     app_graceful_shutdown_result?;
 

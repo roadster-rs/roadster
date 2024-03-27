@@ -6,10 +6,12 @@ use aide::axum::{ApiRouter, IntoApiResponse};
 use aide::transform::TransformOperation;
 #[cfg(feature = "sidekiq")]
 use anyhow::bail;
+#[cfg(any(feature = "sidekiq", feature = "db-sql"))]
 use axum::extract::State;
 use axum::routing::get;
 use axum::{Json, Router};
 use schemars::JsonSchema;
+#[cfg(feature = "db-sql")]
 use sea_orm::DatabaseConnection;
 use serde_derive::{Deserialize, Serialize};
 #[cfg(feature = "sidekiq")]
@@ -39,6 +41,7 @@ where
 #[serde(rename_all = "camelCase")]
 pub struct HeathCheckResponse {
     pub ping_latency: u128,
+    #[cfg(feature = "db-sql")]
     pub db: ResourceHealth,
     #[cfg(feature = "sidekiq")]
     pub redis: ResourceHealth,
@@ -59,22 +62,28 @@ pub enum Status {
 }
 
 #[instrument(skip_all)]
-async fn health_get<S>(State(state): State<S>) -> Result<impl IntoApiResponse, AppError>
+async fn health_get<S>(
+    #[cfg(any(feature = "sidekiq", feature = "db-sql"))] State(state): State<S>,
+) -> Result<impl IntoApiResponse, AppError>
 where
     S: Clone + Send + Sync + 'static + Into<Arc<AppContext>>,
 {
     let timer = Instant::now();
+    #[cfg(any(feature = "sidekiq", feature = "db-sql"))]
     let state: Arc<AppContext> = state.into();
-    let db_timer = Instant::now();
-    let db_status = if ping_db(&state.db).await.is_ok() {
-        Status::Ok
-    } else {
-        Status::Err
-    };
-    let db_timer = db_timer.elapsed();
-    let db = ResourceHealth {
-        status: db_status,
-        ping_latency: db_timer.as_millis(),
+    #[cfg(feature = "db-sql")]
+    let db = {
+        let db_timer = Instant::now();
+        let db_status = if ping_db(&state.db).await.is_ok() {
+            Status::Ok
+        } else {
+            Status::Err
+        };
+        let db_timer = db_timer.elapsed();
+        ResourceHealth {
+            status: db_status,
+            ping_latency: db_timer.as_millis(),
+        }
     };
 
     #[cfg(feature = "sidekiq")]
@@ -92,12 +101,14 @@ where
     };
     Ok(Json(HeathCheckResponse {
         ping_latency: timer.elapsed().as_millis(),
+        #[cfg(feature = "db-sql")]
         db,
         #[cfg(feature = "sidekiq")]
         redis,
     }))
 }
 
+#[cfg(feature = "db-sql")]
 #[instrument(skip_all)]
 async fn ping_db(db: &DatabaseConnection) -> anyhow::Result<()> {
     db.ping().await?;
@@ -126,6 +137,7 @@ fn health_get_docs(op: TransformOperation) -> TransformOperation {
         .response_with::<200, Json<HeathCheckResponse>, _>(|res| {
             res.example(HeathCheckResponse {
                 ping_latency: Duration::from_millis(20).as_millis(),
+                #[cfg(feature = "db-sql")]
                 db: ResourceHealth {
                     status: Status::Ok,
                     ping_latency: Duration::from_millis(10).as_millis(),
