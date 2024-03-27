@@ -1,6 +1,6 @@
 use crate::app_context::AppContext;
 use crate::controller::middleware::Middleware;
-use anyhow::anyhow;
+use anyhow::bail;
 use axum::Router;
 use byte_unit::rust_decimal::prelude::ToPrimitive;
 use byte_unit::Byte;
@@ -49,7 +49,7 @@ impl Middleware for RequestBodyLimitMiddleware {
         // Todo: is there a cleaner way to write this?
         let limit = match limit {
             Some(limit) => limit,
-            None => return Err(anyhow!("Unable to convert bytes from u64 to usize")),
+            None => bail!("Unable to convert bytes from u64 to usize"),
         };
 
         let router = router.layer(RequestBodyLimitLayer::new(*limit));
