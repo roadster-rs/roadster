@@ -21,7 +21,8 @@ pub struct AppConfig {
     pub tracing: Tracing,
     pub environment: Environment,
     pub database: Database,
-    pub worker: Option<Worker>,
+    #[cfg(feature = "sidekiq")]
+    pub worker: Worker,
     #[serde(default)]
     pub middleware: Middleware,
     #[serde(default)]
@@ -160,11 +161,21 @@ impl Database {
 #[serde(rename_all = "kebab-case")]
 pub struct Worker {
     // Todo: Make Redis optional for workers?
+    #[cfg(feature = "sidekiq")]
+    pub sidekiq: Sidekiq,
+}
+
+#[cfg(feature = "sidekiq")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct Sidekiq {
+    // Todo: Make Redis optional for workers?
     pub redis: Redis,
     #[serde(default)]
     pub queue_names: Vec<String>,
 }
 
+#[cfg(feature = "sidekiq")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Redis {
@@ -175,6 +186,7 @@ pub struct Redis {
     pub max_connections: u32,
 }
 
+#[cfg(feature = "sidekiq")]
 impl Redis {
     fn default_min_idle() -> Option<u32> {
         Some(5)

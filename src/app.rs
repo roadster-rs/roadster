@@ -11,6 +11,7 @@ use axum::{Extension, Router};
 use itertools::Itertools;
 use sea_orm::{ConnectOptions, Database};
 use sea_orm_migration::MigratorTrait;
+#[cfg(feature = "sidekiq")]
 use sidekiq::{periodic, Processor};
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
@@ -24,6 +25,7 @@ use crate::controller::middleware::Middleware;
 use crate::initializer::default::default_initializers;
 use crate::initializer::Initializer;
 use crate::tracing::init_tracing;
+#[cfg(feature = "sidekiq")]
 use crate::worker::queue_names;
 
 // todo: this method is getting unweildy, we should break it up
@@ -45,20 +47,20 @@ where
         M::up(&db, None).await?;
     }
 
-    let redis_config = config.worker.as_ref().map(|worker| &worker.redis);
-    let redis = if let Some(redis_config) = redis_config {
+    #[cfg(feature = "sidekiq")]
+    let (mut context, redis) = {
+        let redis_config = &config.worker.sidekiq.redis;
         let redis = sidekiq::RedisConnectionManager::new(redis_config.uri.to_string())?;
         let redis = bb8::Pool::builder()
             .min_idle(redis_config.min_idle)
             .max_size(redis_config.max_connections)
             .build(redis)
             .await?;
-        Some(redis)
-    } else {
-        None
-    };
 
-    let mut context = AppContext::new(config, db, redis.clone()).await?;
+        (AppContext::new(config, db, redis.clone()).await?, redis)
+    };
+    #[cfg(not(feature = "sidekiq"))]
+    let mut context = { AppContext::new(config, db).await? };
 
     let initializers = default_initializers()
         .into_iter()
@@ -124,16 +126,17 @@ where
             initializer.before_serve(router, &context)
         })?;
 
-    let processor = if let Some(redis) = redis {
+    #[cfg(feature = "sidekiq")]
+    let (processor, sidekiq_cancellation_token, _sidekiq_cancellation_token_drop_guard) = {
         // Periodic jobs are not removed automatically. Remove any periodic jobs that were
         // previously added. They should be re-added by `App::worker`.
         periodic::destroy_all(redis.clone()).await?;
         let custom_queue_names = context
             .config
             .worker
-            .as_ref()
-            .map(|worker| worker.queue_names.clone())
-            .unwrap_or_else(Vec::new)
+            .sidekiq
+            .queue_names
+            .clone()
             .into_iter()
             .chain(A::worker_queues(&context, &state))
             .collect();
@@ -145,16 +148,9 @@ where
         debug!("Sidekiq.rs queues: {queue_names:?}");
         let mut processor = Processor::new(redis, queue_names);
         A::workers(&mut processor, &context, &state);
-        Some(processor)
-    } else {
-        None
+        let token = processor.get_cancellation_token();
+        (processor, token.clone(), token.drop_guard())
     };
-    let sidekiq_cancellation_token = processor
-        .as_ref()
-        .map(|processor| processor.get_cancellation_token());
-    let _sidekiq_cancellation_token_drop_guard = sidekiq_cancellation_token
-        .as_ref()
-        .map(|token| token.clone().drop_guard());
 
     let cancel_token = CancellationToken::new();
     let mut join_set = JoinSet::new();
@@ -170,12 +166,12 @@ where
         ),
     ));
     // Task to run the sidekiq processor
-    processor.map(|processor| {
-        join_set.spawn(Box::pin(async {
-            processor.run().await;
-            Ok(())
-        }))
-    });
+    #[cfg(feature = "sidekiq")]
+    join_set.spawn(Box::pin(async {
+        processor.run().await;
+        Ok(())
+    }));
+
     // Task to clean up resources when gracefully shutting down.
     join_set.spawn(cancel_on_error(
         cancel_token.clone(),
@@ -183,8 +179,9 @@ where
         graceful_shutdown(
             token_shutdown_signal(cancel_token.clone()),
             A::graceful_shutdown(context.clone(), state.clone()),
-            sidekiq_cancellation_token,
             context.clone(),
+            #[cfg(feature = "sidekiq")]
+            sidekiq_cancellation_token,
         ),
     ));
     // Task to listen for the signal to gracefully shutdown, and trigger other tasks to stop.
@@ -275,10 +272,12 @@ pub trait App {
     /// Worker queue names can either be provided here, or as config values. If provided here
     /// the consumer is able to use string constants, which can be used when creating a worker
     /// instance. This can reduce the risk of copy/paste errors and typos.
+    #[cfg(feature = "sidekiq")]
     fn worker_queues(_context: &AppContext, _state: &Self::State) -> Vec<String> {
         vec![]
     }
 
+    #[cfg(feature = "sidekiq")]
     fn workers(_processor: &mut Processor, _context: &AppContext, _state: &Self::State) {}
 
     #[instrument(skip_all)]
@@ -393,8 +392,8 @@ where
 async fn graceful_shutdown<F1, F2>(
     shutdown_signal: F1,
     app_graceful_shutdown: F2,
-    sidekiq_cancellation_token: Option<CancellationToken>,
     context: Arc<AppContext>,
+    #[cfg(feature = "sidekiq")] sidekiq_cancellation_token: CancellationToken,
 ) -> anyhow::Result<()>
 where
     F1: Future<Output = ()> + Send + 'static,
@@ -407,9 +406,10 @@ where
     info!("Closing the DB connection pool.");
     let db_close_result = context.as_ref().clone().db.close().await;
 
-    if let Some(token) = sidekiq_cancellation_token {
+    #[cfg(feature = "sidekiq")]
+    {
         info!("Cancelling sidekiq workers.");
-        token.cancel();
+        sidekiq_cancellation_token.cancel();
     }
 
     // Futures are lazy -- the custom `app_graceful_shutdown` future won't run until we call `await` on it.

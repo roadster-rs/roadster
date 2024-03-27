@@ -4,6 +4,7 @@ use std::time::{Duration, Instant};
 use aide::axum::routing::get_with;
 use aide::axum::{ApiRouter, IntoApiResponse};
 use aide::transform::TransformOperation;
+#[cfg(feature = "sidekiq")]
 use anyhow::bail;
 use axum::extract::State;
 use axum::routing::get;
@@ -11,6 +12,7 @@ use axum::{Json, Router};
 use schemars::JsonSchema;
 use sea_orm::DatabaseConnection;
 use serde_derive::{Deserialize, Serialize};
+#[cfg(feature = "sidekiq")]
 use sidekiq::redis_rs::cmd;
 use tracing::instrument;
 
@@ -38,7 +40,8 @@ where
 pub struct HeathCheckResponse {
     pub ping_latency: u128,
     pub db: ResourceHealth,
-    pub redis: Option<ResourceHealth>,
+    #[cfg(feature = "sidekiq")]
+    pub redis: ResourceHealth,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -74,23 +77,23 @@ where
         ping_latency: db_timer.as_millis(),
     };
 
-    let redis = if let Some(redis) = state.redis.as_ref() {
+    #[cfg(feature = "sidekiq")]
+    let redis = {
         let redis_timer = Instant::now();
-        let redis_status = match ping_redis(redis).await {
+        let redis_status = match ping_redis(&state.redis).await {
             Ok(_) => Status::Ok,
             _ => Status::Err,
         };
         let redis_timer = redis_timer.elapsed();
-        Some(ResourceHealth {
+        ResourceHealth {
             status: redis_status,
             ping_latency: redis_timer.as_millis(),
-        })
-    } else {
-        None
+        }
     };
     Ok(Json(HeathCheckResponse {
         ping_latency: timer.elapsed().as_millis(),
         db,
+        #[cfg(feature = "sidekiq")]
         redis,
     }))
 }
@@ -101,6 +104,7 @@ async fn ping_db(db: &DatabaseConnection) -> anyhow::Result<()> {
     Ok(())
 }
 
+#[cfg(feature = "sidekiq")]
 #[instrument(skip_all)]
 async fn ping_redis(redis: &sidekiq::RedisPool) -> anyhow::Result<()> {
     let mut conn = redis.get().await?;
@@ -126,10 +130,11 @@ fn health_get_docs(op: TransformOperation) -> TransformOperation {
                     status: Status::Ok,
                     ping_latency: Duration::from_millis(10).as_millis(),
                 },
-                redis: Some(ResourceHealth {
+                #[cfg(feature = "sidekiq")]
+                redis: ResourceHealth {
                     status: Status::Ok,
                     ping_latency: Duration::from_millis(10).as_millis(),
-                }),
+                },
             })
         })
 }
