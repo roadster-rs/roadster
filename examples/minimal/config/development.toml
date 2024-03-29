@@ -1,0 +1,8 @@
+[auth.jwt]
+secret = "secret-dev"
+
+[database]
+uri = "postgres://roadster:roadster@localhost:5432/minimal_dev"
+
+[worker.sidekiq.redis]
+uri = "redis://localhost:6379"
