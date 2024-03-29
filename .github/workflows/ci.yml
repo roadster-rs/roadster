@@ -53,13 +53,12 @@ jobs:
           - open-api
     steps:
       - uses: actions/checkout@v3
-      - run: export FEATURE_LIST=${{matrix.feature_1}},${{matrix.feature_2}},${{matrix.feature_3}}
       - name: Test
-        run: cargo test --no-fail-fast --features ${{FEATURE_LIST}}
+        run: cargo test --no-fail-fast --features ${{matrix.feature_1}},${{matrix.feature_2}},${{matrix.feature_3}}
       - name: Check
-        run: cargo check --features ${{FEATURE_LIST}}
+        run: cargo check --features ${{matrix.feature_1}},${{matrix.feature_2}},${{matrix.feature_3}}
       - name: Clippy
-        run: cargo clippy --features ${{FEATURE_LIST}} -- -D warnings
+        run: cargo clippy --features ${{matrix.feature_1}},${{matrix.feature_2}},${{matrix.feature_3}} -- -D warnings
 
   check_formatting:
     name: Check formatting
