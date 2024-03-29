@@ -1,3 +1,7 @@
+//! # Roadster
+//!
+//! Todo: Add documentation
+
 #![forbid(unsafe_code)]
 
 pub mod app;

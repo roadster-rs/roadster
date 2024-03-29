@@ -38,5 +38,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Docs
         env:
-          RUSTDOCFLAGS: "-D rustdoc::all -A rustdoc::private-doc-tests"
+          RUSTDOCFLAGS: "-D rustdoc::all"
         run: cargo doc --all-features --no-deps

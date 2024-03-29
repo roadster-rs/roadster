@@ -8,7 +8,7 @@ echo "### fmt --all --check ###"
 cargo fmt --all --check
 
 echo "### cargo doc --all-features --no-deps ###"
-RUSTDOCFLAGS="-D warnings" cargo doc --all-features --no-deps
+RUSTDOCFLAGS="-D rustdoc::all" cargo doc --all-features --no-deps
 
 # With no features
 echo "### test --no-default-features --workspace ###"
