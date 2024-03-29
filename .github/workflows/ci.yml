@@ -30,6 +30,16 @@ jobs:
       - name: Check
         run: cargo check
 
+  roadster_all_features:
+    name: All features
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Test
+        run: cargo test --no-fail-fast --all-features
+      - name: Check
+        run: cargo check --all-features
+
   roadster_with_all_feature_combinations:
     name: Feature combos
     runs-on: ubuntu-latest
