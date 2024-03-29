@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Test
-        run: cargo test --no-default-features --no-fail-fast
+        run: cargo test --no-fail-fast --no-default-features
       - name: Check
         run: cargo check --no-default-features
       - name: Clippy
@@ -39,26 +39,21 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        feature_1:
+        features:
           - sidekiq
           - db-sql
           - open-api
-        feature_2:
-          - sidekiq
-          - db-sql
-          - open-api
-        feature_3:
-          - sidekiq
-          - db-sql
-          - open-api
+          - sidekiq,db-sql
+          - sidekiq,open-api
+          - db-sql,open-api
     steps:
       - uses: actions/checkout@v3
       - name: Test
-        run: cargo test --no-fail-fast --features ${{matrix.feature_1}},${{matrix.feature_2}},${{matrix.feature_3}}
+        run: cargo test --no-fail-fast --no-default-features --features ${{matrix.features}}
       - name: Check
-        run: cargo check --features ${{matrix.feature_1}},${{matrix.feature_2}},${{matrix.feature_3}}
+        run: cargo check --no-default-features --features ${{matrix.features}}
       - name: Clippy
-        run: cargo clippy --features ${{matrix.feature_1}},${{matrix.feature_2}},${{matrix.feature_3}} -- -D warnings
+        run: cargo clippy --no-default-features --features ${{matrix.features}} -- -D warnings
 
   check_formatting:
     name: Check formatting
