@@ -14,7 +14,7 @@ jobs:
     name: No features
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Test
         run: cargo test --no-fail-fast --no-default-features
       - name: Check
@@ -24,7 +24,7 @@ jobs:
     name: Default features
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Test
         run: cargo test --no-fail-fast
       - name: Check
@@ -34,7 +34,7 @@ jobs:
     name: All features
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Test
         run: cargo test --no-fail-fast --all-features
       - name: Check
@@ -54,7 +54,7 @@ jobs:
           - sidekiq,open-api
           - db-sql,open-api
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Test
         run: cargo test --no-fail-fast --no-default-features --features ${{matrix.features}}
       - name: Check
@@ -64,7 +64,7 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Clippy
         run: cargo clippy -- -D warnings
 
@@ -72,6 +72,6 @@ jobs:
     name: Formatting
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Formatting
         run: cargo fmt -- --check
