@@ -17,11 +17,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: taiki-e/install-action@cargo-hack
       - name: Test
-        run: cargo hack test --no-fail-fast --feature-powerset --no-dev-deps --workspace
+        run: cargo hack test --no-fail-fast --feature-powerset --workspace
       - name: Check
         run: cargo hack check --feature-powerset --no-dev-deps --workspace
       - name: Clippy
-        run: cargo hack clippy --workspace --all-targets --feature-powerset --no-dev-deps -- -D warnings
+        run: cargo hack clippy --workspace --all-targets --feature-powerset -- -D warnings
 
   check_formatting:
     name: Formatting
