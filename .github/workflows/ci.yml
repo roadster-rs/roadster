@@ -19,6 +19,8 @@ jobs:
         run: cargo test --no-fail-fast --no-default-features --workspace
       - name: Check
         run: cargo check --no-default-features --workspace
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --no-default-features -- -D warnings
 
   roadster_default_features:
     name: Default features
@@ -29,6 +31,8 @@ jobs:
         run: cargo test --no-fail-fast --workspace
       - name: Check
         run: cargo check --workspace
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
 
   roadster_all_features:
     name: All features
@@ -39,6 +43,8 @@ jobs:
         run: cargo test --no-fail-fast --all-features --workspace
       - name: Check
         run: cargo check --all-features --workspace
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
   roadster_with_all_feature_combinations:
     name: Feature combos
@@ -58,7 +64,9 @@ jobs:
       - name: Test
         run: cargo test --no-fail-fast --no-default-features --features ${{matrix.features}} --workspace
       - name: Check
-        run: cargo check --no-default-features --features ${{matrix.features}} --workspace
+        run: cargo check --no-default-features --workspace
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --features ${{matrix.features}} -- -D warnings
 
   clippy:
     name: Clippy
@@ -74,4 +82,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Formatting
-        run: cargo fmt --all -- --check
+        run: cargo fmt --all --check
