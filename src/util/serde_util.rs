@@ -5,7 +5,7 @@ use serde::{de, Deserializer, Serializer};
 use serde_derive::{Deserialize, Serialize};
 use url::Url;
 
-/// Custom deserializer to allow deserializing a string field as the given type type [T], as long as
+/// Custom deserializer to allow deserializing a string field as the given type `T`, as long as
 /// the type implements [FromStr].
 pub fn deserialize_from_str<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
@@ -21,7 +21,7 @@ where
     }
 }
 
-/// Custom deserializer to allow serializing the given type [T] as a string, as long as the type
+/// Custom serializer to allow serializing the given type `T` as a string, as long as the type
 /// implements [FromStr].
 pub fn serialize_to_str<S, T>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
 where

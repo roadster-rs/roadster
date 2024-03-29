@@ -10,71 +10,18 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  roadster_no_features:
-    name: No features
+  roadster_feature_powerset:
+    name: Feature powerset
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: taiki-e/install-action@cargo-hack
       - name: Test
-        run: cargo test --no-fail-fast --no-default-features --workspace
+        run: cargo hack test --no-fail-fast --feature-powerset --no-dev-deps --workspace
       - name: Check
-        run: cargo check --no-default-features --workspace
+        run: cargo hack check --feature-powerset --no-dev-deps --workspace
       - name: Clippy
-        run: cargo clippy --workspace --all-targets --no-default-features -- -D warnings
-
-  roadster_default_features:
-    name: Default features
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Test
-        run: cargo test --no-fail-fast --workspace
-      - name: Check
-        run: cargo check --workspace
-      - name: Clippy
-        run: cargo clippy --workspace --all-targets -- -D warnings
-
-  roadster_all_features:
-    name: All features
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Test
-        run: cargo test --no-fail-fast --all-features --workspace
-      - name: Check
-        run: cargo check --all-features --workspace
-      - name: Clippy
-        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
-
-  roadster_with_all_feature_combinations:
-    name: Feature combos
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        # Todo: Is there a way to generate this list automatically?
-        features:
-          - sidekiq
-          - db-sql
-          - open-api
-          - sidekiq,db-sql
-          - sidekiq,open-api
-          - db-sql,open-api
-    steps:
-      - uses: actions/checkout@v4
-      - name: Test
-        run: cargo test --no-fail-fast --no-default-features --features ${{matrix.features}} --workspace
-      - name: Check
-        run: cargo check --no-default-features --workspace
-      - name: Clippy
-        run: cargo clippy --workspace --all-targets --features ${{matrix.features}} -- -D warnings
-
-  clippy:
-    name: Clippy
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Clippy
-        run: cargo clippy --workspace -- -D warnings
+        run: cargo hack clippy --workspace --all-targets --feature-powerset --no-dev-deps -- -D warnings
 
   check_formatting:
     name: Formatting
@@ -83,3 +30,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Formatting
         run: cargo fmt --all --check
+
+  check-docs:
+    name: Docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Docs
+        env:
+          RUSTDOCFLAGS: "-D rustdoc::all -A rustdoc::private-doc-tests"
+        run: cargo doc --all-features --no-deps
