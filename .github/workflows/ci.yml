@@ -84,9 +84,11 @@ jobs:
         # Todo: Is there a way to generate this list automatically?
         example:
           - minimal
+    defaults:
+      run:
+        working-directory: ./examples/${{matrix.example}}
     steps:
       - uses: actions/checkout@v4
-      - run: pushd examples/${{matrix.example}}
       - name: Test
         run: cargo test --no-fail-fast
       - name: Check
