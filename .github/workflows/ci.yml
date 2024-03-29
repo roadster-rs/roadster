@@ -21,5 +21,11 @@ jobs:
         run: cargo check --no-default-features
       - name: Clippy
         run: cargo clippy --no-default-features -- -D warnings
+
+  check_formatting:
+    name: Check formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
       - name: Formatting
-        run: cargo fmt --no-default-features -- --check
+        run: cargo fmt -- --check
