@@ -54,6 +54,7 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - name: Clippy
         run: cargo clippy -- -D warnings
 
