@@ -2,24 +2,24 @@
 
 # Checks that don't depend on which features are enabled
 echo "### cargo fmt -- --check ###"
-cargo fmt -- --check
+cargo fmt --workspace -- --check
 echo "### cargo clippy --no-deps -- -D warnings ###"
-cargo clippy --no-deps -- -D warnings
+cargo clippy --workspace -- -D warnings
 
 # Without default features
 echo "### cargo test --no-default-features ###"
-cargo test --no-default-features
+cargo test --no-default-features --workspace
 echo "### cargo check --no-default-features ###"
-cargo check --no-default-features
+cargo check --no-default-features --workspace
 
 # With default features
 echo "### cargo test ###"
-cargo test
+cargo test --workspace
 echo "### cargo check ###"
-cargo check
+cargo check --workspace
 
 # With all features
 echo "### cargo test --all-features ###"
-cargo test --all-features
+cargo test --all-features --workspace
 echo "### cargo check --all-features ###"
-cargo check --all-features
+cargo check --all-features --workspace
