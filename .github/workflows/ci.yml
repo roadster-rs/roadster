@@ -66,7 +66,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Clippy
-        run: cargo clippy --workspace --no-deps -- -D warnings
+        run: cargo clippy --workspace -- -D warnings
 
   check_formatting:
     name: Formatting
@@ -74,4 +74,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Formatting
-        run: cargo fmt --workspace -- --check
+        run: cargo fmt --all -- --check

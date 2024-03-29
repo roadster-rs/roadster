@@ -1,25 +1,25 @@
 #!/usr/bin/env bash
 
 # Checks that don't depend on which features are enabled
-echo "### cargo fmt -- --check ###"
-cargo fmt --workspace -- --check
-echo "### cargo clippy --no-deps -- -D warnings ###"
+echo "### fmt --all -- --check ###"
+cargo fmt --all -- --check
+echo "### clippy --workspace -- -D warnings ###"
 cargo clippy --workspace -- -D warnings
 
 # Without default features
-echo "### cargo test --no-default-features ###"
+echo "### test --no-default-features --workspace ###"
 cargo test --no-default-features --workspace
-echo "### cargo check --no-default-features ###"
+echo "### check --no-default-features --workspace ###"
 cargo check --no-default-features --workspace
 
 # With default features
-echo "### cargo test ###"
+echo "### test --workspace ###"
 cargo test --workspace
-echo "### cargo check ###"
+echo "### check --workspace ###"
 cargo check --workspace
 
 # With all features
-echo "### cargo test --all-features ###"
+echo "### test --all-features --workspace ###"
 cargo test --all-features --workspace
-echo "### cargo check --all-features ###"
+echo "### check --all-features --workspace ###"
 cargo check --all-features --workspace
