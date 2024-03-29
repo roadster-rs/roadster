@@ -1,5 +1,7 @@
 # Roadster
 
+![github ci](https://github.com/roadster-rs/roadster/actions/workflows/ci.yml/badge.svg?branch=main)
+
 # Start local DB
 
 ```shell
