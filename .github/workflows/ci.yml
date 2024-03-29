@@ -1,0 +1,65 @@
+name: Checks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  roadster_no_features:
+    name: No features
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Test
+        run: cargo test --no-fail-fast --no-default-features
+      - name: Check
+        run: cargo check --no-default-features
+      - name: Clippy
+        run: cargo clippy --no-default-features -- -D warnings
+
+  roadster_default_features:
+    name: Default features
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Test
+        run: cargo test --no-fail-fast
+      - name: Check
+        run: cargo check
+      - name: Clippy
+        run: cargo clippy -- -D warnings
+
+  roadster_with_all_feature_combinations:
+    name: Feature combos
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Todo: Is there a way to generate this list automatically?
+        features:
+          - sidekiq
+          - db-sql
+          - open-api
+          - sidekiq,db-sql
+          - sidekiq,open-api
+          - db-sql,open-api
+    steps:
+      - uses: actions/checkout@v3
+      - name: Test
+        run: cargo test --no-fail-fast --no-default-features --features ${{matrix.features}}
+      - name: Check
+        run: cargo check --no-default-features --features ${{matrix.features}}
+      - name: Clippy
+        run: cargo clippy --no-default-features --features ${{matrix.features}} -- -D warnings
+
+  check_formatting:
+    name: Check formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Formatting
+        run: cargo fmt -- --check
