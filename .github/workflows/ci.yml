@@ -22,6 +22,45 @@ jobs:
       - name: Clippy
         run: cargo clippy --no-default-features -- -D warnings
 
+  roadster_default_features:
+    name: Roadster default features
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Test
+        run: cargo test --no-fail-fast
+      - name: Check
+        run: cargo check
+      - name: Clippy
+        run: cargo clippy -- -D warnings
+
+  roadster_with_all_feature_combinations:
+    name: Roadster with all feature combinations
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        feature_1:
+          - sidekiq
+          - db-sql
+          - open-api
+        feature_2:
+          - sidekiq
+          - db-sql
+          - open-api
+        feature_3:
+          - sidekiq
+          - db-sql
+          - open-api
+    steps:
+      - uses: actions/checkout@v3
+      - run: export FEATURE_LIST=${{matrix.feature_1}},${{matrix.feature_2}},${{matrix.feature_3}}
+      - name: Test
+        run: cargo test --no-fail-fast --features $FEATURE_LIST
+      - name: Check
+        run: cargo check --features $FEATURE_LIST
+      - name: Clippy
+        run: cargo clippy --features $FEATURE_LIST -- -D warnings
+
   check_formatting:
     name: Check formatting
     runs-on: ubuntu-latest
