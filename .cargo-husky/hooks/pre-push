@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 
+# Exit immediately if any command returns non-zero exit status.
+set -e
+
 # `fmt` doesn't depend on which features are enabled
 echo "### fmt --all --check ###"
 cargo fmt --all --check
+
+echo "### cargo doc --all-features --no-deps ###"
+RUSTDOCFLAGS="-D warnings" cargo doc --all-features --no-deps
 
 # With no features
 echo "### test --no-default-features --workspace ###"
