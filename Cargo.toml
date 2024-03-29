@@ -1,6 +1,3 @@
-[workspace]
-members = [".", "examples/*"]
-
 [package]
 name = "roadster"
 version = "0.1.0"
@@ -70,3 +67,6 @@ byte-unit = { version = "5.1.4", features = ["serde"] }
 
 [dev-dependencies]
 cargo-husky = { version = "1.5.0", default-features = false, features = ["user-hooks"] }
+
+[workspace]
+members = [".", "examples/*"]
