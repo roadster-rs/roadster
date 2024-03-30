@@ -1,6 +1,8 @@
 use crate::app_context::AppContext;
 use crate::controller::middleware::catch_panic::CatchPanicConfig;
-use crate::controller::middleware::compression::CompressionConfig;
+use crate::controller::middleware::compression::{
+    RequestDecompressionConfig, ResponseCompressionConfig,
+};
 use crate::controller::middleware::request_id::{PropagateRequestIdConfig, SetRequestIdConfig};
 use crate::controller::middleware::sensitive_headers::{
     SensitiveRequestHeadersConfig, SensitiveResponseHeadersConfig,
@@ -25,7 +27,8 @@ pub struct Middleware {
     pub propagate_request_id: MiddlewareConfig<PropagateRequestIdConfig>,
     pub tracing: MiddlewareConfig<TracingConfig>,
     pub catch_panic: MiddlewareConfig<CatchPanicConfig>,
-    pub compression: MiddlewareConfig<CompressionConfig>,
+    pub response_compression: MiddlewareConfig<ResponseCompressionConfig>,
+    pub request_decompression: MiddlewareConfig<RequestDecompressionConfig>,
     pub timeout: MiddlewareConfig<TimeoutConfig>,
     pub size_limit: MiddlewareConfig<SizeLimitConfig>,
     /// Allows providing configs for custom middleware. Any configs that aren't pre-defined above
@@ -73,12 +76,23 @@ impl Default for Middleware {
         let set_request_id: MiddlewareConfig<SetRequestIdConfig> = Default::default();
         let set_request_id = set_request_id.set_priority(priority);
 
-        // Somewhere in the middle, order doesn't particularly matter
+        priority += 10;
         let tracing: MiddlewareConfig<TracingConfig> = Default::default();
-        let catch_panic: MiddlewareConfig<CatchPanicConfig> = Default::default();
-        let compression: MiddlewareConfig<CompressionConfig> = Default::default();
-        let timeout: MiddlewareConfig<TimeoutConfig> = Default::default();
+        let tracing = tracing.set_priority(priority);
+
+        priority += 10;
         let size_limit: MiddlewareConfig<SizeLimitConfig> = Default::default();
+        let size_limit = size_limit.set_priority(priority);
+
+        priority += 10;
+        let request_decompression: MiddlewareConfig<RequestDecompressionConfig> =
+            Default::default();
+        let request_decompression = request_decompression.set_priority(priority);
+
+        // Somewhere in the middle, order doesn't particularly matter
+        let catch_panic: MiddlewareConfig<CatchPanicConfig> = Default::default();
+        let response_compression: MiddlewareConfig<ResponseCompressionConfig> = Default::default();
+        let timeout: MiddlewareConfig<TimeoutConfig> = Default::default();
 
         // Before response middlewares
         let mut priority = PRIORITY_LAST;
@@ -98,7 +112,8 @@ impl Default for Middleware {
             propagate_request_id,
             tracing,
             catch_panic,
-            compression,
+            response_compression,
+            request_decompression,
             timeout,
             size_limit,
             custom: Default::default(),
