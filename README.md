@@ -34,7 +34,7 @@ docker run -d -p 6380:6379 redis:7.2-alpine
 
 # Background/async job queue
 
-There are a few different ways we can implement background/async jobs (currently on Sidekiq.rs is supported).
+There are a few different ways we can implement background/async jobs (currently only Sidekiq.rs is supported).
 
 ## [Sidekiq.rs](https://crates.io/crates/rusty-sidekiq)
 
