@@ -31,7 +31,7 @@ jobs:
       - name: Formatting
         run: cargo fmt --all --check
 
-  check-docs:
+  check_docs:
     name: Docs
     runs-on: ubuntu-latest
     steps:
