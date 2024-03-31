@@ -9,12 +9,12 @@ use tower_http::catch_panic::CatchPanicLayer;
 pub struct CatchPanicConfig {}
 
 pub struct CatchPanicMiddleware;
-impl Middleware for CatchPanicMiddleware {
+impl<S> Middleware<S> for CatchPanicMiddleware {
     fn name(&self) -> String {
         "catch-panic".to_string()
     }
 
-    fn enabled(&self, context: &AppContext) -> bool {
+    fn enabled(&self, context: &AppContext, _state: &S) -> bool {
         context
             .config
             .middleware
@@ -23,11 +23,11 @@ impl Middleware for CatchPanicMiddleware {
             .enabled(context)
     }
 
-    fn priority(&self, context: &AppContext) -> i32 {
+    fn priority(&self, context: &AppContext, _state: &S) -> i32 {
         context.config.middleware.catch_panic.common.priority
     }
 
-    fn install(&self, router: Router, _context: &AppContext) -> anyhow::Result<Router> {
+    fn install(&self, router: Router, _context: &AppContext, _state: &S) -> anyhow::Result<Router> {
         let router = router.layer(CatchPanicLayer::new());
 
         Ok(router)

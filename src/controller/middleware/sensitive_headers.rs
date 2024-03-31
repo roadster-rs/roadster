@@ -5,6 +5,7 @@ use axum::Router;
 use itertools::Itertools;
 use serde_derive::{Deserialize, Serialize};
 use std::str::FromStr;
+
 use tower_http::sensitive_headers::{
     SetSensitiveRequestHeadersLayer, SetSensitiveResponseHeadersLayer,
 };
@@ -55,12 +56,12 @@ pub struct SensitiveResponseHeadersConfig {
 
 pub struct SensitiveRequestHeadersMiddleware;
 
-impl Middleware for SensitiveRequestHeadersMiddleware {
+impl<S> Middleware<S> for SensitiveRequestHeadersMiddleware {
     fn name(&self) -> String {
         "sensitive-request-headers".to_string()
     }
 
-    fn enabled(&self, context: &AppContext) -> bool {
+    fn enabled(&self, context: &AppContext, _state: &S) -> bool {
         context
             .config
             .middleware
@@ -69,7 +70,7 @@ impl Middleware for SensitiveRequestHeadersMiddleware {
             .enabled(context)
     }
 
-    fn priority(&self, context: &AppContext) -> i32 {
+    fn priority(&self, context: &AppContext, _state: &S) -> i32 {
         context
             .config
             .middleware
@@ -77,7 +78,7 @@ impl Middleware for SensitiveRequestHeadersMiddleware {
             .common
             .priority
     }
-    fn install(&self, router: Router, context: &AppContext) -> anyhow::Result<Router> {
+    fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
         let headers = context
             .config
             .middleware
@@ -94,12 +95,12 @@ impl Middleware for SensitiveRequestHeadersMiddleware {
 
 pub struct SensitiveResponseHeadersMiddleware;
 
-impl Middleware for SensitiveResponseHeadersMiddleware {
+impl<S> Middleware<S> for SensitiveResponseHeadersMiddleware {
     fn name(&self) -> String {
         "sensitive-response-headers".to_string()
     }
 
-    fn enabled(&self, context: &AppContext) -> bool {
+    fn enabled(&self, context: &AppContext, _state: &S) -> bool {
         context
             .config
             .middleware
@@ -108,7 +109,7 @@ impl Middleware for SensitiveResponseHeadersMiddleware {
             .enabled(context)
     }
 
-    fn priority(&self, context: &AppContext) -> i32 {
+    fn priority(&self, context: &AppContext, _state: &S) -> i32 {
         context
             .config
             .middleware
@@ -116,7 +117,7 @@ impl Middleware for SensitiveResponseHeadersMiddleware {
             .common
             .priority
     }
-    fn install(&self, router: Router, context: &AppContext) -> anyhow::Result<Router> {
+    fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
         let headers = context
             .config
             .middleware

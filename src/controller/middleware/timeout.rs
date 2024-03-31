@@ -23,20 +23,20 @@ impl Default for TimeoutConfig {
 }
 
 pub struct TimeoutMiddleware;
-impl Middleware for TimeoutMiddleware {
+impl<S> Middleware<S> for TimeoutMiddleware {
     fn name(&self) -> String {
         "timeout".to_string()
     }
 
-    fn enabled(&self, context: &AppContext) -> bool {
+    fn enabled(&self, context: &AppContext, _state: &S) -> bool {
         context.config.middleware.timeout.common.enabled(context)
     }
 
-    fn priority(&self, context: &AppContext) -> i32 {
+    fn priority(&self, context: &AppContext, _state: &S) -> i32 {
         context.config.middleware.timeout.common.priority
     }
 
-    fn install(&self, router: Router, context: &AppContext) -> anyhow::Result<Router> {
+    fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
         let timeout = &context.config.middleware.timeout.custom.timeout;
 
         let router = router.layer(TimeoutLayer::new(*timeout));

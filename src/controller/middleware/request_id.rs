@@ -37,12 +37,12 @@ pub struct PropagateRequestIdConfig {
 }
 
 pub struct SetRequestIdMiddleware;
-impl Middleware for SetRequestIdMiddleware {
+impl<S> Middleware<S> for SetRequestIdMiddleware {
     fn name(&self) -> String {
         "set-request-id".to_string()
     }
 
-    fn enabled(&self, context: &AppContext) -> bool {
+    fn enabled(&self, context: &AppContext, _state: &S) -> bool {
         context
             .config
             .middleware
@@ -51,11 +51,11 @@ impl Middleware for SetRequestIdMiddleware {
             .enabled(context)
     }
 
-    fn priority(&self, context: &AppContext) -> i32 {
+    fn priority(&self, context: &AppContext, _state: &S) -> i32 {
         context.config.middleware.set_request_id.common.priority
     }
 
-    fn install(&self, router: Router, context: &AppContext) -> anyhow::Result<Router> {
+    fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
         let header_name = &context
             .config
             .middleware
@@ -74,12 +74,12 @@ impl Middleware for SetRequestIdMiddleware {
 }
 
 pub struct PropagateRequestIdMiddleware;
-impl Middleware for PropagateRequestIdMiddleware {
+impl<S> Middleware<S> for PropagateRequestIdMiddleware {
     fn name(&self) -> String {
         "propagate-request-id".to_string()
     }
 
-    fn enabled(&self, context: &AppContext) -> bool {
+    fn enabled(&self, context: &AppContext, _state: &S) -> bool {
         context
             .config
             .middleware
@@ -88,7 +88,7 @@ impl Middleware for PropagateRequestIdMiddleware {
             .enabled(context)
     }
 
-    fn priority(&self, context: &AppContext) -> i32 {
+    fn priority(&self, context: &AppContext, _state: &S) -> i32 {
         context
             .config
             .middleware
@@ -97,7 +97,7 @@ impl Middleware for PropagateRequestIdMiddleware {
             .priority
     }
 
-    fn install(&self, router: Router, context: &AppContext) -> anyhow::Result<Router> {
+    fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
         let header_name = &context
             .config
             .middleware

@@ -126,21 +126,21 @@ where
     let initializers = default_initializers()
         .into_iter()
         .chain(A::initializers(&context))
-        .filter(|initializer| initializer.enabled(&context))
+        .filter(|initializer| initializer.enabled(&context, &state))
         .unique_by(|initializer| initializer.name())
-        .sorted_by(|a, b| Ord::cmp(&a.priority(&context), &b.priority(&context)))
+        .sorted_by(|a, b| Ord::cmp(&a.priority(&context, &state), &b.priority(&context, &state)))
         .collect_vec();
 
     let router = initializers
         .iter()
         .try_fold(router, |router, initializer| {
-            initializer.after_router(router, &context)
+            initializer.after_router(router, &context, &state)
         })?;
 
     let router = initializers
         .iter()
         .try_fold(router, |router, initializer| {
-            initializer.before_middleware(router, &context)
+            initializer.before_middleware(router, &context, &state)
         })?;
 
     // Install middleware, both the default middleware and any provided by the consumer.
@@ -148,26 +148,26 @@ where
     let router = default_middleware()
         .into_iter()
         .chain(A::middleware(&context, &state).into_iter())
-        .filter(|middleware| middleware.enabled(&context))
+        .filter(|middleware| middleware.enabled(&context, &state))
         .unique_by(|middleware| middleware.name())
-        .sorted_by(|a, b| Ord::cmp(&a.priority(&context), &b.priority(&context)))
+        .sorted_by(|a, b| Ord::cmp(&a.priority(&context, &state), &b.priority(&context, &state)))
         // Reverse due to how Axum's `Router#layer` method adds middleware.
         .rev()
         .try_fold(router, |router, middleware| {
             info!("Installing middleware: `{}`", middleware.name());
-            middleware.install(router, &context)
+            middleware.install(router, &context, &state)
         })?;
 
     let router = initializers
         .iter()
         .try_fold(router, |router, initializer| {
-            initializer.after_middleware(router, &context)
+            initializer.after_middleware(router, &context, &state)
         })?;
 
     let router = initializers
         .iter()
         .try_fold(router, |router, initializer| {
-            initializer.before_serve(router, &context)
+            initializer.before_serve(router, &context, &state)
         })?;
 
     #[cfg(feature = "sidekiq")]
@@ -289,9 +289,9 @@ pub trait App {
     }
 
     /// Convert the [AppContext] to the custom [Self::State] that will be used throughout the app.
-    /// The conversion should mostly happen in a [`From<AppContext>`] implementation, but this
+    /// The conversion can simply happen in a [`From<AppContext>`] implementation, but this
     /// method is provided in case there's any additional work that needs to be done that the
-    /// consumer doesn't want to put in a [`From<AppContext>`] implementation. For example, any
+    /// consumer can't put in a [`From<AppContext>`] implementation. For example, any
     /// configuration that needs to happen in an async method.
     async fn context_to_state(context: Arc<AppContext>) -> anyhow::Result<Self::State> {
         let state = Self::State::from(context);
@@ -312,11 +312,14 @@ pub trait App {
         }
     }
 
-    fn middleware(_context: &AppContext, _state: &Self::State) -> Vec<Box<dyn Middleware>> {
+    fn middleware(
+        _context: &AppContext,
+        _state: &Self::State,
+    ) -> Vec<Box<dyn Middleware<Self::State>>> {
         Default::default()
     }
 
-    fn initializers(_context: &AppContext) -> Vec<Box<dyn Initializer>> {
+    fn initializers(_context: &AppContext) -> Vec<Box<dyn Initializer<Self::State>>> {
         Default::default()
     }
 
