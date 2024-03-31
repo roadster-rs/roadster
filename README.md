@@ -75,7 +75,6 @@ Another option to view traces (and metrics) locally is to run [Signoz](https://s
    your `config/development.toml` or `config/test.toml` configs as appropriate.
 2. Install and run Signoz in a directory of your choice
    ```shell
-   cd ~/code/
    # Clone the repo
    git clone -b main https://github.com/SigNoz/signoz.git && cd signoz/deploy/
    # Remove the sample application: https://signoz.io/docs/operate/docker-standalone/#remove-the-sample-application-from-signoz-dashboard
