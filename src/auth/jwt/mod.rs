@@ -22,6 +22,8 @@ use axum_extra::TypedHeader;
 use itertools::Itertools;
 use jsonwebtoken::{decode, DecodingKey, Header, TokenData, Validation};
 use serde_derive::{Deserialize, Serialize};
+#[cfg(not(any(feature = "jwt-ietf", feature = "jwt-openid")))]
+use serde_json::Value as Claims;
 use std::sync::Arc;
 use url::Url;
 use uuid::Uuid;
@@ -32,35 +34,17 @@ type BearerAuthHeader = TypedHeader<Authorization<Bearer>>;
 /// customized. If features `jwt-ietf` or `jwt-openid` are enabled, the type will default to
 /// the claims for the respective feature. If both features are enabled, the type will default
 /// to the claims from `jwt-ietf`. If neither feature is enabled (but `jwt` is enabled), then
-/// no default type will be provided and the consumer will need to provide their own type. In all
-/// cases, the type can be overridden by the consumer.
-#[cfg(any(feature = "jwt-ietf", feature = "jwt-openid"))]
+/// the default will simply be a [serde_json::Value]. In all cases, the type can be overridden
+/// by the consumer.
 pub struct Jwt<C = Claims>
 where
     C: for<'de> serde::Deserialize<'de>,
 {
     pub header: Header,
-    // Todo: Other Claims types?
-    pub claims: C,
-}
-/// Struct representing a JWT, including its [Header]s and `claims`. The `claims` type (`C`) can be
-/// customized. If features `jwt-ietf` or `jwt-openid` are enabled, the type will default to
-/// the claims for the respective feature. If both features are enabled, the type will default
-/// to the claims from `jwt-ietf`. If neither feature is enabled (but `jwt` is enabled), then
-/// no default type will be provided and the consumer will need to provide their own type. In all
-/// cases, the type can be overridden by the consumer.
-#[cfg(not(any(feature = "jwt-ietf", feature = "jwt-openid")))]
-pub struct Jwt<C>
-where
-    C: for<'de> serde::Deserialize<'de>,
-{
-    pub header: Header,
-    // Todo: Other Claims types?
     pub claims: C,
 }
 
 // Required in order to use `Jwt` in an Aide route.
-#[cfg(feature = "open-api")]
 impl OperationInput for Jwt {}
 
 #[async_trait]
