@@ -8,6 +8,7 @@ on:
   schedule:
     # Run once a week on Friday at 1AM UTC (6PM PST)
     - cron: '0 1 * * 5'
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
