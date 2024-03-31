@@ -35,6 +35,8 @@ jobs:
         if: ${{ github.event_name == 'schedule' }}
         run: test $(git rev-list  --after="7 days"  ${{ github.sha }}) && echo "should_run1=true" >> "$GITHUB_OUTPUT"
 
+      - name: print label
+        run: echo ${{ github.event.label.name }}
       - id: should_run2
         continue-on-error: true
         name: Check that the powerset_check label was added
