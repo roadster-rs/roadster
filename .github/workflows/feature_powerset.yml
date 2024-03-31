@@ -43,6 +43,14 @@ jobs:
         if: ${{ github.event_name == 'pull_request' && github.event.label.name == 'powerset_check' }}
         run: echo "should_run2=true" >> "$GITHUB_OUTPUT"
 
+  check_output:
+    needs: check_trigger
+    steps:
+      - run: echo ${{ needs.check_trigger.outputs.should_run1 }}
+      - run: echo ${{ needs.check_trigger.outputs.should_run2 }}
+      - run: echo ${{ needs.check_trigger.outputs.should_run1 == 'true'}}
+      - run: echo ${{ needs.check_trigger.outputs.should_run2 == 'true' }}
+
   roadster_feature_powerset:
     needs: check_trigger
     if: ${{ needs.check_trigger.outputs.should_run1 == 'true' || needs.check_trigger.outputs.should_run2 == 'true' || github.event_name == 'workflow_dispatch' }}
