@@ -9,15 +9,18 @@ on:
     # Run once a week on Friday at 1AM UTC (6PM PST)
     - cron: '0 1 * * 5'
   workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+    types: [ labeled ]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   # https://stackoverflow.com/questions/63014786/how-to-schedule-a-github-actions-nightly-build-but-run-it-only-when-there-where
-  check_date:
+  check_trigger:
     runs-on: ubuntu-latest
-    name: Check latest commit
+    name: Check trigger
     outputs:
       should_run: ${{ steps.should_run.outputs.should_run }}
     steps:
@@ -29,11 +32,23 @@ jobs:
         continue-on-error: true
         name: check latest commit is less than a day
         if: ${{ github.event_name == 'schedule' }}
-        run: test -z $(git rev-list  --after="7 days"  ${{ github.sha }}) && echo "::set-output name=should_run::false"
+        run: test $(git rev-list  --after="7 days"  ${{ github.sha }}) && echo "should_run=true" >> "$GITHUB_OUTPUT"
+
+      - id: should_run
+        continue-on-error: true
+        name: check latest commit is less than a day
+        if: ${{ github.event_name == 'pull_request' && github.event.label.name == 'powerset_check' }}
+        run: echo "should_run=true" >> "$GITHUB_OUTPUT"
+
+      - id: should_run
+        continue-on-error: true
+        name: check latest commit is less than a day
+        if: ${{ workflow_dispatch }}
+        run: echo "should_run=true" >> "$GITHUB_OUTPUT"
 
   roadster_feature_powerset:
-    needs: check_date
-    if: ${{ needs.check_date.outputs.should_run != 'false' }}
+    needs: check_trigger
+    if: ${{ needs.check_trigger.outputs.should_run == 'true' }}
     name: Feature powerset
     runs-on: ubuntu-latest
     steps:
