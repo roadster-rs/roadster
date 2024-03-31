@@ -45,6 +45,7 @@ where
 }
 
 // Required in order to use `Jwt` in an Aide route.
+#[cfg(feature = "open-api")]
 impl OperationInput for Jwt {}
 
 #[async_trait]
