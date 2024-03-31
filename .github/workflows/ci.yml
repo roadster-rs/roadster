@@ -10,18 +10,30 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  roadster_feature_powerset:
-    name: Feature powerset
+  roadster_each_feature:
+    name: Each feature
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: taiki-e/install-action@cargo-hack
       - name: Test
-        run: cargo hack test --no-fail-fast --feature-powerset --workspace
+        run: cargo hack test --no-fail-fast --each-feature --workspace
       - name: Check
-        run: cargo hack check --feature-powerset --no-dev-deps --workspace
+        run: cargo hack check --each-feature --no-dev-deps --workspace
       - name: Clippy
-        run: cargo hack clippy --workspace --all-targets --feature-powerset -- -D warnings
+        run: cargo hack clippy --workspace --all-targets --each-feature -- -D warnings
+
+  roadster_all_features:
+    name: All features
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test
+        run: cargo test --no-fail-fast --all-features --workspace
+      - name: Check
+        run: cargo check --all-features --workspace
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
   check_formatting:
     name: Formatting
