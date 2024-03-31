@@ -48,3 +48,8 @@ impl Display for UriOrString {
         }
     }
 }
+
+/// Function to default a boolean field to `true`.
+pub fn default_true() -> bool {
+    true
+}
