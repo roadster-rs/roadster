@@ -22,33 +22,28 @@ jobs:
     runs-on: ubuntu-latest
     name: Check trigger
     outputs:
-      should_run: ${{ steps.should_run.outputs.should_run }}
+      should_run1: ${{ steps.should_run.outputs.should_run1 }}
+      should_run2: ${{ steps.should_run.outputs.should_run2 }}
     steps:
       - uses: actions/checkout@v4
       - name: print latest_commit
         run: echo ${{ github.sha }}
 
-      - id: should_run
+      - id: should_run1
         continue-on-error: true
-        name: check latest commit is less than a day
+        name: Check latest commit is less than a week
         if: ${{ github.event_name == 'schedule' }}
-        run: test $(git rev-list  --after="7 days"  ${{ github.sha }}) && echo "should_run=true" >> "$GITHUB_OUTPUT"
+        run: test $(git rev-list  --after="7 days"  ${{ github.sha }}) && echo "should_run1=true" >> "$GITHUB_OUTPUT"
 
-      - id: should_run
+      - id: should_run2
         continue-on-error: true
-        name: check latest commit is less than a day
+        name: Check that the powerset_check label was added
         if: ${{ github.event_name == 'pull_request' && github.event.label.name == 'powerset_check' }}
-        run: echo "should_run=true" >> "$GITHUB_OUTPUT"
-
-      - id: should_run
-        continue-on-error: true
-        name: check latest commit is less than a day
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        run: echo "should_run=true" >> "$GITHUB_OUTPUT"
+        run: echo "should_run2=true" >> "$GITHUB_OUTPUT"
 
   roadster_feature_powerset:
     needs: check_trigger
-    if: ${{ needs.check_trigger.outputs.should_run == 'true' }}
+    if: ${{ needs.check_trigger.outputs.should_run1 == 'true' || needs.check_trigger.outputs.should_run2 == 'true' || github.event_name == 'workflow_dispatch' }}
     name: Feature powerset
     runs-on: ubuntu-latest
     steps:
