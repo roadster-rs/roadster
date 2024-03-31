@@ -53,3 +53,41 @@ impl Display for UriOrString {
 pub fn default_true() -> bool {
     true
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::util::serde_util::UriOrString;
+    use serde_derive::{Deserialize, Serialize};
+    use serde_json::from_str;
+    use std::str::FromStr;
+    use url::Url;
+
+    #[derive(Debug, Deserialize, Serialize)]
+    struct Wrapper<T> {
+        inner: T,
+    }
+
+    #[test]
+    fn deserialize_uri_or_string_as_uri() {
+        let value: Wrapper<UriOrString> = from_str(r#"{"inner": "https://example.com"}"#).unwrap();
+        assert_eq!(
+            value.inner,
+            UriOrString::Uri(Url::from_str("https://example.com").unwrap())
+        );
+    }
+
+    #[test]
+    fn serialize_uri_as_string() {
+        let value = Wrapper {
+            inner: UriOrString::Uri(Url::from_str("https://example.com").unwrap()),
+        };
+        let s = serde_json::to_string(&value).unwrap();
+        assert_eq!(s, r#"{"inner":"https://example.com/"}"#);
+    }
+
+    #[test]
+    fn deserialize_uri_or_string_as_string() {
+        let value: Wrapper<UriOrString> = from_str(r#"{"inner": "invalid-uri"}"#).unwrap();
+        assert_eq!(value.inner, UriOrString::String("invalid-uri".to_string()));
+    }
+}
