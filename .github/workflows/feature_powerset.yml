@@ -44,6 +44,7 @@ jobs:
         run: echo "should_run2=true" >> "$GITHUB_OUTPUT"
 
   check_output:
+    runs-on: ubuntu-latest
     needs: check_trigger
     steps:
       - run: echo ${{ needs.check_trigger.outputs.should_run1 }}
