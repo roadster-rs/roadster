@@ -22,26 +22,26 @@ jobs:
     runs-on: ubuntu-latest
     name: Check trigger
     outputs:
-      should_run1: ${{ steps.should_run.outputs.should_run1 }}
-      should_run2: ${{ steps.should_run.outputs.should_run2 }}
+      should_run1: ${{ steps.schedule_trigger.outputs.should_run }}
+      should_run2: ${{ steps.label_trigger.outputs.should_run }}
     steps:
       - uses: actions/checkout@v4
       - name: print latest_commit
         run: echo ${{ github.sha }}
 
-      - id: should_run1
+      - id: schedule_trigger
         continue-on-error: true
         name: Check latest commit is less than a week
         if: ${{ github.event_name == 'schedule' }}
-        run: test $(git rev-list  --after="7 days"  ${{ github.sha }}) && echo "should_run1=true" >> "$GITHUB_OUTPUT"
+        run: test $(git rev-list  --after="7 days"  ${{ github.sha }}) && echo "should_run=true" >> "$GITHUB_OUTPUT"
 
       - name: print label
         run: echo ${{ github.event.label.name }}
-      - id: should_run2
+      - id: label_trigger
         continue-on-error: true
         name: Check that the powerset_check label was added
         if: ${{ github.event_name == 'pull_request' && github.event.label.name == 'powerset_check' }}
-        run: echo "should_run2=true" >> "$GITHUB_OUTPUT"
+        run: echo "should_run=true" >> "$GITHUB_OUTPUT"
 
   check_output:
     runs-on: ubuntu-latest
