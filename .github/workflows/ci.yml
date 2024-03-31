@@ -10,6 +10,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # `cargo hack --each-feature` runs the given command for each feature, including "no features", "all features",
+  # and the `default` feature.
   roadster_each_feature:
     name: Each feature
     runs-on: ubuntu-latest
@@ -22,18 +24,6 @@ jobs:
         run: cargo hack check --each-feature --no-dev-deps --workspace
       - name: Clippy
         run: cargo hack clippy --workspace --all-targets --each-feature -- -D warnings
-
-  roadster_all_features:
-    name: All features
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Test
-        run: cargo test --no-fail-fast --all-features --workspace
-      - name: Check
-        run: cargo check --all-features --workspace
-      - name: Clippy
-        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
   check_formatting:
     name: Formatting
