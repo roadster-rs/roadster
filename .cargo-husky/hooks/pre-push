@@ -8,6 +8,8 @@ echo "### fmt --all --check ###"
 cargo fmt --all --check
 
 # With no features
+echo "### build --no-default-features ###"
+cargo build --no-default-features
 echo "### test --no-default-features --workspace ###"
 cargo test --no-default-features --workspace
 echo "### check --no-default-features --workspace ###"
@@ -16,6 +18,8 @@ echo "### clippy --workspace --all-targets --no-default-features -- -D warnings 
 cargo clippy --workspace --all-targets --no-default-features -- -D warnings
 
 # With default features
+echo "### build ###"
+cargo build
 echo "### test --workspace ###"
 cargo test --workspace
 echo "### check --workspace ###"
@@ -24,6 +28,8 @@ echo "### clippy --workspace --all-targets -- -D warnings ###"
 cargo clippy --workspace --all-targets -- -D warnings
 
 # With all features
+echo "### build --all-features ###"
+cargo build --all-features
 echo "### test --all-features --workspace ###"
 cargo test --all-features --workspace
 echo "### check --all-features --workspace ###"
