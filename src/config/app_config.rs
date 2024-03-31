@@ -13,7 +13,7 @@ use url::Url;
 use crate::config::environment::Environment;
 use crate::config::initializer::Initializer;
 use crate::config::middleware::Middleware;
-use crate::util::serde_util::UriOrString;
+use crate::util::serde_util::{default_true, UriOrString};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -77,14 +77,8 @@ impl AppConfig {
 pub struct App {
     pub name: String,
     /// Shutdown the whole app if an error occurs in one of the app's top-level tasks (API, workers, etc).
-    #[serde(default = "App::default_shutdown_on_error")]
+    #[serde(default = "default_true")]
     pub shutdown_on_error: bool,
-}
-
-impl App {
-    fn default_shutdown_on_error() -> bool {
-        true
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -127,6 +121,14 @@ pub struct JwtClaims {
 #[serde(rename_all = "kebab-case")]
 pub struct Tracing {
     pub level: String,
+    /// The name of the service to use for the OpenTelemetry `service.name` field. If not provided,
+    /// will use the [`App::name`][App] config value, translated to `snake_case`.
+    pub service_name: Option<String>,
+    /// Propagate traces across service boundaries. Mostly useful in microservice architectures.
+    #[serde(default = "default_true")]
+    pub trace_propagation: bool,
+    /// URI of the OTLP exporter where traces/metics/logs will be sent.
+    pub otlp_endpoint: Option<Url>,
 }
 
 #[cfg(feature = "db-sql")]

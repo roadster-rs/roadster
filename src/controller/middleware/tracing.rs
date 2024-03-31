@@ -66,7 +66,7 @@ impl<B> MakeSpan<B> for CustomMakeSpan {
     fn make_span(&mut self, request: &Request<B>) -> Span {
         let path = get_path(request);
         let request_id = get_request_id(&self.request_id_header_name, request);
-        info_span!("request",
+        info_span!("http_request",
             { HTTP_REQUEST_METHOD } = %request.method(),
             { HTTP_ROUTE } = optional_trace_field(path),
             request_id = optional_trace_field(request_id),
