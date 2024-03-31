@@ -43,7 +43,7 @@ jobs:
       - id: should_run
         continue-on-error: true
         name: check latest commit is less than a day
-        if: ${{ workflow_dispatch }}
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         run: echo "should_run=true" >> "$GITHUB_OUTPUT"
 
   roadster_feature_powerset:
