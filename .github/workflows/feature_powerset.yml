@@ -1,0 +1,46 @@
+# Check to build Roadster with all combinations (powerset) of features. Because we have a bunch of features, the
+# powerset of all features is quite large, meaning we need to run a large number of iterations of the tests. To
+# conserve CI usage, as well as mimimize CI time needed on PRs, we'll only run checks against the feature powerset
+# once a week, and only if a commit was merged in the past week.
+name: Feature Powerset
+
+on:
+  schedule:
+    # Run once a week on Friday at 1AM UTC (6PM PST)
+    - cron: '0 1 * * 5'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # https://stackoverflow.com/questions/63014786/how-to-schedule-a-github-actions-nightly-build-but-run-it-only-when-there-where
+  check_date:
+    runs-on: ubuntu-latest
+    name: Check latest commit
+    outputs:
+      should_run: ${{ steps.should_run.outputs.should_run }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: print latest_commit
+        run: echo ${{ github.sha }}
+
+      - id: should_run
+        continue-on-error: true
+        name: check latest commit is less than a day
+        if: ${{ github.event_name == 'schedule' }}
+        run: test -z $(git rev-list  --after="7 days"  ${{ github.sha }}) && echo "::set-output name=should_run::false"
+
+  roadster_feature_powerset:
+    needs: check_date
+    if: ${{ needs.check_date.outputs.should_run != 'false' }}
+    name: Feature powerset
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/install-action@cargo-hack
+      - name: Test
+        run: cargo hack test --no-fail-fast --feature-powerset --workspace
+      - name: Check
+        run: cargo hack check --feature-powerset --no-dev-deps --workspace
+      - name: Clippy
+        run: cargo hack clippy --workspace --all-targets --feature-powerset -- -D warnings
