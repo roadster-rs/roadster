@@ -1,4 +1,3 @@
-#[cfg(feature = "open-api")]
 use std::sync::Arc;
 
 #[cfg(feature = "open-api")]
