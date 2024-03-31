@@ -12,6 +12,15 @@ pub trait Initializer<S> {
 
     fn enabled(&self, context: &AppContext, state: &S) -> bool;
 
+    /// Used to determine the order in which the initializer will run during app initialization.
+    /// Smaller numbers will run before larger numbers. For example, an initializer with priority
+    /// `-10` will run before an initializer with priority `10`.
+    ///
+    /// If two initializers have the same priority, they are not guaranteed to run in any particular
+    /// order relative to each other. This may be fine for many initializers.
+    ///
+    /// If the order in which your initializer runs doesn't particularly matter, it's generally
+    /// safe to set its priority as `0`.
     fn priority(&self, context: &AppContext, state: &S) -> i32;
 
     fn after_router(
