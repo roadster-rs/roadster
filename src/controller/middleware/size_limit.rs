@@ -23,20 +23,20 @@ impl Default for SizeLimitConfig {
 }
 
 pub struct RequestBodyLimitMiddleware;
-impl Middleware for RequestBodyLimitMiddleware {
+impl<S> Middleware<S> for RequestBodyLimitMiddleware {
     fn name(&self) -> String {
         "request-body-size-limit".to_string()
     }
 
-    fn enabled(&self, context: &AppContext) -> bool {
+    fn enabled(&self, context: &AppContext, _state: &S) -> bool {
         context.config.middleware.size_limit.common.enabled(context)
     }
 
-    fn priority(&self, context: &AppContext) -> i32 {
+    fn priority(&self, context: &AppContext, _state: &S) -> i32 {
         context.config.middleware.size_limit.common.priority
     }
 
-    fn install(&self, router: Router, context: &AppContext) -> anyhow::Result<Router> {
+    fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
         let limit = &context
             .config
             .middleware

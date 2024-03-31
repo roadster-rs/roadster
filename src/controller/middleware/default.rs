@@ -11,7 +11,7 @@ use crate::controller::middleware::timeout::TimeoutMiddleware;
 use crate::controller::middleware::tracing::TracingMiddleware;
 use crate::controller::middleware::Middleware;
 
-pub fn default_middleware() -> Vec<Box<dyn Middleware>> {
+pub fn default_middleware<S>() -> Vec<Box<dyn Middleware<S>>> {
     vec![
         Box::new(SensitiveRequestHeadersMiddleware),
         Box::new(SensitiveResponseHeadersMiddleware),

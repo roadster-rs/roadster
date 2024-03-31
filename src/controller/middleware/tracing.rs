@@ -16,21 +16,21 @@ use tracing::{event, field, info_span, Level, Span, Value};
 pub struct TracingConfig {}
 
 pub struct TracingMiddleware;
-impl Middleware for TracingMiddleware {
+impl<S> Middleware<S> for TracingMiddleware {
     fn name(&self) -> String {
         "tracing".to_string()
     }
 
-    fn enabled(&self, context: &AppContext) -> bool {
+    fn enabled(&self, context: &AppContext, _state: &S) -> bool {
         context.config.middleware.tracing.common.enabled(context)
     }
 
-    fn priority(&self, context: &AppContext) -> i32 {
+    fn priority(&self, context: &AppContext, _state: &S) -> i32 {
         context.config.middleware.tracing.common.priority
     }
 
-    fn install(&self, router: Router, _context: &AppContext) -> anyhow::Result<Router> {
-        let request_id_header_name = &_context
+    fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
+        let request_id_header_name = &context
             .config
             .middleware
             .set_request_id

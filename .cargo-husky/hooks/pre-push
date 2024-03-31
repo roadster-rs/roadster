@@ -7,9 +7,6 @@ set -e
 echo "### fmt --all --check ###"
 cargo fmt --all --check
 
-echo "### cargo doc --all-features --no-deps ###"
-RUSTDOCFLAGS="-D rustdoc::all" cargo doc --all-features --no-deps
-
 # With no features
 echo "### test --no-default-features --workspace ###"
 cargo test --no-default-features --workspace
@@ -33,3 +30,6 @@ echo "### check --all-features --workspace ###"
 cargo check --all-features --workspace
 echo "### clippy --workspace --all-targets --all-features -- -D warnings ###"
 cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+echo "### cargo doc --all-features --no-deps ###"
+RUSTDOCFLAGS="-D rustdoc::all" cargo doc --all-features --no-deps

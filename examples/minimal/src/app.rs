@@ -1,6 +1,3 @@
-// The RoadsterApp trait uses `AppContext`, so allow an exception in order to implement the trait.
-#![allow(clippy::disallowed_types)]
-
 use aide::axum::ApiRouter;
 use roadster::app::App as RoadsterApp;
 use roadster::config::app_config::AppConfig;
