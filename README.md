@@ -1,6 +1,7 @@
 # Roadster
 
-![github ci](https://github.com/roadster-rs/roadster/actions/workflows/ci.yml/badge.svg?branch=main)
+[![Checks](https://github.com/roadster-rs/roadster/actions/workflows/ci.yml/badge.svg)](https://github.com/roadster-rs/roadster/actions/workflows/ci.yml)
+[![Feature Powerset](https://github.com/roadster-rs/roadster/actions/workflows/feature_powerset.yml/badge.svg)](https://github.com/roadster-rs/roadster/actions/workflows/feature_powerset.yml)
 
 A "Batteries Included" web framework for rust designed to get you moving fast 🏎️. Inspired by other fully-featured
 frameworks such as [Rails](https://rubyonrails.org/), [Loco](https://github.com/loco-rs/loco),
