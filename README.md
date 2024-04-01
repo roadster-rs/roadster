@@ -90,50 +90,10 @@ Another option to view traces (and metrics) locally is to run [Signoz](https://s
    docker compose -f docker/clickhouse-setup/docker-compose.yaml stop
    ```
 
-# Background/async job queue
-
-There are a few different ways we can implement background/async jobs (currently only Sidekiq.rs is supported).
-
-## [Sidekiq.rs](https://crates.io/crates/rusty-sidekiq)
+# Background/async job queue using [Sidekiq.rs](https://crates.io/crates/rusty-sidekiq)
 
 This crate is a rust implementation of [Sidekiq](https://sidekiq.org/), which is usually used with Ruby on Rails. All we
-need
-to use this is a Redis instance.
-
-## [Faktory](https://crates.io/crates/faktory)
-
-This crate integrates with Faktory, a language agnostic job queue from the creators of Sidekiq. Unfortunately, this
-crate is not quite ready to be used in production. Some reasons why we're not using this crate:
-
-- No async support in job handlers
-- Not able to signal consumers to gracefully shut down
-- Job handlers can't use `anyhow`/`eyre` and instead need to use an `Error` type that implements `std::error::Error`.
-  This
-  can fairly easily be done using [thiserror](https://crates.io/crates/thiserror) to wrap `anyhow::Error`, but it's
-  still not ideal.
-    ```rust
-    // Example wrapping `anyhow::Error`
-    #[derive(Error, Debug)]
-    pub enum AnyhowWrapper {
-        #[error(transparent)]
-        Other(#[from] anyhow::Error),
-    }
-    
-    ```
-- The provided methods of enqueuing jobs decouple the queue name from the job handler. We would need (want) to create a
-  custom method of enqueueing jobs that automates providing the correct queue name.
-
-## [Apalis](https://crates.io/crates/apalis)
-
-Todo: [Evaluate using this](https://github.com/MassDissent/roadster/issues/3)
-
-## External/managed queues
-
-Todo: Evaluate using these instead of a self-hosted queue.
-
-- Kafka queue
-- SQS
-- Pub/Sub (e.g., Google Cloud's offering)
+need in order to use this is a Redis instance.
 
 # Development
 
