@@ -2,11 +2,16 @@ use async_trait::async_trait;
 use clap::{Parser, Subcommand};
 
 use crate::app_context::AppContext;
+#[cfg(feature = "open-api")]
 use crate::cli::list_routes::ListRoutesArgs;
+#[cfg(feature = "open-api")]
+use crate::cli::open_api_schema::OpenApiArgs;
 use crate::config::environment::Environment;
 
 #[cfg(feature = "open-api")]
 pub mod list_routes;
+#[cfg(feature = "open-api")]
+pub mod open_api_schema;
 
 /// Implement to enable Roadster to run your custom CLI commands.
 #[async_trait]
@@ -107,17 +112,24 @@ impl RunRoadsterCommand for RoadsterArgs {
 
 #[derive(Debug, Subcommand)]
 pub enum RoadsterSubCommand {
-    /// List the API routes available in the app. Note: this command will only list routes that
-    /// were defined using the `Aide` crate.
+    /// List the API routes available in the app. Note: only the routes defined
+    /// using the `Aide` crate will be included in the output.
     #[cfg(feature = "open-api")]
     ListRoutes(ListRoutesArgs),
+    /// Generate an OpenAPI 3.1 schema for the app's API routes. Note: only the routes defined
+    /// using the `Aide` crate will be included in the schema.
+    #[cfg(feature = "open-api")]
+    OpenApi(OpenApiArgs),
 }
 
 #[async_trait]
 impl RunRoadsterCommand for RoadsterSubCommand {
     async fn run(&self, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool> {
         match self {
+            #[cfg(feature = "open-api")]
             RoadsterSubCommand::ListRoutes(args) => args.run(cli, context).await,
+            #[cfg(feature = "open-api")]
+            RoadsterSubCommand::OpenApi(args) => args.run(cli, context).await,
         }
     }
 }
