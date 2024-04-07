@@ -23,6 +23,8 @@ use sea_orm_migration::MigratorTrait;
 use sidekiq::{periodic, Processor};
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
+// `debug` isn't used with some feature configurations
+#[allow(unused_imports)]
 use tracing::{debug, error, info, instrument};
 
 use crate::app_context::AppContext;
@@ -61,12 +63,12 @@ where
         // combine them with the roadster CLI attributes.
         let cli = A::Cli::augment_args(cli);
         let cli = if let Some((a, b)) = about.zip(cli.get_about().cloned()) {
-            cli.about(format!("roadster: {a}, app: {b}"))
+            cli.about(format!("{a}\n\n{b}"))
         } else {
             cli
         };
         let cli = if let Some((a, b)) = long_about.zip(cli.get_long_about().cloned()) {
-            cli.long_about(format!("roadster: {a}, app: {b}"))
+            cli.long_about(format!("{a}\n\n{b}"))
         } else {
             cli
         };
@@ -96,8 +98,6 @@ where
     let config = AppConfig::new(environment)?;
 
     A::init_tracing(&config)?;
-
-    debug!("{config:?}");
 
     #[cfg(feature = "db-sql")]
     let db = Database::connect(A::db_connection_options(&config)?).await?;
