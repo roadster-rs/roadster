@@ -2,6 +2,8 @@ use std::env;
 use std::str::FromStr;
 
 use anyhow::anyhow;
+#[cfg(feature = "cli")]
+use clap::ValueEnum;
 use const_format::concatcp;
 use serde_derive::{Deserialize, Serialize};
 use strum_macros::{EnumString, IntoStaticStr};
@@ -9,6 +11,7 @@ use strum_macros::{EnumString, IntoStaticStr};
 use crate::config::app_config::{ENV_VAR_PREFIX, ENV_VAR_SEPARATOR};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, EnumString, IntoStaticStr)]
+#[cfg_attr(feature = "cli", derive(ValueEnum))]
 #[serde(rename_all = "kebab-case")]
 #[strum(serialize_all = "kebab-case")]
 pub enum Environment {
@@ -30,7 +33,7 @@ impl Environment {
         // Get the stage, and validate it by parsing to the Environment enum
         let environment = env::var(ENV_VAR_WITH_PREFIX)
             .map_err(|_| anyhow!("Env var `{ENV_VAR_WITH_PREFIX}` not defined."))?;
-        let environment = Environment::from_str(&environment).map_err(|err| {
+        let environment = <Environment as FromStr>::from_str(&environment).map_err(|err| {
             anyhow!(
                 "Unable to parse `{ENV_VAR_WITH_PREFIX}` env var with value `{environment}`: {err}"
             )
