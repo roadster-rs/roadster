@@ -6,6 +6,7 @@ use async_trait::async_trait;
 use clap::Parser;
 use tracing::info;
 
+use crate::app::App;
 use crate::app_context::AppContext;
 use crate::cli::{RoadsterCli, RunRoadsterCommand};
 
@@ -20,8 +21,16 @@ pub struct OpenApiArgs {
 }
 
 #[async_trait]
-impl RunRoadsterCommand for OpenApiArgs {
-    async fn run(&self, _cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool> {
+impl<A> RunRoadsterCommand<A> for OpenApiArgs
+where
+    A: App,
+{
+    async fn run(
+        &self,
+        _app: &A,
+        _cli: &RoadsterCli,
+        context: &AppContext,
+    ) -> anyhow::Result<bool> {
         let schema_json = if self.pretty_print {
             serde_json::to_string_pretty(context.api.as_ref())?
         } else {
