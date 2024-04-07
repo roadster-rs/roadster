@@ -98,11 +98,6 @@ where
 
     #[cfg(feature = "db-sql")]
     let db = Database::connect(A::db_connection_options(&config)?).await?;
-    // Todo: enable manual migrations
-    #[cfg(feature = "db-sql")]
-    if config.database.auto_migrate {
-        A::M::up(&db, None).await?;
-    }
 
     #[cfg(feature = "sidekiq")]
     let redis = {
@@ -149,6 +144,12 @@ where
         if app_cli.run(&app_cli, &context, &state).await? {
             return Ok(());
         }
+    }
+
+    // Todo: enable manual migrations
+    #[cfg(feature = "db-sql")]
+    if context.config.database.auto_migrate {
+        A::M::up(&context.db, None).await?;
     }
 
     let initializers = default_initializers()
