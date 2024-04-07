@@ -7,6 +7,7 @@ use dotenvy::dotenv;
 use serde_derive::{Deserialize, Serialize};
 #[cfg(feature = "db-sql")]
 use serde_with::serde_as;
+#[cfg(any(feature = "otel", feature = "db-sql", feature = "sidekiq"))]
 use url::Url;
 
 use crate::config::environment::{Environment, ENVIRONMENT_ENV_VAR_NAME};
@@ -132,13 +133,19 @@ pub struct JwtClaims {
 #[serde(rename_all = "kebab-case")]
 pub struct Tracing {
     pub level: String,
+
     /// The name of the service to use for the OpenTelemetry `service.name` field. If not provided,
     /// will use the [`App::name`][App] config value, translated to `snake_case`.
+    #[cfg(feature = "otel")]
     pub service_name: Option<String>,
+
     /// Propagate traces across service boundaries. Mostly useful in microservice architectures.
     #[serde(default = "default_true")]
+    #[cfg(feature = "otel")]
     pub trace_propagation: bool,
+
     /// URI of the OTLP exporter where traces/metrics/logs will be sent.
+    #[cfg(feature = "otel")]
     pub otlp_endpoint: Option<Url>,
 }
 

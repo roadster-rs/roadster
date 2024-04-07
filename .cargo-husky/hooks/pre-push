@@ -9,7 +9,7 @@ cargo fmt --all --check
 
 # With no features
 echo "### build --no-default-features ###"
-cargo build --no-default-features
+RUSTFLAGS="-D warnings" cargo build --no-default-features
 echo "### test --no-default-features --workspace ###"
 cargo test --no-default-features --workspace
 echo "### check --no-default-features --workspace ###"
