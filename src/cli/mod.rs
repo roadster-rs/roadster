@@ -2,7 +2,11 @@ use async_trait::async_trait;
 use clap::{Parser, Subcommand};
 
 use crate::app_context::AppContext;
+use crate::cli::list_routes::ListRoutesArgs;
 use crate::config::environment::Environment;
+
+#[cfg(feature = "open-api")]
+pub mod list_routes;
 
 /// Implement to enable Roadster to run your custom CLI commands.
 #[async_trait]
@@ -29,6 +33,14 @@ where
     async fn run(&self, cli: &C, context: &AppContext, state: &S) -> anyhow::Result<bool>;
 }
 
+/// Specialized version of [RunCommand] that removes the `C` and `S` generics because we know what
+/// `C` is and we don't need the custom app state `S` within roadster, so we don't need to provide
+/// them everytime time we want to implement a roadster command.
+#[async_trait]
+trait RunRoadsterCommand {
+    async fn run(&self, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool>;
+}
+
 /// Roadster: The Roadster CLI provides various utilities for managing your application. If no subcommand
 /// is matched, Roadster will default to running/serving your application.
 #[derive(Debug, Parser)]
@@ -42,6 +54,8 @@ pub struct RoadsterCli {
     pub command: Option<RoadsterCommand>,
 }
 
+/// We implement [RunCommand] instead of [RunRoadsterCommand] for the top-level [RoadsterCli] so
+/// we can run the roadster cli in the same way as the app-specific cli.
 #[async_trait]
 impl<S> RunCommand<RoadsterCli, S> for RoadsterCli
 where
@@ -51,10 +65,10 @@ where
         &self,
         cli: &RoadsterCli,
         context: &AppContext,
-        state: &S,
+        _state: &S,
     ) -> anyhow::Result<bool> {
         if let Some(command) = self.command.as_ref() {
-            command.run(cli, context, state).await
+            command.run(cli, context).await
         } else {
             Ok(false)
         }
@@ -70,36 +84,40 @@ pub enum RoadsterCommand {
 }
 
 #[async_trait]
-impl<S> RunCommand<RoadsterCli, S> for RoadsterCommand
-where
-    S: Sync,
-{
-    async fn run(
-        &self,
-        cli: &RoadsterCli,
-        context: &AppContext,
-        state: &S,
-    ) -> anyhow::Result<bool> {
+impl RunRoadsterCommand for RoadsterCommand {
+    async fn run(&self, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool> {
         match self {
-            RoadsterCommand::Roadster(args) => args.run(cli, context, state).await,
+            RoadsterCommand::Roadster(args) => args.run(cli, context).await,
         }
     }
 }
 
 #[derive(Debug, Parser)]
-pub struct RoadsterArgs {}
+pub struct RoadsterArgs {
+    #[command(subcommand)]
+    pub command: RoadsterSubCommand,
+}
 
 #[async_trait]
-impl<S> RunCommand<RoadsterCli, S> for RoadsterArgs
-where
-    S: Sync,
-{
-    async fn run(
-        &self,
-        _cli: &RoadsterCli,
-        _context: &AppContext,
-        _state: &S,
-    ) -> anyhow::Result<bool> {
-        Ok(false)
+impl RunRoadsterCommand for RoadsterArgs {
+    async fn run(&self, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool> {
+        self.command.run(cli, context).await
+    }
+}
+
+#[derive(Debug, Subcommand)]
+pub enum RoadsterSubCommand {
+    /// List the API routes available in the app. Note: this command will only list routes that
+    /// were defined using the `Aide` crate.
+    #[cfg(feature = "open-api")]
+    ListRoutes(ListRoutesArgs),
+}
+
+#[async_trait]
+impl RunRoadsterCommand for RoadsterSubCommand {
+    async fn run(&self, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool> {
+        match self {
+            RoadsterSubCommand::ListRoutes(args) => args.run(cli, context).await,
+        }
     }
 }
