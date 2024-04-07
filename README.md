@@ -115,7 +115,18 @@ locally in a standalone docker container.
 git clone https://github.com/roadster-rs/standalone_sidekiq_dashboard.git
 cd standalone_sidekiq_dashboard
 docker build -t standalone-sidekiq .
+# Development
 docker run --network=host standalone-sidekiq
+# Test
+docker run --network=host -e REDIS_URL='redis://localhost:6380' standalone-sidekiq
+```
+
+## Redis Insights
+
+You can also inspect the Redis DB directly using [RedisInsight](https://redis.io/docs/connect/insight/).
+
+```shell
+docker run -d --name redisinsight -p 5540:5540 redis/redisinsight:latest
 ```
 
 # Development
