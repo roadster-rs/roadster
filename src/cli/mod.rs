@@ -9,6 +9,7 @@ use crate::cli::list_routes::ListRoutesArgs;
 use crate::cli::migrate::MigrateArgs;
 #[cfg(feature = "open-api")]
 use crate::cli::open_api_schema::OpenApiArgs;
+use crate::cli::print_config::PrintConfigArgs;
 use crate::config::environment::Environment;
 
 #[cfg(feature = "open-api")]
@@ -17,6 +18,7 @@ pub mod list_routes;
 pub mod migrate;
 #[cfg(feature = "open-api")]
 pub mod open_api_schema;
+pub mod print_config;
 
 /// Implement to enable Roadster to run your custom CLI commands.
 #[async_trait]
@@ -139,6 +141,9 @@ pub enum RoadsterSubCommand {
     #[cfg(feature = "db-sql")]
     #[clap(visible_aliases = ["m", "migration"])]
     Migrate(MigrateArgs),
+
+    /// Print the AppConfig
+    PrintConfig(PrintConfigArgs),
 }
 
 #[async_trait]
@@ -154,6 +159,7 @@ where
             RoadsterSubCommand::OpenApi(args) => args.run(app, cli, context).await,
             #[cfg(feature = "db-sql")]
             RoadsterSubCommand::Migrate(args) => args.run(app, cli, context).await,
+            RoadsterSubCommand::PrintConfig(args) => args.run(app, cli, context).await,
         }
     }
 }
