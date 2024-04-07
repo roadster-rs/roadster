@@ -52,7 +52,11 @@ jobs:
       - uses: taiki-e/install-action@cargo-hack
       - name: Test
         run: cargo hack test --no-fail-fast --feature-powerset --skip default --group-features jwt-ietf,jwt --group-features jwt-openid,jwt --clean-per-run --log-group github-actions --exclude-no-default-features --exclude-all-features
+      - name: Clean
+        run: cargo clean
       - name: Check
         run: cargo hack check --feature-powerset --no-dev-deps --skip default --group-features jwt-ietf,jwt --group-features jwt-openid,jwt --clean-per-run --log-group github-actions --exclude-no-default-features --exclude-all-features
+      - name: Clean
+        run: cargo clean
       - name: Clippy
         run: cargo hack clippy --all-targets --feature-powerset --skip default --group-features jwt-ietf,jwt --group-features jwt-openid,jwt --clean-per-run --log-group github-actions --exclude-no-default-features --exclude-all-features -- -D warnings
