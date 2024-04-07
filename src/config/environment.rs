@@ -8,7 +8,7 @@ use strum_macros::{EnumString, IntoStaticStr};
 
 use crate::config::app_config::{ENV_VAR_PREFIX, ENV_VAR_SEPARATOR};
 
-#[derive(Debug, Clone, Serialize, Deserialize, EnumString, IntoStaticStr)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, EnumString, IntoStaticStr)]
 #[serde(rename_all = "kebab-case")]
 #[strum(serialize_all = "kebab-case")]
 pub enum Environment {

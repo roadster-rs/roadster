@@ -1,24 +1,28 @@
 use async_trait::async_trait;
 use clap::{Parser, Subcommand};
 
+use crate::app::App;
 use crate::app_context::AppContext;
 #[cfg(feature = "open-api")]
 use crate::cli::list_routes::ListRoutesArgs;
+#[cfg(feature = "db-sql")]
+use crate::cli::migrate::MigrateArgs;
 #[cfg(feature = "open-api")]
 use crate::cli::open_api_schema::OpenApiArgs;
 use crate::config::environment::Environment;
 
 #[cfg(feature = "open-api")]
 pub mod list_routes;
+#[cfg(feature = "db-sql")]
+pub mod migrate;
 #[cfg(feature = "open-api")]
 pub mod open_api_schema;
 
 /// Implement to enable Roadster to run your custom CLI commands.
 #[async_trait]
-pub trait RunCommand<C, S>
+pub trait RunCommand<A>
 where
-    C: clap::Args,
-    S: Sync,
+    A: App + ?Sized + Sync,
 {
     /// Run the command.
     ///
@@ -29,21 +33,18 @@ where
     ///     continue execution after the command is complete.
     /// * `Err(...)` - If the implementation experienced an error while handling the command. The
     ///     app should end execution after the command is complete.
-    ///
-    /// # Arguments
-    ///
-    /// * `cli` - The root-level clap args that were parsed, e.g. [RoadsterCli] or [crate::app::App::Cli].
-    /// * `context` - The [context][AppContext] for the app.
-    /// * `state` - The [state][crate::app::App::State] for the app.
-    async fn run(&self, cli: &C, context: &AppContext, state: &S) -> anyhow::Result<bool>;
+    async fn run(&self, app: &A, cli: &A::Cli, state: &A::State) -> anyhow::Result<bool>;
 }
 
-/// Specialized version of [RunCommand] that removes the `C` and `S` generics because we know what
-/// `C` is and we don't need the custom app state `S` within roadster, so we don't need to provide
-/// them everytime time we want to implement a roadster command.
+/// Internal version of [RunCommand] that uses the [RoadsterCli] and [AppContext] instead of
+/// the consuming app's versions of these objects. This (slightly) reduces the boilerplate
+/// required to implement a Roadster command.
 #[async_trait]
-trait RunRoadsterCommand {
-    async fn run(&self, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool>;
+pub(crate) trait RunRoadsterCommand<A>
+where
+    A: App,
+{
+    async fn run(&self, app: &A, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool>;
 }
 
 /// Roadster: The Roadster CLI provides various utilities for managing your application. If no subcommand
@@ -55,25 +56,31 @@ pub struct RoadsterCli {
     /// environment variable if it's set.
     #[clap(short, long)]
     pub environment: Option<Environment>,
+
+    /// Allow dangerous/destructive operations when running in the `production` environment. If
+    /// this argument is not provided, dangerous/destructive operations will not be performed
+    /// when running in `production`.
+    #[clap(long, action)]
+    pub allow_dangerous: bool,
+
     #[command(subcommand)]
     pub command: Option<RoadsterCommand>,
 }
 
-/// We implement [RunCommand] instead of [RunRoadsterCommand] for the top-level [RoadsterCli] so
-/// we can run the roadster cli in the same way as the app-specific cli.
+impl RoadsterCli {
+    pub fn allow_dangerous(&self, context: &AppContext) -> bool {
+        context.config.environment != Environment::Production || self.allow_dangerous
+    }
+}
+
 #[async_trait]
-impl<S> RunCommand<RoadsterCli, S> for RoadsterCli
+impl<A> RunRoadsterCommand<A> for RoadsterCli
 where
-    S: Sync,
+    A: App,
 {
-    async fn run(
-        &self,
-        cli: &RoadsterCli,
-        context: &AppContext,
-        _state: &S,
-    ) -> anyhow::Result<bool> {
+    async fn run(&self, app: &A, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool> {
         if let Some(command) = self.command.as_ref() {
-            command.run(cli, context).await
+            command.run(app, cli, context).await
         } else {
             Ok(false)
         }
@@ -89,10 +96,13 @@ pub enum RoadsterCommand {
 }
 
 #[async_trait]
-impl RunRoadsterCommand for RoadsterCommand {
-    async fn run(&self, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool> {
+impl<A> RunRoadsterCommand<A> for RoadsterCommand
+where
+    A: App,
+{
+    async fn run(&self, app: &A, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool> {
         match self {
-            RoadsterCommand::Roadster(args) => args.run(cli, context).await,
+            RoadsterCommand::Roadster(args) => args.run(app, cli, context).await,
         }
     }
 }
@@ -104,9 +114,12 @@ pub struct RoadsterArgs {
 }
 
 #[async_trait]
-impl RunRoadsterCommand for RoadsterArgs {
-    async fn run(&self, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool> {
-        self.command.run(cli, context).await
+impl<A> RunRoadsterCommand<A> for RoadsterArgs
+where
+    A: App,
+{
+    async fn run(&self, app: &A, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool> {
+        self.command.run(app, cli, context).await
     }
 }
 
@@ -116,20 +129,31 @@ pub enum RoadsterSubCommand {
     /// using the `Aide` crate will be included in the output.
     #[cfg(feature = "open-api")]
     ListRoutes(ListRoutesArgs),
+
     /// Generate an OpenAPI 3.1 schema for the app's API routes. Note: only the routes defined
     /// using the `Aide` crate will be included in the schema.
     #[cfg(feature = "open-api")]
     OpenApi(OpenApiArgs),
+
+    /// Perform DB operations using SeaORM migrations.
+    #[cfg(feature = "db-sql")]
+    #[clap(visible_aliases = ["m", "migration"])]
+    Migrate(MigrateArgs),
 }
 
 #[async_trait]
-impl RunRoadsterCommand for RoadsterSubCommand {
-    async fn run(&self, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool> {
+impl<A> RunRoadsterCommand<A> for RoadsterSubCommand
+where
+    A: App,
+{
+    async fn run(&self, app: &A, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool> {
         match self {
             #[cfg(feature = "open-api")]
-            RoadsterSubCommand::ListRoutes(args) => args.run(cli, context).await,
+            RoadsterSubCommand::ListRoutes(args) => args.run(app, cli, context).await,
             #[cfg(feature = "open-api")]
-            RoadsterSubCommand::OpenApi(args) => args.run(cli, context).await,
+            RoadsterSubCommand::OpenApi(args) => args.run(app, cli, context).await,
+            #[cfg(feature = "db-sql")]
+            RoadsterSubCommand::Migrate(args) => args.run(app, cli, context).await,
         }
     }
 }

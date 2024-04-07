@@ -27,7 +27,7 @@ use tracing::{debug, error, info, instrument};
 
 use crate::app_context::AppContext;
 #[cfg(feature = "cli")]
-use crate::cli::{RoadsterCli, RunCommand};
+use crate::cli::{RoadsterCli, RunCommand, RunRoadsterCommand};
 use crate::config::app_config::AppConfig;
 #[cfg(not(feature = "cli"))]
 use crate::config::environment::Environment;
@@ -40,7 +40,10 @@ use crate::tracing::init_tracing;
 use crate::worker::queue_names;
 
 // todo: this method is getting unweildy, we should break it up
-pub async fn start<A>() -> anyhow::Result<()>
+pub async fn start<A>(
+    // This parameter is (currently) not used when no features are enabled.
+    #[allow(unused_variables)] app: A,
+) -> anyhow::Result<()>
 where
     A: App + Default + Send + Sync + 'static,
 {
@@ -138,15 +141,14 @@ where
 
     #[cfg(feature = "cli")]
     {
-        if roadster_cli.run(&roadster_cli, &context, &state).await? {
+        if roadster_cli.run(&app, &roadster_cli, &context).await? {
             return Ok(());
         }
-        if app_cli.run(&app_cli, &context, &state).await? {
+        if app_cli.run(&app, &app_cli, &state).await? {
             return Ok(());
         }
     }
 
-    // Todo: enable manual migrations
     #[cfg(feature = "db-sql")]
     if context.config.database.auto_migrate {
         A::M::up(&context.db, None).await?;
@@ -290,10 +292,10 @@ where
 }
 
 #[async_trait]
-pub trait App {
+pub trait App: Send + Sync {
     type State: From<Arc<AppContext>> + Into<Arc<AppContext>> + Clone + Send + Sync + 'static;
     #[cfg(feature = "cli")]
-    type Cli: clap::Args + RunCommand<Self::Cli, Self::State>;
+    type Cli: clap::Args + RunCommand<Self>;
     #[cfg(feature = "db-sql")]
     type M: MigratorTrait;
 
