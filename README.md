@@ -24,6 +24,7 @@ and [Poem](https://github.com/poem-web/poem).
   the `db-sql` feature)
 - Built-in support for [Sidekiq.rs](https://crates.io/crates/rusty-sidekiq) for running async/background jobs (requires
   the `sidekiq` feature)
+- Export traces/metrics using OpenTelemetry (requires the `otel` feature)
 
 # Start local DB
 
