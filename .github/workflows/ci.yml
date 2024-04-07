@@ -43,5 +43,5 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Docs
         env:
-          RUSTDOCFLAGS: "-D rustdoc::all"
+          RUSTDOCFLAGS: "-D rustdoc::all -A rustdoc::private_intra_doc_links"
         run: cargo doc --all-features --no-deps

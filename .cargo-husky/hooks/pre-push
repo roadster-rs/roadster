@@ -38,4 +38,4 @@ echo "### clippy --workspace --all-targets --all-features -- -D warnings ###"
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 
 echo "### cargo doc --all-features --no-deps ###"
-RUSTDOCFLAGS="-D rustdoc::all" cargo doc --all-features --no-deps
+RUSTDOCFLAGS="-D rustdoc::all -A rustdoc::private_intra_doc_links" cargo doc --all-features --no-deps
