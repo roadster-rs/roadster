@@ -106,6 +106,18 @@ Another option to view traces (and metrics) locally is to run [Signoz](https://s
 This crate is a rust implementation of [Sidekiq](https://sidekiq.org/), which is usually used with Ruby on Rails. All we
 need in order to use this is a Redis instance.
 
+## Sidekiq dashboard
+
+We provide a [sample repo](https://github.com/roadster-rs/standalone_sidekiq_dashboard) to run the sidekiq dashboard
+locally in a standalone docker container.
+
+```shell
+git clone https://github.com/roadster-rs/standalone_sidekiq_dashboard.git
+cd standalone_sidekiq_dashboard
+docker build -t standalone-sidekiq .
+docker run --network=host standalone-sidekiq
+```
+
 # Development
 
 ## Code Coverage
