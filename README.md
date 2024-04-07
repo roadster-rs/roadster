@@ -18,7 +18,7 @@ and [Poem](https://github.com/poem-web/poem).
   the `open-api` feature)
 - Provides a CLI for common commands, and allows consumers to provide their own CLI commands
   using [clap](https://crates.io/crates/clap) (requires the `cli` feature)
-- Provides sample JWT implementations (requires the `jwt-ietf` and/or `jwt-openid` features). Also provides a general
+- Provides sample JWT extractor for Axum (requires the `jwt-ietf` and/or `jwt-openid` features). Also provides a general
   JWT extractor for Axum that simply puts all claims into a map (available with the `jwt` feature)
 - Built-in support for [SeaORM](https://crates.io/crates/sea-orm), including creating DB connections (requires
   the `db-sql` feature)
