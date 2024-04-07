@@ -8,14 +8,13 @@ use aide::axum::ApiRouter;
 use aide::openapi::OpenApi;
 #[cfg(feature = "open-api")]
 use aide::transform::TransformOpenApi;
-
 use async_trait::async_trait;
 #[cfg(feature = "open-api")]
 use axum::Extension;
 use axum::Router;
+#[cfg(feature = "cli")]
+use clap::{Args, Command, FromArgMatches};
 use itertools::Itertools;
-#[cfg(feature = "db-sql")]
-use sea_orm::DatabaseConnection;
 #[cfg(feature = "db-sql")]
 use sea_orm::{ConnectOptions, Database};
 #[cfg(feature = "db-sql")]
@@ -24,11 +23,14 @@ use sea_orm_migration::MigratorTrait;
 use sidekiq::{periodic, Processor};
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
-
 use tracing::{debug, error, info, instrument};
 
 use crate::app_context::AppContext;
+#[cfg(feature = "cli")]
+use crate::cli::{RoadsterCli, RunCommand};
 use crate::config::app_config::AppConfig;
+#[cfg(not(feature = "cli"))]
+use crate::config::environment::Environment;
 use crate::controller::middleware::default::default_middleware;
 use crate::controller::middleware::Middleware;
 use crate::initializer::default::default_initializers;
@@ -37,55 +39,71 @@ use crate::tracing::init_tracing;
 #[cfg(feature = "sidekiq")]
 use crate::worker::queue_names;
 
-#[cfg(not(feature = "db-sql"))]
+// todo: this method is getting unweildy, we should break it up
 pub async fn start<A>() -> anyhow::Result<()>
 where
     A: App + Default + Send + Sync + 'static,
 {
-    let config = get_app_config::<A>()?;
-    run_app::<A>(config).await
-}
+    #[cfg(feature = "cli")]
+    let (roadster_cli, app_cli) = {
+        // Build the CLI by augmenting a default Command with both the roadster and app-specific CLIs
+        let cli = Command::default();
+        // Add the roadster CLI. Save the shared attributes to use after adding the app-specific CLI
+        let cli = RoadsterCli::augment_args(cli);
+        let about = cli.get_about().cloned();
+        let long_about = cli.get_long_about().cloned();
+        let version = cli.get_version().map(|x| x.to_string());
+        let long_version = cli.get_long_version().map(|x| x.to_string());
+        // Add the app-specific CLI. This will override the shared attributes, so we need to
+        // combine them with the roadster CLI attributes.
+        let cli = A::Cli::augment_args(cli);
+        let cli = if let Some((a, b)) = about.zip(cli.get_about().cloned()) {
+            cli.about(format!("roadster: {a}, app: {b}"))
+        } else {
+            cli
+        };
+        let cli = if let Some((a, b)) = long_about.zip(cli.get_long_about().cloned()) {
+            cli.long_about(format!("roadster: {a}, app: {b}"))
+        } else {
+            cli
+        };
+        let cli = if let Some((a, b)) = version.zip(cli.get_version().map(|x| x.to_string())) {
+            cli.version(format!("roadster: {a}, app: {b}"))
+        } else {
+            cli
+        };
+        let cli =
+            if let Some((a, b)) = long_version.zip(cli.get_long_version().map(|x| x.to_string())) {
+                cli.long_version(format!("roadster: {a}\n\napp: {b}"))
+            } else {
+                cli
+            };
+        // Build each CLI from the CLI args
+        let matches = cli.get_matches();
+        let roadster_cli = RoadsterCli::from_arg_matches(&matches)?;
+        let app_cli = A::Cli::from_arg_matches(&matches)?;
+        (roadster_cli, app_cli)
+    };
 
-#[cfg(feature = "db-sql")]
-pub async fn start<A, M>() -> anyhow::Result<()>
-where
-    A: App + Default + Send + Sync + 'static,
-    M: MigratorTrait,
-{
-    let config = get_app_config::<A>()?;
+    #[cfg(feature = "cli")]
+    let environment = roadster_cli.environment.clone();
+    #[cfg(not(feature = "cli"))]
+    let environment: Option<Environment> = None;
+
+    let config = AppConfig::new(environment)?;
+
+    A::init_tracing(&config)?;
+
+    debug!("{config:?}");
 
     #[cfg(feature = "db-sql")]
     let db = Database::connect(A::db_connection_options(&config)?).await?;
     // Todo: enable manual migrations
     #[cfg(feature = "db-sql")]
     if config.database.auto_migrate {
-        M::up(&db, None).await?;
+        A::M::up(&db, None).await?;
     }
 
-    run_app::<A>(config, db).await
-}
-
-fn get_app_config<A>() -> anyhow::Result<AppConfig>
-where
-    A: App + Default + Send + Sync + 'static,
-{
-    let config = AppConfig::new()?;
-
-    A::init_tracing(&config)?;
-
-    debug!("{config:?}");
-
-    Ok(config)
-}
-
-// todo: this method is getting unweildy, we should break it up
-async fn run_app<A>(
-    config: AppConfig,
-    #[cfg(feature = "db-sql")] db: DatabaseConnection,
-) -> anyhow::Result<()>
-where
-    A: App + Default + Send + Sync + 'static,
-{
     #[cfg(feature = "sidekiq")]
     let redis = {
         let redis_config = &config.worker.sidekiq.redis;
@@ -122,6 +140,16 @@ where
     let state = A::context_to_state(context.clone()).await?;
     let router = router.with_state::<()>(state.clone());
     let state = Arc::new(state);
+
+    #[cfg(feature = "cli")]
+    {
+        if roadster_cli.run(&roadster_cli, &context, &state).await? {
+            return Ok(());
+        }
+        if app_cli.run(&app_cli, &context, &state).await? {
+            return Ok(());
+        }
+    }
 
     let initializers = default_initializers()
         .into_iter()
@@ -263,6 +291,10 @@ where
 #[async_trait]
 pub trait App {
     type State: From<Arc<AppContext>> + Into<Arc<AppContext>> + Clone + Send + Sync + 'static;
+    #[cfg(feature = "cli")]
+    type Cli: clap::Args + RunCommand<Self::Cli, Self::State>;
+    #[cfg(feature = "db-sql")]
+    type M: MigratorTrait;
 
     fn init_tracing(config: &AppConfig) -> anyhow::Result<()> {
         init_tracing(config)?;

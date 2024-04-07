@@ -17,6 +17,7 @@ axum = "0.7.5"
 # DB
 entity = { path = "entity" }
 migration = { path = "migration" }
+clap = { version = "4.5.4", features = ["derive"] }
 
 [dev-dependencies]
 cargo-husky = { version = "1.5.0", features = ["default", "run-cargo-check", "run-cargo-clippy", "run-cargo-fmt", "run-cargo-test"] }

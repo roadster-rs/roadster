@@ -9,7 +9,7 @@ use serde_derive::{Deserialize, Serialize};
 use serde_with::serde_as;
 use url::Url;
 
-use crate::config::environment::Environment;
+use crate::config::environment::{Environment, ENVIRONMENT_ENV_VAR_NAME};
 use crate::config::initializer::Initializer;
 use crate::config::middleware::Middleware;
 use crate::util::serde_util::{default_true, UriOrString};
@@ -32,24 +32,36 @@ pub struct AppConfig {
     pub initializer: Initializer,
 }
 
+pub const ENV_VAR_PREFIX: &str = "ROADSTER";
+pub const ENV_VAR_SEPARATOR: &str = ".";
+
 impl AppConfig {
-    pub fn new() -> anyhow::Result<Self> {
+    // This runs before tracing is initialized, so we need to use `println` in order to
+    // log from this method.
+    #[allow(clippy::disallowed_macros)]
+    pub fn new(environment: Option<Environment>) -> anyhow::Result<Self> {
         dotenv().ok();
 
-        let environment = Environment::new()?;
-        let environment: &'static str = environment.into();
+        let environment = if let Some(environment) = environment {
+            println!("Using environment from CLI args: {environment:?}");
+            environment
+        } else {
+            Environment::new()?
+        };
+        let environment_str: &str = environment.into();
 
         let config: AppConfig = Config::builder()
             .add_source(config::File::with_name("config/default.toml"))
             .add_source(config::File::with_name(&format!(
-                "config/{environment}.toml"
+                "config/{environment_str}.toml"
             )))
             .add_source(
                 config::Environment::default()
-                    .prefix("roadster")
+                    .prefix(ENV_VAR_PREFIX)
                     .convert_case(Case::Kebab)
-                    .separator("."),
+                    .separator(ENV_VAR_SEPARATOR),
             )
+            .set_override(ENVIRONMENT_ENV_VAR_NAME, environment_str)?
             .build()?
             .try_deserialize()
             .map_err(|err| anyhow!("Unable to deserialize app config: {err:?}"))?;
