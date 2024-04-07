@@ -15,6 +15,8 @@
 pub mod app;
 pub mod app_context;
 pub mod auth;
+#[cfg(feature = "cli")]
+pub mod cli;
 pub mod config;
 pub mod controller;
 pub mod initializer;
