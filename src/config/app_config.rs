@@ -138,7 +138,7 @@ pub struct Tracing {
     /// Propagate traces across service boundaries. Mostly useful in microservice architectures.
     #[serde(default = "default_true")]
     pub trace_propagation: bool,
-    /// URI of the OTLP exporter where traces/metics/logs will be sent.
+    /// URI of the OTLP exporter where traces/metrics/logs will be sent.
     pub otlp_endpoint: Option<Url>,
 }
 
@@ -149,6 +149,8 @@ pub struct Tracing {
 pub struct Database {
     /// This can be overridden with an environment variable, e.g. `ROADSTER.DATABASE.URI=postgres://example:example@example:1234/example_app`
     pub uri: Url,
+    /// Whether to automatically apply migrations during the app's start up. Migrations can also
+    /// be manually performed via the `roadster migration [COMMAND]` CLI command.
     pub auto_migrate: bool,
     #[serde(default = "Database::default_connect_timeout")]
     #[serde_as(as = "serde_with::DurationMilliSeconds")]
