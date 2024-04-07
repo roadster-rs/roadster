@@ -23,9 +23,9 @@ use sea_orm_migration::MigratorTrait;
 use sidekiq::{periodic, Processor};
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
-// `debug` isn't used with some feature configurations
-#[allow(unused_imports)]
-use tracing::{debug, error, info, instrument};
+#[cfg(feature = "sidekiq")]
+use tracing::debug;
+use tracing::{error, info, instrument};
 
 use crate::app_context::AppContext;
 #[cfg(feature = "cli")]
