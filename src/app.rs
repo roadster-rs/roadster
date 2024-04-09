@@ -41,6 +41,7 @@ use crate::initializer::Initializer;
 use crate::tracing::init_tracing;
 #[cfg(feature = "sidekiq")]
 use crate::worker::queue_names;
+#[cfg(feature = "sidekiq")]
 use crate::worker::WorkerRegistry;
 
 // todo: this method is getting unweildy, we should break it up
