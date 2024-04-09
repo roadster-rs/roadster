@@ -6,7 +6,7 @@ use itertools::Itertools;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
-use sidekiq::{RedisPool, Worker, WorkerOpts};
+use sidekiq::{Processor, RedisPool, Worker, WorkerOpts};
 
 use std::marker::PhantomData;
 use std::sync::Arc;
@@ -205,5 +205,27 @@ where
         } else {
             inner.await
         }
+    }
+}
+
+pub struct WorkerRegistry<A>
+where
+    A: App + ?Sized,
+{
+    pub(crate) processor: Processor,
+    pub(crate) state: Arc<A::State>,
+}
+
+impl<A> WorkerRegistry<A>
+where
+    A: App + 'static,
+{
+    pub fn register_app_worker<Args, W>(&mut self, worker: W)
+    where
+        Args: Sync + Send + Serialize + for<'de> serde::Deserialize<'de> + 'static,
+        W: AppWorker<A, Args> + 'static,
+    {
+        let roadster_worker = RoadsterWorker::new(worker, self.state.clone());
+        self.processor.register(roadster_worker);
     }
 }

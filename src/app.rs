@@ -42,6 +42,8 @@ use crate::initializer::Initializer;
 use crate::tracing::init_tracing;
 #[cfg(feature = "sidekiq")]
 use crate::worker::queue_names;
+use crate::worker::WorkerRegistry;
+#[cfg(feature = "sidekiq")]
 use crate::worker::{AppWorker, RoadsterWorker};
 
 // todo: this method is getting unweildy, we should break it up
@@ -299,28 +301,6 @@ where
     info!("Shutdown complete");
 
     Ok(())
-}
-
-pub struct WorkerRegistry<A>
-where
-    A: App + ?Sized,
-{
-    processor: Processor,
-    state: Arc<A::State>,
-}
-
-impl<A> WorkerRegistry<A>
-where
-    A: App + 'static,
-{
-    pub fn register_app_worker<Args, W>(&mut self, worker: W)
-    where
-        Args: Sync + Send + Serialize + for<'de> serde::Deserialize<'de> + 'static,
-        W: AppWorker<A, Args> + 'static,
-    {
-        let roadster_worker = RoadsterWorker::new(worker, self.state.clone());
-        self.processor.register(roadster_worker);
-    }
 }
 
 #[async_trait]
