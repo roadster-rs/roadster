@@ -19,6 +19,8 @@ use itertools::Itertools;
 use sea_orm::{ConnectOptions, Database};
 #[cfg(feature = "db-sql")]
 use sea_orm_migration::MigratorTrait;
+use serde::Serialize;
+use sidekiq::Worker;
 #[cfg(feature = "sidekiq")]
 use sidekiq::{periodic, Processor};
 use tokio::task::JoinSet;
@@ -40,6 +42,7 @@ use crate::initializer::Initializer;
 use crate::tracing::init_tracing;
 #[cfg(feature = "sidekiq")]
 use crate::worker::queue_names;
+use crate::worker::{AppWorker, RoadsterWorker};
 
 // todo: this method is getting unweildy, we should break it up
 pub async fn start<A>(
@@ -221,9 +224,16 @@ where
             queue_names.len()
         );
         debug!("Sidekiq.rs queues: {queue_names:?}");
-        let mut processor = Processor::new(redis, queue_names);
-        A::workers(&mut processor, &context, &state);
+        let processor = {
+            let mut registry = WorkerRegistry {
+                processor: Processor::new(redis, queue_names),
+                state: state.clone(),
+            };
+            A::workers(&mut registry, &context, &state);
+            registry.processor
+        };
         let token = processor.get_cancellation_token();
+
         (processor, token.clone(), token.drop_guard())
     };
 
@@ -289,6 +299,28 @@ where
     info!("Shutdown complete");
 
     Ok(())
+}
+
+pub struct WorkerRegistry<A>
+where
+    A: App + ?Sized,
+{
+    processor: Processor,
+    state: Arc<A::State>,
+}
+
+impl<A> WorkerRegistry<A>
+where
+    A: App + 'static,
+{
+    pub fn register_app_worker<Args, W>(&mut self, worker: W)
+    where
+        Args: Sync + Send + Serialize + for<'de> serde::Deserialize<'de> + 'static,
+        W: AppWorker<A, Args> + 'static,
+    {
+        let roadster_worker = RoadsterWorker::new(worker, self.state.clone());
+        self.processor.register(roadster_worker);
+    }
 }
 
 #[async_trait]
@@ -367,7 +399,7 @@ pub trait App: Send + Sync {
     }
 
     #[cfg(feature = "sidekiq")]
-    fn workers(_processor: &mut Processor, _context: &AppContext, _state: &Self::State) {}
+    fn workers(_registry: &mut WorkerRegistry<Self>, _context: &AppContext, _state: &Self::State) {}
 
     #[instrument(skip_all)]
     async fn serve<F>(
