@@ -1,19 +1,17 @@
 use crate::app::App;
 use crate::app_context::AppContext;
 use async_trait::async_trait;
-use clap::builder::Str;
-use convert_case::{Case, Casing};
-use derive_builder::Builder;
+
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use sidekiq::{RedisPool, Worker, WorkerOpts};
-use std::env::Args;
+
 use std::marker::PhantomData;
 use std::sync::Arc;
 use std::time::Duration;
-use tracing::{debug, error, info, instrument};
+use tracing::{error, instrument};
 use typed_builder::TypedBuilder;
 
 lazy_static! {
