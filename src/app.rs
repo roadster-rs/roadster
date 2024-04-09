@@ -19,7 +19,6 @@ use itertools::Itertools;
 use sea_orm::{ConnectOptions, Database};
 #[cfg(feature = "db-sql")]
 use sea_orm_migration::MigratorTrait;
-use serde::Serialize;
 
 #[cfg(feature = "sidekiq")]
 use sidekiq::{periodic, Processor};
@@ -43,8 +42,6 @@ use crate::tracing::init_tracing;
 #[cfg(feature = "sidekiq")]
 use crate::worker::queue_names;
 use crate::worker::WorkerRegistry;
-#[cfg(feature = "sidekiq")]
-use crate::worker::{AppWorker, RoadsterWorker};
 
 // todo: this method is getting unweildy, we should break it up
 pub async fn start<A>(

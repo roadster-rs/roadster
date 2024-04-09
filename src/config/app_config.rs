@@ -13,6 +13,7 @@ use url::Url;
 use crate::config::environment::{Environment, ENVIRONMENT_ENV_VAR_NAME};
 use crate::config::initializer::Initializer;
 use crate::config::middleware::Middleware;
+#[cfg(feature = "sidekiq")]
 use crate::config::worker::Worker;
 use crate::util::serde_util::{default_true, UriOrString};
 
