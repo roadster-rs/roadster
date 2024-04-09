@@ -7,11 +7,13 @@ use derive_builder::Builder;
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
 use sidekiq::{RedisPool, Worker, WorkerOpts};
 use std::env::Args;
 use std::marker::PhantomData;
 use std::sync::Arc;
 use std::time::Duration;
+use tracing::{debug, error, info, instrument};
 use typed_builder::TypedBuilder;
 
 lazy_static! {
@@ -28,7 +30,9 @@ pub fn queue_names(custom_queue_names: &Vec<String>) -> Vec<String> {
         .collect()
 }
 
+#[serde_as]
 #[derive(Debug, Clone, Serialize, Deserialize, TypedBuilder)]
+#[serde(default, rename_all = "kebab-case")]
 pub struct AppWorkerConfig {
     pub max_retries: usize,
     #[serde_as(as = "Option<serde_with::DurationSeconds>")]
@@ -46,12 +50,20 @@ impl Default for AppWorkerConfig {
     }
 }
 
+#[async_trait]
 pub trait AppWorker<A, Args>: Worker<Args>
 where
+    Self: Sized,
     A: App,
+    Args: Send + Sync + serde::Serialize + 'static,
 {
+    async fn enqueue(state: &A::State, args: Args) -> anyhow::Result<()> {
+        let context: Arc<AppContext> = state.clone().into();
+        Self::perform_async(&context.redis, args).await?;
+        Ok(())
+    }
+
     fn config(&self, state: &A::State) -> AppWorkerConfig {
-        // AppWorkerConfig::default().queue(self.queue(state))
         AppWorkerConfig::builder()
             .max_retries(AppWorker::max_retries(self, state))
             .timeout(self.timeout(state))
@@ -99,7 +111,7 @@ where
 pub struct RoadsterWorker<A, Args, W>
 where
     A: App,
-    Args: Send + Sync + Serialize,
+    Args: Send + Sync + Serialize + 'static,
     W: AppWorker<A, Args>,
 {
     inner: W,
@@ -160,20 +172,7 @@ where
     where
         Self: Sized,
     {
-        let self_name = {
-            let name = std::any::type_name::<W>().to_case(Case::UpperCamel);
-            name.split("::")
-                .last()
-                .unwrap_or(&name)
-                .to_case(Case::UpperCamel)
-        };
-        let inner_name = if W::use_fqcn() {
-            std::any::type_name::<W>().to_case(Case::UpperCamel)
-        } else {
-            W::class_name()
-        };
-
-        format!("{}::{}", self_name, inner_name)
+        W::class_name()
     }
 
     async fn perform_async(redis: &RedisPool, args: Args) -> sidekiq::Result<()>
@@ -192,7 +191,21 @@ where
         W::perform_in(redis, duration, args).await
     }
 
+    #[instrument(skip_all)]
     async fn perform(&self, args: Args) -> sidekiq::Result<()> {
-        self.inner.perform(args).await
+        let inner = self.inner.perform(args);
+
+        if let Some(timeout) = self.inner_config.timeout {
+            tokio::time::timeout(timeout, inner).await.map_err(|err| {
+                error!(
+                    "Worker {} timed out after {} seconds",
+                    W::class_name(),
+                    timeout.as_secs()
+                );
+                sidekiq::Error::Any(Box::new(err))
+            })?
+        } else {
+            inner.await
+        }
     }
 }

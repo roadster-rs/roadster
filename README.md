@@ -115,10 +115,17 @@ locally in a standalone docker container.
 git clone https://github.com/roadster-rs/standalone_sidekiq_dashboard.git
 cd standalone_sidekiq_dashboard
 docker build -t standalone-sidekiq .
+# Linux docker commands
 # Development
 docker run --network=host standalone-sidekiq
 # Test
 docker run --network=host -e REDIS_URL='redis://localhost:6380' standalone-sidekiq
+
+# Mac docker commands -- todo: see if there's a command that will work on both mac and linux
+# Development
+docker run -p 9292:9292 -e REDIS_URL=redis://host.docker.internal:6379 standalone-sidekiq
+# Test
+docker run -p 9292:9292 -e REDIS_URL=redis://host.docker.internal:6380 standalone-sidekiq
 ```
 
 ## Redis Insights
