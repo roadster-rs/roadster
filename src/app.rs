@@ -19,7 +19,6 @@ use itertools::Itertools;
 use sea_orm::{ConnectOptions, Database};
 #[cfg(feature = "db-sql")]
 use sea_orm_migration::MigratorTrait;
-
 #[cfg(feature = "sidekiq")]
 use sidekiq::{periodic, Processor};
 use tokio::task::JoinSet;

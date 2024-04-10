@@ -80,7 +80,6 @@ chrono = { version = "0.4.35", features = ["serde"] }
 byte-unit = { version = "5.1.4", features = ["serde"] }
 convert_case = "0.6.0"
 const_format = "0.2.32"
-derive_builder = "0.20.0"
 typed-builder = "0.18.1"
 
 [dev-dependencies]
