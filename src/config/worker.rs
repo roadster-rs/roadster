@@ -1,5 +1,5 @@
 use crate::config::app_config::Redis;
-use crate::worker::AppWorkerConfig;
+use crate::worker::app_worker::AppWorkerConfig;
 use serde_derive::{Deserialize, Serialize};
 
 #[cfg(feature = "sidekiq")]
