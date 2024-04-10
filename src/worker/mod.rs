@@ -2,21 +2,19 @@ pub mod app_worker;
 pub mod registry;
 
 use crate::app::App;
-use crate::app_context::AppContext;
+
 use crate::worker::app_worker::AppWorkerConfig;
 use app_worker::AppWorker;
 use async_trait::async_trait;
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use serde::Serialize;
-use serde_derive::Deserialize;
-use serde_with::serde_as;
-use sidekiq::{Processor, RedisPool, Worker, WorkerOpts};
+
+use sidekiq::{RedisPool, Worker, WorkerOpts};
 use std::marker::PhantomData;
 use std::sync::Arc;
 use std::time::Duration;
 use tracing::{error, instrument};
-use typed_builder::TypedBuilder;
 
 lazy_static! {
     pub static ref DEFAULT_QUEUE_NAMES: Vec<String> =
@@ -32,6 +30,9 @@ pub fn queue_names(custom_queue_names: &Vec<String>) -> Vec<String> {
         .collect()
 }
 
+/// Worker used by Roadster to wrap the consuming app's workers to add additional behavior. For
+/// example, [RoadsterWorker] is by default configured to automatically abort the app's worker
+/// when it exceeds a certain timeout.
 pub(crate) struct RoadsterWorker<A, Args, W>
 where
     A: App,
@@ -119,7 +120,7 @@ where
     async fn perform(&self, args: Args) -> sidekiq::Result<()> {
         let inner = self.inner.perform(args);
 
-        if let Some(timeout) = self.inner_config.timeout {
+        if let Some(timeout) = self.inner_config.max_duration {
             tokio::time::timeout(timeout, inner).await.map_err(|err| {
                 error!(
                     "Worker {} timed out after {} seconds",
