@@ -1,6 +1,5 @@
 use crate::app::App;
 use crate::app_context::AppContext;
-use crate::worker::AppWorkerConfig;
 use async_trait::async_trait;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::serde_as;
