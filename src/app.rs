@@ -42,7 +42,7 @@ use crate::tracing::init_tracing;
 #[cfg(feature = "sidekiq")]
 use crate::worker::queue_names;
 #[cfg(feature = "sidekiq")]
-use crate::worker::WorkerRegistry;
+use crate::worker::registry::WorkerRegistry;
 
 // todo: this method is getting unweildy, we should break it up
 pub async fn start<A>(
