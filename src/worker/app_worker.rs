@@ -71,37 +71,6 @@ where
             .build()
     }
 
-    /// The name of the queue the worker will run on.
-    ///
-    /// See [sidekiq::WorkerOpts::queue].
-    ///
-    /// [Worker] requires some options via the static method [Worker::opts]. So, unfortunately,
-    /// those options need to be provided via a static method on [Self].
-    fn queue() -> Option<String> {
-        None
-    }
-
-    /// Whether the worker should retry on failure.
-    ///
-    /// See [sidekiq::WorkerOpts::retry].
-    ///
-    /// [Worker] requires some options via the static method [Worker::opts]. So, unfortunately,
-    /// those options need to be provided via a static method on [Self].
-    fn retry() -> Option<bool> {
-        None
-    }
-
-    /// The duration for which the worker's jobs should be unique. Other matching jobs that are
-    /// enqueued during the duration will be ignored.
-    ///
-    /// See [sidekiq::WorkerOpts::unique_for].
-    ///
-    /// [Worker] requires some options via the static method [Worker::opts]. So, unfortunately,
-    /// those options need to be provided via a static method on [Self].
-    fn unique_for() -> Option<Duration> {
-        None
-    }
-
     /// See [AppWorkerConfig::max_retries].
     ///
     /// The default implementation uses the value from the app's config file.

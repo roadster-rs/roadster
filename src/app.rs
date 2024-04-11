@@ -212,7 +212,7 @@ where
             .config
             .worker
             .sidekiq
-            .queue_names
+            .queues
             .clone()
             .into_iter()
             .chain(A::worker_queues(&context, &state))

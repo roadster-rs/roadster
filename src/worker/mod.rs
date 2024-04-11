@@ -77,16 +77,10 @@ where
     where
         Self: Sized,
     {
-        let opts = WorkerOpts::new();
-        let opts = W::queue()
-            .into_iter()
-            .fold(opts, |opts, queue| opts.queue(queue));
-        let opts = W::retry()
-            .into_iter()
-            .fold(opts, |opts, retry| opts.retry(retry));
-        W::unique_for()
-            .into_iter()
-            .fold(opts, |opts, unique_for| opts.unique_for(unique_for))
+        // This method not implemented because `RoadsterWorker` should not be enqueued directly,
+        // and this method is only used when enqueuing. Instead, Sidekiq.rs will use the
+        // `W::opts` implementation directly.
+        unimplemented!()
     }
 
     fn max_retries(&self) -> usize {
@@ -97,23 +91,30 @@ where
     where
         Self: Sized,
     {
+        // This method is implemented because it's used both when registering the worker, and
+        // when enqueuing a job. We forward the implementation to `W::classname` because that's
+        // what Sidekiq.rs uses specifically. If we attempt to override this, our impl will be used
+        // when registering the worker, but not when enqueuing a job, so the worker will not pick
+        // up the jobs.
         W::class_name()
     }
 
-    async fn perform_async(redis: &RedisPool, args: Args) -> sidekiq::Result<()>
+    async fn perform_async(_redis: &RedisPool, _args: Args) -> sidekiq::Result<()>
     where
         Self: Sized,
         Args: Send + Sync + Serialize + 'static,
     {
-        W::perform_async(redis, args).await
+        // This method not implemented because `RoadsterWorker` should not be enqueued directly.
+        unimplemented!()
     }
 
-    async fn perform_in(redis: &RedisPool, duration: Duration, args: Args) -> sidekiq::Result<()>
+    async fn perform_in(_redis: &RedisPool, _duration: Duration, _args: Args) -> sidekiq::Result<()>
     where
         Self: Sized,
         Args: Send + Sync + Serialize + 'static,
     {
-        W::perform_in(redis, duration, args).await
+        // This method not implemented because `RoadsterWorker` should not be enqueued directly.
+        unimplemented!()
     }
 
     #[instrument(skip_all)]

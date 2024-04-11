@@ -19,7 +19,7 @@ pub struct Sidekiq {
     pub redis: Redis,
 
     #[serde(default)]
-    pub queue_names: Vec<String>,
+    pub queues: Vec<String>,
 
     /// The default worker config.
     #[serde(default)]
