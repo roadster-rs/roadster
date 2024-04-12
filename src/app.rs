@@ -39,7 +39,9 @@ use crate::initializer::default::default_initializers;
 use crate::initializer::Initializer;
 use crate::tracing::init_tracing;
 #[cfg(feature = "sidekiq")]
-use crate::worker::queue_names;
+use crate::worker::queues;
+#[cfg(feature = "sidekiq")]
+use crate::worker::registry::WorkerRegistry;
 
 // todo: this method is getting unweildy, we should break it up
 pub async fn start<A>(
@@ -210,20 +212,27 @@ where
             .config
             .worker
             .sidekiq
-            .queue_names
+            .queues
             .clone()
             .into_iter()
             .chain(A::worker_queues(&context, &state))
             .collect();
-        let queue_names = queue_names(&custom_queue_names);
+        let queues = queues(&custom_queue_names);
         info!(
             "Creating Sidekiq.rs (rusty-sidekiq) processor with {} queues",
-            queue_names.len()
+            queues.len()
         );
-        debug!("Sidekiq.rs queues: {queue_names:?}");
-        let mut processor = Processor::new(redis, queue_names);
-        A::workers(&mut processor, &context, &state);
+        debug!("Sidekiq.rs queues: {queues:?}");
+        let processor = {
+            let mut registry = WorkerRegistry {
+                processor: Processor::new(redis, queues.clone()),
+                state: state.clone(),
+            };
+            A::workers(&mut registry, &context, &state);
+            registry.processor
+        };
         let token = processor.get_cancellation_token();
+
         (processor, token.clone(), token.drop_guard())
     };
 
@@ -363,13 +372,12 @@ pub trait App: Send + Sync {
     /// instance. This can reduce the risk of copy/paste errors and typos.
     #[cfg(feature = "sidekiq")]
     fn worker_queues(_context: &AppContext, _state: &Self::State) -> Vec<String> {
-        vec![]
+        Default::default()
     }
 
     #[cfg(feature = "sidekiq")]
-    fn workers(_processor: &mut Processor, _context: &AppContext, _state: &Self::State) {}
+    fn workers(_registry: &mut WorkerRegistry<Self>, _context: &AppContext, _state: &Self::State) {}
 
-    #[instrument(skip_all)]
     async fn serve<F>(
         router: Router,
         shutdown_signal: F,
@@ -408,7 +416,6 @@ pub trait App: Send + Sync {
     }
 }
 
-#[instrument(skip_all)]
 async fn graceful_shutdown_signal<F>(cancellation_token: CancellationToken, app_shutdown_signal: F)
 where
     F: Future<Output = ()> + Send + 'static,

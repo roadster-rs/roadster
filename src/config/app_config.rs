@@ -13,6 +13,8 @@ use url::Url;
 use crate::config::environment::{Environment, ENVIRONMENT_ENV_VAR_NAME};
 use crate::config::initializer::Initializer;
 use crate::config::middleware::Middleware;
+#[cfg(feature = "sidekiq")]
+use crate::config::worker::Worker;
 use crate::util::serde_util::{default_true, UriOrString};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -52,6 +54,8 @@ impl AppConfig {
         let environment_str: &str = environment.into();
 
         let config: AppConfig = Config::builder()
+            // Todo: allow other file formats?
+            // Todo: allow splitting config into multiple files?
             .add_source(config::File::with_name("config/default.toml"))
             .add_source(config::File::with_name(&format!(
                 "config/{environment_str}.toml"
@@ -183,25 +187,6 @@ impl Database {
     fn default_acquire_timeout() -> Duration {
         Duration::from_millis(1000)
     }
-}
-
-#[cfg(feature = "sidekiq")]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct Worker {
-    // Todo: Make Redis optional for workers?
-    #[cfg(feature = "sidekiq")]
-    pub sidekiq: Sidekiq,
-}
-
-#[cfg(feature = "sidekiq")]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct Sidekiq {
-    // Todo: Make Redis optional for workers?
-    pub redis: Redis,
-    #[serde(default)]
-    pub queue_names: Vec<String>,
 }
 
 #[cfg(feature = "sidekiq")]
