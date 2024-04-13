@@ -17,15 +17,19 @@ use typed_builder::TypedBuilder;
 #[serde(default, rename_all = "kebab-case")]
 pub struct AppWorkerConfig {
     /// The maximum number of times a job should be retried on failure.
+    #[builder(default = AppWorkerConfig::default().max_retries)]
     pub max_retries: usize,
     /// True if Roadster should enforce a timeout on the app's workers. The default duration of
     /// the timeout can be configured with the `max-duration` option.
+    #[builder(default = AppWorkerConfig::default().timeout)]
     pub timeout: bool,
     /// The maximum duration workers should run for. The timeout is only enforced if `timeout`
     /// is `true`.
     #[serde_as(as = "serde_with::DurationSeconds")]
+    #[builder(default = AppWorkerConfig::default().max_duration)]
     pub max_duration: Duration,
     /// See <https://docs.rs/rusty-sidekiq/latest/sidekiq/trait.Worker.html#method.disable_argument_coercion>
+    #[builder(default = AppWorkerConfig::default().disable_argument_coercion)]
     pub disable_argument_coercion: bool,
 }
 

@@ -117,15 +117,15 @@ cd standalone_sidekiq_dashboard
 docker build -t standalone-sidekiq .
 # Linux docker commands
 # Development
-docker run --network=host standalone-sidekiq
+docker run -d --network=host standalone-sidekiq
 # Test
-docker run --network=host -e REDIS_URL='redis://localhost:6380' standalone-sidekiq
+docker run -d --network=host -e REDIS_URL='redis://localhost:6380' standalone-sidekiq
 
 # Mac docker commands -- todo: see if there's a command that will work on both mac and linux
 # Development
-docker run -p 9292:9292 -e REDIS_URL=redis://host.docker.internal:6379 standalone-sidekiq
+docker run -d -p 9292:9292 -e REDIS_URL=redis://host.docker.internal:6379 standalone-sidekiq
 # Test
-docker run -p 9292:9292 -e REDIS_URL=redis://host.docker.internal:6380 standalone-sidekiq
+docker run -d -p 9292:9292 -e REDIS_URL=redis://host.docker.internal:6380 standalone-sidekiq
 ```
 
 ## Redis Insights
@@ -133,6 +133,9 @@ docker run -p 9292:9292 -e REDIS_URL=redis://host.docker.internal:6380 standalon
 You can also inspect the Redis DB directly using [RedisInsight](https://redis.io/docs/connect/insight/).
 
 ```shell
+# Linux docker commands
+docker run -d --name redisinsight --network=host -p 5540:5540 redis/redisinsight:latest
+# Mac docker commands -- todo: see if there's a command that will work on both mac and linux
 docker run -d --name redisinsight -p 5540:5540 redis/redisinsight:latest
 ```
 
