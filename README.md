@@ -44,7 +44,7 @@ docker run -d -p 6379:6379 redis:7.2-alpine
 docker run -d -p 6380:6379 redis:7.2-alpine
 ```
 
-# Tracing (via OpenTelemetry)
+# Tracing + OpenTelemetry
 
 Roadster allows reporting traces and metrics using the `tracing` and `opentelemetry_rust` integrations. Provide the URL
 of your OTLP exporter in order to report the trace/metric data to your telemetry provider (e.g., SigNoz, New Relic,
