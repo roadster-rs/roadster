@@ -4,7 +4,7 @@
 [![Feature Powerset](https://github.com/roadster-rs/roadster/actions/workflows/feature_powerset.yml/badge.svg)](https://github.com/roadster-rs/roadster/actions/workflows/feature_powerset.yml)
 
 A "Batteries Included" web framework for rust designed to get you moving fast 🏎️. Inspired by other fully-featured
-frameworks such as [Rails](https://rubyonrails.org/), [Loco](https://github.com/loco-rs/loco),
+frameworks such as [Rails](https://rubyonrails.org/), [Django](https://www.djangoproject.com/), [Laravel](https://laravel.com/), [Loco](https://github.com/loco-rs/loco),
 and [Poem](https://github.com/poem-web/poem).
 
 ## Features
@@ -24,7 +24,7 @@ and [Poem](https://github.com/poem-web/poem).
   the `db-sql` feature)
 - Built-in support for [Sidekiq.rs](https://crates.io/crates/rusty-sidekiq) for running async/background jobs (requires
   the `sidekiq` feature)
-- Export traces/metrics using OpenTelemetry (requires the `otel` feature)
+- Structured logs/traces using tokio's [tracing](https://docs.rs/tracing/latest/tracing/) crate. Export traces/metrics using OpenTelemetry (requires the `otel` feature).
 
 # Start local DB
 
