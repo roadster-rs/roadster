@@ -228,7 +228,7 @@ where
                 processor: Processor::new(redis, queues.clone()),
                 state: state.clone(),
             };
-            A::workers(&mut registry, &context, &state);
+            A::workers(&mut registry, &context, &state).await?;
             registry.processor
         };
         let token = processor.get_cancellation_token();
@@ -376,7 +376,13 @@ pub trait App: Send + Sync {
     }
 
     #[cfg(feature = "sidekiq")]
-    fn workers(_registry: &mut WorkerRegistry<Self>, _context: &AppContext, _state: &Self::State) {}
+    async fn workers(
+        _registry: &mut WorkerRegistry<Self>,
+        _context: &AppContext,
+        _state: &Self::State,
+    ) -> anyhow::Result<()> {
+        Ok(())
+    }
 
     async fn serve<F>(
         router: Router,

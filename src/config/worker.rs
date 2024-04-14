@@ -25,6 +25,6 @@ pub struct Sidekiq {
 
     /// The default app worker config. Values can be overridden on a per-worker basis by
     /// implementing the corresponding [crate::worker::app_worker::AppWorker] methods.
-    #[serde(default)]
+    #[serde(default, flatten)]
     pub worker_config: AppWorkerConfig,
 }
