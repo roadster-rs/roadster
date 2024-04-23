@@ -4,7 +4,8 @@
 [![Feature Powerset](https://github.com/roadster-rs/roadster/actions/workflows/feature_powerset.yml/badge.svg)](https://github.com/roadster-rs/roadster/actions/workflows/feature_powerset.yml)
 
 A "Batteries Included" web framework for rust designed to get you moving fast 🏎️. Inspired by other fully-featured
-frameworks such as [Rails](https://rubyonrails.org/), [Django](https://www.djangoproject.com/), [Laravel](https://laravel.com/), [Loco](https://github.com/loco-rs/loco),
+frameworks such
+as [Rails](https://rubyonrails.org/), [Django](https://www.djangoproject.com/), [Laravel](https://laravel.com/), [Loco](https://github.com/loco-rs/loco),
 and [Poem](https://github.com/poem-web/poem).
 
 ## Features
@@ -24,7 +25,8 @@ and [Poem](https://github.com/poem-web/poem).
   the `db-sql` feature)
 - Built-in support for [Sidekiq.rs](https://crates.io/crates/rusty-sidekiq) for running async/background jobs (requires
   the `sidekiq` feature)
-- Structured logs/traces using tokio's [tracing](https://docs.rs/tracing/latest/tracing/) crate. Export traces/metrics using OpenTelemetry (requires the `otel` feature).
+- Structured logs/traces using tokio's [tracing](https://docs.rs/tracing/latest/tracing/) crate. Export traces/metrics
+  using OpenTelemetry (requires the `otel` feature).
 
 # Start local DB
 
@@ -136,6 +138,7 @@ You can also inspect the Redis DB directly using [RedisInsight](https://redis.io
 # Linux docker commands
 docker run -d --name redisinsight --network=host -p 5540:5540 redis/redisinsight:latest
 # Mac docker commands -- todo: see if there's a command that will work on both mac and linux
+# Use `host.docker.internal` as the host domain in redis insight (instead of `127.0.0.1`)
 docker run -d --name redisinsight -p 5540:5540 redis/redisinsight:latest
 ```
 

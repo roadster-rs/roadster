@@ -45,7 +45,7 @@ sea-orm-migration = { version = "1.0.0-rc.2", features = ["runtime-tokio-rustls"
 
 # Workers
 # Todo: the default `rss-stats` feature has a dependency that currently can't be satisfied (memchr: ~2.3)
-rusty-sidekiq = { version = "0.10.0", default-features = false, optional = true }
+rusty-sidekiq = { version = "0.10.2", default-features = false, optional = true }
 bb8 = { version = "0.8.3", optional = true }
 num_cpus = { version = "1.16.0", optional = true }
 

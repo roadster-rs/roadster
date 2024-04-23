@@ -33,6 +33,8 @@ use crate::cli::{RoadsterCli, RunCommand, RunRoadsterCommand};
 use crate::config::app_config::AppConfig;
 #[cfg(not(feature = "cli"))]
 use crate::config::environment::Environment;
+#[cfg(feature = "sidekiq")]
+use crate::config::worker::StaleCleanUpBehavior;
 use crate::controller::middleware::default::default_middleware;
 use crate::controller::middleware::Middleware;
 use crate::initializer::default::default_initializers;
@@ -205,9 +207,13 @@ where
 
     #[cfg(feature = "sidekiq")]
     let (processor, sidekiq_cancellation_token, _sidekiq_cancellation_token_drop_guard) = {
-        // Periodic jobs are not removed automatically. Remove any periodic jobs that were
-        // previously added. They should be re-added by `App::worker`.
-        periodic::destroy_all(redis.clone()).await?;
+        if context.config.worker.sidekiq.periodic.stale_cleanup
+            == StaleCleanUpBehavior::AutoCleanAll
+        {
+            // Periodic jobs are not removed automatically. Remove any periodic jobs that were
+            // previously added. They should be re-added by `App::worker`.
+            periodic::destroy_all(redis.clone()).await?;
+        }
         let custom_queue_names = context
             .config
             .worker
@@ -224,11 +230,10 @@ where
         );
         debug!("Sidekiq.rs queues: {queues:?}");
         let processor = {
-            let mut registry = WorkerRegistry {
-                processor: Processor::new(redis, queues.clone()),
-                state: state.clone(),
-            };
+            let mut registry =
+                WorkerRegistry::new(Processor::new(redis, queues.clone()), state.clone());
             A::workers(&mut registry, &context, &state).await?;
+            registry.remove_stale_periodic_jobs(&context).await?;
             registry.processor
         };
         let token = processor.get_cancellation_token();

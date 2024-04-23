@@ -37,7 +37,7 @@ pub fn queues(custom_queue_names: &Vec<String>) -> Vec<String> {
 /// Worker used by Roadster to wrap the consuming app's workers to add additional behavior. For
 /// example, [RoadsterWorker] is by default configured to automatically abort the app's worker
 /// when it exceeds a certain timeout.
-pub(crate) struct RoadsterWorker<A, Args, W>
+pub struct RoadsterWorker<A, Args, W>
 where
     A: App,
     Args: Send + Sync + Serialize + 'static,
