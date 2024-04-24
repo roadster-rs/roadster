@@ -8,6 +8,8 @@ use aide::axum::ApiRouter;
 use aide::openapi::OpenApi;
 #[cfg(feature = "open-api")]
 use aide::transform::TransformOpenApi;
+#[cfg(feature = "sidekiq")]
+use anyhow::anyhow;
 use async_trait::async_trait;
 #[cfg(feature = "open-api")]
 use axum::Extension;
@@ -15,12 +17,14 @@ use axum::Router;
 #[cfg(feature = "cli")]
 use clap::{Args, Command, FromArgMatches};
 use itertools::Itertools;
+#[cfg(feature = "sidekiq")]
+use num_traits::ToPrimitive;
 #[cfg(feature = "db-sql")]
 use sea_orm::{ConnectOptions, Database};
 #[cfg(feature = "db-sql")]
 use sea_orm_migration::MigratorTrait;
 #[cfg(feature = "sidekiq")]
-use sidekiq::{periodic, Processor};
+use sidekiq::{periodic, Processor, ProcessorConfig};
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
 #[cfg(feature = "sidekiq")]
@@ -108,11 +112,15 @@ where
 
     #[cfg(feature = "sidekiq")]
     let redis = {
-        let redis_config = &config.worker.sidekiq.redis;
+        let sidekiq_config = &config.worker.sidekiq;
+        let redis_config = &sidekiq_config.redis;
         let redis = sidekiq::RedisConnectionManager::new(redis_config.uri.to_string())?;
+        let max_conns = redis_config
+            .max_connections
+            .unwrap_or(sidekiq_config.num_workers + 5);
         bb8::Pool::builder()
             .min_idle(redis_config.min_idle)
-            .max_size(redis_config.max_connections)
+            .max_size(max_conns)
             .build(redis)
             .await?
     };
@@ -230,8 +238,22 @@ where
         );
         debug!("Sidekiq.rs queues: {queues:?}");
         let processor = {
-            let mut registry =
-                WorkerRegistry::new(Processor::new(redis, queues.clone()), state.clone());
+            let num_workers = context
+                .config
+                .worker
+                .sidekiq
+                .num_workers
+                .to_usize()
+                .ok_or_else(|| {
+                    anyhow!(
+                        "Unable to convert num_workers `{}` to usize",
+                        context.config.worker.sidekiq.num_workers
+                    )
+                })?;
+            let processor_config: ProcessorConfig = Default::default();
+            let processor_config = processor_config.num_workers(num_workers);
+            let processor = Processor::new(redis, queues.clone()).with_config(processor_config);
+            let mut registry = WorkerRegistry::new(processor, state.clone());
             A::workers(&mut registry, &context, &state).await?;
             registry.remove_stale_periodic_jobs(&context).await?;
             registry.processor

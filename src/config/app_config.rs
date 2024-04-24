@@ -188,25 +188,3 @@ impl Database {
         Duration::from_millis(1000)
     }
 }
-
-#[cfg(feature = "sidekiq")]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct Redis {
-    pub uri: Url,
-    #[serde(default = "Redis::default_min_idle")]
-    pub min_idle: Option<u32>,
-    #[serde(default = "Redis::default_max_connections")]
-    pub max_connections: u32,
-}
-
-#[cfg(feature = "sidekiq")]
-impl Redis {
-    fn default_min_idle() -> Option<u32> {
-        Some(5)
-    }
-
-    fn default_max_connections() -> u32 {
-        (num_cpus::get() + 5) as u32
-    }
-}
