@@ -7,7 +7,7 @@ use dotenvy::dotenv;
 use serde_derive::{Deserialize, Serialize};
 #[cfg(feature = "db-sql")]
 use serde_with::serde_as;
-#[cfg(any(feature = "otel", feature = "db-sql", feature = "sidekiq"))]
+#[cfg(any(feature = "otel", feature = "db-sql"))]
 use url::Url;
 
 use crate::config::environment::{Environment, ENVIRONMENT_ENV_VAR_NAME};
