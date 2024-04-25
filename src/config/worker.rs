@@ -3,16 +3,13 @@ use serde_derive::{Deserialize, Serialize};
 use strum_macros::{EnumString, IntoStaticStr};
 use url::Url;
 
-#[cfg(feature = "sidekiq")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Worker {
     // Todo: Make Redis optional for workers?
-    #[cfg(feature = "sidekiq")]
     pub sidekiq: Sidekiq,
 }
 
-#[cfg(feature = "sidekiq")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Sidekiq {
@@ -50,7 +47,6 @@ impl Sidekiq {
     }
 }
 
-#[cfg(feature = "sidekiq")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Periodic {
@@ -74,18 +70,22 @@ pub enum StaleCleanUpBehavior {
     AutoCleanStale,
 }
 
-#[cfg(feature = "sidekiq")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Redis {
     pub uri: Url,
+    /// The configuration for the Redis connection pool used for enqueuing Sidekiq jobs in Redis.
     #[serde(default)]
+    pub enqueue_pool: ConnectionPool,
+    /// The configuration for the Redis connection pool used by [sidekiq::Processor] to fetch
+    /// Sidekiq jobs from Redis.
+    #[serde(default)]
+    pub fetch_pool: ConnectionPool,
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[serde(default, rename_all = "kebab-case")]
+pub struct ConnectionPool {
     pub min_idle: Option<u32>,
-    /// The maximum number of Redis connections to allow. If not specified, will default to
-    /// [worker.sidekiq.num-workers][crate::config::worker::Sidekiq], plus a small amount to
-    /// allow other things to access Redis as needed, for example, a health check endpoint.
-    // Todo: Is it okay if this is equal to or smaller than the number of workers, or does each
-    //  worker task consume a connection?
-    #[serde(default)]
     pub max_connections: Option<u32>,
 }

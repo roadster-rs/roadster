@@ -1,4 +1,6 @@
 use std::sync::Arc;
+#[cfg(feature = "sidekiq")]
+use std::time::Duration;
 use std::time::Instant;
 
 #[cfg(feature = "open-api")]
@@ -21,6 +23,7 @@ use schemars::JsonSchema;
 #[cfg(feature = "db-sql")]
 use sea_orm::DatabaseConnection;
 use serde_derive::{Deserialize, Serialize};
+use serde_with::{serde_as, skip_serializing_none};
 #[cfg(feature = "sidekiq")]
 use sidekiq::redis_rs::cmd;
 use tracing::instrument;
@@ -57,19 +60,31 @@ where
 #[cfg_attr(feature = "open-api", derive(JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct HeathCheckResponse {
-    pub ping_latency: u128,
+    /// Total latency of checking the health of the app.
+    pub latency: u128,
     #[cfg(feature = "db-sql")]
     pub db: ResourceHealth,
+    /// Health of the Redis connection used to enqueue Sidekiq jobs.
     #[cfg(feature = "sidekiq")]
-    pub redis: ResourceHealth,
+    pub redis_enqueue: ResourceHealth,
+    /// Health of the Redis connection used to fetch Sidekiq jobs.
+    #[cfg(feature = "sidekiq")]
+    pub redis_fetch: ResourceHealth,
 }
 
+#[serde_as]
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "open-api", derive(JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct ResourceHealth {
     status: Status,
-    ping_latency: u128,
+    /// How long it takes to acquire a connection from the pool.
+    acquire_conn_latency: Option<u128>,
+    /// How long it takes to ping the resource after the connection is acquired.
+    ping_latency: Option<u128>,
+    /// Total latency of checking the health of the resource.
+    latency: u128,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -101,29 +116,25 @@ where
         let db_timer = db_timer.elapsed();
         ResourceHealth {
             status: db_status,
-            ping_latency: db_timer.as_millis(),
+            acquire_conn_latency: None,
+            ping_latency: None,
+            latency: db_timer.as_millis(),
         }
     };
 
     #[cfg(feature = "sidekiq")]
-    let redis = {
-        let redis_timer = Instant::now();
-        let redis_status = match ping_redis(&state.redis).await {
-            Ok(_) => Status::Ok,
-            _ => Status::Err,
-        };
-        let redis_timer = redis_timer.elapsed();
-        ResourceHealth {
-            status: redis_status,
-            ping_latency: redis_timer.as_millis(),
-        }
-    };
+    let redis_enqueue = redis_health(&state.redis_enqueue).await;
+    #[cfg(feature = "sidekiq")]
+    let redis_fetch = redis_health(&state.redis_fetch).await;
+
     Ok(Json(HeathCheckResponse {
-        ping_latency: timer.elapsed().as_millis(),
+        latency: timer.elapsed().as_millis(),
         #[cfg(feature = "db-sql")]
         db,
         #[cfg(feature = "sidekiq")]
-        redis,
+        redis_enqueue,
+        #[cfg(feature = "sidekiq")]
+        redis_fetch,
     }))
 }
 
@@ -136,15 +147,38 @@ async fn ping_db(db: &DatabaseConnection) -> anyhow::Result<()> {
 
 #[cfg(feature = "sidekiq")]
 #[instrument(skip_all)]
-async fn ping_redis(redis: &sidekiq::RedisPool) -> anyhow::Result<()> {
+async fn redis_health(redis: &sidekiq::RedisPool) -> ResourceHealth {
+    let redis_timer = Instant::now();
+    let (redis_status, acquire_conn_latency, ping_latency) = match ping_redis(redis).await {
+        Ok((a, b)) => (Status::Ok, Some(a.as_millis()), Some(b.as_millis())),
+        _ => (Status::Err, None, None),
+    };
+    let redis_timer = redis_timer.elapsed();
+    ResourceHealth {
+        status: redis_status,
+        acquire_conn_latency,
+        ping_latency,
+        latency: redis_timer.as_millis(),
+    }
+}
+
+#[cfg(feature = "sidekiq")]
+#[instrument(skip_all)]
+async fn ping_redis(redis: &sidekiq::RedisPool) -> anyhow::Result<(Duration, Duration)> {
+    let timer = Instant::now();
     let mut conn = redis.get().await?;
+    let acquire_conn_latency = timer.elapsed();
+
+    let timer = Instant::now();
     let msg = uuid::Uuid::new_v4().to_string();
     let pong: String = cmd("PING")
         .arg(&msg)
         .query_async(conn.unnamespaced_borrow_mut())
         .await?;
+    let ping_latency = timer.elapsed();
+
     if pong == msg {
-        Ok(())
+        Ok((acquire_conn_latency, ping_latency))
     } else {
         bail!("Ping response does not match input.")
     }
@@ -156,16 +190,27 @@ fn health_get_docs(op: TransformOperation) -> TransformOperation {
         .tag(TAG)
         .response_with::<200, Json<HeathCheckResponse>, _>(|res| {
             res.example(HeathCheckResponse {
-                ping_latency: 20,
+                latency: 20,
                 #[cfg(feature = "db-sql")]
                 db: ResourceHealth {
                     status: Status::Ok,
-                    ping_latency: 10,
+                    acquire_conn_latency: None,
+                    ping_latency: None,
+                    latency: 10,
                 },
                 #[cfg(feature = "sidekiq")]
-                redis: ResourceHealth {
+                redis_enqueue: ResourceHealth {
                     status: Status::Ok,
-                    ping_latency: 10,
+                    acquire_conn_latency: Some(5),
+                    ping_latency: Some(10),
+                    latency: 15,
+                },
+                #[cfg(feature = "sidekiq")]
+                redis_fetch: ResourceHealth {
+                    status: Status::Ok,
+                    acquire_conn_latency: Some(15),
+                    ping_latency: Some(20),
+                    latency: 35,
                 },
             })
         })

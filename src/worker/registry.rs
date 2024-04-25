@@ -94,7 +94,7 @@ where
         &self,
         context: &AppContext,
     ) -> anyhow::Result<()> {
-        let mut conn = context.redis.get().await?;
+        let mut conn = context.redis_enqueue.get().await?;
         let stale_jobs = conn
             .zrange(PERIODIC_KEY.to_string(), 0, -1)
             .await?
