@@ -59,7 +59,7 @@ where
     /// [sidekiq::RedisPool] from inside the [state][App::State].
     async fn enqueue(state: &A::State, args: Args) -> anyhow::Result<()> {
         let context: Arc<AppContext> = state.clone().into();
-        Self::perform_async(&context.redis, args).await?;
+        Self::perform_async(&context.redis_enqueue, args).await?;
         Ok(())
     }
 

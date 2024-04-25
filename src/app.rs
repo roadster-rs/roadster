@@ -111,18 +111,29 @@ where
     let db = Database::connect(A::db_connection_options(&config)?).await?;
 
     #[cfg(feature = "sidekiq")]
-    let redis = {
+    let (redis_enqueue, redis_fetch) = {
         let sidekiq_config = &config.worker.sidekiq;
         let redis_config = &sidekiq_config.redis;
         let redis = sidekiq::RedisConnectionManager::new(redis_config.uri.to_string())?;
-        let max_conns = redis_config
-            .max_connections
-            .unwrap_or(sidekiq_config.num_workers + 5);
-        bb8::Pool::builder()
-            .min_idle(redis_config.min_idle)
-            .max_size(max_conns)
-            .build(redis)
-            .await?
+        let redis_enqueue = {
+            let pool = bb8::Pool::builder().min_idle(redis_config.enqueue_pool.min_idle);
+            let pool = redis_config
+                .enqueue_pool
+                .max_connections
+                .iter()
+                .fold(pool, |pool, max_conns| pool.max_size(*max_conns));
+            pool.build(redis.clone()).await?
+        };
+        let redis_fetch = {
+            let pool = bb8::Pool::builder().min_idle(redis_config.fetch_pool.min_idle);
+            let pool = redis_config
+                .fetch_pool
+                .max_connections
+                .iter()
+                .fold(pool, |pool, max_conns| pool.max_size(*max_conns));
+            pool.build(redis.clone()).await?
+        };
+        (redis_enqueue, redis_fetch)
     };
 
     let router = A::router(&config);
@@ -140,7 +151,9 @@ where
         #[cfg(feature = "db-sql")]
         db,
         #[cfg(feature = "sidekiq")]
-        redis.clone(),
+        redis_enqueue.clone(),
+        #[cfg(feature = "sidekiq")]
+        redis_fetch.clone(),
         #[cfg(feature = "open-api")]
         api,
     )
@@ -220,7 +233,7 @@ where
         {
             // Periodic jobs are not removed automatically. Remove any periodic jobs that were
             // previously added. They should be re-added by `App::worker`.
-            periodic::destroy_all(redis.clone()).await?;
+            periodic::destroy_all(redis_enqueue).await?;
         }
         let custom_queue_names = context
             .config
@@ -252,7 +265,8 @@ where
                 })?;
             let processor_config: ProcessorConfig = Default::default();
             let processor_config = processor_config.num_workers(num_workers);
-            let processor = Processor::new(redis, queues.clone()).with_config(processor_config);
+            let processor =
+                Processor::new(redis_fetch, queues.clone()).with_config(processor_config);
             let mut registry = WorkerRegistry::new(processor, state.clone());
             A::workers(&mut registry, &context, &state).await?;
             registry.remove_stale_periodic_jobs(&context).await?;
