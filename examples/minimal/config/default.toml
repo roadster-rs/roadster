@@ -15,3 +15,6 @@ acquire-timeout = 5000
 idle-timeout = 60
 min-connections = 0
 max-connections = 10
+
+[worker.sidekiq]
+queues = ["default"]
