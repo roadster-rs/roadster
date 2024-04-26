@@ -15,8 +15,11 @@ pub struct AppContext {
     pub db: DatabaseConnection,
     #[cfg(feature = "sidekiq")]
     pub redis_enqueue: sidekiq::RedisPool,
+    /// The Redis connection pool used by [sidekiq::Processor] to fetch Sidekiq jobs from Redis.
+    /// May be `None` if the [fetch_pool.max_connections][crate::config::worker::ConnectionPool]
+    /// config is set to zero, in which case the [sidekiq::Processor] would also not be started.
     #[cfg(feature = "sidekiq")]
-    pub redis_fetch: sidekiq::RedisPool,
+    pub redis_fetch: Option<sidekiq::RedisPool>,
     #[cfg(feature = "open-api")]
     pub api: Arc<OpenApi>,
     // Prevent consumers from directly creating an AppContext
@@ -28,7 +31,7 @@ impl AppContext {
         config: AppConfig,
         #[cfg(feature = "db-sql")] db: DatabaseConnection,
         #[cfg(feature = "sidekiq")] redis_enqueue: sidekiq::RedisPool,
-        #[cfg(feature = "sidekiq")] redis_fetch: sidekiq::RedisPool,
+        #[cfg(feature = "sidekiq")] redis_fetch: Option<sidekiq::RedisPool>,
         #[cfg(feature = "open-api")] api: Arc<OpenApi>,
     ) -> anyhow::Result<Self> {
         let context = Self {

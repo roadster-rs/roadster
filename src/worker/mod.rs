@@ -6,8 +6,6 @@ use crate::app::App;
 use crate::worker::app_worker::AppWorkerConfig;
 use app_worker::AppWorker;
 use async_trait::async_trait;
-use itertools::Itertools;
-use lazy_static::lazy_static;
 use serde::Serialize;
 
 use sidekiq::{RedisPool, Worker, WorkerOpts};
@@ -15,24 +13,6 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 use std::time::Duration;
 use tracing::{error, instrument};
-
-lazy_static! {
-    // Todo: We don't need to specifically provide the `default` queue. However, if no queues
-    //  are provided, Sidekiq.rs will error out. If no queues are provided, we should probably
-    //  just not initialize the Sidekiq.rs processor instead of providing a `default` queue,
-    //  which may not be what the consumer wants.
-    pub static ref DEFAULT_QUEUE_NAMES: Vec<String> =
-        ["default"].iter().map(|s| s.to_string()).collect();
-}
-
-pub fn queues(custom_queue_names: &Vec<String>) -> Vec<String> {
-    DEFAULT_QUEUE_NAMES
-        .iter()
-        .chain(custom_queue_names)
-        .unique()
-        .map(|s| s.to_owned())
-        .collect()
-}
 
 /// Worker used by Roadster to wrap the consuming app's workers to add additional behavior. For
 /// example, [RoadsterWorker] is by default configured to automatically abort the app's worker

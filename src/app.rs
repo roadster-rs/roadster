@@ -45,8 +45,6 @@ use crate::initializer::default::default_initializers;
 use crate::initializer::Initializer;
 use crate::tracing::init_tracing;
 #[cfg(feature = "sidekiq")]
-use crate::worker::queues;
-#[cfg(feature = "sidekiq")]
 use crate::worker::registry::WorkerRegistry;
 
 // todo: this method is getting unweildy, we should break it up
@@ -124,14 +122,24 @@ where
                 .fold(pool, |pool, max_conns| pool.max_size(*max_conns));
             pool.build(redis.clone()).await?
         };
-        let redis_fetch = {
+        let redis_fetch = if redis_config
+            .fetch_pool
+            .max_connections
+            .iter()
+            .any(|max_conns| *max_conns == 0)
+        {
+            info!(
+                "Redis fetch pool configured with size of zero, will not start the Sidekiq processor"
+            );
+            None
+        } else {
             let pool = bb8::Pool::builder().min_idle(redis_config.fetch_pool.min_idle);
             let pool = redis_config
                 .fetch_pool
                 .max_connections
                 .iter()
                 .fold(pool, |pool, max_conns| pool.max_size(*max_conns));
-            pool.build(redis.clone()).await?
+            Some(pool.build(redis.clone()).await?)
         };
         (redis_enqueue, redis_fetch)
     };
@@ -227,55 +235,65 @@ where
         })?;
 
     #[cfg(feature = "sidekiq")]
-    let (processor, sidekiq_cancellation_token, _sidekiq_cancellation_token_drop_guard) = {
-        if context.config.worker.sidekiq.periodic.stale_cleanup
-            == StaleCleanUpBehavior::AutoCleanAll
-        {
-            // Periodic jobs are not removed automatically. Remove any periodic jobs that were
-            // previously added. They should be re-added by `App::worker`.
-            periodic::destroy_all(redis_enqueue).await?;
-        }
-        let custom_queue_names = context
-            .config
-            .worker
-            .sidekiq
-            .queues
-            .clone()
-            .into_iter()
-            .chain(A::worker_queues(&context, &state))
-            .collect();
-        let queues = queues(&custom_queue_names);
-        info!(
-            "Creating Sidekiq.rs (rusty-sidekiq) processor with {} queues",
-            queues.len()
-        );
-        debug!("Sidekiq.rs queues: {queues:?}");
-        let processor = {
-            let num_workers = context
+    let (processor, sidekiq_cancellation_token, _sidekiq_cancellation_token_drop_guard) =
+        if redis_fetch.is_some() && context.config.worker.sidekiq.queues.is_empty() {
+            info!("No Sidekiq queues configured, not starting the Sidekiq processor");
+            (None, None, None)
+        } else if let Some(redis_fetch) = redis_fetch {
+            if context.config.worker.sidekiq.periodic.stale_cleanup
+                == StaleCleanUpBehavior::AutoCleanAll
+            {
+                // Periodic jobs are not removed automatically. Remove any periodic jobs that were
+                // previously added. They should be re-added by `App::worker`.
+                periodic::destroy_all(redis_enqueue).await?;
+            }
+            let queues = context
                 .config
                 .worker
                 .sidekiq
-                .num_workers
-                .to_usize()
-                .ok_or_else(|| {
-                    anyhow!(
-                        "Unable to convert num_workers `{}` to usize",
-                        context.config.worker.sidekiq.num_workers
-                    )
-                })?;
-            let processor_config: ProcessorConfig = Default::default();
-            let processor_config = processor_config.num_workers(num_workers);
-            let processor =
-                Processor::new(redis_fetch, queues.clone()).with_config(processor_config);
-            let mut registry = WorkerRegistry::new(processor, state.clone());
-            A::workers(&mut registry, &context, &state).await?;
-            registry.remove_stale_periodic_jobs(&context).await?;
-            registry.processor
-        };
-        let token = processor.get_cancellation_token();
+                .queues
+                .clone()
+                .into_iter()
+                .chain(A::worker_queues(&context, &state))
+                .collect_vec();
+            info!(
+                "Creating Sidekiq.rs (rusty-sidekiq) processor with {} queues",
+                queues.len()
+            );
+            debug!("Sidekiq.rs queues: {queues:?}");
+            let processor = {
+                let num_workers = context
+                    .config
+                    .worker
+                    .sidekiq
+                    .num_workers
+                    .to_usize()
+                    .ok_or_else(|| {
+                        anyhow!(
+                            "Unable to convert num_workers `{}` to usize",
+                            context.config.worker.sidekiq.num_workers
+                        )
+                    })?;
+                let processor_config: ProcessorConfig = Default::default();
+                let processor_config = processor_config.num_workers(num_workers);
+                let processor =
+                    Processor::new(redis_fetch, queues.clone()).with_config(processor_config);
+                let mut registry = WorkerRegistry::new(processor, state.clone());
+                A::workers(&mut registry, &context, &state).await?;
+                registry.remove_stale_periodic_jobs(&context).await?;
+                registry.processor
+            };
+            let token = processor.get_cancellation_token();
 
-        (processor, token.clone(), token.drop_guard())
-    };
+            (
+                Some(processor),
+                Some(token.clone()),
+                Some(token.drop_guard()),
+            )
+        } else {
+            info!("Not starting the Sidekiq processor");
+            (None, None, None)
+        };
 
     let cancel_token = CancellationToken::new();
     let mut join_set = JoinSet::new();
@@ -293,7 +311,9 @@ where
     // Task to run the sidekiq processor
     #[cfg(feature = "sidekiq")]
     join_set.spawn(Box::pin(async {
-        processor.run().await;
+        if let Some(processor) = processor {
+            processor.run().await;
+        }
         Ok(())
     }));
 
@@ -536,7 +556,7 @@ async fn graceful_shutdown<F1, F2>(
     shutdown_signal: F1,
     app_graceful_shutdown: F2,
     #[cfg(feature = "db-sql")] context: Arc<AppContext>,
-    #[cfg(feature = "sidekiq")] sidekiq_cancellation_token: CancellationToken,
+    #[cfg(feature = "sidekiq")] sidekiq_cancellation_token: Option<CancellationToken>,
 ) -> anyhow::Result<()>
 where
     F1: Future<Output = ()> + Send + 'static,
@@ -553,7 +573,7 @@ where
     };
 
     #[cfg(feature = "sidekiq")]
-    {
+    if let Some(sidekiq_cancellation_token) = sidekiq_cancellation_token {
         info!("Cancelling sidekiq workers.");
         sidekiq_cancellation_token.cancel();
     }
