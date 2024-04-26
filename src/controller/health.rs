@@ -56,6 +56,8 @@ where
     ApiRouter::new().api_route(&root, get_with(health_get::<S>, health_get_docs))
 }
 
+#[serde_as]
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "open-api", derive(JsonSchema))]
 #[serde(rename_all = "camelCase")]
@@ -69,7 +71,7 @@ pub struct HeathCheckResponse {
     pub redis_enqueue: ResourceHealth,
     /// Health of the Redis connection used to fetch Sidekiq jobs.
     #[cfg(feature = "sidekiq")]
-    pub redis_fetch: ResourceHealth,
+    pub redis_fetch: Option<ResourceHealth>,
 }
 
 #[serde_as]
@@ -125,7 +127,11 @@ where
     #[cfg(feature = "sidekiq")]
     let redis_enqueue = redis_health(&state.redis_enqueue).await;
     #[cfg(feature = "sidekiq")]
-    let redis_fetch = redis_health(&state.redis_fetch).await;
+    let redis_fetch = if let Some(redis_fetch) = state.redis_fetch.as_ref() {
+        Some(redis_health(redis_fetch).await)
+    } else {
+        None
+    };
 
     Ok(Json(HeathCheckResponse {
         latency: timer.elapsed().as_millis(),
@@ -206,12 +212,12 @@ fn health_get_docs(op: TransformOperation) -> TransformOperation {
                     latency: 15,
                 },
                 #[cfg(feature = "sidekiq")]
-                redis_fetch: ResourceHealth {
+                redis_fetch: Some(ResourceHealth {
                     status: Status::Ok,
                     acquire_conn_latency: Some(15),
                     ping_latency: Some(20),
                     latency: 35,
-                },
+                }),
             })
         })
 }
