@@ -1,21 +1,21 @@
-use std::future;
-use std::future::Future;
-use std::sync::Arc;
-
-#[cfg(feature = "open-api")]
-use aide::axum::ApiRouter;
-#[cfg(feature = "open-api")]
-use aide::openapi::OpenApi;
-#[cfg(feature = "open-api")]
-use aide::transform::TransformOpenApi;
+use crate::app_context::AppContext;
+#[cfg(feature = "cli")]
+use crate::cli::{RoadsterCli, RunCommand, RunRoadsterCommand};
+use crate::config::app_config::AppConfig;
+#[cfg(not(feature = "cli"))]
+use crate::config::environment::Environment;
+#[cfg(feature = "sidekiq")]
+use crate::config::worker::StaleCleanUpBehavior;
+use crate::service::AppService;
+use crate::tracing::init_tracing;
+#[cfg(feature = "sidekiq")]
+use crate::worker::registry::WorkerRegistry;
 #[cfg(feature = "sidekiq")]
 use anyhow::anyhow;
 use async_trait::async_trait;
-#[cfg(feature = "open-api")]
-use axum::Extension;
-use axum::Router;
 #[cfg(feature = "cli")]
 use clap::{Args, Command, FromArgMatches};
+#[cfg(feature = "sidekiq")]
 use itertools::Itertools;
 #[cfg(feature = "sidekiq")]
 use num_traits::ToPrimitive;
@@ -25,27 +25,14 @@ use sea_orm::{ConnectOptions, Database};
 use sea_orm_migration::MigratorTrait;
 #[cfg(feature = "sidekiq")]
 use sidekiq::{periodic, Processor, ProcessorConfig};
+use std::future;
+use std::future::Future;
+use std::sync::Arc;
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
 #[cfg(feature = "sidekiq")]
 use tracing::debug;
 use tracing::{error, info, instrument};
-
-use crate::app_context::AppContext;
-#[cfg(feature = "cli")]
-use crate::cli::{RoadsterCli, RunCommand, RunRoadsterCommand};
-use crate::config::app_config::AppConfig;
-#[cfg(not(feature = "cli"))]
-use crate::config::environment::Environment;
-#[cfg(feature = "sidekiq")]
-use crate::config::worker::StaleCleanUpBehavior;
-use crate::controller::middleware::default::default_middleware;
-use crate::controller::middleware::Middleware;
-use crate::initializer::default::default_initializers;
-use crate::initializer::Initializer;
-use crate::tracing::init_tracing;
-#[cfg(feature = "sidekiq")]
-use crate::worker::registry::WorkerRegistry;
 
 // todo: this method is getting unweildy, we should break it up
 pub async fn start<A>(
@@ -144,16 +131,6 @@ where
         (redis_enqueue, redis_fetch)
     };
 
-    let router = A::router(&config);
-    #[cfg(feature = "open-api")]
-    let (router, api) = {
-        let mut api = OpenApi::default();
-        let router = router.finish_api_with(&mut api, A::api_docs(&config));
-        // Arc is very important here or we will face massive memory and performance issues
-        let api = Arc::new(api);
-        let router = router.layer(Extension(api.clone()));
-        (router, api)
-    };
     let context = AppContext::new(
         config,
         #[cfg(feature = "db-sql")]
@@ -162,14 +139,11 @@ where
         redis_enqueue.clone(),
         #[cfg(feature = "sidekiq")]
         redis_fetch.clone(),
-        #[cfg(feature = "open-api")]
-        api,
     )
     .await?;
 
     let context = Arc::new(context);
     let state = A::context_to_state(context.clone()).await?;
-    let router = router.with_state::<()>(state.clone());
     let state = Arc::new(state);
 
     #[cfg(feature = "cli")]
@@ -182,57 +156,22 @@ where
         }
     }
 
+    let services = A::services(&context, &state).await?;
+
+    #[cfg(feature = "cli")]
+    for service in services.iter() {
+        if service
+            .handle_cli(&roadster_cli, &app_cli, &context, &state)
+            .await?
+        {
+            return Ok(());
+        }
+    }
+
     #[cfg(feature = "db-sql")]
     if context.config.database.auto_migrate {
         A::M::up(&context.db, None).await?;
     }
-
-    let initializers = default_initializers()
-        .into_iter()
-        .chain(A::initializers(&context))
-        .filter(|initializer| initializer.enabled(&context, &state))
-        .unique_by(|initializer| initializer.name())
-        .sorted_by(|a, b| Ord::cmp(&a.priority(&context, &state), &b.priority(&context, &state)))
-        .collect_vec();
-
-    let router = initializers
-        .iter()
-        .try_fold(router, |router, initializer| {
-            initializer.after_router(router, &context, &state)
-        })?;
-
-    let router = initializers
-        .iter()
-        .try_fold(router, |router, initializer| {
-            initializer.before_middleware(router, &context, &state)
-        })?;
-
-    // Install middleware, both the default middleware and any provided by the consumer.
-    info!("Installing middleware. Note: the order of installation is the inverse of the order middleware will run when handling a request.");
-    let router = default_middleware()
-        .into_iter()
-        .chain(A::middleware(&context, &state).into_iter())
-        .filter(|middleware| middleware.enabled(&context, &state))
-        .unique_by(|middleware| middleware.name())
-        .sorted_by(|a, b| Ord::cmp(&a.priority(&context, &state), &b.priority(&context, &state)))
-        // Reverse due to how Axum's `Router#layer` method adds middleware.
-        .rev()
-        .try_fold(router, |router, middleware| {
-            info!("Installing middleware: `{}`", middleware.name());
-            middleware.install(router, &context, &state)
-        })?;
-
-    let router = initializers
-        .iter()
-        .try_fold(router, |router, initializer| {
-            initializer.after_middleware(router, &context, &state)
-        })?;
-
-    let router = initializers
-        .iter()
-        .try_fold(router, |router, initializer| {
-            initializer.before_serve(router, &context, &state)
-        })?;
 
     #[cfg(feature = "sidekiq")]
     let (processor, sidekiq_cancellation_token, _sidekiq_cancellation_token_drop_guard) =
@@ -297,17 +236,17 @@ where
 
     let cancel_token = CancellationToken::new();
     let mut join_set = JoinSet::new();
-    // Task to serve the app.
-    join_set.spawn(cancel_on_error(
-        cancel_token.clone(),
-        context.clone(),
-        A::serve(
-            router,
-            token_shutdown_signal(cancel_token.clone()),
-            context.clone(),
-            state.clone(),
-        ),
-    ));
+
+    // Spawn tasks for the app's services
+    for service in services {
+        let context = context.clone();
+        let state = state.clone();
+        let cancel_token = cancel_token.clone();
+        join_set.spawn(Box::pin(async move {
+            service.run(context, state, cancel_token).await
+        }));
+    }
+
     // Task to run the sidekiq processor
     #[cfg(feature = "sidekiq")]
     join_set.spawn(Box::pin(async {
@@ -403,31 +342,6 @@ pub trait App: Send + Sync {
         Ok(state)
     }
 
-    #[cfg(not(feature = "open-api"))]
-    fn router(_config: &AppConfig) -> Router<Self::State>;
-
-    #[cfg(feature = "open-api")]
-    fn router(_config: &AppConfig) -> ApiRouter<Self::State>;
-
-    #[cfg(feature = "open-api")]
-    fn api_docs(config: &AppConfig) -> impl Fn(TransformOpenApi) -> TransformOpenApi {
-        |api| {
-            api.title(&config.app.name)
-                .description(&format!("# {}", config.app.name))
-        }
-    }
-
-    fn middleware(
-        _context: &AppContext,
-        _state: &Self::State,
-    ) -> Vec<Box<dyn Middleware<Self::State>>> {
-        Default::default()
-    }
-
-    fn initializers(_context: &AppContext) -> Vec<Box<dyn Initializer<Self::State>>> {
-        Default::default()
-    }
-
     /// Worker queue names can either be provided here, or as config values. If provided here
     /// the consumer is able to use string constants, which can be used when creating a worker
     /// instance. This can reduce the risk of copy/paste errors and typos.
@@ -445,24 +359,11 @@ pub trait App: Send + Sync {
         Ok(())
     }
 
-    async fn serve<F>(
-        router: Router,
-        shutdown_signal: F,
-        context: Arc<AppContext>,
-        _state: Arc<Self::State>,
-    ) -> anyhow::Result<()>
-    where
-        F: Future<Output = ()> + Send + 'static,
-    {
-        let server_addr = context.config.server.url();
-        info!("Server will start at {server_addr}");
-
-        let app_listener = tokio::net::TcpListener::bind(server_addr).await?;
-        axum::serve(app_listener, router)
-            .with_graceful_shutdown(shutdown_signal)
-            .await?;
-
-        Ok(())
+    async fn services(
+        _context: &AppContext,
+        _state: &Self::State,
+    ) -> anyhow::Result<Vec<Box<dyn AppService<Self>>>> {
+        Ok(Default::default())
     }
 
     /// Override to provide a custom shutdown signal. Roadster provides some default shutdown

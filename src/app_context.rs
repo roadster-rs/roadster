@@ -1,7 +1,5 @@
 use std::sync::Arc;
 
-#[cfg(feature = "open-api")]
-use aide::openapi::OpenApi;
 #[cfg(feature = "db-sql")]
 use sea_orm::DatabaseConnection;
 
@@ -20,8 +18,6 @@ pub struct AppContext {
     /// config is set to zero, in which case the [sidekiq::Processor] would also not be started.
     #[cfg(feature = "sidekiq")]
     pub redis_fetch: Option<sidekiq::RedisPool>,
-    #[cfg(feature = "open-api")]
-    pub api: Arc<OpenApi>,
     // Prevent consumers from directly creating an AppContext
     _private: (),
 }
@@ -32,7 +28,6 @@ impl AppContext {
         #[cfg(feature = "db-sql")] db: DatabaseConnection,
         #[cfg(feature = "sidekiq")] redis_enqueue: sidekiq::RedisPool,
         #[cfg(feature = "sidekiq")] redis_fetch: Option<sidekiq::RedisPool>,
-        #[cfg(feature = "open-api")] api: Arc<OpenApi>,
     ) -> anyhow::Result<Self> {
         let context = Self {
             config,
@@ -42,8 +37,6 @@ impl AppContext {
             redis_enqueue,
             #[cfg(feature = "sidekiq")]
             redis_fetch,
-            #[cfg(feature = "open-api")]
-            api,
             _private: (),
         };
         Ok(context)
