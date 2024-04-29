@@ -154,9 +154,17 @@ where
     async fn run(&self, app: &A, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool> {
         match self {
             #[cfg(feature = "open-api")]
-            RoadsterSubCommand::ListRoutes(args) => args.run(app, cli, context).await,
+            RoadsterSubCommand::ListRoutes(_) => {
+                #[allow(unused_doc_comments)]
+                /// Implemented by [crate::service::http::http_service::HttpService]
+                Ok(false)
+            }
             #[cfg(feature = "open-api")]
-            RoadsterSubCommand::OpenApi(args) => args.run(app, cli, context).await,
+            RoadsterSubCommand::OpenApi(_) => {
+                #[allow(unused_doc_comments)]
+                /// Implemented by [crate::service::http::http_service::HttpService]
+                Ok(false)
+            }
             #[cfg(feature = "db-sql")]
             RoadsterSubCommand::Migrate(args) => args.run(app, cli, context).await,
             RoadsterSubCommand::PrintConfig(args) => args.run(app, cli, context).await,

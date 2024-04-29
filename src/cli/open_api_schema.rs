@@ -1,14 +1,5 @@
-use std::fs::File;
-use std::io::Write;
-use std::path::PathBuf;
-
-use async_trait::async_trait;
 use clap::Parser;
-use tracing::info;
-
-use crate::app::App;
-use crate::app_context::AppContext;
-use crate::cli::{RoadsterCli, RunRoadsterCommand};
+use std::path::PathBuf;
 
 #[derive(Debug, Parser)]
 pub struct OpenApiArgs {
@@ -18,32 +9,4 @@ pub struct OpenApiArgs {
     /// Whether to pretty-print the schema. Default: false.
     #[clap(short, long, default_value_t = false)]
     pub pretty_print: bool,
-}
-
-#[async_trait]
-impl<A> RunRoadsterCommand<A> for OpenApiArgs
-where
-    A: App,
-{
-    async fn run(
-        &self,
-        _app: &A,
-        _cli: &RoadsterCli,
-        context: &AppContext,
-    ) -> anyhow::Result<bool> {
-        let schema_json = if self.pretty_print {
-            serde_json::to_string_pretty(context.api.as_ref())?
-        } else {
-            serde_json::to_string(context.api.as_ref())?
-        };
-        if let Some(path) = &self.output {
-            info!("Writing schema to {:?}", path);
-            write!(File::create(path)?, "{schema_json}")?;
-        } else {
-            info!("OpenAPI schema:");
-            info!("{schema_json}");
-        };
-
-        Ok(true)
-    }
 }

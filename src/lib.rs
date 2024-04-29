@@ -20,6 +20,7 @@ pub mod cli;
 pub mod config;
 pub mod controller;
 pub mod initializer;
+pub mod service;
 pub mod tracing;
 pub mod util;
 pub mod view;
