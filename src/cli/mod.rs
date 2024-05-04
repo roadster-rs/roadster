@@ -156,13 +156,13 @@ where
             #[cfg(feature = "open-api")]
             RoadsterSubCommand::ListRoutes(_) => {
                 #[allow(unused_doc_comments)]
-                /// Implemented by [crate::service::http::http_service::HttpService]
+                /// Implemented by [crate::service::http::service::HttpService]
                 Ok(false)
             }
             #[cfg(feature = "open-api")]
             RoadsterSubCommand::OpenApi(_) => {
                 #[allow(unused_doc_comments)]
-                /// Implemented by [crate::service::http::http_service::HttpService]
+                /// Implemented by [crate::service::http::service::HttpService]
                 Ok(false)
             }
             #[cfg(feature = "db-sql")]

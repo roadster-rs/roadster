@@ -22,7 +22,7 @@ use axum::Router;
 ///        middleware is installed is the reverse of the order it will run when handling a request.
 ///        Therefore, we install the middleware in the reverse order that we want it to run (this
 ///        is done automatically by Roadster based on [Middleware::priority]).
-pub trait Middleware<S> {
+pub trait Middleware<S>: Send {
     fn name(&self) -> String;
     fn enabled(&self, context: &AppContext, state: &S) -> bool;
     /// Used to determine the order in which the middleware will run when handling a request. Smaller

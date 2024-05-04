@@ -23,5 +23,3 @@ pub mod service;
 pub mod tracing;
 pub mod util;
 pub mod view;
-#[cfg(feature = "sidekiq")]
-pub mod worker;

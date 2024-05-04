@@ -39,18 +39,18 @@ impl<A: App> ServiceRegistry<A> {
 
     /// Build and register a new service. If the service is not enabled (e.g.,
     /// [AppService::enabled] is `false`), the service will not be built or registered.
-    pub fn register_builder<S, B>(&mut self, builder: B) -> anyhow::Result<()>
+    pub async fn register_builder<S, B>(&mut self, builder: B) -> anyhow::Result<()>
     where
         S: AppService<A> + 'static,
         B: AppServiceBuilder<A, S>,
     {
-        if !S::enabled(&self.context, &self.state) {
+        if !S::enabled(&self.context, &self.state) || !builder.enabled(&self.context, &self.state) {
             info!(service = %S::name(), "Service is not enabled, skipping building and registration");
             return Ok(());
         }
 
         info!(service = %S::name(), "Building service");
-        let service = builder.build(&self.context, &self.state)?;
+        let service = builder.build(&self.context, &self.state).await?;
 
         self.register_unchecked(service)
     }

@@ -1,7 +1,7 @@
 use crate::app::App;
 use crate::app_state::AppState;
 use async_trait::async_trait;
-use roadster::worker::app_worker::AppWorker;
+use roadster::service::worker::sidekiq::app_worker::AppWorker;
 use sidekiq::Worker;
 use tracing::{info, instrument};
 

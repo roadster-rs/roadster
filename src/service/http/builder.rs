@@ -1,11 +1,11 @@
 use crate::app::App;
 use crate::app_context::AppContext;
 use crate::controller::default_routes;
-use crate::service::http::http_service::HttpService;
 use crate::service::http::initializer::default::default_initializers;
 use crate::service::http::initializer::Initializer;
 use crate::service::http::middleware::default::default_middleware;
 use crate::service::http::middleware::Middleware;
+use crate::service::http::service::HttpService;
 use crate::service::AppServiceBuilder;
 #[cfg(feature = "open-api")]
 use aide::axum::ApiRouter;
@@ -13,6 +13,7 @@ use aide::axum::ApiRouter;
 use aide::openapi::OpenApi;
 #[cfg(feature = "open-api")]
 use aide::transform::TransformOpenApi;
+use async_trait::async_trait;
 #[cfg(feature = "open-api")]
 use axum::Extension;
 #[cfg(not(feature = "open-api"))]
@@ -28,7 +29,7 @@ pub struct HttpServiceBuilder<A: App> {
     #[cfg(feature = "open-api")]
     router: ApiRouter<A::State>,
     #[cfg(feature = "open-api")]
-    api_docs: Box<dyn Fn(TransformOpenApi) -> TransformOpenApi>,
+    api_docs: Box<dyn Fn(TransformOpenApi) -> TransformOpenApi + Send>,
     middleware: Vec<Box<dyn Middleware<A::State>>>,
     initializers: Vec<Box<dyn Initializer<A::State>>>,
 }
@@ -61,7 +62,10 @@ impl<A: App> HttpServiceBuilder<A> {
     }
 
     #[cfg(feature = "open-api")]
-    pub fn api_docs(mut self, api_docs: Box<dyn Fn(TransformOpenApi) -> TransformOpenApi>) -> Self {
+    pub fn api_docs(
+        mut self,
+        api_docs: Box<dyn Fn(TransformOpenApi) -> TransformOpenApi + Send>,
+    ) -> Self {
         self.api_docs = api_docs;
         self
     }
@@ -77,8 +81,9 @@ impl<A: App> HttpServiceBuilder<A> {
     }
 }
 
+#[async_trait]
 impl<A: App> AppServiceBuilder<A, HttpService> for HttpServiceBuilder<A> {
-    fn build(self, context: &AppContext, state: &A::State) -> anyhow::Result<HttpService> {
+    async fn build(self, context: &AppContext, state: &A::State) -> anyhow::Result<HttpService> {
         #[cfg(not(feature = "open-api"))]
         let router = self.router;
 
