@@ -1,6 +1,6 @@
 use crate::app_context::AppContext;
 use crate::config::app_config::CustomConfig;
-use crate::initializer::normalize_path::NormalizePathConfig;
+use crate::service::http::initializer::normalize_path::NormalizePathConfig;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 

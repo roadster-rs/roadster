@@ -13,7 +13,7 @@ use axum::Router;
 /// Allows initializing and installing middleware on the app's [Router]. The type `S` is the
 /// custom [crate::app::App::State] defined for the app.
 ///
-/// This trait is provided in addition to [crate::initializer::Initializer] because installing
+/// This trait is provided in addition to [crate::service::http::initializer::Initializer] because installing
 /// middleware is a bit of a special case compared to a general initializer:
 ///     1. The order in which middleware runs matters. For example, we want
 ///        [tower_http::sensitive_headers::SetSensitiveRequestHeadersLayer] to run before

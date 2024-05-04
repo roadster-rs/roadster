@@ -1,5 +1,5 @@
-use crate::config::service::http_service::initializer::Initializer;
-use crate::config::service::http_service::middleware::Middleware;
+use crate::config::service::http::initializer::Initializer;
+use crate::config::service::http::middleware::Middleware;
 use serde_derive::{Deserialize, Serialize};
 
 pub mod initializer;

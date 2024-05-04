@@ -1,5 +1,5 @@
 use crate::app_context::AppContext;
-use crate::controller::middleware::Middleware;
+use crate::service::http::middleware::Middleware;
 use axum::extract::MatchedPath;
 use axum::http::{Request, Response};
 use axum::Router;

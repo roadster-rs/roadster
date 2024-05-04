@@ -1,5 +1,5 @@
 use crate::app_context::AppContext;
-use crate::controller::middleware::Middleware;
+use crate::service::http::middleware::Middleware;
 use axum::http::{header, HeaderName};
 use axum::Router;
 use itertools::Itertools;

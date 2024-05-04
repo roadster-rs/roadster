@@ -1,15 +1,15 @@
-use crate::controller::middleware::catch_panic::CatchPanicMiddleware;
-use crate::controller::middleware::compression::RequestDecompressionMiddleware;
-use crate::controller::middleware::request_id::{
+use crate::service::http::middleware::catch_panic::CatchPanicMiddleware;
+use crate::service::http::middleware::compression::RequestDecompressionMiddleware;
+use crate::service::http::middleware::request_id::{
     PropagateRequestIdMiddleware, SetRequestIdMiddleware,
 };
-use crate::controller::middleware::sensitive_headers::{
+use crate::service::http::middleware::sensitive_headers::{
     SensitiveRequestHeadersMiddleware, SensitiveResponseHeadersMiddleware,
 };
-use crate::controller::middleware::size_limit::RequestBodyLimitMiddleware;
-use crate::controller::middleware::timeout::TimeoutMiddleware;
-use crate::controller::middleware::tracing::TracingMiddleware;
-use crate::controller::middleware::Middleware;
+use crate::service::http::middleware::size_limit::RequestBodyLimitMiddleware;
+use crate::service::http::middleware::timeout::TimeoutMiddleware;
+use crate::service::http::middleware::tracing::TracingMiddleware;
+use crate::service::http::middleware::Middleware;
 
 pub fn default_middleware<S>() -> Vec<Box<dyn Middleware<S>>> {
     vec![

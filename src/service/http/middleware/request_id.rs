@@ -1,5 +1,5 @@
 use crate::app_context::AppContext;
-use crate::controller::middleware::Middleware;
+use crate::service::http::middleware::Middleware;
 use axum::http::HeaderName;
 use axum::Router;
 use serde_derive::{Deserialize, Serialize};

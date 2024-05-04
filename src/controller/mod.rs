@@ -12,7 +12,6 @@ use crate::config::app_config::AppConfig;
 #[cfg(feature = "open-api")]
 pub mod docs;
 pub mod health;
-pub mod middleware;
 pub mod ping;
 
 pub fn build_path(parent: &str, child: &str) -> String {
