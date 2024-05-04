@@ -1,7 +1,7 @@
-pub mod http_service;
+pub mod http;
 
 use crate::app_context::AppContext;
-use crate::config::service::http_service::HttpServiceConfig;
+use crate::config::service::http::HttpServiceConfig;
 use crate::util::serde_util::default_true;
 use serde_derive::{Deserialize, Serialize};
 

@@ -1,5 +1,5 @@
 use crate::app_context::AppContext;
-use crate::initializer::Initializer;
+use crate::service::http::initializer::Initializer;
 use axum::Router;
 use serde_derive::{Deserialize, Serialize};
 use tower::Layer;

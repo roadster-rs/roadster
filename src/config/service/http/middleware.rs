@@ -1,16 +1,16 @@
 use crate::app_context::AppContext;
 use crate::config::app_config::CustomConfig;
-use crate::controller::middleware::catch_panic::CatchPanicConfig;
-use crate::controller::middleware::compression::{
+use crate::service::http::middleware::catch_panic::CatchPanicConfig;
+use crate::service::http::middleware::compression::{
     RequestDecompressionConfig, ResponseCompressionConfig,
 };
-use crate::controller::middleware::request_id::{PropagateRequestIdConfig, SetRequestIdConfig};
-use crate::controller::middleware::sensitive_headers::{
+use crate::service::http::middleware::request_id::{PropagateRequestIdConfig, SetRequestIdConfig};
+use crate::service::http::middleware::sensitive_headers::{
     SensitiveRequestHeadersConfig, SensitiveResponseHeadersConfig,
 };
-use crate::controller::middleware::size_limit::SizeLimitConfig;
-use crate::controller::middleware::timeout::TimeoutConfig;
-use crate::controller::middleware::tracing::TracingConfig;
+use crate::service::http::middleware::size_limit::SizeLimitConfig;
+use crate::service::http::middleware::timeout::TimeoutConfig;
+use crate::service::http::middleware::tracing::TracingConfig;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 

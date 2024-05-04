@@ -1,31 +1,31 @@
 use crate::app_context::AppContext;
-use crate::controller::middleware::Middleware;
-use anyhow::bail;
+use crate::service::http::middleware::Middleware;
 use axum::Router;
-use byte_unit::rust_decimal::prelude::ToPrimitive;
-use byte_unit::Byte;
-use byte_unit::Unit::MB;
 use serde_derive::{Deserialize, Serialize};
-use tower_http::limit::RequestBodyLimitLayer;
+use serde_with::serde_as;
+use std::time::Duration;
+use tower_http::timeout::TimeoutLayer;
 
+#[serde_as]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
-pub struct SizeLimitConfig {
-    pub limit: Byte,
+pub struct TimeoutConfig {
+    #[serde_as(as = "serde_with::DurationMilliSeconds")]
+    pub timeout: Duration,
 }
 
-impl Default for SizeLimitConfig {
+impl Default for TimeoutConfig {
     fn default() -> Self {
         Self {
-            limit: Byte::from_u64_with_unit(5, MB).unwrap(),
+            timeout: Duration::from_secs(10),
         }
     }
 }
 
-pub struct RequestBodyLimitMiddleware;
-impl<S> Middleware<S> for RequestBodyLimitMiddleware {
+pub struct TimeoutMiddleware;
+impl<S> Middleware<S> for TimeoutMiddleware {
     fn name(&self) -> String {
-        "request-body-size-limit".to_string()
+        "timeout".to_string()
     }
 
     fn enabled(&self, context: &AppContext, _state: &S) -> bool {
@@ -35,7 +35,7 @@ impl<S> Middleware<S> for RequestBodyLimitMiddleware {
             .http
             .custom
             .middleware
-            .size_limit
+            .timeout
             .common
             .enabled(context)
     }
@@ -47,31 +47,23 @@ impl<S> Middleware<S> for RequestBodyLimitMiddleware {
             .http
             .custom
             .middleware
-            .size_limit
+            .timeout
             .common
             .priority
     }
 
     fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
-        let limit = &context
+        let timeout = &context
             .config
             .service
             .http
             .custom
             .middleware
-            .size_limit
+            .timeout
             .custom
-            .limit
-            .as_u64()
-            .to_usize();
+            .timeout;
 
-        // Todo: is there a cleaner way to write this?
-        let limit = match limit {
-            Some(limit) => limit,
-            None => bail!("Unable to convert bytes from u64 to usize"),
-        };
-
-        let router = router.layer(RequestBodyLimitLayer::new(*limit));
+        let router = router.layer(TimeoutLayer::new(*timeout));
 
         Ok(router)
     }

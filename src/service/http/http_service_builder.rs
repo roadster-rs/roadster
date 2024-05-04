@@ -1,11 +1,11 @@
 use crate::app::App;
 use crate::app_context::AppContext;
 use crate::controller::default_routes;
-use crate::controller::middleware::default::default_middleware;
-use crate::controller::middleware::Middleware;
-use crate::initializer::default::default_initializers;
-use crate::initializer::Initializer;
 use crate::service::http::http_service::HttpService;
+use crate::service::http::initializer::default::default_initializers;
+use crate::service::http::initializer::Initializer;
+use crate::service::http::middleware::default::default_middleware;
+use crate::service::http::middleware::Middleware;
 use crate::service::AppServiceBuilder;
 #[cfg(feature = "open-api")]
 use aide::axum::ApiRouter;
@@ -125,7 +125,7 @@ impl<A: App> AppServiceBuilder<A, HttpService> for HttpServiceBuilder<A> {
             // Reverse due to how Axum's `Router#layer` method adds middleware.
             .rev()
             .try_fold(router, |router, middleware| {
-                info!("Installing middleware: `{}`", middleware.name());
+                info!(middleware=%middleware.name(), "Installing middleware");
                 middleware.install(router, context, state)
             })?;
 
