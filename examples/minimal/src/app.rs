@@ -2,11 +2,10 @@ use async_trait::async_trait;
 use migration::Migrator;
 use roadster::app::App as RoadsterApp;
 use roadster::app_context::AppContext;
-use roadster::service::http::http_service_builder::HttpServiceBuilder;
-use roadster::service::AppService;
+use roadster::service::http::http_service::HttpService;
+use roadster::service::registry::ServiceRegistry;
 use roadster::worker::app_worker::AppWorker;
 use roadster::worker::registry::WorkerRegistry;
-use std::vec;
 
 use crate::app_state::AppState;
 use crate::cli::AppCli;
@@ -34,15 +33,14 @@ impl RoadsterApp for App {
     }
 
     async fn services(
+        registry: &mut ServiceRegistry<Self>,
         context: &AppContext,
-        state: &Self::State,
-    ) -> anyhow::Result<Vec<Box<dyn AppService<Self>>>> {
-        let http_service = Box::new(
-            HttpServiceBuilder::<Self>::new(BASE, context)
-                .router(controller::routes(BASE))
-                .build(context, state)?,
-        );
+        _state: &Self::State,
+    ) -> anyhow::Result<()> {
+        registry.register_builder(
+            HttpService::builder(BASE, context).router(controller::routes(BASE)),
+        )?;
 
-        Ok(vec![http_service])
+        Ok(())
     }
 }

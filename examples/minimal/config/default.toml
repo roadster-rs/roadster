@@ -1,7 +1,8 @@
 [app]
 name = "Minimal Example"
 
-[server]
+[service.http]
+enable = true
 host = "127.0.0.1"
 port = 3000
 

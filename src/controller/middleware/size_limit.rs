@@ -29,16 +29,35 @@ impl<S> Middleware<S> for RequestBodyLimitMiddleware {
     }
 
     fn enabled(&self, context: &AppContext, _state: &S) -> bool {
-        context.config.middleware.size_limit.common.enabled(context)
+        context
+            .config
+            .service
+            .http
+            .custom
+            .middleware
+            .size_limit
+            .common
+            .enabled(context)
     }
 
     fn priority(&self, context: &AppContext, _state: &S) -> i32 {
-        context.config.middleware.size_limit.common.priority
+        context
+            .config
+            .service
+            .http
+            .custom
+            .middleware
+            .size_limit
+            .common
+            .priority
     }
 
     fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
         let limit = &context
             .config
+            .service
+            .http
+            .custom
             .middleware
             .size_limit
             .custom

@@ -19,6 +19,9 @@ impl<S> Initializer<S> for NormalizePathInitializer {
     fn enabled(&self, context: &AppContext, _state: &S) -> bool {
         context
             .config
+            .service
+            .http
+            .custom
             .initializer
             .normalize_path
             .common
@@ -26,7 +29,15 @@ impl<S> Initializer<S> for NormalizePathInitializer {
     }
 
     fn priority(&self, context: &AppContext, _state: &S) -> i32 {
-        context.config.initializer.normalize_path.common.priority
+        context
+            .config
+            .service
+            .http
+            .custom
+            .initializer
+            .normalize_path
+            .common
+            .priority
     }
 
     fn before_serve(

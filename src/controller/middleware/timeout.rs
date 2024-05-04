@@ -29,15 +29,39 @@ impl<S> Middleware<S> for TimeoutMiddleware {
     }
 
     fn enabled(&self, context: &AppContext, _state: &S) -> bool {
-        context.config.middleware.timeout.common.enabled(context)
+        context
+            .config
+            .service
+            .http
+            .custom
+            .middleware
+            .timeout
+            .common
+            .enabled(context)
     }
 
     fn priority(&self, context: &AppContext, _state: &S) -> i32 {
-        context.config.middleware.timeout.common.priority
+        context
+            .config
+            .service
+            .http
+            .custom
+            .middleware
+            .timeout
+            .common
+            .priority
     }
 
     fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
-        let timeout = &context.config.middleware.timeout.custom.timeout;
+        let timeout = &context
+            .config
+            .service
+            .http
+            .custom
+            .middleware
+            .timeout
+            .custom
+            .timeout;
 
         let router = router.layer(TimeoutLayer::new(*timeout));
 

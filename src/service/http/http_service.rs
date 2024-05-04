@@ -11,6 +11,8 @@ use aide::openapi::OpenApi;
 use async_trait::async_trait;
 use axum::Router;
 #[cfg(feature = "open-api")]
+use itertools::Itertools;
+#[cfg(feature = "open-api")]
 use std::fs::File;
 #[cfg(feature = "open-api")]
 use std::io::Write;
@@ -28,6 +30,14 @@ pub struct HttpService {
 
 #[async_trait]
 impl<A: App> AppService<A> for HttpService {
+    fn name() -> String {
+        "http".to_string()
+    }
+
+    fn enabled(context: &AppContext, _state: &A::State) -> bool {
+        context.config.service.http.common.enabled(context)
+    }
+
     #[cfg(feature = "cli")]
     async fn handle_cli(
         &self,
@@ -62,7 +72,7 @@ impl<A: App> AppService<A> for HttpService {
         _app_state: Arc<A::State>,
         cancel_token: CancellationToken,
     ) -> anyhow::Result<()> {
-        let server_addr = app_context.config.server.url();
+        let server_addr = app_context.config.service.http.custom.address.url();
         info!("Server will start at {server_addr}");
 
         let app_listener = tokio::net::TcpListener::bind(server_addr).await?;
@@ -75,19 +85,23 @@ impl<A: App> AppService<A> for HttpService {
 }
 
 impl HttpService {
+    /// Create a new [HttpServiceBuilder].
     pub fn builder<A: App>(path_root: &str, context: &AppContext) -> HttpServiceBuilder<A> {
         HttpServiceBuilder::new(path_root, context)
     }
 
+    /// List the available HTTP API routes.
     #[cfg(feature = "open-api")]
     pub fn list_routes(&self) {
         info!("API routes:");
         self.api
             .as_ref()
             .operations()
+            .sorted_by(|(path_a, _, _), (path_b, _, _)| Ord::cmp(&path_a, &path_b))
             .for_each(|(path, method, _operation)| info!("[{method}]\t{path}"));
     }
 
+    /// Generate an OpenAPI schema for the HTTP API.
     #[cfg(feature = "open-api")]
     pub fn open_api_schema(
         &self,

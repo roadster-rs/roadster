@@ -1,4 +1,5 @@
 use crate::app_context::AppContext;
+use crate::config::app_config::CustomConfig;
 use crate::controller::middleware::catch_panic::CatchPanicConfig;
 use crate::controller::middleware::compression::{
     RequestDecompressionConfig, ResponseCompressionConfig,
@@ -12,7 +13,6 @@ use crate::controller::middleware::timeout::TimeoutConfig;
 use crate::controller::middleware::tracing::TracingConfig;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use toml::Value;
 
 pub const PRIORITY_FIRST: i32 = -10_000;
 pub const PRIORITY_LAST: i32 = 10_000;
@@ -51,7 +51,7 @@ pub struct Middleware {
     ///             enable: true,
     ///             priority: 10
     ///         },
-    ///         MiddlewareConfig<CustomMiddlewareConfig>#custom: {
+    ///         MiddlewareConfig<CustomConfig>#custom: {
     ///             config: {
     ///                 "x": "y"
     ///             }
@@ -59,9 +59,8 @@ pub struct Middleware {
     ///     }
     /// }
     /// ```
-    // Todo: consolidate custom settings for both middleware an initializers?
     #[serde(flatten)]
-    pub custom: BTreeMap<String, MiddlewareConfig<CustomMiddlewareConfig>>,
+    pub custom: BTreeMap<String, MiddlewareConfig<CustomConfig>>,
 }
 
 impl Default for Middleware {
@@ -140,7 +139,7 @@ impl CommonConfig {
 
     pub fn enabled(&self, context: &AppContext) -> bool {
         self.enable
-            .unwrap_or(context.config.middleware.default_enable)
+            .unwrap_or(context.config.service.http.custom.middleware.default_enable)
     }
 }
 
@@ -160,16 +159,10 @@ impl<T: Default> MiddlewareConfig<T> {
     }
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case", default)]
-pub struct CustomMiddlewareConfig {
-    #[serde(flatten)]
-    pub config: BTreeMap<String, Value>,
-}
-
 #[cfg(test)]
 mod test {
-    use toml::Value;
+    use super::*;
+    use serde_json::Value;
 
     #[test]
     fn test_custom_config() {
@@ -182,7 +175,7 @@ mod test {
         priority = 10
         x = "y"
         "#;
-        let config: crate::config::middleware::Middleware = toml::from_str(config).unwrap();
+        let config: Middleware = toml::from_str(config).unwrap();
 
         assert!(config.custom.contains_key("foo"));
 
