@@ -1,8 +1,8 @@
 use crate::app_context::AppContext;
+use crate::config::app_config::CustomConfig;
 use crate::initializer::normalize_path::NormalizePathConfig;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use toml::Value;
 
 pub const PRIORITY_FIRST: i32 = -10_000;
 pub const PRIORITY_LAST: i32 = 10_000;
@@ -32,7 +32,7 @@ pub struct Initializer {
     ///             enable: true,
     ///             priority: 10
     ///         },
-    ///         InitializerConfig<CustomInitializerConfig>#custom: {
+    ///         InitializerConfig<CustomConfig>#custom: {
     ///             config: {
     ///                 "x": "y"
     ///             }
@@ -40,9 +40,8 @@ pub struct Initializer {
     ///     }
     /// }
     /// ```
-    // Todo: consolidate custom settings for both middleware an initializers?
     #[serde(flatten)]
-    pub custom: BTreeMap<String, InitializerConfig<CustomInitializerConfig>>,
+    pub custom: BTreeMap<String, InitializerConfig<CustomConfig>>,
 }
 
 impl Default for Initializer {
@@ -76,8 +75,15 @@ impl CommonConfig {
     }
 
     pub fn enabled(&self, context: &AppContext) -> bool {
-        self.enable
-            .unwrap_or(context.config.initializer.default_enable)
+        self.enable.unwrap_or(
+            context
+                .config
+                .service
+                .http
+                .custom
+                .initializer
+                .default_enable,
+        )
     }
 }
 
@@ -97,16 +103,10 @@ impl<T: Default> InitializerConfig<T> {
     }
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case", default)]
-pub struct CustomInitializerConfig {
-    #[serde(flatten)]
-    pub config: BTreeMap<String, Value>,
-}
-
 #[cfg(test)]
 mod test {
-    use toml::Value;
+    use super::*;
+    use serde_json::Value;
 
     #[test]
     fn test_custom_config() {
@@ -119,7 +119,7 @@ mod test {
         priority = 10
         x = "y"
         "#;
-        let config: crate::config::initializer::Initializer = toml::from_str(config).unwrap();
+        let config: Initializer = toml::from_str(config).unwrap();
 
         assert!(config.custom.contains_key("foo"));
 

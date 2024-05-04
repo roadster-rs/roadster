@@ -17,6 +17,9 @@ impl<S> Middleware<S> for CatchPanicMiddleware {
     fn enabled(&self, context: &AppContext, _state: &S) -> bool {
         context
             .config
+            .service
+            .http
+            .custom
             .middleware
             .catch_panic
             .common
@@ -24,7 +27,15 @@ impl<S> Middleware<S> for CatchPanicMiddleware {
     }
 
     fn priority(&self, context: &AppContext, _state: &S) -> i32 {
-        context.config.middleware.catch_panic.common.priority
+        context
+            .config
+            .service
+            .http
+            .custom
+            .middleware
+            .catch_panic
+            .common
+            .priority
     }
 
     fn install(&self, router: Router, _context: &AppContext, _state: &S) -> anyhow::Result<Router> {

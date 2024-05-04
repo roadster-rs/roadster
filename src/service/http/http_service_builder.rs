@@ -6,6 +6,7 @@ use crate::controller::middleware::Middleware;
 use crate::initializer::default::default_initializers;
 use crate::initializer::Initializer;
 use crate::service::http::http_service::HttpService;
+use crate::service::AppServiceBuilder;
 #[cfg(feature = "open-api")]
 use aide::axum::ApiRouter;
 #[cfg(feature = "open-api")]
@@ -47,7 +48,37 @@ impl<A: App> HttpServiceBuilder<A> {
         }
     }
 
-    pub fn build(self, context: &AppContext, state: &A::State) -> anyhow::Result<HttpService> {
+    #[cfg(not(feature = "open-api"))]
+    pub fn router(mut self, router: Router<A::State>) -> Self {
+        self.router = self.router.merge(router);
+        self
+    }
+
+    #[cfg(feature = "open-api")]
+    pub fn router(mut self, router: ApiRouter<A::State>) -> Self {
+        self.router = self.router.merge(router);
+        self
+    }
+
+    #[cfg(feature = "open-api")]
+    pub fn api_docs(mut self, api_docs: Box<dyn Fn(TransformOpenApi) -> TransformOpenApi>) -> Self {
+        self.api_docs = api_docs;
+        self
+    }
+
+    pub fn initializer(mut self, initializer: Box<dyn Initializer<A::State>>) -> Self {
+        self.initializers.push(initializer);
+        self
+    }
+
+    pub fn middleware(mut self, middleware: Box<dyn Middleware<A::State>>) -> Self {
+        self.middleware.push(middleware);
+        self
+    }
+}
+
+impl<A: App> AppServiceBuilder<A, HttpService> for HttpServiceBuilder<A> {
+    fn build(self, context: &AppContext, state: &A::State) -> anyhow::Result<HttpService> {
         #[cfg(not(feature = "open-api"))]
         let router = self.router;
 
@@ -110,38 +141,12 @@ impl<A: App> HttpServiceBuilder<A> {
                 initializer.before_serve(router, context, state)
             })?;
 
-        Ok(HttpService {
+        let service = HttpService {
             router,
             #[cfg(feature = "open-api")]
             api,
-        })
-    }
+        };
 
-    #[cfg(not(feature = "open-api"))]
-    pub fn router(mut self, router: Router<A::State>) -> Self {
-        self.router = self.router.merge(router);
-        self
-    }
-
-    #[cfg(feature = "open-api")]
-    pub fn router(mut self, router: ApiRouter<A::State>) -> Self {
-        self.router = self.router.merge(router);
-        self
-    }
-
-    #[cfg(feature = "open-api")]
-    pub fn api_docs(mut self, api_docs: Box<dyn Fn(TransformOpenApi) -> TransformOpenApi>) -> Self {
-        self.api_docs = api_docs;
-        self
-    }
-
-    pub fn initializer(mut self, initializer: Box<dyn Initializer<A::State>>) -> Self {
-        self.initializers.push(initializer);
-        self
-    }
-
-    pub fn middleware(mut self, middleware: Box<dyn Middleware<A::State>>) -> Self {
-        self.middleware.push(middleware);
-        self
+        Ok(service)
     }
 }

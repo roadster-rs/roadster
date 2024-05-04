@@ -64,6 +64,9 @@ impl<S> Middleware<S> for SensitiveRequestHeadersMiddleware {
     fn enabled(&self, context: &AppContext, _state: &S) -> bool {
         context
             .config
+            .service
+            .http
+            .custom
             .middleware
             .sensitive_request_headers
             .common
@@ -73,6 +76,9 @@ impl<S> Middleware<S> for SensitiveRequestHeadersMiddleware {
     fn priority(&self, context: &AppContext, _state: &S) -> i32 {
         context
             .config
+            .service
+            .http
+            .custom
             .middleware
             .sensitive_request_headers
             .common
@@ -81,6 +87,9 @@ impl<S> Middleware<S> for SensitiveRequestHeadersMiddleware {
     fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
         let headers = context
             .config
+            .service
+            .http
+            .custom
             .middleware
             .sensitive_request_headers
             .custom
@@ -103,6 +112,9 @@ impl<S> Middleware<S> for SensitiveResponseHeadersMiddleware {
     fn enabled(&self, context: &AppContext, _state: &S) -> bool {
         context
             .config
+            .service
+            .http
+            .custom
             .middleware
             .sensitive_response_headers
             .common
@@ -112,6 +124,9 @@ impl<S> Middleware<S> for SensitiveResponseHeadersMiddleware {
     fn priority(&self, context: &AppContext, _state: &S) -> i32 {
         context
             .config
+            .service
+            .http
+            .custom
             .middleware
             .sensitive_response_headers
             .common
@@ -120,6 +135,9 @@ impl<S> Middleware<S> for SensitiveResponseHeadersMiddleware {
     fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
         let headers = context
             .config
+            .service
+            .http
+            .custom
             .middleware
             .sensitive_response_headers
             .custom

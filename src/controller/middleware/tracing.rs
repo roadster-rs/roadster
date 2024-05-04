@@ -22,16 +22,35 @@ impl<S> Middleware<S> for TracingMiddleware {
     }
 
     fn enabled(&self, context: &AppContext, _state: &S) -> bool {
-        context.config.middleware.tracing.common.enabled(context)
+        context
+            .config
+            .service
+            .http
+            .custom
+            .middleware
+            .tracing
+            .common
+            .enabled(context)
     }
 
     fn priority(&self, context: &AppContext, _state: &S) -> i32 {
-        context.config.middleware.tracing.common.priority
+        context
+            .config
+            .service
+            .http
+            .custom
+            .middleware
+            .tracing
+            .common
+            .priority
     }
 
     fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
         let request_id_header_name = &context
             .config
+            .service
+            .http
+            .custom
             .middleware
             .set_request_id
             .custom

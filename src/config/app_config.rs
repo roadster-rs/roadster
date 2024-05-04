@@ -1,27 +1,26 @@
-#[cfg(feature = "db-sql")]
-use std::time::Duration;
-
+use crate::config::environment::{Environment, ENVIRONMENT_ENV_VAR_NAME};
+use crate::config::service::Service;
+#[cfg(feature = "sidekiq")]
+use crate::config::worker::Worker;
+use crate::util::serde_util::{default_true, UriOrString};
 use anyhow::anyhow;
 use config::{Case, Config};
 use dotenvy::dotenv;
 use serde_derive::{Deserialize, Serialize};
+use serde_json::Value;
 #[cfg(feature = "db-sql")]
 use serde_with::serde_as;
+use std::collections::BTreeMap;
+#[cfg(feature = "db-sql")]
+use std::time::Duration;
 #[cfg(any(feature = "otel", feature = "db-sql"))]
 use url::Url;
-
-use crate::config::environment::{Environment, ENVIRONMENT_ENV_VAR_NAME};
-use crate::config::initializer::Initializer;
-use crate::config::middleware::Middleware;
-#[cfg(feature = "sidekiq")]
-use crate::config::worker::Worker;
-use crate::util::serde_util::{default_true, UriOrString};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct AppConfig {
     pub app: App,
-    pub server: Server,
+    pub service: Service,
     pub auth: Auth,
     pub tracing: Tracing,
     pub environment: Environment,
@@ -29,10 +28,26 @@ pub struct AppConfig {
     pub database: Database,
     #[cfg(feature = "sidekiq")]
     pub worker: Worker,
-    #[serde(default)]
-    pub middleware: Middleware,
-    #[serde(default)]
-    pub initializer: Initializer,
+    /// Allows providing custom config values. Any configs that aren't pre-defined above
+    /// will be collected here.
+    ///
+    /// # Examples
+    ///
+    /// ```toml
+    /// [foo]
+    /// x = "y"
+    /// ```
+    ///
+    /// This will be parsed as:
+    /// ```raw
+    /// AppConfig#custom: {
+    ///     "foo": {
+    ///         "x": "y",
+    ///     }
+    /// }
+    /// ```
+    #[serde(flatten, default)]
+    pub custom: CustomConfig,
 }
 
 pub const ENV_VAR_PREFIX: &str = "ROADSTER";
@@ -71,19 +86,6 @@ impl AppConfig {
             .try_deserialize()
             .map_err(|err| anyhow!("Unable to deserialize app config: {err:?}"))?;
 
-        // Validations
-        // Todo: Is there a crate that would make this easier?
-        debug_assert_eq!(
-            config.middleware.set_request_id.custom.common.header_name,
-            config
-                .middleware
-                .propagate_request_id
-                .custom
-                .common
-                .header_name,
-            "A different request ID header name is used when handling a request vs when sending a response."
-        );
-
         Ok(config)
     }
 }
@@ -95,19 +97,6 @@ pub struct App {
     /// Shutdown the whole app if an error occurs in one of the app's top-level tasks (API, workers, etc).
     #[serde(default = "default_true")]
     pub shutdown_on_error: bool,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct Server {
-    pub host: String,
-    pub port: u32,
-}
-
-impl Server {
-    pub fn url(&self) -> String {
-        format!("{}:{}", self.host, self.port)
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -187,4 +176,13 @@ impl Database {
     fn default_acquire_timeout() -> Duration {
         Duration::from_millis(1000)
     }
+}
+
+/// General struct to capture custom config values that don't exist in a pre-defined
+/// config struct.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case", default)]
+pub struct CustomConfig {
+    #[serde(flatten)]
+    pub config: BTreeMap<String, Value>,
 }

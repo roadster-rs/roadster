@@ -45,6 +45,9 @@ impl<S> Middleware<S> for SetRequestIdMiddleware {
     fn enabled(&self, context: &AppContext, _state: &S) -> bool {
         context
             .config
+            .service
+            .http
+            .custom
             .middleware
             .set_request_id
             .common
@@ -52,12 +55,23 @@ impl<S> Middleware<S> for SetRequestIdMiddleware {
     }
 
     fn priority(&self, context: &AppContext, _state: &S) -> i32 {
-        context.config.middleware.set_request_id.common.priority
+        context
+            .config
+            .service
+            .http
+            .custom
+            .middleware
+            .set_request_id
+            .common
+            .priority
     }
 
     fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
         let header_name = &context
             .config
+            .service
+            .http
+            .custom
             .middleware
             .set_request_id
             .custom
@@ -82,6 +96,9 @@ impl<S> Middleware<S> for PropagateRequestIdMiddleware {
     fn enabled(&self, context: &AppContext, _state: &S) -> bool {
         context
             .config
+            .service
+            .http
+            .custom
             .middleware
             .propagate_request_id
             .common
@@ -91,6 +108,9 @@ impl<S> Middleware<S> for PropagateRequestIdMiddleware {
     fn priority(&self, context: &AppContext, _state: &S) -> i32 {
         context
             .config
+            .service
+            .http
+            .custom
             .middleware
             .propagate_request_id
             .common
@@ -100,6 +120,9 @@ impl<S> Middleware<S> for PropagateRequestIdMiddleware {
     fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
         let header_name = &context
             .config
+            .service
+            .http
+            .custom
             .middleware
             .propagate_request_id
             .custom

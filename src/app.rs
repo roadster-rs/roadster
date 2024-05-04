@@ -6,7 +6,7 @@ use crate::config::app_config::AppConfig;
 use crate::config::environment::Environment;
 #[cfg(feature = "sidekiq")]
 use crate::config::worker::StaleCleanUpBehavior;
-use crate::service::AppService;
+use crate::service::registry::ServiceRegistry;
 use crate::tracing::init_tracing;
 #[cfg(feature = "sidekiq")]
 use crate::worker::registry::WorkerRegistry;
@@ -156,10 +156,11 @@ where
         }
     }
 
-    let services = A::services(&context, &state).await?;
+    let mut service_registry = ServiceRegistry::new(context.clone(), state.clone());
+    A::services(&mut service_registry, &context, &state).await?;
 
     #[cfg(feature = "cli")]
-    for service in services.iter() {
+    for (_name, service) in service_registry.services.iter() {
         if service
             .handle_cli(&roadster_cli, &app_cli, &context, &state)
             .await?
@@ -238,11 +239,12 @@ where
     let mut join_set = JoinSet::new();
 
     // Spawn tasks for the app's services
-    for service in services {
+    for (name, service) in service_registry.services {
         let context = context.clone();
         let state = state.clone();
         let cancel_token = cancel_token.clone();
         join_set.spawn(Box::pin(async move {
+            info!(service=%name, "Running service");
             service.run(context, state, cancel_token).await
         }));
     }
@@ -360,10 +362,11 @@ pub trait App: Send + Sync {
     }
 
     async fn services(
+        _registry: &mut ServiceRegistry<Self>,
         _context: &AppContext,
         _state: &Self::State,
-    ) -> anyhow::Result<Vec<Box<dyn AppService<Self>>>> {
-        Ok(Default::default())
+    ) -> anyhow::Result<()> {
+        Ok(())
     }
 
     /// Override to provide a custom shutdown signal. Roadster provides some default shutdown

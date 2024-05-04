@@ -47,7 +47,7 @@ where
         W: AppWorker<A, Args> + 'static,
     {
         let class_name = W::class_name();
-        debug!(worker = class_name, "Registering worker");
+        debug!(worker = %class_name, "Registering worker");
         self.registered_workers.insert(class_name.clone());
         let roadster_worker = RoadsterWorker::new(worker, self.state.clone());
         self.processor.register(roadster_worker);
@@ -71,7 +71,7 @@ where
         W: AppWorker<A, Args> + 'static,
     {
         let class_name = W::class_name();
-        debug!(worker = class_name, "Registering periodic worker");
+        debug!(worker = %class_name, "Registering periodic worker");
         let roadster_worker = RoadsterWorker::new(worker, self.state.clone());
         let builder = builder.args(args)?;
         let job_json = serde_json::to_string(&builder.into_periodic_job(class_name)?)?;
