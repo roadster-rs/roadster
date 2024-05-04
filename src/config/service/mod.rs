@@ -1,7 +1,10 @@
 pub mod http;
+pub mod worker;
 
 use crate::app_context::AppContext;
 use crate::config::service::http::HttpServiceConfig;
+#[cfg(feature = "sidekiq")]
+use crate::config::service::worker::sidekiq::SidekiqServiceConfig;
 use crate::util::serde_util::default_true;
 use serde_derive::{Deserialize, Serialize};
 
@@ -11,6 +14,8 @@ pub struct Service {
     #[serde(default = "default_true")]
     pub default_enable: bool,
     pub http: ServiceConfig<HttpServiceConfig>,
+    #[cfg(feature = "sidekiq")]
+    pub sidekiq: ServiceConfig<SidekiqServiceConfig>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

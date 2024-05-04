@@ -14,7 +14,7 @@ pub struct AppContext {
     #[cfg(feature = "sidekiq")]
     pub redis_enqueue: sidekiq::RedisPool,
     /// The Redis connection pool used by [sidekiq::Processor] to fetch Sidekiq jobs from Redis.
-    /// May be `None` if the [fetch_pool.max_connections][crate::config::worker::ConnectionPool]
+    /// May be `None` if the [fetch_pool.max_connections][crate::config::service::worker::sidekiq::ConnectionPool]
     /// config is set to zero, in which case the [sidekiq::Processor] would also not be started.
     #[cfg(feature = "sidekiq")]
     pub redis_fetch: Option<sidekiq::RedisPool>,

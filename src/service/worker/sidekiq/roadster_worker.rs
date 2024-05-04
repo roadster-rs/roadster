@@ -1,10 +1,7 @@
-pub mod app_worker;
-pub mod registry;
-
 use crate::app::App;
 
-use crate::worker::app_worker::AppWorkerConfig;
-use app_worker::AppWorker;
+use crate::service::worker::sidekiq::app_worker::AppWorker;
+use crate::service::worker::sidekiq::app_worker::AppWorkerConfig;
 use async_trait::async_trait;
 use serde::Serialize;
 

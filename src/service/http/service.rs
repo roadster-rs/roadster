@@ -4,7 +4,7 @@ use crate::app_context::AppContext;
 use crate::cli::RoadsterSubCommand;
 #[cfg(feature = "cli")]
 use crate::cli::{RoadsterCli, RoadsterCommand};
-use crate::service::http::http_service_builder::HttpServiceBuilder;
+use crate::service::http::builder::HttpServiceBuilder;
 use crate::service::AppService;
 #[cfg(feature = "open-api")]
 use aide::openapi::OpenApi;

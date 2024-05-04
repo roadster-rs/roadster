@@ -80,7 +80,13 @@ where
     /// The default implementation uses the value from the app's config file.
     fn max_retries(&self, state: &A::State) -> usize {
         let context: Arc<AppContext> = state.clone().into();
-        context.config.worker.sidekiq.worker_config.max_retries
+        context
+            .config
+            .service
+            .sidekiq
+            .custom
+            .worker_config
+            .max_retries
     }
 
     /// See [AppWorkerConfig::timeout].
@@ -88,7 +94,7 @@ where
     /// The default implementation uses the value from the app's config file.
     fn timeout(&self, state: &A::State) -> bool {
         let context: Arc<AppContext> = state.clone().into();
-        context.config.worker.sidekiq.worker_config.timeout
+        context.config.service.sidekiq.custom.worker_config.timeout
     }
 
     /// See [AppWorkerConfig::max_duration].
@@ -96,7 +102,13 @@ where
     /// The default implementation uses the value from the app's config file.
     fn max_duration(&self, state: &A::State) -> Duration {
         let context: Arc<AppContext> = state.clone().into();
-        context.config.worker.sidekiq.worker_config.max_duration
+        context
+            .config
+            .service
+            .sidekiq
+            .custom
+            .worker_config
+            .max_duration
     }
 
     /// See [AppWorkerConfig::disable_argument_coercion].
@@ -106,8 +118,9 @@ where
         let context: Arc<AppContext> = state.clone().into();
         context
             .config
-            .worker
+            .service
             .sidekiq
+            .custom
             .worker_config
             .disable_argument_coercion
     }

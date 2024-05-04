@@ -7,7 +7,7 @@ use axum::Router;
 /// Provides hooks into various stages of the app's startup to allow initializing and installing
 /// anything that needs to be done during a specific stage of startup. The type `S` is the
 /// custom [crate::app::App::State] defined for the app.
-pub trait Initializer<S> {
+pub trait Initializer<S>: Send {
     fn name(&self) -> String;
 
     fn enabled(&self, context: &AppContext, state: &S) -> bool;

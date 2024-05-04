@@ -1,7 +1,5 @@
 use crate::config::environment::{Environment, ENVIRONMENT_ENV_VAR_NAME};
 use crate::config::service::Service;
-#[cfg(feature = "sidekiq")]
-use crate::config::worker::Worker;
 use crate::util::serde_util::{default_true, UriOrString};
 use anyhow::anyhow;
 use config::{Case, Config};
@@ -26,8 +24,6 @@ pub struct AppConfig {
     pub environment: Environment,
     #[cfg(feature = "db-sql")]
     pub database: Database,
-    #[cfg(feature = "sidekiq")]
-    pub worker: Worker,
     /// Allows providing custom config values. Any configs that aren't pre-defined above
     /// will be collected here.
     ///

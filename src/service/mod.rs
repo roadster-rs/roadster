@@ -8,9 +8,10 @@ use tokio_util::sync::CancellationToken;
 
 pub mod http;
 pub mod registry;
+pub mod worker;
 
 /// Trait to represent a service (e.g., a persistent task) to run in the app. Example services
-/// include, but are not limited to: an [http API][crate::service::http::http_service::HttpService],
+/// include, but are not limited to: an [http API][crate::service::http::service::HttpService],
 /// a sidekiq processor, or a gRPC API.
 #[async_trait]
 pub trait AppService<A: App>: Send + Sync {
@@ -59,10 +60,15 @@ pub trait AppService<A: App>: Send + Sync {
 /// the [ServiceRegistry][crate::service::registry::ServiceRegistry] instead of an [AppService],
 /// in which case the [ServiceRegistry][crate::service::registry::ServiceRegistry] will only
 /// build and register the service if [AppService::enabled] is `true`.
+#[async_trait]
 pub trait AppServiceBuilder<A, S>
 where
     A: App,
     S: AppService<A>,
 {
-    fn build(self, context: &AppContext, state: &A::State) -> anyhow::Result<S>;
+    fn enabled(&self, app_context: &AppContext, app_state: &A::State) -> bool {
+        S::enabled(app_context, app_state)
+    }
+
+    async fn build(self, context: &AppContext, state: &A::State) -> anyhow::Result<S>;
 }
