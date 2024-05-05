@@ -144,6 +144,20 @@ docker run -d --name redisinsight -p 5540:5540 redis/redisinsight:latest
 
 # Development
 
+## Git hooks
+
+We use [cargo-husky](https://crates.io/crates/cargo-husky) to manage our git hooks. The hooks are installed by running
+`cargo test`.
+
+```shell
+# Install required cargo dependencies
+# We use nextest to run our unit tests
+cargo binstall cargo-nextest # or `cargo install cargo-nextest`
+# Install the git hooks
+cargo clean
+cargo test
+```
+
 ## Code Coverage
 
 ```shell
