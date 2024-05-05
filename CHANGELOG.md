@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.1.0...roadster-v0.1.1) - 2024-05-05
+
+### Other
+- Only run the release workflow on main
+- Install missing nextest dependency for feature powerset
+- Add crates.io and docs.rs badges
+- Run the release workflow after the `Feature Powerset` workflow succeeds
+
 ## [0.1.0](https://github.com/roadster-rs/roadster/releases/tag/roadster-v0.1.0) - 2024-05-05
 
 ### Other
