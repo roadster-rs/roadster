@@ -2,6 +2,9 @@
 
 [![Checks](https://github.com/roadster-rs/roadster/actions/workflows/ci.yml/badge.svg)](https://github.com/roadster-rs/roadster/actions/workflows/ci.yml)
 [![Feature Powerset](https://github.com/roadster-rs/roadster/actions/workflows/feature_powerset.yml/badge.svg)](https://github.com/roadster-rs/roadster/actions/workflows/feature_powerset.yml)
+[![crates.io](https://img.shields.io/crates/v/roadster.svg)](https://crates.io/crates/roadster)
+[![Crates.io License](https://img.shields.io/crates/l/roadster)](https://crates.io/crates/roadster)
+[![docs.rs](https://img.shields.io/docsrs/roadster)](https://docs.rs/roadster/latest/roadster/)
 
 A "Batteries Included" web framework for rust designed to get you moving fast 🏎️. Inspired by other fully-featured
 frameworks such
