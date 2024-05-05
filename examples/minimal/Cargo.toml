@@ -7,13 +7,13 @@ edition = "2021"
 
 [dependencies]
 roadster = { version = "0.1", path = "../.." }
-tokio = { version = "1.35.1", features = ["full", "macros"] }
-anyhow = "1.0.81"
+tokio = { version = "1.37.0", features = ["full", "macros"] }
+anyhow = "1.0.82"
 tracing = { version = "0.1.40", features = ["async-await"] }
-async-trait = "0.1.77"
-aide = { version = "0.13.3", features = ["axum"] }
+async-trait = "0.1.80"
+aide = { version = "0.13.4", features = ["axum"] }
 axum = "0.7.5"
-schemars = "0.8.16"
+schemars = "0.8.17"
 
 # DB
 entity = { path = "entity" }
@@ -21,8 +21,8 @@ migration = { path = "migration" }
 clap = { version = "4.5.4", features = ["derive"] }
 
 # The default `rss-stats` feature has a dependency that currently can't be satisfied (memchr: ~2.3)
-rusty-sidekiq = { version = "0.10.4", default-features = false }
-serde = { version = "1.0.198", features = ["derive"] }
+rusty-sidekiq = { version = "0.10.5", default-features = false }
+serde = { version = "1.0.200", features = ["derive"] }
 
 [dev-dependencies]
 cargo-husky = { version = "1.5.0", features = ["default", "run-cargo-check", "run-cargo-clippy", "run-cargo-fmt", "run-cargo-test"] }
