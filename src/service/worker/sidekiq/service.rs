@@ -5,8 +5,9 @@ use crate::service::AppService;
 use async_trait::async_trait;
 use sidekiq::Processor;
 use std::sync::Arc;
+use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, info};
+use tracing::{debug, error};
 
 pub struct SidekiqWorkerService {
     pub(crate) processor: Processor,
@@ -54,20 +55,26 @@ impl<A: App> AppService<A> for SidekiqWorkerService {
         let processor = self.processor.clone();
         let sidekiq_cancel_token = processor.get_cancellation_token();
 
-        tokio::select! {
-            _ = cancel_token.cancelled() => {
-                info!("The app is shutting down, stopping the sidekiq processor.")
-            },
-            _ = sidekiq_cancel_token.cancelled() => {
-                info!("The sidekiq cancellation token was cancelled, shutting down the app.")
-            },
-            _ = processor.run() => {
-                info!("The sidekiq processor exited, shutting down the app.")
-            },
-        }
+        let mut join_set = JoinSet::new();
+        let token = cancel_token.clone();
+        join_set.spawn(Box::pin(async move {
+            token.cancelled().await;
+        }));
+        let token = sidekiq_cancel_token.clone();
+        join_set.spawn(Box::pin(async move {
+            token.cancelled().await;
+        }));
+        join_set.spawn(processor.run());
 
-        cancel_token.cancel();
-        sidekiq_cancel_token.cancel();
+        while let Some(result) = join_set.join_next().await {
+            // Once any of the tasks finishes, cancel the cancellation tokens to ensure
+            // the processor and the app shut down gracefully.
+            cancel_token.cancel();
+            sidekiq_cancel_token.cancel();
+            if let Err(join_err) = result {
+                error!("An error occurred when trying to join on one of the app's tasks. Error: {join_err}");
+            }
+        }
 
         Ok(())
     }
