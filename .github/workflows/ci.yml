@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-hack
       - uses: taiki-e/install-action@nextest
@@ -34,6 +36,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: Swatinem/rust-cache@v2
       - name: Formatting
         run: cargo fmt --all --check
@@ -43,6 +47,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: Swatinem/rust-cache@v2
       - name: Docs
         env:
