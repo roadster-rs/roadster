@@ -3,6 +3,11 @@ name = "roadster"
 version = "0.1.0"
 edition = "2021"
 publish = true
+description = "A \"Batteries Included\" web framework for rust designed to get you moving fast."
+repository = "https://github.com/roadster-rs/roadster"
+license = "MIT OR Apache-2.0"
+keywords = ["web", "framework"]
+categories = ["web-programming", "web-programming::http-server"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
