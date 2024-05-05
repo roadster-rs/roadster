@@ -10,8 +10,11 @@ cargo fmt --all --check
 # With no features
 echo "### build --no-default-features ###"
 RUSTFLAGS="-D warnings" cargo build --no-default-features
-echo "### test --no-default-features --workspace ###"
-cargo test --no-default-features --workspace
+echo "### nextest run --no-default-features --workspace ###"
+cargo nextest run --no-default-features --workspace
+# Nextest doesn't support doc tests, run those separately
+echo "### test --doc --no-default-features --workspace ###"
+cargo test --doc --no-default-features --workspace
 echo "### check --no-default-features --workspace ###"
 cargo check --no-default-features --workspace
 echo "### clippy --workspace --all-targets --no-default-features -- -D warnings ###"
@@ -20,8 +23,11 @@ cargo clippy --workspace --all-targets --no-default-features -- -D warnings
 # With default features
 echo "### build ###"
 cargo build
-echo "### test --workspace ###"
-cargo test --workspace
+echo "### nextest run --workspace ###"
+cargo nextest run --workspace
+# Nextest doesn't support doc tests, run those separately
+echo "### test --doc --workspace ###"
+cargo test --doc --workspace
 echo "### check --workspace ###"
 cargo check --workspace
 echo "### clippy --workspace --all-targets -- -D warnings ###"
@@ -30,8 +36,11 @@ cargo clippy --workspace --all-targets -- -D warnings
 # With all features
 echo "### build --all-features ###"
 cargo build --all-features
-echo "### test --all-features --workspace ###"
-cargo test --all-features --workspace
+echo "### nextest run --all-features --workspace ###"
+cargo nextest run --all-features --workspace
+# Nextest doesn't support doc tests, run those separately
+echo "### test --doc --all-features --workspace ###"
+cargo test --doc --all-features --workspace
 echo "### check --all-features --workspace ###"
 cargo check --all-features --workspace
 echo "### clippy --workspace --all-targets --all-features -- -D warnings ###"
