@@ -26,8 +26,6 @@ jobs:
       should_run2: ${{ steps.label_trigger.outputs.should_run }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: print latest_commit
         run: echo ${{ github.sha }}
 
@@ -50,8 +48,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-hack
 
