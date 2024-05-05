@@ -13,10 +13,12 @@ on:
     workflows: [ Feature Powerset ]
     types:
       - completed
+    branches:
+      - main
 
 jobs:
-  release-plz:
-    name: Release-plz
+  release:
+    name: Release
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
@@ -31,3 +33,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+  on-powerset-failure:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+      - run: echo 'The `Feature Powerset` workflow failed, skipping release.'
