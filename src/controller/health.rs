@@ -26,6 +26,8 @@ use serde_derive::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
 #[cfg(feature = "sidekiq")]
 use sidekiq::redis_rs::cmd;
+#[cfg(feature = "sidekiq")]
+use tokio::time::timeout;
 use tracing::instrument;
 
 use crate::app_context::AppContext;
@@ -172,7 +174,7 @@ async fn redis_health(redis: &sidekiq::RedisPool) -> ResourceHealth {
 #[instrument(skip_all)]
 async fn ping_redis(redis: &sidekiq::RedisPool) -> anyhow::Result<(Duration, Duration)> {
     let timer = Instant::now();
-    let mut conn = redis.get().await?;
+    let mut conn = timeout(Duration::from_secs(5), redis.get()).await??;
     let acquire_conn_latency = timer.elapsed();
 
     let timer = Instant::now();
