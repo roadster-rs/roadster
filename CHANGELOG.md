@@ -30,14 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow configuring the number of sidekiq worker tasks
 - Remove stale periodic jobs
 - Enable registering periodic workers
-- Update README.md
-- Update README.md
 - Check disk usage between feature powerset workflow steps
 - Add defaults for `AppWorkerConfig`'s builder
 - Add RoadsterWorker to provide common behaviors for workers
 - Add instructions for RedisInsight to the readme
 - Add standalone sidekiq dashboard instructions to readme
-- Update README.md
 - Clean between powerset build stages
 - Skip and group features to reduce powerset size
 - Use cfg feature flag instead of allowing unused import
@@ -50,8 +47,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add CLI command to list API routes
 - Set up roadster CLI and custom app CLI
 - Fix the cron used for `feature_powerset.yml` workflow
-- Update README.md
-- Update README.md
 - Remove a `cfg` that caused a build error
 - Add doc comment for `Initializer::priority`
 - Allow using custom App::State in Initializer and Middleware traits
@@ -76,7 +71,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix build break with all features disabled
 - Enable reporting traces/metrics via an otlp exporter
 - Use snake case in github ci job
-- Update README.md
 - Add RequestDecompressionMiddleware
 - Add more crate-level documentation
 - Create LICENSE
@@ -85,7 +79,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove `--no-dev-deps` where it can't be used in github ci workflow
 - Use `cargo hack` to test feature powerset
 - Update cargo checks
-- Update README.md
 - Fix cargo fmt command
 - Create workspace that includes the examples
 - Set working dir for examples job
@@ -105,8 +98,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add instructions for generating an html coverage report
 - Use `JoinSet` instead of `TaskTracker`
 - Make the Jwt claims type generic and use `Claims` as the default
-- Update README.md
-- Update README.md
 - Add notes on background job queue options
 - Add JWT extractor with basic Claims impl for default/recommended claims
 - Add logs for sidekiq queues
@@ -125,8 +116,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add catch panic middleware
 - Add graceful shutdown signal
 - Add rusty-sidekiq for running async jobs
-- --wip-- [skip ci]
-- --wip-- [skip ci]
 - Add `_health` route to check the health of the service
 - Enable migrations
 - Add SeaORM integration
