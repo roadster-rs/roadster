@@ -1,0 +1,160 @@
+# Changelog
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.1.0](https://github.com/roadster-rs/roadster/releases/tag/roadster-v0.1.0) - 2024-05-05
+
+### Other
+- Set `publish = false` in the minimal example Cargo.toml
+- Set `publish = true` in the Cargo.toml
+- Remove fetch depth of 0 from CI and feature powerset
+- Automate releases with release-plz
+- Use fetch depth of 0 in CI
+- Remove `lazy_static` dependency
+- Use the nextest test runner
+- Upgrade dependencies in `Cargo.toml`s
+- Fix the graceful shutdown of the sidekiq service
+- Timeout the ping redis method so the health route can return without fully timing out
+- Implement the sidekiq processor task as an `AppService`
+- Move middleware/initializers to service/http module
+- Add `ServiceRegistry` and restructure configs
+- Add `AppService` trait and use it to implement the HTTP service
+- Add example worker and api to the `minimal` example
+- Don't run Processor depending on configs
+- Use a separate redis connection pool for enqueuing vs fetching jobs
+- Remove `url::Url` import from `app_config.rs` for `sidekiq` feature
+- Allow configuring the number of sidekiq worker tasks
+- Remove stale periodic jobs
+- Enable registering periodic workers
+- Update README.md
+- Update README.md
+- Check disk usage between feature powerset workflow steps
+- Add defaults for `AppWorkerConfig`'s builder
+- Add RoadsterWorker to provide common behaviors for workers
+- Add instructions for RedisInsight to the readme
+- Add standalone sidekiq dashboard instructions to readme
+- Update README.md
+- Clean between powerset build stages
+- Skip and group features to reduce powerset size
+- Use cfg feature flag instead of allowing unused import
+- Add feature flag to enable exporting traces/metrics using otel
+- Add to list of features in readme
+- Add CLI command to print the app config
+- Add CLI commands to run DB migrations
+- Add CLI command to generate an openapi schema
+- Allow private intra doc links for rustdoc
+- Add CLI command to list API routes
+- Set up roadster CLI and custom app CLI
+- Fix the cron used for `feature_powerset.yml` workflow
+- Update README.md
+- Update README.md
+- Remove a `cfg` that caused a build error
+- Add doc comment for `Initializer::priority`
+- Allow using custom App::State in Initializer and Middleware traits
+- Remove debugging outputs
+- Fix step names used to define outputs
+- Add missing runs-on field
+- Add debugging log to workflow
+- Add log of label name
+- Use uniq job output names
+- Fix error in feature_powerset.yml
+- Allow triggering the feature powerset check by adding a lable to a pr
+- Add missing cfg for the `open-api` feature
+- Fix a powerset build error
+- Add `Swatinem/rust-cache@v2` to cache rust builds
+- Update checkout action version
+- Add `workflow_dispatch` event to feature_powerset.yml
+- Add github workflow to run checks against the powerset of features
+- Remove "all features" job b/c it's a duplicate of the cargo hack job
+- Use `cargo hack --each-feature` instead of `--feature-powerset`
+- Add openid jwt claims
+- Minor changes
+- Fix build break with all features disabled
+- Enable reporting traces/metrics via an otlp exporter
+- Use snake case in github ci job
+- Update README.md
+- Add RequestDecompressionMiddleware
+- Add more crate-level documentation
+- Create LICENSE
+- Move workspace declaration to the bottom of the Cargo.toml
+- Fix a `rustdoc::all` warning
+- Remove `--no-dev-deps` where it can't be used in github ci workflow
+- Use `cargo hack` to test feature powerset
+- Update cargo checks
+- Update README.md
+- Fix cargo fmt command
+- Create workspace that includes the examples
+- Set working dir for examples job
+- Add a minimal example
+- Don't run clippy against deps in ci
+- Add CI badge to the readme
+- Update checkout action to v4
+- Add workflow stage to run checks for all features
+- Add missing checkout in workflow
+- Use custom husky hooks
+- Add github workflow to run checks with all feature combinations
+- Add feature flag for generating openapi schema using `aide`
+- Add feature flag for the SQL db
+- Add feature flag for sidekiq
+- Add RequestBodyLimitMiddleware
+- Add TimeoutLayer middleware
+- Add instructions for generating an html coverage report
+- Use `JoinSet` instead of `TaskTracker`
+- Make the Jwt claims type generic and use `Claims` as the default
+- Update README.md
+- Update README.md
+- Add notes on background job queue options
+- Add JWT extractor with basic Claims impl for default/recommended claims
+- Add logs for sidekiq queues
+- Add ping latencies to health check response
+- Allow configuring the max number of redis connections
+- Don't bail early in graceful shutdown if an error occurred.
+- Minor string change
+- Remove `instrument` from `cancel_on_error`
+- Remove `log` from dependencies
+- Improve graceful shutdown logic
+- Always run shutdown logic and don't require consumer to run it
+- Add token cancelation drop guard, and add doc comment recommending to use the default shutdown signal
+- Add logs for installing middleware
+- Add compression middleware
+- Remove stray log
+- Add catch panic middleware
+- Add graceful shutdown signal
+- Add rusty-sidekiq for running async jobs
+- --wip-- [skip ci]
+- --wip-- [skip ci]
+- Add `_health` route to check the health of the service
+- Enable migrations
+- Add SeaORM integration
+- Enable custom configs for initializers
+- Add Initializer with various hooks, and add NormalizePathInitializer
+- Minor change to concat middleware vecs inline
+- Don't require consumers to include default middleware
+- Reorder default middleware -- order determined by config now
+- Enable providing configs for custom middleware
+- Enable configuring middleware
+- Add environment to the AppConfig
+- Add OpenAPI docs + spec routes
+- Add tracing middleware
+- Add request id middleware
+- Allow middleware installers to return a result
+- Enable adding middleware and provide defaults
+- Require custom state to be convertable to AppContext
+- Add default _ping route
+- Enable defining routes using Axum or Aide routers
+- Use From trait instead of a custom trait
+- Re-order dependencies in Cargo.toml
+- Add App trait and allow providing a custom state
+- Add app entrypoint
+- Init tracing
+- Add basic configuration support
+- Remove .idea directory
+- Remove Cargo.lock from git
+- Move cargo-husky to dev-deps
+- Prevent publishing for now
+- Add cargo-husky
+- Init and add empty rust lib project
