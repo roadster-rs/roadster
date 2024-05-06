@@ -1,6 +1,7 @@
 use crate::app::App;
 use crate::app_context::AppContext;
 use crate::service::{AppService, AppServiceBuilder};
+use anyhow::bail;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use tracing::info;
@@ -34,7 +35,7 @@ impl<A: App> ServiceRegistry<A> {
             info!(service = %S::name(), "Service is not enabled, skipping registration");
             return Ok(());
         }
-        self.register_unchecked(service)
+        self.register_internal(service)
     }
 
     /// Build and register a new service. If the service is not enabled (e.g.,
@@ -52,16 +53,18 @@ impl<A: App> ServiceRegistry<A> {
         info!(service = %S::name(), "Building service");
         let service = builder.build(&self.context, &self.state).await?;
 
-        self.register_unchecked(service)
+        self.register_internal(service)
     }
 
-    fn register_unchecked<S>(&mut self, service: S) -> anyhow::Result<()>
+    fn register_internal<S>(&mut self, service: S) -> anyhow::Result<()>
     where
         S: AppService<A> + 'static,
     {
         info!(service = %S::name(), "Registering service");
 
-        self.services.insert(S::name(), Box::new(service));
+        if self.services.insert(S::name(), Box::new(service)).is_some() {
+            bail!("Service `{}` was already registered", S::name());
+        }
         Ok(())
     }
 }

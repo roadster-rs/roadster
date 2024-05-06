@@ -86,8 +86,12 @@ impl<A: App> AppService<A> for HttpService {
 
 impl HttpService {
     /// Create a new [HttpServiceBuilder].
-    pub fn builder<A: App>(path_root: &str, context: &AppContext) -> HttpServiceBuilder<A> {
-        HttpServiceBuilder::new(path_root, context)
+    pub fn builder<A: App>(
+        path_root: &str,
+        context: &AppContext,
+        state: &A::State,
+    ) -> HttpServiceBuilder<A> {
+        HttpServiceBuilder::new(path_root, context, state)
     }
 
     /// List the available HTTP API routes.

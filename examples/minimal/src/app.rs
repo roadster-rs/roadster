@@ -30,14 +30,17 @@ impl RoadsterApp for App {
         state: Arc<Self::State>,
     ) -> anyhow::Result<()> {
         registry
-            .register_builder(HttpService::builder(BASE, &context).router(controller::routes(BASE)))
+            .register_builder(
+                HttpService::builder(BASE, &context, state.as_ref())
+                    .router(controller::routes(BASE)),
+            )
             .await?;
 
         registry
             .register_builder(
                 SidekiqWorkerService::builder(context.clone(), state.clone())
                     .await?
-                    .register_app_worker(ExampleWorker::build(&state)),
+                    .register_app_worker(ExampleWorker::build(&state))?,
             )
             .await?;
 
