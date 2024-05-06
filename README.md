@@ -1,11 +1,11 @@
 # Roadster
 
+[![crates.io](https://img.shields.io/crates/v/roadster.svg)](https://crates.io/crates/roadster)
+[![docs.rs](https://img.shields.io/docsrs/roadster?logo=docsdotrs)](https://docs.rs/roadster/latest/roadster/)
+[![Crates.io License](https://img.shields.io/crates/l/roadster)](https://crates.io/crates/roadster)
+[![Discord](https://img.shields.io/discord/1234415847666094120?logo=discord&label=Discord)](https://discord.gg/yb2m7SKb73)
 [![Checks](https://github.com/roadster-rs/roadster/actions/workflows/ci.yml/badge.svg)](https://github.com/roadster-rs/roadster/actions/workflows/ci.yml)
 [![Feature Powerset](https://github.com/roadster-rs/roadster/actions/workflows/feature_powerset.yml/badge.svg)](https://github.com/roadster-rs/roadster/actions/workflows/feature_powerset.yml)
-[![crates.io](https://img.shields.io/crates/v/roadster.svg)](https://crates.io/crates/roadster)
-[![Crates.io License](https://img.shields.io/crates/l/roadster)](https://crates.io/crates/roadster)
-[![docs.rs](https://img.shields.io/docsrs/roadster)](https://docs.rs/roadster/latest/roadster/)
-[![Discord](https://img.shields.io/discord/1234415847666094120)](https://discord.gg/yb2m7SKb73)
 
 A "Batteries Included" web framework for rust designed to get you moving fast 🏎️. Inspired by other fully-featured
 frameworks such
