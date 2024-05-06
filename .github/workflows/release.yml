@@ -1,4 +1,7 @@
 # https://release-plz.ieni.dev/docs/github/quickstart#example-release-pr-and-release
+# We use a separate workflow to release vs create a release PR -- this is because we (currently) only want to
+# create a release PR after the `Feature Powerset` workflow completes, but we want to publish any merged release
+# commits once they're merged to `main`.
 
 name: Release
 
@@ -7,12 +10,7 @@ permissions:
   contents: write
 
 on:
-  workflow_run:
-    # Releases are performed after the `Feature Powerset` workflow completes successfully. Currently, `Feature Powerset`
-    # runs once a week, so releases will also be performed once a week.
-    workflows: [ Feature Powerset ]
-    types:
-      - completed
+  push:
     branches:
       - main
 
@@ -20,7 +18,6 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,11 +27,8 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
       - name: Run release-plz
         uses: MarcoIeni/release-plz-action@v0.5
+        with:
+          command: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-  on-powerset-failure:
-    runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
-    steps:
-      - run: echo 'The `Feature Powerset` workflow failed, skipping release.'
