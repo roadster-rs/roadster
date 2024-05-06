@@ -40,6 +40,7 @@ pub fn default_routes<S>(parent: &str, config: &AppConfig) -> ApiRouter<S>
 where
     S: Clone + Send + Sync + 'static + Into<Arc<AppContext>>,
 {
+    // Todo: Allow disabling the default routes
     ApiRouter::new()
         .merge(ping::routes(parent))
         .merge(health::routes(parent))

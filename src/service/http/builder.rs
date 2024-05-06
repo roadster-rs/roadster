@@ -13,12 +13,14 @@ use aide::axum::ApiRouter;
 use aide::openapi::OpenApi;
 #[cfg(feature = "open-api")]
 use aide::transform::TransformOpenApi;
+use anyhow::bail;
 use async_trait::async_trait;
 #[cfg(feature = "open-api")]
 use axum::Extension;
 #[cfg(not(feature = "open-api"))]
 use axum::Router;
 use itertools::Itertools;
+use std::collections::BTreeMap;
 #[cfg(feature = "open-api")]
 use std::sync::Arc;
 use tracing::info;
@@ -30,22 +32,22 @@ pub struct HttpServiceBuilder<A: App> {
     router: ApiRouter<A::State>,
     #[cfg(feature = "open-api")]
     api_docs: Box<dyn Fn(TransformOpenApi) -> TransformOpenApi + Send>,
-    middleware: Vec<Box<dyn Middleware<A::State>>>,
-    initializers: Vec<Box<dyn Initializer<A::State>>>,
+    middleware: BTreeMap<String, Box<dyn Middleware<A::State>>>,
+    initializers: BTreeMap<String, Box<dyn Initializer<A::State>>>,
 }
 
 impl<A: App> HttpServiceBuilder<A> {
-    pub fn new(path_root: &str, app_context: &AppContext) -> Self {
+    pub fn new(path_root: &str, context: &AppContext, state: &A::State) -> Self {
         #[cfg(feature = "open-api")]
-        let app_name = app_context.config.app.name.clone();
+        let app_name = context.config.app.name.clone();
         Self {
-            router: default_routes(path_root, &app_context.config),
+            router: default_routes(path_root, &context.config),
             #[cfg(feature = "open-api")]
             api_docs: Box::new(move |api| {
                 api.title(&app_name).description(&format!("# {}", app_name))
             }),
-            middleware: default_middleware(),
-            initializers: default_initializers(),
+            middleware: default_middleware(context, state),
+            initializers: default_initializers(context, state),
         }
     }
 
@@ -70,14 +72,27 @@ impl<A: App> HttpServiceBuilder<A> {
         self
     }
 
-    pub fn initializer(mut self, initializer: Box<dyn Initializer<A::State>>) -> Self {
-        self.initializers.push(initializer);
-        self
+    pub fn initializer(
+        mut self,
+        initializer: Box<dyn Initializer<A::State>>,
+    ) -> anyhow::Result<Self> {
+        let name = initializer.name();
+        if self
+            .initializers
+            .insert(name.clone(), initializer)
+            .is_some()
+        {
+            bail!("Initializer `{name}` was already registered");
+        }
+        Ok(self)
     }
 
-    pub fn middleware(mut self, middleware: Box<dyn Middleware<A::State>>) -> Self {
-        self.middleware.push(middleware);
-        self
+    pub fn middleware(mut self, middleware: Box<dyn Middleware<A::State>>) -> anyhow::Result<Self> {
+        let name = middleware.name();
+        if self.middleware.insert(name.clone(), middleware).is_some() {
+            bail!("Middleware `{name}` was already registered");
+        }
+        Ok(self)
     }
 }
 
@@ -102,9 +117,8 @@ impl<A: App> AppServiceBuilder<A, HttpService> for HttpServiceBuilder<A> {
 
         let initializers = self
             .initializers
-            .into_iter()
+            .values()
             .filter(|initializer| initializer.enabled(context, state))
-            .unique_by(|initializer| initializer.name())
             .sorted_by(|a, b| Ord::cmp(&a.priority(context, state), &b.priority(context, state)))
             .collect_vec();
 
@@ -123,9 +137,8 @@ impl<A: App> AppServiceBuilder<A, HttpService> for HttpServiceBuilder<A> {
         info!("Installing middleware. Note: the order of installation is the inverse of the order middleware will run when handling a request.");
         let router = self
             .middleware
-            .into_iter()
+            .values()
             .filter(|middleware| middleware.enabled(context, state))
-            .unique_by(|middleware| middleware.name())
             .sorted_by(|a, b| Ord::cmp(&a.priority(context, state), &b.priority(context, state)))
             // Reverse due to how Axum's `Router#layer` method adds middleware.
             .rev()

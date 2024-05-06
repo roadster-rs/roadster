@@ -205,7 +205,7 @@ where
     ///
     /// The worker will be wrapped by a [RoadsterWorker], which provides some common behavior, such
     /// as enforcing a timeout/max duration of worker jobs.
-    pub fn register_app_worker<Args, W>(mut self, worker: W) -> Self
+    pub fn register_app_worker<Args, W>(mut self, worker: W) -> anyhow::Result<Self>
     where
         Args: Sync + Send + Serialize + for<'de> serde::Deserialize<'de> + 'static,
         W: AppWorker<A, Args> + 'static,
@@ -219,12 +219,14 @@ where
         {
             let class_name = W::class_name();
             debug!(worker = %class_name, "Registering worker");
-            registered_workers.insert(class_name.clone());
+            if !registered_workers.insert(class_name.clone()) {
+                bail!("Worker `{class_name}` was already registered");
+            }
             let roadster_worker = RoadsterWorker::new(worker, state.clone());
             processor.register(roadster_worker);
         }
 
-        self
+        Ok(self)
     }
 
     /// Register a periodic [worker][AppWorker] that will run with the provided args. The cadence
@@ -255,8 +257,12 @@ where
             debug!(worker = %class_name, "Registering periodic worker");
             let roadster_worker = RoadsterWorker::new(worker, state.clone());
             let builder = builder.args(args)?;
-            let job_json = serde_json::to_string(&builder.into_periodic_job(class_name)?)?;
-            registered_periodic_workers.insert(job_json);
+            let job_json = serde_json::to_string(&builder.into_periodic_job(class_name.clone())?)?;
+            if !registered_periodic_workers.insert(job_json.clone()) {
+                bail!(
+                    "Periodic worker `{class_name}` was already registered; full job: {job_json}"
+                );
+            }
             builder.register(processor, roadster_worker).await?;
         }
 
