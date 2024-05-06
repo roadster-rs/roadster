@@ -93,3 +93,7 @@ cargo-husky = { version = "1.5.0", default-features = false, features = ["user-h
 
 [workspace]
 members = [".", "examples/*"]
+
+[package.metadata.docs.rs]
+# Have docs.rs pass `--all-features` to ensure all features have their documentation built.
+all-features = true
