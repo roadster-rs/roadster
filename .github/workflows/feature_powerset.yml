@@ -6,8 +6,8 @@ name: Feature Powerset
 
 on:
   schedule:
-    # Run once a week on Saturday at 1AM UTC (Friday 6PM PST)
-    - cron: '0 1 * * 6'
+    # Run once a week on Friday at 11PM UTC (Friday 4PM PST)
+    - cron: '0 23 * * 5'
   workflow_dispatch:
   pull_request:
     branches: [ main ]
