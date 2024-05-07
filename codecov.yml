@@ -1,0 +1,14 @@
+# https://docs.codecov.com/docs/common-recipe-list
+
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+      github_checks:
+        # Install the codecov browser extension to see coverage annotations in GitHub.
+        # https://docs.codecov.com/docs/the-codecov-browser-extension
+        annotations: false
+      comment:
+        require_changes: true
