@@ -56,7 +56,7 @@ pub fn default_true() -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::util::serde_util::UriOrString;
+    use super::*;
     use serde_derive::{Deserialize, Serialize};
     use serde_json::from_str;
     use std::str::FromStr;
@@ -86,8 +86,25 @@ mod tests {
     }
 
     #[test]
+    fn uri_or_string_uri_variant_to_string() {
+        let uri = UriOrString::Uri(Url::from_str("https://example.com").unwrap());
+        assert_eq!("https://example.com/", uri.to_string());
+    }
+
+    #[test]
+    fn uri_or_string_string_variant_to_string() {
+        let uri = UriOrString::String("foo".to_string());
+        assert_eq!("foo", uri.to_string());
+    }
+
+    #[test]
     fn deserialize_uri_or_string_as_string() {
         let value: Wrapper<UriOrString> = from_str(r#"{"inner": "invalid-uri"}"#).unwrap();
         assert_eq!(value.inner, UriOrString::String("invalid-uri".to_string()));
+    }
+
+    #[test]
+    fn default_true_returns_true() {
+        assert!(default_true());
     }
 }

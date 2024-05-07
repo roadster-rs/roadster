@@ -22,11 +22,15 @@ Code coverage stats are generated automatically in CI. To generate coverage stat
 # Install coverage dependencies
 cargo binstall grcov
 rustup component add llvm-tools
+# If you have Nix on you system, you can install the `genhtml` command using the nix package.
+# Todo: other methods of installing `genhtml`
+nix-env -iA nixpkgs.lcov
 # Build + run tests with coverage
-cargo llvm-cov --no-report nextest --all-features
+cargo llvm-cov --no-report nextest --all-features 
 # Generate and open an HTML coverage report
-grcov . -s . --binary-path ./target/debug/ -t html --branch --ignore-not-existing -o ./target/debug/coverage/
-open target/debug/coverage/index.html
+cargo llvm-cov report --lcov --output-path ./target/llvm-cov-target/debug/lcov.info
+genhtml -o ./target/llvm-cov-target/debug/coverage/ --show-details --highlight --ignore-errors source --legend ./target/llvm-cov-target/debug/lcov.info
+open target/llvm-cov-target/debug/coverage/index.html
 ```
 
 # Releases
