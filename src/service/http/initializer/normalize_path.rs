@@ -18,7 +18,7 @@ impl<S> Initializer<S> for NormalizePathInitializer {
 
     fn enabled(&self, context: &AppContext, _state: &S) -> bool {
         context
-            .config
+            .config()
             .service
             .http
             .custom
@@ -30,7 +30,7 @@ impl<S> Initializer<S> for NormalizePathInitializer {
 
     fn priority(&self, context: &AppContext, _state: &S) -> i32 {
         context
-            .config
+            .config()
             .service
             .http
             .custom

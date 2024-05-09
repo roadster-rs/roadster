@@ -92,10 +92,10 @@ where
         let processor = if !<SidekiqWorkerService as AppService<A>>::enabled(&context, &state) {
             debug!("Sidekiq service not enabled, not creating the Sidekiq processor");
             None
-        } else if let Some(redis_fetch) = context.redis_fetch.clone() {
+        } else if let Some(redis_fetch) = context.redis_fetch() {
             Self::auto_clean_periodic(&context).await?;
             let queues = context
-                .config
+                .config()
                 .service
                 .sidekiq
                 .custom
@@ -111,7 +111,7 @@ where
             debug!("Sidekiq.rs queues: {queues:?}");
             let processor = {
                 let num_workers = context
-                    .config
+                    .config()
                     .service
                     .sidekiq
                     .custom
@@ -120,12 +120,12 @@ where
                     .ok_or_else(|| {
                         anyhow!(
                             "Unable to convert num_workers `{}` to usize",
-                            context.config.service.sidekiq.custom.num_workers
+                            context.config().service.sidekiq.custom.num_workers
                         )
                     })?;
                 let processor_config: ProcessorConfig = Default::default();
                 let processor_config = processor_config.num_workers(num_workers);
-                Processor::new(redis_fetch, queues.clone()).with_config(processor_config)
+                Processor::new(redis_fetch.clone(), queues.clone()).with_config(processor_config)
             };
 
             Some(processor)
@@ -166,13 +166,19 @@ where
     }
 
     async fn auto_clean_periodic(context: &AppContext) -> anyhow::Result<()> {
-        if context.config.service.sidekiq.custom.periodic.stale_cleanup
+        if context
+            .config()
+            .service
+            .sidekiq
+            .custom
+            .periodic
+            .stale_cleanup
             == StaleCleanUpBehavior::AutoCleanAll
         {
             // Periodic jobs are not removed automatically. Remove any periodic jobs that were
             // previously added. They should be re-added by `App::worker`.
             info!("Auto-cleaning periodic jobs");
-            periodic::destroy_all(context.redis_enqueue.clone()).await?;
+            periodic::destroy_all(context.redis_enqueue().clone()).await?;
         }
 
         Ok(())
@@ -195,7 +201,7 @@ where
             if !registered_periodic_workers.is_empty() {
                 bail!("Can only clean up previous periodic jobs if no periodic jobs have been registered yet.")
             }
-            periodic::destroy_all(context.redis_enqueue.clone()).await?;
+            periodic::destroy_all(context.redis_enqueue().clone()).await?;
         }
 
         Ok(self)
@@ -281,7 +287,7 @@ where
         context: &AppContext,
         registered_periodic_workers: &HashSet<String>,
     ) -> anyhow::Result<()> {
-        let mut conn = context.redis_enqueue.get().await?;
+        let mut conn = context.redis_enqueue().get().await?;
         let stale_jobs = conn
             .zrange(PERIODIC_KEY.to_string(), 0, -1)
             .await?
@@ -294,7 +300,13 @@ where
             return Ok(());
         }
 
-        if context.config.service.sidekiq.custom.periodic.stale_cleanup
+        if context
+            .config()
+            .service
+            .sidekiq
+            .custom
+            .periodic
+            .stale_cleanup
             == StaleCleanUpBehavior::AutoCleanStale
         {
             info!(

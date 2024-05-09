@@ -71,7 +71,7 @@ pub struct RoadsterCli {
 
 impl RoadsterCli {
     pub fn allow_dangerous(&self, context: &AppContext) -> bool {
-        context.config.environment != Environment::Production || self.allow_dangerous
+        context.config().environment != Environment::Production || self.allow_dangerous
     }
 }
 

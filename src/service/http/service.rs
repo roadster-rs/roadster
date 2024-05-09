@@ -35,7 +35,7 @@ impl<A: App> AppService<A> for HttpService {
     }
 
     fn enabled(context: &AppContext, _state: &A::State) -> bool {
-        context.config.service.http.common.enabled(context)
+        context.config().service.http.common.enabled(context)
     }
 
     #[cfg(feature = "cli")]
@@ -72,7 +72,7 @@ impl<A: App> AppService<A> for HttpService {
         _app_state: Arc<A::State>,
         cancel_token: CancellationToken,
     ) -> anyhow::Result<()> {
-        let server_addr = app_context.config.service.http.custom.address.url();
+        let server_addr = app_context.config().service.http.custom.address.url();
         info!("Server will start at {server_addr}");
 
         let app_listener = tokio::net::TcpListener::bind(server_addr).await?;

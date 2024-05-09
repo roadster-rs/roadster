@@ -26,7 +26,7 @@ impl<A: App> AppService<A> for SidekiqWorkerService {
     where
         Self: Sized,
     {
-        let sidekiq_config = &context.config.service.sidekiq;
+        let sidekiq_config = &context.config().service.sidekiq;
         if !sidekiq_config.common.enabled(context) {
             debug!("Sidekiq is not enabled in the config.");
             return false;
@@ -39,7 +39,7 @@ impl<A: App> AppService<A> for SidekiqWorkerService {
             debug!("Sidekiq configured with 0 worker queues.");
             return false;
         }
-        if context.redis_fetch.is_none() {
+        if context.redis_fetch().is_none() {
             debug!("No 'redis-fetch' pool connections available.");
             return false;
         }

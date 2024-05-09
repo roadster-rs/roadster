@@ -39,9 +39,9 @@ pub struct HttpServiceBuilder<A: App> {
 impl<A: App> HttpServiceBuilder<A> {
     pub fn new(path_root: &str, context: &AppContext, state: &A::State) -> Self {
         #[cfg(feature = "open-api")]
-        let app_name = context.config.app.name.clone();
+        let app_name = context.config().app.name.clone();
         Self {
-            router: default_routes(path_root, &context.config),
+            router: default_routes(path_root, context.config()),
             #[cfg(feature = "open-api")]
             api_docs: Box::new(move |api| {
                 api.title(&app_name).description(&format!("# {}", app_name))

@@ -16,7 +16,7 @@ impl<S> Middleware<S> for CatchPanicMiddleware {
 
     fn enabled(&self, context: &AppContext, _state: &S) -> bool {
         context
-            .config
+            .config()
             .service
             .http
             .custom
@@ -28,7 +28,7 @@ impl<S> Middleware<S> for CatchPanicMiddleware {
 
     fn priority(&self, context: &AppContext, _state: &S) -> i32 {
         context
-            .config
+            .config()
             .service
             .http
             .custom
