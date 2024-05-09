@@ -161,8 +161,8 @@ where
     }
 
     #[cfg(feature = "db-sql")]
-    if context.config.database.auto_migrate {
-        A::M::up(&context.db, None).await?;
+    if context.config().database.auto_migrate {
+        A::M::up(context.db(), None).await?;
     }
 
     let cancel_token = CancellationToken::new();
@@ -352,7 +352,7 @@ where
     F: Future<Output = anyhow::Result<T>> + Send + 'static,
 {
     let result = f.await;
-    if result.is_err() && context.config.app.shutdown_on_error {
+    if result.is_err() && context.config().app.shutdown_on_error {
         cancellation_token.cancel();
     }
     result
@@ -375,7 +375,7 @@ where
     #[cfg(feature = "db-sql")]
     let db_close_result = {
         info!("Closing the DB connection pool.");
-        context.as_ref().clone().db.close().await
+        context.db().clone().close().await
     };
 
     // Futures are lazy -- the custom `app_graceful_shutdown` future won't run until we call `await` on it.

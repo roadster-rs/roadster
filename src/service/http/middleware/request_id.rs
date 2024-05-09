@@ -44,7 +44,7 @@ impl<S> Middleware<S> for SetRequestIdMiddleware {
 
     fn enabled(&self, context: &AppContext, _state: &S) -> bool {
         context
-            .config
+            .config()
             .service
             .http
             .custom
@@ -56,7 +56,7 @@ impl<S> Middleware<S> for SetRequestIdMiddleware {
 
     fn priority(&self, context: &AppContext, _state: &S) -> i32 {
         context
-            .config
+            .config()
             .service
             .http
             .custom
@@ -68,7 +68,7 @@ impl<S> Middleware<S> for SetRequestIdMiddleware {
 
     fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
         let header_name = &context
-            .config
+            .config()
             .service
             .http
             .custom
@@ -95,7 +95,7 @@ impl<S> Middleware<S> for PropagateRequestIdMiddleware {
 
     fn enabled(&self, context: &AppContext, _state: &S) -> bool {
         context
-            .config
+            .config()
             .service
             .http
             .custom
@@ -107,7 +107,7 @@ impl<S> Middleware<S> for PropagateRequestIdMiddleware {
 
     fn priority(&self, context: &AppContext, _state: &S) -> i32 {
         context
-            .config
+            .config()
             .service
             .http
             .custom
@@ -119,7 +119,7 @@ impl<S> Middleware<S> for PropagateRequestIdMiddleware {
 
     fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
         let header_name = &context
-            .config
+            .config()
             .service
             .http
             .custom

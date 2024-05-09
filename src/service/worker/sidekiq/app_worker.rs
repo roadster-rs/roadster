@@ -59,7 +59,7 @@ where
     /// [sidekiq::RedisPool] from inside the [state][App::State].
     async fn enqueue(state: &A::State, args: Args) -> anyhow::Result<()> {
         let context: Arc<AppContext> = state.clone().into();
-        Self::perform_async(&context.redis_enqueue, args).await?;
+        Self::perform_async(context.redis_enqueue(), args).await?;
         Ok(())
     }
 
@@ -81,7 +81,7 @@ where
     fn max_retries(&self, state: &A::State) -> usize {
         let context: Arc<AppContext> = state.clone().into();
         context
-            .config
+            .config()
             .service
             .sidekiq
             .custom
@@ -94,7 +94,13 @@ where
     /// The default implementation uses the value from the app's config file.
     fn timeout(&self, state: &A::State) -> bool {
         let context: Arc<AppContext> = state.clone().into();
-        context.config.service.sidekiq.custom.worker_config.timeout
+        context
+            .config()
+            .service
+            .sidekiq
+            .custom
+            .worker_config
+            .timeout
     }
 
     /// See [AppWorkerConfig::max_duration].
@@ -103,7 +109,7 @@ where
     fn max_duration(&self, state: &A::State) -> Duration {
         let context: Arc<AppContext> = state.clone().into();
         context
-            .config
+            .config()
             .service
             .sidekiq
             .custom
@@ -117,7 +123,7 @@ where
     fn disable_argument_coercion(&self, state: &A::State) -> bool {
         let context: Arc<AppContext> = state.clone().into();
         context
-            .config
+            .config()
             .service
             .sidekiq
             .custom

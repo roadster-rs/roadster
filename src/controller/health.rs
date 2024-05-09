@@ -112,7 +112,7 @@ where
     #[cfg(feature = "db-sql")]
     let db = {
         let db_timer = Instant::now();
-        let db_status = if ping_db(&state.db).await.is_ok() {
+        let db_status = if ping_db(state.db()).await.is_ok() {
             Status::Ok
         } else {
             Status::Err
@@ -127,9 +127,9 @@ where
     };
 
     #[cfg(feature = "sidekiq")]
-    let redis_enqueue = redis_health(&state.redis_enqueue).await;
+    let redis_enqueue = redis_health(state.redis_enqueue()).await;
     #[cfg(feature = "sidekiq")]
-    let redis_fetch = if let Some(redis_fetch) = state.redis_fetch.as_ref() {
+    let redis_fetch = if let Some(redis_fetch) = state.redis_fetch() {
         Some(redis_health(redis_fetch).await)
     } else {
         None

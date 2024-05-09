@@ -61,9 +61,9 @@ where
         let state: Arc<AppContext> = state.clone().into();
         let token: TokenData<C> = decode_auth_token(
             auth_header.0.token(),
-            &state.config.auth.jwt.secret,
-            &state.config.auth.jwt.claims.audience,
-            &state.config.auth.jwt.claims.required_claims,
+            &state.config().auth.jwt.secret,
+            &state.config().auth.jwt.claims.audience,
+            &state.config().auth.jwt.claims.required_claims,
         )?;
         let token = Jwt {
             header: token.header,

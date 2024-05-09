@@ -47,20 +47,21 @@ where
 {
     async fn run(&self, _app: &A, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool> {
         if is_destructive(self) && !cli.allow_dangerous(context) {
-            bail!("Running destructive command `{:?}` is not allowed in environment `{:?}`. To override, provide the `--allow-dangerous` CLI arg.", self, context.config.environment);
+            bail!("Running destructive command `{:?}` is not allowed in environment `{:?}`. To override, provide the `--allow-dangerous` CLI arg.", self, context.config().environment);
         } else if is_destructive(self) {
             warn!(
                 "Running destructive command `{:?}` in environment `{:?}`",
-                self, context.config.environment
+                self,
+                context.config().environment
             );
         }
         match self {
-            MigrateCommand::Up(args) => A::M::up(&context.db, args.steps).await?,
-            MigrateCommand::Down(args) => A::M::down(&context.db, args.steps).await?,
-            MigrateCommand::Refresh => A::M::refresh(&context.db).await?,
-            MigrateCommand::Reset => A::M::reset(&context.db).await?,
-            MigrateCommand::Fresh => A::M::fresh(&context.db).await?,
-            MigrateCommand::Status => A::M::status(&context.db).await?,
+            MigrateCommand::Up(args) => A::M::up(context.db(), args.steps).await?,
+            MigrateCommand::Down(args) => A::M::down(context.db(), args.steps).await?,
+            MigrateCommand::Refresh => A::M::refresh(context.db()).await?,
+            MigrateCommand::Reset => A::M::reset(context.db()).await?,
+            MigrateCommand::Fresh => A::M::fresh(context.db()).await?,
+            MigrateCommand::Status => A::M::status(context.db()).await?,
         };
         Ok(true)
     }

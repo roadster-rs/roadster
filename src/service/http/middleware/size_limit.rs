@@ -30,7 +30,7 @@ impl<S> Middleware<S> for RequestBodyLimitMiddleware {
 
     fn enabled(&self, context: &AppContext, _state: &S) -> bool {
         context
-            .config
+            .config()
             .service
             .http
             .custom
@@ -42,7 +42,7 @@ impl<S> Middleware<S> for RequestBodyLimitMiddleware {
 
     fn priority(&self, context: &AppContext, _state: &S) -> i32 {
         context
-            .config
+            .config()
             .service
             .http
             .custom
@@ -54,7 +54,7 @@ impl<S> Middleware<S> for RequestBodyLimitMiddleware {
 
     fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
         let limit = &context
-            .config
+            .config()
             .service
             .http
             .custom

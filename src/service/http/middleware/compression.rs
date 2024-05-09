@@ -22,7 +22,7 @@ impl<S> Middleware<S> for ResponseCompressionMiddleware {
 
     fn enabled(&self, context: &AppContext, _state: &S) -> bool {
         context
-            .config
+            .config()
             .service
             .http
             .custom
@@ -34,7 +34,7 @@ impl<S> Middleware<S> for ResponseCompressionMiddleware {
 
     fn priority(&self, context: &AppContext, _state: &S) -> i32 {
         context
-            .config
+            .config()
             .service
             .http
             .custom
@@ -59,7 +59,7 @@ impl<S> Middleware<S> for RequestDecompressionMiddleware {
 
     fn enabled(&self, context: &AppContext, _state: &S) -> bool {
         context
-            .config
+            .config()
             .service
             .http
             .custom
@@ -71,7 +71,7 @@ impl<S> Middleware<S> for RequestDecompressionMiddleware {
 
     fn priority(&self, context: &AppContext, _state: &S) -> i32 {
         context
-            .config
+            .config()
             .service
             .http
             .custom
