@@ -6,6 +6,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.1.1...roadster-v0.2.0) - 2024-05-10
+
+### Other
+- Add methods to AppContext instead of direct field access
+- Fix codecov config
+- Add tests to serde_util
+- Add codecov config file
+- Update instructions to run CI locally
+- Add coverage badge to the readme
+- Add workflow to generate code coverage stats
+- Disallow registering things multiple times
+- Create FUNDING.yml
+- Update feature_powerset.yml schedule
+- Rearrange and enhance the status badges in the readme
+- Add a Discord badge
+- Have docs.rs pass --all-features to ensure all features have docs built
+
 ## [0.1.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.1.0...roadster-v0.1.1) - 2024-05-05
 
 ### Other
