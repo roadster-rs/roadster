@@ -77,10 +77,3 @@ struct AppContextInner {
     #[cfg(feature = "sidekiq")]
     redis_fetch: Option<sidekiq::RedisPool>,
 }
-
-/// Implemented so consumers can use [AppContext] as their [crate::app::App::State] if they want.
-impl From<Arc<AppContext>> for AppContext {
-    fn from(value: Arc<AppContext>) -> Self {
-        value.as_ref().clone()
-    }
-}
