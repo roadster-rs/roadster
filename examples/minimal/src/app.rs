@@ -7,7 +7,7 @@ use roadster::service::registry::ServiceRegistry;
 use roadster::service::worker::sidekiq::app_worker::AppWorker;
 use roadster::service::worker::sidekiq::service::SidekiqWorkerService;
 
-use crate::app_state::AppState;
+use crate::app_state::CustomAppContext;
 use crate::cli::AppCli;
 use crate::controller;
 use crate::worker::example::ExampleWorker;
@@ -19,7 +19,7 @@ pub struct App;
 
 #[async_trait]
 impl RoadsterApp for App {
-    type State = AppState;
+    type State = CustomAppContext;
     type Cli = AppCli;
     type M = Migrator;
 
