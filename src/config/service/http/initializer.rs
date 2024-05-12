@@ -104,12 +104,12 @@ impl<T: Default> InitializerConfig<T> {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
     use serde_json::Value;
 
     #[test]
-    fn test_custom_config() {
+    fn custom_config() {
         // Note: since we're parsing into a Initializer config struct directly, we don't
         // need to prefix `foo` with `initializer`. If we want to actually provide custom initializer
         // configs, the table key will need to be `[initializer.foo]`.

@@ -127,7 +127,7 @@ pub enum Subject {
 
 #[cfg(test)]
 mod tests {
-    use crate::auth::jwt::Subject;
+    use super::*;
     use serde_derive::{Deserialize, Serialize};
     use serde_json::from_str;
     use std::str::FromStr;
