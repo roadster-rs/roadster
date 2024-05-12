@@ -137,7 +137,7 @@ impl CommonConfig {
         self
     }
 
-    pub fn enabled(&self, context: &AppContext) -> bool {
+    pub fn enabled<S>(&self, context: &AppContext<S>) -> bool {
         self.enable.unwrap_or(
             context
                 .config()

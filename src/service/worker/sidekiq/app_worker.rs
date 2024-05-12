@@ -4,7 +4,6 @@ use async_trait::async_trait;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
 use sidekiq::Worker;
-use std::sync::Arc;
 use std::time::Duration;
 use typed_builder::TypedBuilder;
 
@@ -52,13 +51,12 @@ where
     Args: Send + Sync + serde::Serialize + 'static,
 {
     /// Build a new instance of the [worker][Self].
-    fn build(state: &A::State) -> Self;
+    fn build(context: &AppContext<A::State>) -> Self;
 
     /// Enqueue the worker into its Sidekiq queue. This is a helper method around [Worker::perform_async]
     /// so the caller can simply provide the [state][App::State] instead of needing to access the
     /// [sidekiq::RedisPool] from inside the [state][App::State].
-    async fn enqueue(state: &A::State, args: Args) -> anyhow::Result<()> {
-        let context: Arc<AppContext> = state.clone().into();
+    async fn enqueue(context: &AppContext<A::State>, args: Args) -> anyhow::Result<()> {
         Self::perform_async(context.redis_enqueue(), args).await?;
         Ok(())
     }
@@ -66,20 +64,19 @@ where
     /// Provide the [AppWorkerConfig] for [Self]. The default implementation populates the
     /// [AppWorkerConfig] using the values from the corresponding methods on [Self], e.g.,
     /// [Self::max_retries].
-    fn config(&self, state: &A::State) -> AppWorkerConfig {
+    fn config(&self, context: &AppContext<A::State>) -> AppWorkerConfig {
         AppWorkerConfig::builder()
-            .max_retries(AppWorker::max_retries(self, state))
-            .timeout(self.timeout(state))
-            .max_duration(self.max_duration(state))
-            .disable_argument_coercion(AppWorker::disable_argument_coercion(self, state))
+            .max_retries(AppWorker::max_retries(self, context))
+            .timeout(self.timeout(context))
+            .max_duration(self.max_duration(context))
+            .disable_argument_coercion(AppWorker::disable_argument_coercion(self, context))
             .build()
     }
 
     /// See [AppWorkerConfig::max_retries].
     ///
     /// The default implementation uses the value from the app's config file.
-    fn max_retries(&self, state: &A::State) -> usize {
-        let context: Arc<AppContext> = state.clone().into();
+    fn max_retries(&self, context: &AppContext<A::State>) -> usize {
         context
             .config()
             .service
@@ -92,8 +89,7 @@ where
     /// See [AppWorkerConfig::timeout].
     ///
     /// The default implementation uses the value from the app's config file.
-    fn timeout(&self, state: &A::State) -> bool {
-        let context: Arc<AppContext> = state.clone().into();
+    fn timeout(&self, context: &AppContext<A::State>) -> bool {
         context
             .config()
             .service
@@ -106,8 +102,7 @@ where
     /// See [AppWorkerConfig::max_duration].
     ///
     /// The default implementation uses the value from the app's config file.
-    fn max_duration(&self, state: &A::State) -> Duration {
-        let context: Arc<AppContext> = state.clone().into();
+    fn max_duration(&self, context: &AppContext<A::State>) -> Duration {
         context
             .config()
             .service
@@ -120,8 +115,7 @@ where
     /// See [AppWorkerConfig::disable_argument_coercion].
     ///
     /// The default implementation uses the value from the app's config file.
-    fn disable_argument_coercion(&self, state: &A::State) -> bool {
-        let context: Arc<AppContext> = state.clone().into();
+    fn disable_argument_coercion(&self, context: &AppContext<A::State>) -> bool {
         context
             .config()
             .service

@@ -20,7 +20,7 @@ impl<S> Middleware<S> for ResponseCompressionMiddleware {
         "response-compression".to_string()
     }
 
-    fn enabled(&self, context: &AppContext, _state: &S) -> bool {
+    fn enabled(&self, context: &AppContext<S>) -> bool {
         context
             .config()
             .service
@@ -32,7 +32,7 @@ impl<S> Middleware<S> for ResponseCompressionMiddleware {
             .enabled(context)
     }
 
-    fn priority(&self, context: &AppContext, _state: &S) -> i32 {
+    fn priority(&self, context: &AppContext<S>) -> i32 {
         context
             .config()
             .service
@@ -44,7 +44,7 @@ impl<S> Middleware<S> for ResponseCompressionMiddleware {
             .priority
     }
 
-    fn install(&self, router: Router, _context: &AppContext, _state: &S) -> anyhow::Result<Router> {
+    fn install(&self, router: Router, _context: &AppContext<S>) -> anyhow::Result<Router> {
         let router = router.layer(CompressionLayer::new());
 
         Ok(router)
@@ -57,7 +57,7 @@ impl<S> Middleware<S> for RequestDecompressionMiddleware {
         "request-decompression".to_string()
     }
 
-    fn enabled(&self, context: &AppContext, _state: &S) -> bool {
+    fn enabled(&self, context: &AppContext<S>) -> bool {
         context
             .config()
             .service
@@ -69,7 +69,7 @@ impl<S> Middleware<S> for RequestDecompressionMiddleware {
             .enabled(context)
     }
 
-    fn priority(&self, context: &AppContext, _state: &S) -> i32 {
+    fn priority(&self, context: &AppContext<S>) -> i32 {
         context
             .config()
             .service
@@ -81,7 +81,7 @@ impl<S> Middleware<S> for RequestDecompressionMiddleware {
             .priority
     }
 
-    fn install(&self, router: Router, _context: &AppContext, _state: &S) -> anyhow::Result<Router> {
+    fn install(&self, router: Router, _context: &AppContext<S>) -> anyhow::Result<Router> {
         let router = router.layer(RequestDecompressionLayer::new());
 
         Ok(router)

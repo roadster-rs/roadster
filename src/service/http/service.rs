@@ -18,6 +18,7 @@ use std::fs::File;
 use std::io::Write;
 #[cfg(feature = "open-api")]
 use std::path::PathBuf;
+#[cfg(feature = "open-api")]
 use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 use tracing::info;
@@ -34,7 +35,7 @@ impl<A: App> AppService<A> for HttpService {
         "http".to_string()
     }
 
-    fn enabled(context: &AppContext, _state: &A::State) -> bool {
+    fn enabled(context: &AppContext<A::State>) -> bool {
         context.config().service.http.common.enabled(context)
     }
 
@@ -43,8 +44,7 @@ impl<A: App> AppService<A> for HttpService {
         &self,
         roadster_cli: &RoadsterCli,
         _app_cli: &A::Cli,
-        _app_context: &AppContext,
-        _app_state: &A::State,
+        _app_context: &AppContext<A::State>,
     ) -> anyhow::Result<bool> {
         if let Some(command) = roadster_cli.command.as_ref() {
             match command {
@@ -68,8 +68,7 @@ impl<A: App> AppService<A> for HttpService {
 
     async fn run(
         &self,
-        app_context: Arc<AppContext>,
-        _app_state: Arc<A::State>,
+        app_context: AppContext<A::State>,
         cancel_token: CancellationToken,
     ) -> anyhow::Result<()> {
         let server_addr = app_context.config().service.http.custom.address.url();
@@ -88,10 +87,9 @@ impl HttpService {
     /// Create a new [HttpServiceBuilder].
     pub fn builder<A: App>(
         path_root: &str,
-        context: &AppContext,
-        state: &A::State,
+        context: &AppContext<A::State>,
     ) -> HttpServiceBuilder<A> {
-        HttpServiceBuilder::new(path_root, context, state)
+        HttpServiceBuilder::new(path_root, context)
     }
 
     /// List the available HTTP API routes.

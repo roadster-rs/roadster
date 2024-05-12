@@ -1,4 +1,3 @@
-use std::sync::Arc;
 #[cfg(feature = "sidekiq")]
 use std::time::Duration;
 use std::time::Instant;
@@ -39,9 +38,9 @@ const BASE: &str = "/_health";
 const TAG: &str = "Health";
 
 #[cfg(not(feature = "open-api"))]
-pub fn routes<S>(parent: &str) -> Router<S>
+pub fn routes<S>(parent: &str) -> Router<AppContext<S>>
 where
-    S: Clone + Send + Sync + 'static + Into<Arc<AppContext>>,
+    S: Clone + Send + Sync + 'static,
 {
     let root = build_path(parent, BASE);
 
@@ -49,9 +48,9 @@ where
 }
 
 #[cfg(feature = "open-api")]
-pub fn routes<S>(parent: &str) -> ApiRouter<S>
+pub fn routes<S>(parent: &str) -> ApiRouter<AppContext<S>>
 where
-    S: Clone + Send + Sync + 'static + Into<Arc<AppContext>>,
+    S: Clone + Send + Sync + 'static,
 {
     let root = build_path(parent, BASE);
 
@@ -101,14 +100,13 @@ pub enum Status {
 
 #[instrument(skip_all)]
 async fn health_get<S>(
-    #[cfg(any(feature = "sidekiq", feature = "db-sql"))] State(state): State<S>,
+    #[cfg(any(feature = "sidekiq", feature = "db-sql"))] State(state): State<AppContext<S>>,
 ) -> Result<Json<HeathCheckResponse>, AppError>
 where
-    S: Clone + Send + Sync + 'static + Into<Arc<AppContext>>,
+    S: Clone + Send + Sync + 'static,
 {
     let timer = Instant::now();
     #[cfg(any(feature = "sidekiq", feature = "db-sql"))]
-    let state: Arc<AppContext> = state.into();
     #[cfg(feature = "db-sql")]
     let db = {
         let db_timer = Instant::now();

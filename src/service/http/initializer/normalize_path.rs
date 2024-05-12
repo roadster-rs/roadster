@@ -16,7 +16,7 @@ impl<S> Initializer<S> for NormalizePathInitializer {
         "normalize-path".to_string()
     }
 
-    fn enabled(&self, context: &AppContext, _state: &S) -> bool {
+    fn enabled(&self, context: &AppContext<S>) -> bool {
         context
             .config()
             .service
@@ -28,7 +28,7 @@ impl<S> Initializer<S> for NormalizePathInitializer {
             .enabled(context)
     }
 
-    fn priority(&self, context: &AppContext, _state: &S) -> i32 {
+    fn priority(&self, context: &AppContext<S>) -> i32 {
         context
             .config()
             .service
@@ -40,12 +40,7 @@ impl<S> Initializer<S> for NormalizePathInitializer {
             .priority
     }
 
-    fn before_serve(
-        &self,
-        router: Router,
-        _context: &AppContext,
-        _state: &S,
-    ) -> anyhow::Result<Router> {
+    fn before_serve(&self, router: Router, _context: &AppContext<S>) -> anyhow::Result<Router> {
         let router = NormalizePathLayer::trim_trailing_slash().layer(router);
         let router = Router::new().nest_service("/", router);
         Ok(router)

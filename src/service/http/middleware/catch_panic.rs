@@ -14,7 +14,7 @@ impl<S> Middleware<S> for CatchPanicMiddleware {
         "catch-panic".to_string()
     }
 
-    fn enabled(&self, context: &AppContext, _state: &S) -> bool {
+    fn enabled(&self, context: &AppContext<S>) -> bool {
         context
             .config()
             .service
@@ -26,7 +26,7 @@ impl<S> Middleware<S> for CatchPanicMiddleware {
             .enabled(context)
     }
 
-    fn priority(&self, context: &AppContext, _state: &S) -> i32 {
+    fn priority(&self, context: &AppContext<S>) -> i32 {
         context
             .config()
             .service
@@ -38,7 +38,7 @@ impl<S> Middleware<S> for CatchPanicMiddleware {
             .priority
     }
 
-    fn install(&self, router: Router, _context: &AppContext, _state: &S) -> anyhow::Result<Router> {
+    fn install(&self, router: Router, _context: &AppContext<S>) -> anyhow::Result<Router> {
         let router = router.layer(CatchPanicLayer::new());
 
         Ok(router)

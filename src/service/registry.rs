@@ -3,7 +3,6 @@ use crate::app_context::AppContext;
 use crate::service::{AppService, AppServiceBuilder};
 use anyhow::bail;
 use std::collections::BTreeMap;
-use std::sync::Arc;
 use tracing::info;
 
 /// Registry for [AppService]s that will be run in the app.
@@ -11,16 +10,14 @@ pub struct ServiceRegistry<A>
 where
     A: App + ?Sized,
 {
-    pub(crate) context: Arc<AppContext>,
-    pub(crate) state: Arc<A::State>,
+    pub(crate) context: AppContext<A::State>,
     pub(crate) services: BTreeMap<String, Box<dyn AppService<A>>>,
 }
 
 impl<A: App> ServiceRegistry<A> {
-    pub(crate) fn new(context: Arc<AppContext>, state: Arc<A::State>) -> Self {
+    pub(crate) fn new(context: AppContext<A::State>) -> Self {
         Self {
             context,
-            state,
             services: Default::default(),
         }
     }
@@ -31,7 +28,7 @@ impl<A: App> ServiceRegistry<A> {
     where
         S: AppService<A> + 'static,
     {
-        if !S::enabled(&self.context, &self.state) {
+        if !S::enabled(&self.context) {
             info!(service = %S::name(), "Service is not enabled, skipping registration");
             return Ok(());
         }
@@ -45,13 +42,13 @@ impl<A: App> ServiceRegistry<A> {
         S: AppService<A> + 'static,
         B: AppServiceBuilder<A, S>,
     {
-        if !S::enabled(&self.context, &self.state) || !builder.enabled(&self.context, &self.state) {
+        if !S::enabled(&self.context) || !builder.enabled(&self.context) {
             info!(service = %S::name(), "Service is not enabled, skipping building and registration");
             return Ok(());
         }
 
         info!(service = %S::name(), "Building service");
-        let service = builder.build(&self.context, &self.state).await?;
+        let service = builder.build(&self.context).await?;
 
         self.register_internal(service)
     }

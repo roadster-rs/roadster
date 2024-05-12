@@ -29,7 +29,7 @@ pub struct CommonConfig {
 }
 
 impl CommonConfig {
-    pub fn enabled(&self, context: &AppContext) -> bool {
+    pub fn enabled<T>(&self, context: &AppContext<T>) -> bool {
         self.enable
             .unwrap_or(context.config().service.default_enable)
     }

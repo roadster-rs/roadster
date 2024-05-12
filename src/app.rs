@@ -15,7 +15,6 @@ use sea_orm::{ConnectOptions, Database};
 use sea_orm_migration::MigratorTrait;
 use std::future;
 use std::future::Future;
-use std::sync::Arc;
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, instrument, warn};
@@ -117,7 +116,7 @@ where
         (redis_enqueue, redis_fetch)
     };
 
-    let context = AppContext::new(
+    let context = AppContext::<()>::new(
         config,
         #[cfg(feature = "db-sql")]
         db,
@@ -125,30 +124,28 @@ where
         redis_enqueue.clone(),
         #[cfg(feature = "sidekiq")]
         redis_fetch.clone(),
-    )
-    .await?;
+    )?;
 
-    let context = Arc::new(context);
-    let state = A::context_to_state(context.clone()).await?;
-    let state = Arc::new(state);
+    let state = A::with_state(&context).await?;
+    let context = context.with_custom(state);
 
     #[cfg(feature = "cli")]
     {
         if roadster_cli.run(&app, &roadster_cli, &context).await? {
             return Ok(());
         }
-        if app_cli.run(&app, &app_cli, &state).await? {
+        if app_cli.run(&app, &app_cli, &context).await? {
             return Ok(());
         }
     }
 
-    let mut service_registry = ServiceRegistry::new(context.clone(), state.clone());
-    A::services(&mut service_registry, context.clone(), state.clone()).await?;
+    let mut service_registry = ServiceRegistry::new(context.clone());
+    A::services(&mut service_registry, context.clone()).await?;
 
     #[cfg(feature = "cli")]
     for (_name, service) in service_registry.services.iter() {
         if service
-            .handle_cli(&roadster_cli, &app_cli, &context, &state)
+            .handle_cli(&roadster_cli, &app_cli, &context)
             .await?
         {
             return Ok(());
@@ -171,11 +168,10 @@ where
     // Spawn tasks for the app's services
     for (name, service) in service_registry.services {
         let context = context.clone();
-        let state = state.clone();
         let cancel_token = cancel_token.clone();
         join_set.spawn(Box::pin(async move {
             info!(service=%name, "Running service");
-            service.run(context, state, cancel_token).await
+            service.run(context, cancel_token).await
         }));
     }
 
@@ -185,15 +181,14 @@ where
         context.clone(),
         graceful_shutdown(
             token_shutdown_signal(cancel_token.clone()),
-            A::graceful_shutdown(context.clone(), state.clone()),
-            #[cfg(feature = "db-sql")]
+            A::graceful_shutdown(context.clone()),
             context.clone(),
         ),
     ));
     // Task to listen for the signal to gracefully shutdown, and trigger other tasks to stop.
     let graceful_shutdown_signal = graceful_shutdown_signal(
         cancel_token.clone(),
-        A::graceful_shutdown_signal(context.clone(), state.clone()),
+        A::graceful_shutdown_signal(context.clone()),
     );
     join_set.spawn(cancel_token_on_signal_received(
         graceful_shutdown_signal,
@@ -223,7 +218,8 @@ where
 
 #[async_trait]
 pub trait App: Send + Sync {
-    type State: From<Arc<AppContext>> + Into<Arc<AppContext>> + Clone + Send + Sync + 'static;
+    // Todo: Are clone, etc necessary if we store it inside an Arc?
+    type State: Clone + Send + Sync + 'static;
     #[cfg(feature = "cli")]
     type Cli: clap::Args + RunCommand<Self>;
     #[cfg(feature = "db-sql")]
@@ -258,16 +254,12 @@ pub trait App: Send + Sync {
     /// method is provided in case there's any additional work that needs to be done that the
     /// consumer can't put in a [`From<AppContext>`] implementation. For example, any
     /// configuration that needs to happen in an async method.
-    async fn context_to_state(context: Arc<AppContext>) -> anyhow::Result<Self::State> {
-        let state = Self::State::from(context);
-        Ok(state)
-    }
+    async fn with_state(context: &AppContext) -> anyhow::Result<Self::State>;
 
     /// Provide the services to run in the app.
     async fn services(
         _registry: &mut ServiceRegistry<Self>,
-        _context: Arc<AppContext>,
-        _state: Arc<Self::State>,
+        _context: AppContext<Self::State>,
     ) -> anyhow::Result<()> {
         Ok(())
     }
@@ -275,17 +267,14 @@ pub trait App: Send + Sync {
     /// Override to provide a custom shutdown signal. Roadster provides some default shutdown
     /// signals, but it may be desirable to provide a custom signal in order to, e.g., shutdown the
     /// server when a particular API is called.
-    async fn graceful_shutdown_signal(_context: Arc<AppContext>, _state: Arc<Self::State>) {
+    async fn graceful_shutdown_signal(_context: AppContext<Self::State>) {
         let _output: () = future::pending().await;
     }
 
     /// Override to provide custom graceful shutdown logic to clean up any resources created by
     /// the app. Roadster will take care of cleaning up the resources it created.
     #[instrument(skip_all)]
-    async fn graceful_shutdown(
-        _context: Arc<AppContext>,
-        _state: Arc<Self::State>,
-    ) -> anyhow::Result<()> {
+    async fn graceful_shutdown(_context: AppContext<Self::State>) -> anyhow::Result<()> {
         Ok(())
     }
 }
@@ -343,9 +332,9 @@ async fn token_shutdown_signal(cancellation_token: CancellationToken) {
     cancellation_token.cancelled().await
 }
 
-async fn cancel_on_error<T, F>(
+async fn cancel_on_error<T, F, S>(
     cancellation_token: CancellationToken,
-    context: Arc<AppContext>,
+    context: AppContext<S>,
     f: F,
 ) -> anyhow::Result<T>
 where
@@ -359,10 +348,11 @@ where
 }
 
 #[instrument(skip_all)]
-async fn graceful_shutdown<F1, F2>(
+async fn graceful_shutdown<F1, F2, S>(
     shutdown_signal: F1,
     app_graceful_shutdown: F2,
-    #[cfg(feature = "db-sql")] context: Arc<AppContext>,
+    // This parameter is (currently) not used when no features are enabled.
+    #[allow(unused_variables)] context: AppContext<S>,
 ) -> anyhow::Result<()>
 where
     F1: Future<Output = ()> + Send + 'static,

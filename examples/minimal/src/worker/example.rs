@@ -1,6 +1,7 @@
 use crate::app::App;
 use crate::app_state::AppState;
 use async_trait::async_trait;
+use roadster::app_context::AppContext;
 use roadster::service::worker::sidekiq::app_worker::AppWorker;
 use sidekiq::Worker;
 use tracing::{info, instrument};
@@ -18,7 +19,7 @@ impl Worker<String> for ExampleWorker {
 
 #[async_trait]
 impl AppWorker<App, String> for ExampleWorker {
-    fn build(_state: &AppState) -> Self {
+    fn build(_context: &AppContext<AppState>) -> Self {
         Self {}
     }
 }

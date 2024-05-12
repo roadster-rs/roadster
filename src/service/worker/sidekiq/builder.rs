@@ -12,7 +12,6 @@ use num_traits::ToPrimitive;
 use serde::Serialize;
 use sidekiq::{periodic, Processor, ProcessorConfig};
 use std::collections::HashSet;
-use std::sync::Arc;
 use tracing::{debug, info, warn};
 
 const PERIODIC_KEY: &str = "periodic";
@@ -27,8 +26,7 @@ where
 enum BuilderState<A: App> {
     Enabled {
         processor: Processor,
-        context: Arc<AppContext>,
-        state: Arc<A::State>,
+        context: AppContext<A::State>,
         registered_workers: HashSet<String>,
         registered_periodic_workers: HashSet<String>,
     },
@@ -40,20 +38,16 @@ impl<A> AppServiceBuilder<A, SidekiqWorkerService> for SidekiqWorkerServiceBuild
 where
     A: App + 'static,
 {
-    fn enabled(&self, app_context: &AppContext, app_state: &A::State) -> bool {
+    fn enabled(&self, app_context: &AppContext<A::State>) -> bool {
         match self.state {
             BuilderState::Enabled { .. } => {
-                <SidekiqWorkerService as AppService<A>>::enabled(app_context, app_state)
+                <SidekiqWorkerService as AppService<A>>::enabled(app_context)
             }
             BuilderState::Disabled => false,
         }
     }
 
-    async fn build(
-        self,
-        context: &AppContext,
-        _state: &A::State,
-    ) -> anyhow::Result<SidekiqWorkerService> {
+    async fn build(self, context: &AppContext<A::State>) -> anyhow::Result<SidekiqWorkerService> {
         let service = match self.state {
             BuilderState::Enabled {
                 processor,
@@ -77,23 +71,21 @@ where
     A: App + 'static,
 {
     pub async fn with_processor(
-        context: Arc<AppContext>,
-        state: Arc<A::State>,
+        context: &AppContext<A::State>,
         processor: Processor,
     ) -> anyhow::Result<Self> {
-        Self::new(context, state, Some(processor)).await
+        Self::new(context.clone(), Some(processor)).await
     }
 
     pub async fn with_default_processor(
-        context: Arc<AppContext>,
-        state: Arc<A::State>,
+        context: &AppContext<A::State>,
         worker_queues: Option<Vec<String>>,
     ) -> anyhow::Result<Self> {
-        let processor = if !<SidekiqWorkerService as AppService<A>>::enabled(&context, &state) {
+        let processor = if !<SidekiqWorkerService as AppService<A>>::enabled(context) {
             debug!("Sidekiq service not enabled, not creating the Sidekiq processor");
             None
         } else if let Some(redis_fetch) = context.redis_fetch() {
-            Self::auto_clean_periodic(&context).await?;
+            Self::auto_clean_periodic(context).await?;
             let queues = context
                 .config()
                 .service
@@ -136,15 +128,14 @@ where
             None
         };
 
-        Self::new(context, state, processor).await
+        Self::new(context.clone(), processor).await
     }
 
     async fn new(
-        context: Arc<AppContext>,
-        state: Arc<A::State>,
+        context: AppContext<A::State>,
         processor: Option<Processor>,
     ) -> anyhow::Result<Self> {
-        let processor = if <SidekiqWorkerService as AppService<A>>::enabled(&context, &state) {
+        let processor = if <SidekiqWorkerService as AppService<A>>::enabled(&context) {
             processor
         } else {
             None
@@ -154,7 +145,6 @@ where
             BuilderState::Enabled {
                 processor,
                 context,
-                state,
                 registered_workers: Default::default(),
                 registered_periodic_workers: Default::default(),
             }
@@ -165,7 +155,7 @@ where
         Ok(Self { state })
     }
 
-    async fn auto_clean_periodic(context: &AppContext) -> anyhow::Result<()> {
+    async fn auto_clean_periodic(context: &AppContext<A::State>) -> anyhow::Result<()> {
         if context
             .config()
             .service
@@ -218,8 +208,8 @@ where
     {
         if let BuilderState::Enabled {
             processor,
-            state,
             registered_workers,
+            context,
             ..
         } = &mut self.state
         {
@@ -228,7 +218,7 @@ where
             if !registered_workers.insert(class_name.clone()) {
                 bail!("Worker `{class_name}` was already registered");
             }
-            let roadster_worker = RoadsterWorker::new(worker, state.clone());
+            let roadster_worker = RoadsterWorker::new(worker, context);
             processor.register(roadster_worker);
         }
 
@@ -254,14 +244,14 @@ where
     {
         if let BuilderState::Enabled {
             processor,
-            state,
+            context,
             registered_periodic_workers,
             ..
         } = &mut self.state
         {
             let class_name = W::class_name();
             debug!(worker = %class_name, "Registering periodic worker");
-            let roadster_worker = RoadsterWorker::new(worker, state.clone());
+            let roadster_worker = RoadsterWorker::new(worker, context);
             let builder = builder.args(args)?;
             let job_json = serde_json::to_string(&builder.into_periodic_job(class_name.clone())?)?;
             if !registered_periodic_workers.insert(job_json.clone()) {
@@ -284,7 +274,7 @@ where
     ///
     /// This is run after all the app's periodic jobs have been registered.
     pub(crate) async fn remove_stale_periodic_jobs(
-        context: &AppContext,
+        context: &AppContext<A::State>,
         registered_periodic_workers: &HashSet<String>,
     ) -> anyhow::Result<()> {
         let mut conn = context.redis_enqueue().get().await?;

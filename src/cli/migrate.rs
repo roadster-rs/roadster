@@ -19,7 +19,12 @@ impl<A> RunRoadsterCommand<A> for MigrateArgs
 where
     A: App,
 {
-    async fn run(&self, app: &A, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool> {
+    async fn run(
+        &self,
+        app: &A,
+        cli: &RoadsterCli,
+        context: &AppContext<A::State>,
+    ) -> anyhow::Result<bool> {
         self.command.run(app, cli, context).await
     }
 }
@@ -45,7 +50,12 @@ impl<A> RunRoadsterCommand<A> for MigrateCommand
 where
     A: App,
 {
-    async fn run(&self, _app: &A, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool> {
+    async fn run(
+        &self,
+        _app: &A,
+        cli: &RoadsterCli,
+        context: &AppContext<A::State>,
+    ) -> anyhow::Result<bool> {
         if is_destructive(self) && !cli.allow_dangerous(context) {
             bail!("Running destructive command `{:?}` is not allowed in environment `{:?}`. To override, provide the `--allow-dangerous` CLI arg.", self, context.config().environment);
         } else if is_destructive(self) {
