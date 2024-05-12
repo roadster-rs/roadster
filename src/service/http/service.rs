@@ -51,7 +51,10 @@ impl<A: App> AppService<A> for HttpService {
                 RoadsterCommand::Roadster(args) => match &args.command {
                     #[cfg(feature = "open-api")]
                     RoadsterSubCommand::ListRoutes(_) => {
-                        self.list_routes();
+                        info!("API routes:");
+                        self.list_routes()
+                            .iter()
+                            .for_each(|(path, method)| info!("[{method}]\t{path}"));
                         return Ok(true);
                     }
                     #[cfg(feature = "open-api")]
@@ -94,13 +97,13 @@ impl HttpService {
 
     /// List the available HTTP API routes.
     #[cfg(feature = "open-api")]
-    pub fn list_routes(&self) {
-        info!("API routes:");
+    pub fn list_routes(&self) -> Vec<(&str, &str)> {
         self.api
             .as_ref()
             .operations()
             .sorted_by(|(path_a, _, _), (path_b, _, _)| Ord::cmp(&path_a, &path_b))
-            .for_each(|(path, method, _operation)| info!("[{method}]\t{path}"));
+            .map(|(path, method, _)| (path, method))
+            .collect()
     }
 
     /// Generate an OpenAPI schema for the HTTP API.
@@ -123,5 +126,55 @@ impl HttpService {
             info!("{schema_json}");
         };
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    #[cfg(feature = "open-api")]
+    fn list_routes() {
+        use crate::service::http::service::HttpService;
+        use aide::axum::routing::{delete_with, get_with, post_with, put_with};
+        use aide::axum::ApiRouter;
+        use aide::openapi::OpenApi;
+        use itertools::Itertools;
+        use std::collections::BTreeMap;
+        use std::sync::Arc;
+
+        async fn api_method() {}
+        let mut open_api = OpenApi::default();
+        let router = ApiRouter::new()
+            .api_route("/foo", get_with(api_method, |op| op))
+            .api_route("/bar", post_with(api_method, |op| op))
+            .api_route("/baz", put_with(api_method, |op| op))
+            .api_route("/a", delete_with(api_method, |op| op))
+            .api_route("/c", get_with(api_method, |op| op))
+            .api_route("/b", get_with(api_method, |op| op))
+            .finish_api(&mut open_api);
+
+        let service = HttpService {
+            router,
+            api: Arc::new(open_api),
+        };
+
+        let paths = service
+            .list_routes()
+            .iter()
+            .map(|(path, _)| path.to_string())
+            .collect_vec();
+        assert_eq!(
+            paths,
+            ["/a", "/b", "/bar", "/baz", "/c", "/foo"]
+                .iter()
+                .map(|s| s.to_string())
+                .collect_vec()
+        );
+        let paths: BTreeMap<&str, &str> = service.list_routes().into_iter().collect();
+        assert_eq!(paths.get("/foo").unwrap(), &"get");
+        assert_eq!(paths.get("/bar").unwrap(), &"post");
+        assert_eq!(paths.get("/baz").unwrap(), &"put");
+        assert_eq!(paths.get("/a").unwrap(), &"delete");
     }
 }
