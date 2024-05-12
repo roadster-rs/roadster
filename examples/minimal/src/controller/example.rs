@@ -5,7 +5,6 @@ use aide::axum::ApiRouter;
 use aide::transform::TransformOperation;
 use axum::extract::State;
 use axum::Json;
-use roadster::app_context::AppContext;
 use roadster::controller::build_path;
 use roadster::service::worker::sidekiq::app_worker::AppWorker;
 use roadster::view::app_error::AppError;
@@ -16,7 +15,7 @@ use tracing::instrument;
 const BASE: &str = "/example";
 const TAG: &str = "Example";
 
-pub fn routes(parent: &str) -> ApiRouter<AppContext<AppState>> {
+pub fn routes(parent: &str) -> ApiRouter<AppState> {
     let root = build_path(parent, BASE);
 
     ApiRouter::new().api_route(&root, get_with(example_get, example_get_docs))
@@ -27,9 +26,7 @@ pub fn routes(parent: &str) -> ApiRouter<AppContext<AppState>> {
 pub struct ExampleResponse {}
 
 #[instrument(skip_all)]
-async fn example_get(
-    State(state): State<AppContext<AppState>>,
-) -> Result<Json<ExampleResponse>, AppError> {
+async fn example_get(State(state): State<AppState>) -> Result<Json<ExampleResponse>, AppError> {
     ExampleWorker::enqueue(&state, "Example".to_string()).await?;
     Ok(Json(ExampleResponse {}))
 }

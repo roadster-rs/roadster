@@ -5,7 +5,7 @@ use roadster::app_context::AppContext;
 use roadster::cli::RunCommand;
 
 use crate::app::App;
-use crate::app_state::AppState;
+use crate::app_state::CustomAppContext;
 
 /// Minimal Example: Commands specific to managing the `minimal` app are provided in the CLI
 /// as well. Subcommands not listed under the `roadster` subcommand are specific to `minimal`.
@@ -23,7 +23,7 @@ impl RunCommand<App> for AppCli {
         &self,
         app: &App,
         cli: &AppCli,
-        context: &AppContext<AppState>,
+        context: &AppContext<CustomAppContext>,
     ) -> anyhow::Result<bool> {
         if let Some(command) = self.command.as_ref() {
             command.run(app, cli, context).await
@@ -45,7 +45,7 @@ impl RunCommand<App> for AppCommand {
         &self,
         _app: &App,
         _cli: &AppCli,
-        _context: &AppContext<AppState>,
+        _context: &AppContext<CustomAppContext>,
     ) -> anyhow::Result<bool> {
         Ok(false)
     }
