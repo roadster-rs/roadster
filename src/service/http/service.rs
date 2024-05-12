@@ -68,7 +68,7 @@ impl<A: App> AppService<A> for HttpService {
 
     async fn run(
         &self,
-        app_context: AppContext<A::State>,
+        app_context: &AppContext<A::State>,
         cancel_token: CancellationToken,
     ) -> anyhow::Result<()> {
         let server_addr = app_context.config().service.http.custom.address.url();

@@ -47,7 +47,7 @@ pub trait AppService<A: App>: Send + Sync {
     /// the service.
     async fn run(
         &self,
-        app_context: AppContext<A::State>,
+        app_context: &AppContext<A::State>,
         cancel_token: CancellationToken,
     ) -> anyhow::Result<()>;
 }

@@ -47,7 +47,7 @@ impl<A: App> AppService<A> for SidekiqWorkerService {
 
     async fn run(
         &self,
-        _app_context: AppContext<A::State>,
+        _app_context: &AppContext<A::State>,
         cancel_token: CancellationToken,
     ) -> anyhow::Result<()> {
         let processor = self.processor.clone();
@@ -80,11 +80,11 @@ impl<A: App> AppService<A> for SidekiqWorkerService {
 
 impl SidekiqWorkerService {
     pub async fn builder<A>(
-        context: AppContext<A::State>,
+        context: &AppContext<A::State>,
     ) -> anyhow::Result<SidekiqWorkerServiceBuilder<A>>
     where
         A: App + 'static,
     {
-        SidekiqWorkerServiceBuilder::with_default_processor(&context, None).await
+        SidekiqWorkerServiceBuilder::with_default_processor(context, None).await
     }
 }

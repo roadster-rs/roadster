@@ -15,9 +15,9 @@ where
 }
 
 impl<A: App> ServiceRegistry<A> {
-    pub(crate) fn new(context: AppContext<A::State>) -> Self {
+    pub(crate) fn new(context: &AppContext<A::State>) -> Self {
         Self {
-            context,
+            context: context.clone(),
             services: Default::default(),
         }
     }
