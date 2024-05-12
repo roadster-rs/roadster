@@ -27,9 +27,9 @@ use tracing::info;
 
 pub struct HttpServiceBuilder<A: App> {
     #[cfg(not(feature = "open-api"))]
-    router: Router<A::State>,
+    router: Router<AppContext<A::State>>,
     #[cfg(feature = "open-api")]
-    router: ApiRouter<A::State>,
+    router: ApiRouter<AppContext<A::State>>,
     #[cfg(feature = "open-api")]
     api_docs: Box<dyn Fn(TransformOpenApi) -> TransformOpenApi + Send>,
     middleware: BTreeMap<String, Box<dyn Middleware<A::State>>>,
@@ -37,7 +37,7 @@ pub struct HttpServiceBuilder<A: App> {
 }
 
 impl<A: App> HttpServiceBuilder<A> {
-    pub fn new(path_root: &str, context: &AppContext, state: &A::State) -> Self {
+    pub fn new(path_root: &str, context: &AppContext<A::State>) -> Self {
         #[cfg(feature = "open-api")]
         let app_name = context.config().app.name.clone();
         Self {
@@ -46,19 +46,19 @@ impl<A: App> HttpServiceBuilder<A> {
             api_docs: Box::new(move |api| {
                 api.title(&app_name).description(&format!("# {}", app_name))
             }),
-            middleware: default_middleware(context, state),
-            initializers: default_initializers(context, state),
+            middleware: default_middleware(context),
+            initializers: default_initializers(context),
         }
     }
 
     #[cfg(not(feature = "open-api"))]
-    pub fn router(mut self, router: Router<A::State>) -> Self {
+    pub fn router(mut self, router: Router<AppContext<A::State>>) -> Self {
         self.router = self.router.merge(router);
         self
     }
 
     #[cfg(feature = "open-api")]
-    pub fn router(mut self, router: ApiRouter<A::State>) -> Self {
+    pub fn router(mut self, router: ApiRouter<AppContext<A::State>>) -> Self {
         self.router = self.router.merge(router);
         self
     }
@@ -98,7 +98,7 @@ impl<A: App> HttpServiceBuilder<A> {
 
 #[async_trait]
 impl<A: App> AppServiceBuilder<A, HttpService> for HttpServiceBuilder<A> {
-    async fn build(self, context: &AppContext, state: &A::State) -> anyhow::Result<HttpService> {
+    async fn build(self, context: &AppContext<A::State>) -> anyhow::Result<HttpService> {
         #[cfg(not(feature = "open-api"))]
         let router = self.router;
 
@@ -113,50 +113,50 @@ impl<A: App> AppServiceBuilder<A, HttpService> for HttpServiceBuilder<A> {
             (router, api)
         };
 
-        let router = router.with_state::<()>(state.clone());
+        let router = router.with_state::<()>(context.clone());
 
         let initializers = self
             .initializers
             .values()
-            .filter(|initializer| initializer.enabled(context, state))
-            .sorted_by(|a, b| Ord::cmp(&a.priority(context, state), &b.priority(context, state)))
+            .filter(|initializer| initializer.enabled(context))
+            .sorted_by(|a, b| Ord::cmp(&a.priority(context), &b.priority(context)))
             .collect_vec();
 
         let router = initializers
             .iter()
             .try_fold(router, |router, initializer| {
-                initializer.after_router(router, context, state)
+                initializer.after_router(router, context)
             })?;
 
         let router = initializers
             .iter()
             .try_fold(router, |router, initializer| {
-                initializer.before_middleware(router, context, state)
+                initializer.before_middleware(router, context)
             })?;
 
         info!("Installing middleware. Note: the order of installation is the inverse of the order middleware will run when handling a request.");
         let router = self
             .middleware
             .values()
-            .filter(|middleware| middleware.enabled(context, state))
-            .sorted_by(|a, b| Ord::cmp(&a.priority(context, state), &b.priority(context, state)))
+            .filter(|middleware| middleware.enabled(context))
+            .sorted_by(|a, b| Ord::cmp(&a.priority(context), &b.priority(context)))
             // Reverse due to how Axum's `Router#layer` method adds middleware.
             .rev()
             .try_fold(router, |router, middleware| {
                 info!(middleware=%middleware.name(), "Installing middleware");
-                middleware.install(router, context, state)
+                middleware.install(router, context)
             })?;
 
         let router = initializers
             .iter()
             .try_fold(router, |router, initializer| {
-                initializer.after_middleware(router, context, state)
+                initializer.after_middleware(router, context)
             })?;
 
         let router = initializers
             .iter()
             .try_fold(router, |router, initializer| {
-                initializer.before_serve(router, context, state)
+                initializer.before_serve(router, context)
             })?;
 
         let service = HttpService {

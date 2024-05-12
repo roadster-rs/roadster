@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use clap::{Parser, Subcommand};
+use roadster::app_context::AppContext;
 
 use roadster::cli::RunCommand;
 
@@ -18,9 +19,14 @@ pub struct AppCli {
 #[async_trait]
 impl RunCommand<App> for AppCli {
     #[allow(clippy::disallowed_types)]
-    async fn run(&self, app: &App, cli: &AppCli, state: &AppState) -> anyhow::Result<bool> {
+    async fn run(
+        &self,
+        app: &App,
+        cli: &AppCli,
+        context: &AppContext<AppState>,
+    ) -> anyhow::Result<bool> {
         if let Some(command) = self.command.as_ref() {
-            command.run(app, cli, state).await
+            command.run(app, cli, context).await
         } else {
             Ok(false)
         }
@@ -35,7 +41,12 @@ pub enum AppCommand {}
 
 #[async_trait]
 impl RunCommand<App> for AppCommand {
-    async fn run(&self, _app: &App, _cli: &AppCli, _state: &AppState) -> anyhow::Result<bool> {
+    async fn run(
+        &self,
+        _app: &App,
+        _cli: &AppCli,
+        _context: &AppContext<AppState>,
+    ) -> anyhow::Result<bool> {
         Ok(false)
     }
 }

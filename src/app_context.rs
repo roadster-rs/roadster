@@ -5,18 +5,19 @@ use sea_orm::DatabaseConnection;
 
 use crate::config::app_config::AppConfig;
 
-#[derive(Debug, Clone)]
-pub struct AppContext {
+#[derive(Clone)]
+pub struct AppContext<T = ()> {
     inner: Arc<AppContextInner>,
+    custom: Arc<T>,
 }
 
-impl AppContext {
-    pub async fn new(
+impl<T> AppContext<T> {
+    pub fn new(
         config: AppConfig,
         #[cfg(feature = "db-sql")] db: DatabaseConnection,
         #[cfg(feature = "sidekiq")] redis_enqueue: sidekiq::RedisPool,
         #[cfg(feature = "sidekiq")] redis_fetch: Option<sidekiq::RedisPool>,
-    ) -> anyhow::Result<Self> {
+    ) -> anyhow::Result<AppContext<()>> {
         let inner = AppContextInner {
             config,
             #[cfg(feature = "db-sql")]
@@ -26,9 +27,17 @@ impl AppContext {
             #[cfg(feature = "sidekiq")]
             redis_fetch,
         };
-        Ok(Self {
+        Ok(AppContext {
             inner: Arc::new(inner),
+            custom: Arc::new(()),
         })
+    }
+
+    pub fn with_custom<NewT>(self, custom: NewT) -> AppContext<NewT> {
+        AppContext {
+            inner: self.inner,
+            custom: Arc::new(custom),
+        }
     }
 
     pub fn config(&self) -> &AppConfig {
@@ -48,6 +57,10 @@ impl AppContext {
     #[cfg(feature = "sidekiq")]
     pub fn redis_fetch(&self) -> Option<&sidekiq::RedisPool> {
         self.inner.redis_fetch.as_ref()
+    }
+
+    pub fn custom(&self) -> &T {
+        &self.custom
     }
 }
 

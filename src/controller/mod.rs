@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 #[cfg(feature = "open-api")]
 use aide::axum::ApiRouter;
 #[cfg(not(feature = "open-api"))]
@@ -26,9 +24,9 @@ pub fn build_path(parent: &str, child: &str) -> String {
 }
 
 #[cfg(not(feature = "open-api"))]
-pub fn default_routes<S>(parent: &str, _config: &AppConfig) -> Router<S>
+pub fn default_routes<S>(parent: &str, _config: &AppConfig) -> Router<AppContext<S>>
 where
-    S: Clone + Send + Sync + 'static + Into<Arc<AppContext>>,
+    S: Clone + Send + Sync + 'static,
 {
     Router::new()
         .merge(ping::routes(parent))
@@ -36,9 +34,9 @@ where
 }
 
 #[cfg(feature = "open-api")]
-pub fn default_routes<S>(parent: &str, config: &AppConfig) -> ApiRouter<S>
+pub fn default_routes<S>(parent: &str, config: &AppConfig) -> ApiRouter<AppContext<S>>
 where
-    S: Clone + Send + Sync + 'static + Into<Arc<AppContext>>,
+    S: Clone + Send + Sync + 'static,
 {
     // Todo: Allow disabling the default routes
     ApiRouter::new()

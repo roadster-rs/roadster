@@ -3,7 +3,6 @@ use crate::app_context::AppContext;
 #[cfg(feature = "cli")]
 use crate::cli::RoadsterCli;
 use async_trait::async_trait;
-use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 
 pub mod http;
@@ -21,7 +20,7 @@ pub trait AppService<A: App>: Send + Sync {
         Self: Sized;
 
     /// Whether the service is enabled. If the service is not enabled, it will not be run.
-    fn enabled(context: &AppContext, state: &A::State) -> bool
+    fn enabled(context: &AppContext<A::State>) -> bool
     where
         Self: Sized;
 
@@ -37,8 +36,7 @@ pub trait AppService<A: App>: Send + Sync {
         &self,
         _roadster_cli: &RoadsterCli,
         _app_cli: &A::Cli,
-        _app_context: &AppContext,
-        _app_state: &A::State,
+        _app_context: &AppContext<A::State>,
     ) -> anyhow::Result<bool> {
         Ok(false)
     }
@@ -49,8 +47,7 @@ pub trait AppService<A: App>: Send + Sync {
     /// the service.
     async fn run(
         &self,
-        app_context: Arc<AppContext>,
-        app_state: Arc<A::State>,
+        app_context: AppContext<A::State>,
         cancel_token: CancellationToken,
     ) -> anyhow::Result<()>;
 }
@@ -66,9 +63,9 @@ where
     A: App,
     S: AppService<A>,
 {
-    fn enabled(&self, app_context: &AppContext, app_state: &A::State) -> bool {
-        S::enabled(app_context, app_state)
+    fn enabled(&self, app_context: &AppContext<A::State>) -> bool {
+        S::enabled(app_context)
     }
 
-    async fn build(self, context: &AppContext, state: &A::State) -> anyhow::Result<S>;
+    async fn build(self, context: &AppContext<A::State>) -> anyhow::Result<S>;
 }

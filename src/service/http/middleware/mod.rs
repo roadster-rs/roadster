@@ -24,7 +24,7 @@ use axum::Router;
 ///        is done automatically by Roadster based on [Middleware::priority]).
 pub trait Middleware<S>: Send {
     fn name(&self) -> String;
-    fn enabled(&self, context: &AppContext, state: &S) -> bool;
+    fn enabled(&self, context: &AppContext<S>) -> bool;
     /// Used to determine the order in which the middleware will run when handling a request. Smaller
     /// numbers will run before larger numbers. For example, a middleware with priority `-10`
     /// will run before a middleware with priority `10`.
@@ -41,6 +41,6 @@ pub trait Middleware<S>: Send {
     /// is done automatically by Roadster based on [Middleware::priority]). So, a middleware
     /// with priority `-10` will be _installed after_ a middleware with priority `10`, which will
     /// allow the middleware with priority `-10` to _run before_ a middleware with priority `10`.
-    fn priority(&self, context: &AppContext, state: &S) -> i32;
-    fn install(&self, router: Router, context: &AppContext, state: &S) -> anyhow::Result<Router>;
+    fn priority(&self, context: &AppContext<S>) -> i32;
+    fn install(&self, router: Router, context: &AppContext<S>) -> anyhow::Result<Router>;
 }

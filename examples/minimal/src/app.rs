@@ -6,7 +6,6 @@ use roadster::service::http::service::HttpService;
 use roadster::service::registry::ServiceRegistry;
 use roadster::service::worker::sidekiq::app_worker::AppWorker;
 use roadster::service::worker::sidekiq::service::SidekiqWorkerService;
-use std::sync::Arc;
 
 use crate::app_state::AppState;
 use crate::cli::AppCli;
@@ -24,23 +23,23 @@ impl RoadsterApp for App {
     type Cli = AppCli;
     type M = Migrator;
 
+    async fn with_state(_context: &AppContext) -> anyhow::Result<Self::State> {
+        Ok(())
+    }
+
     async fn services(
         registry: &mut ServiceRegistry<Self>,
-        context: Arc<AppContext>,
-        state: Arc<Self::State>,
+        context: AppContext<Self::State>,
     ) -> anyhow::Result<()> {
         registry
-            .register_builder(
-                HttpService::builder(BASE, &context, state.as_ref())
-                    .router(controller::routes(BASE)),
-            )
+            .register_builder(HttpService::builder(BASE, &context).router(controller::routes(BASE)))
             .await?;
 
         registry
             .register_builder(
-                SidekiqWorkerService::builder(context.clone(), state.clone())
+                SidekiqWorkerService::builder(context.clone())
                     .await?
-                    .register_app_worker(ExampleWorker::build(&state))?,
+                    .register_app_worker(ExampleWorker::build(&context))?,
             )
             .await?;
 

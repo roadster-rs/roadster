@@ -61,7 +61,7 @@ impl<S> Middleware<S> for SensitiveRequestHeadersMiddleware {
         "sensitive-request-headers".to_string()
     }
 
-    fn enabled(&self, context: &AppContext, _state: &S) -> bool {
+    fn enabled(&self, context: &AppContext<S>) -> bool {
         context
             .config()
             .service
@@ -73,7 +73,7 @@ impl<S> Middleware<S> for SensitiveRequestHeadersMiddleware {
             .enabled(context)
     }
 
-    fn priority(&self, context: &AppContext, _state: &S) -> i32 {
+    fn priority(&self, context: &AppContext<S>) -> i32 {
         context
             .config()
             .service
@@ -84,7 +84,7 @@ impl<S> Middleware<S> for SensitiveRequestHeadersMiddleware {
             .common
             .priority
     }
-    fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
+    fn install(&self, router: Router, context: &AppContext<S>) -> anyhow::Result<Router> {
         let headers = context
             .config()
             .service
@@ -109,7 +109,7 @@ impl<S> Middleware<S> for SensitiveResponseHeadersMiddleware {
         "sensitive-response-headers".to_string()
     }
 
-    fn enabled(&self, context: &AppContext, _state: &S) -> bool {
+    fn enabled(&self, context: &AppContext<S>) -> bool {
         context
             .config()
             .service
@@ -121,7 +121,7 @@ impl<S> Middleware<S> for SensitiveResponseHeadersMiddleware {
             .enabled(context)
     }
 
-    fn priority(&self, context: &AppContext, _state: &S) -> i32 {
+    fn priority(&self, context: &AppContext<S>) -> i32 {
         context
             .config()
             .service
@@ -132,7 +132,7 @@ impl<S> Middleware<S> for SensitiveResponseHeadersMiddleware {
             .common
             .priority
     }
-    fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
+    fn install(&self, router: Router, context: &AppContext<S>) -> anyhow::Result<Router> {
         let headers = context
             .config()
             .service

@@ -21,7 +21,7 @@ impl<S> Middleware<S> for TracingMiddleware {
         "tracing".to_string()
     }
 
-    fn enabled(&self, context: &AppContext, _state: &S) -> bool {
+    fn enabled(&self, context: &AppContext<S>) -> bool {
         context
             .config()
             .service
@@ -33,7 +33,7 @@ impl<S> Middleware<S> for TracingMiddleware {
             .enabled(context)
     }
 
-    fn priority(&self, context: &AppContext, _state: &S) -> i32 {
+    fn priority(&self, context: &AppContext<S>) -> i32 {
         context
             .config()
             .service
@@ -45,7 +45,7 @@ impl<S> Middleware<S> for TracingMiddleware {
             .priority
     }
 
-    fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
+    fn install(&self, router: Router, context: &AppContext<S>) -> anyhow::Result<Router> {
         let request_id_header_name = &context
             .config()
             .service

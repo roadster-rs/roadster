@@ -42,7 +42,7 @@ impl<S> Middleware<S> for SetRequestIdMiddleware {
         "set-request-id".to_string()
     }
 
-    fn enabled(&self, context: &AppContext, _state: &S) -> bool {
+    fn enabled(&self, context: &AppContext<S>) -> bool {
         context
             .config()
             .service
@@ -54,7 +54,7 @@ impl<S> Middleware<S> for SetRequestIdMiddleware {
             .enabled(context)
     }
 
-    fn priority(&self, context: &AppContext, _state: &S) -> i32 {
+    fn priority(&self, context: &AppContext<S>) -> i32 {
         context
             .config()
             .service
@@ -66,7 +66,7 @@ impl<S> Middleware<S> for SetRequestIdMiddleware {
             .priority
     }
 
-    fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
+    fn install(&self, router: Router, context: &AppContext<S>) -> anyhow::Result<Router> {
         let header_name = &context
             .config()
             .service
@@ -93,7 +93,7 @@ impl<S> Middleware<S> for PropagateRequestIdMiddleware {
         "propagate-request-id".to_string()
     }
 
-    fn enabled(&self, context: &AppContext, _state: &S) -> bool {
+    fn enabled(&self, context: &AppContext<S>) -> bool {
         context
             .config()
             .service
@@ -105,7 +105,7 @@ impl<S> Middleware<S> for PropagateRequestIdMiddleware {
             .enabled(context)
     }
 
-    fn priority(&self, context: &AppContext, _state: &S) -> i32 {
+    fn priority(&self, context: &AppContext<S>) -> i32 {
         context
             .config()
             .service
@@ -117,7 +117,7 @@ impl<S> Middleware<S> for PropagateRequestIdMiddleware {
             .priority
     }
 
-    fn install(&self, router: Router, context: &AppContext, _state: &S) -> anyhow::Result<Router> {
+    fn install(&self, router: Router, context: &AppContext<S>) -> anyhow::Result<Router> {
         let header_name = &context
             .config()
             .service

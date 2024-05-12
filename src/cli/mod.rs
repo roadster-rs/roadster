@@ -35,7 +35,12 @@ where
     ///     continue execution after the command is complete.
     /// * `Err(...)` - If the implementation experienced an error while handling the command. The
     ///     app should end execution after the command is complete.
-    async fn run(&self, app: &A, cli: &A::Cli, state: &A::State) -> anyhow::Result<bool>;
+    async fn run(
+        &self,
+        app: &A,
+        cli: &A::Cli,
+        context: &AppContext<A::State>,
+    ) -> anyhow::Result<bool>;
 }
 
 /// Internal version of [RunCommand] that uses the [RoadsterCli] and [AppContext] instead of
@@ -46,7 +51,12 @@ pub(crate) trait RunRoadsterCommand<A>
 where
     A: App,
 {
-    async fn run(&self, app: &A, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool>;
+    async fn run(
+        &self,
+        app: &A,
+        cli: &RoadsterCli,
+        context: &AppContext<A::State>,
+    ) -> anyhow::Result<bool>;
 }
 
 /// Roadster: The Roadster CLI provides various utilities for managing your application. If no subcommand
@@ -70,7 +80,7 @@ pub struct RoadsterCli {
 }
 
 impl RoadsterCli {
-    pub fn allow_dangerous(&self, context: &AppContext) -> bool {
+    pub fn allow_dangerous<S>(&self, context: &AppContext<S>) -> bool {
         context.config().environment != Environment::Production || self.allow_dangerous
     }
 }
@@ -80,7 +90,12 @@ impl<A> RunRoadsterCommand<A> for RoadsterCli
 where
     A: App,
 {
-    async fn run(&self, app: &A, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool> {
+    async fn run(
+        &self,
+        app: &A,
+        cli: &RoadsterCli,
+        context: &AppContext<A::State>,
+    ) -> anyhow::Result<bool> {
         if let Some(command) = self.command.as_ref() {
             command.run(app, cli, context).await
         } else {
@@ -102,7 +117,12 @@ impl<A> RunRoadsterCommand<A> for RoadsterCommand
 where
     A: App,
 {
-    async fn run(&self, app: &A, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool> {
+    async fn run(
+        &self,
+        app: &A,
+        cli: &RoadsterCli,
+        context: &AppContext<A::State>,
+    ) -> anyhow::Result<bool> {
         match self {
             RoadsterCommand::Roadster(args) => args.run(app, cli, context).await,
         }
@@ -120,7 +140,12 @@ impl<A> RunRoadsterCommand<A> for RoadsterArgs
 where
     A: App,
 {
-    async fn run(&self, app: &A, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool> {
+    async fn run(
+        &self,
+        app: &A,
+        cli: &RoadsterCli,
+        context: &AppContext<A::State>,
+    ) -> anyhow::Result<bool> {
         self.command.run(app, cli, context).await
     }
 }
@@ -151,7 +176,12 @@ impl<A> RunRoadsterCommand<A> for RoadsterSubCommand
 where
     A: App,
 {
-    async fn run(&self, app: &A, cli: &RoadsterCli, context: &AppContext) -> anyhow::Result<bool> {
+    async fn run(
+        &self,
+        app: &A,
+        cli: &RoadsterCli,
+        context: &AppContext<A::State>,
+    ) -> anyhow::Result<bool> {
         match self {
             #[cfg(feature = "open-api")]
             RoadsterSubCommand::ListRoutes(_) => {

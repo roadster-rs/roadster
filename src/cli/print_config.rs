@@ -37,7 +37,7 @@ where
         &self,
         _app: &A,
         _cli: &RoadsterCli,
-        context: &AppContext,
+        context: &AppContext<A::State>,
     ) -> anyhow::Result<bool> {
         match self.format {
             Format::Debug => {

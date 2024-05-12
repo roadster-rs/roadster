@@ -5,9 +5,9 @@ use crate::service::worker::sidekiq::app_worker::AppWorkerConfig;
 use async_trait::async_trait;
 use serde::Serialize;
 
+use crate::app_context::AppContext;
 use sidekiq::{RedisPool, Worker, WorkerOpts};
 use std::marker::PhantomData;
-use std::sync::Arc;
 use std::time::Duration;
 use tracing::{error, instrument};
 
@@ -32,8 +32,8 @@ where
     Args: Send + Sync + Serialize,
     W: AppWorker<A, Args>,
 {
-    pub(crate) fn new(inner: W, state: Arc<A::State>) -> Self {
-        let config = inner.config(&state);
+    pub(crate) fn new(inner: W, context: &AppContext<A::State>) -> Self {
+        let config = inner.config(context);
         Self {
             inner,
             inner_config: config,
