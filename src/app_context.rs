@@ -12,7 +12,7 @@ pub struct AppContext<T = ()> {
 }
 
 impl<T> AppContext<T> {
-    pub fn new(
+    pub(crate) fn new(
         config: AppConfig,
         #[cfg(feature = "db-sql")] db: DatabaseConnection,
         #[cfg(feature = "sidekiq")] redis_enqueue: sidekiq::RedisPool,

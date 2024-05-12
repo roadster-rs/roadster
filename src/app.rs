@@ -139,8 +139,8 @@ where
         }
     }
 
-    let mut service_registry = ServiceRegistry::new(context.clone());
-    A::services(&mut service_registry, context.clone()).await?;
+    let mut service_registry = ServiceRegistry::new(&context);
+    A::services(&mut service_registry, &context).await?;
 
     #[cfg(feature = "cli")]
     for (_name, service) in service_registry.services.iter() {
@@ -171,29 +171,45 @@ where
         let cancel_token = cancel_token.clone();
         join_set.spawn(Box::pin(async move {
             info!(service=%name, "Running service");
-            service.run(context, cancel_token).await
+            service.run(&context, cancel_token).await
         }));
     }
 
     // Task to clean up resources when gracefully shutting down.
-    join_set.spawn(cancel_on_error(
-        cancel_token.clone(),
-        context.clone(),
-        graceful_shutdown(
-            token_shutdown_signal(cancel_token.clone()),
-            A::graceful_shutdown(context.clone()),
-            context.clone(),
-        ),
-    ));
+    {
+        let context = context.clone();
+        let cancel_token = cancel_token.clone();
+        let app_graceful_shutdown = {
+            let context = context.clone();
+            Box::pin(async move { A::graceful_shutdown(&context).await })
+        };
+        join_set.spawn(Box::pin(async move {
+            cancel_on_error(
+                cancel_token.clone(),
+                &context,
+                graceful_shutdown(
+                    token_shutdown_signal(cancel_token.clone()),
+                    app_graceful_shutdown,
+                    context.clone(),
+                ),
+            )
+            .await
+        }));
+    }
     // Task to listen for the signal to gracefully shutdown, and trigger other tasks to stop.
-    let graceful_shutdown_signal = graceful_shutdown_signal(
-        cancel_token.clone(),
-        A::graceful_shutdown_signal(context.clone()),
-    );
-    join_set.spawn(cancel_token_on_signal_received(
-        graceful_shutdown_signal,
-        cancel_token.clone(),
-    ));
+    {
+        let context = context.clone();
+        let app_graceful_shutdown_signal = {
+            let context = context.clone();
+            Box::pin(async move { A::graceful_shutdown_signal(&context).await })
+        };
+        let graceful_shutdown_signal =
+            graceful_shutdown_signal(cancel_token.clone(), app_graceful_shutdown_signal);
+        join_set.spawn(cancel_token_on_signal_received(
+            graceful_shutdown_signal,
+            cancel_token.clone(),
+        ));
+    }
 
     // Wait for all the tasks to complete.
     while let Some(result) = join_set.join_next().await {
@@ -259,7 +275,7 @@ pub trait App: Send + Sync {
     /// Provide the services to run in the app.
     async fn services(
         _registry: &mut ServiceRegistry<Self>,
-        _context: AppContext<Self::State>,
+        _context: &AppContext<Self::State>,
     ) -> anyhow::Result<()> {
         Ok(())
     }
@@ -267,14 +283,14 @@ pub trait App: Send + Sync {
     /// Override to provide a custom shutdown signal. Roadster provides some default shutdown
     /// signals, but it may be desirable to provide a custom signal in order to, e.g., shutdown the
     /// server when a particular API is called.
-    async fn graceful_shutdown_signal(_context: AppContext<Self::State>) {
+    async fn graceful_shutdown_signal(_context: &AppContext<Self::State>) {
         let _output: () = future::pending().await;
     }
 
     /// Override to provide custom graceful shutdown logic to clean up any resources created by
     /// the app. Roadster will take care of cleaning up the resources it created.
     #[instrument(skip_all)]
-    async fn graceful_shutdown(_context: AppContext<Self::State>) -> anyhow::Result<()> {
+    async fn graceful_shutdown(_context: &AppContext<Self::State>) -> anyhow::Result<()> {
         Ok(())
     }
 }
@@ -334,7 +350,7 @@ async fn token_shutdown_signal(cancellation_token: CancellationToken) {
 
 async fn cancel_on_error<T, F, S>(
     cancellation_token: CancellationToken,
-    context: AppContext<S>,
+    context: &AppContext<S>,
     f: F,
 ) -> anyhow::Result<T>
 where

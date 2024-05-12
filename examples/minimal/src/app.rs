@@ -29,17 +29,17 @@ impl RoadsterApp for App {
 
     async fn services(
         registry: &mut ServiceRegistry<Self>,
-        context: AppContext<Self::State>,
+        context: &AppContext<Self::State>,
     ) -> anyhow::Result<()> {
         registry
-            .register_builder(HttpService::builder(BASE, &context).router(controller::routes(BASE)))
+            .register_builder(HttpService::builder(BASE, context).router(controller::routes(BASE)))
             .await?;
 
         registry
             .register_builder(
-                SidekiqWorkerService::builder(context.clone())
+                SidekiqWorkerService::builder(context)
                     .await?
-                    .register_app_worker(ExampleWorker::build(&context))?,
+                    .register_app_worker(ExampleWorker::build(context))?,
             )
             .await?;
 
