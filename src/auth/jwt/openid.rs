@@ -68,7 +68,7 @@ pub enum Acr {
 
 #[cfg(test)]
 mod tests {
-    use crate::auth::jwt::openid::Acr;
+    use super::*;
     use serde_derive::{Deserialize, Serialize};
     use serde_json::from_str;
     use std::str::FromStr;

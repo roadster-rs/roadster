@@ -51,25 +51,23 @@ pub struct Claims {
 
 #[cfg(test)]
 mod tests {
-    use std::ops::{Add, Sub};
-    use std::str::FromStr;
-
+    use super::*;
+    use crate::auth::jwt::decode_auth_token;
+    use crate::util::serde_util::UriOrString;
     use chrono::{TimeDelta, Utc};
     use jsonwebtoken::{encode, EncodingKey, Header, TokenData};
     use serde_derive::{Deserialize, Serialize};
     use serde_json::from_str;
+    use std::ops::{Add, Sub};
+    use std::str::FromStr;
     use url::Url;
-
-    use crate::auth::jwt::decode_auth_token;
-    use crate::auth::jwt::ietf::{Claims, Subject};
-    use crate::util::serde_util::UriOrString;
 
     const TEST_JWT_SECRET: &str = "test-jwt-secret";
     const AUDIENCE: &[&str] = &["authenticated"];
     const REQUIRED_CLAIMS: &[&str] = &[];
 
     #[test]
-    fn test_decode_token() {
+    fn decode_token() {
         let jwt = build_token(false, None);
 
         let decoded: TokenData<Claims> =
@@ -79,7 +77,7 @@ mod tests {
     }
 
     #[test]
-    fn test_decode_token_expired() {
+    fn decode_token_expired() {
         let (_, jwt) = build_token(true, None);
 
         let decoded: anyhow::Result<TokenData<Claims>> =
@@ -89,7 +87,7 @@ mod tests {
     }
 
     #[test]
-    fn test_decode_token_wrong_audience() {
+    fn decode_token_wrong_audience() {
         let (_, jwt) = build_token(false, Some("different-audience".to_string()));
 
         let decoded: anyhow::Result<TokenData<Claims>> =

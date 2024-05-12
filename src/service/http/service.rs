@@ -131,13 +131,12 @@ impl HttpService {
 
 #[cfg(test)]
 mod tests {
-    use aide::axum::routing::get;
 
     #[test]
     #[cfg(feature = "open-api")]
     fn list_routes() {
-        use crate::service::http::service::HttpService;
-        use aide::axum::routing::{delete_with, get_with, post_with, put_with};
+        use super::*;
+        use aide::axum::routing::{delete_with, get, get_with, post_with, put_with};
         use aide::axum::ApiRouter;
         use aide::openapi::OpenApi;
         use itertools::Itertools;
