@@ -131,6 +131,7 @@ impl HttpService {
 
 #[cfg(test)]
 mod tests {
+    use aide::axum::routing::get;
 
     #[test]
     #[cfg(feature = "open-api")]
@@ -152,6 +153,9 @@ mod tests {
             .api_route("/a", delete_with(api_method, |op| op))
             .api_route("/c", get_with(api_method, |op| op))
             .api_route("/b", get_with(api_method, |op| op))
+            // Methods registered with `get` instead of `get_with` will not have OpenAPI
+            // documentation generated, but will still be included in the list of routes.
+            .api_route("/not_documented", get(api_method))
             .finish_api(&mut open_api);
 
         let service = HttpService {
@@ -166,7 +170,7 @@ mod tests {
             .collect_vec();
         assert_eq!(
             paths,
-            ["/a", "/b", "/bar", "/baz", "/c", "/foo"]
+            ["/a", "/b", "/bar", "/baz", "/c", "/foo", "/not_documented"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect_vec()
