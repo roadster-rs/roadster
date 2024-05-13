@@ -78,7 +78,6 @@ mod tests {
     #[rstest]
     #[case(true, 1)]
     #[case(false, 0)]
-    #[tokio::test]
     fn register_service(#[case] service_enabled: bool, #[case] expected_count: usize) {
         // Arrange
         let mut context = MockAppContext::default();
