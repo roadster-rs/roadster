@@ -1,11 +1,10 @@
 use crate::app::App;
-
+#[mockall_double::double]
+use crate::app_context::AppContext;
 use crate::service::worker::sidekiq::app_worker::AppWorker;
 use crate::service::worker::sidekiq::app_worker::AppWorkerConfig;
 use async_trait::async_trait;
 use serde::Serialize;
-
-use crate::app_context::AppContext;
 use sidekiq::{RedisPool, Worker, WorkerOpts};
 use std::marker::PhantomData;
 use std::time::Duration;

@@ -1,4 +1,5 @@
 use crate::app::App;
+#[mockall_double::double]
 use crate::app_context::AppContext;
 use async_trait::async_trait;
 use serde_derive::{Deserialize, Serialize};

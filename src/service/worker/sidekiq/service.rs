@@ -1,4 +1,5 @@
 use crate::app::App;
+#[mockall_double::double]
 use crate::app_context::AppContext;
 use crate::service::worker::sidekiq::builder::SidekiqWorkerServiceBuilder;
 use crate::service::AppService;
@@ -13,7 +14,7 @@ pub struct SidekiqWorkerService {
 }
 
 #[async_trait]
-impl<A: App> AppService<A> for SidekiqWorkerService {
+impl<A: App + 'static> AppService<A> for SidekiqWorkerService {
     fn name() -> String
     where
         Self: Sized,

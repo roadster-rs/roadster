@@ -20,7 +20,7 @@ Code coverage stats are generated automatically in CI. To generate coverage stat
 
 ```shell
 # Install coverage dependencies
-cargo binstall grcov
+cargo binstall cargo-llvm-cov
 rustup component add llvm-tools
 # If you have Nix on you system, you can install the `genhtml` command using the nix package.
 # Todo: other methods of installing `genhtml`

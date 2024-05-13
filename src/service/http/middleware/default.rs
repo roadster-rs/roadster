@@ -1,3 +1,4 @@
+#[mockall_double::double]
 use crate::app_context::AppContext;
 use crate::service::http::middleware::catch_panic::CatchPanicMiddleware;
 use crate::service::http::middleware::compression::RequestDecompressionMiddleware;

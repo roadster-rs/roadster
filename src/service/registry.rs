@@ -1,4 +1,5 @@
 use crate::app::App;
+#[mockall_double::double]
 use crate::app_context::AppContext;
 use crate::service::{AppService, AppServiceBuilder};
 use anyhow::bail;
@@ -8,7 +9,7 @@ use tracing::info;
 /// Registry for [AppService]s that will be run in the app.
 pub struct ServiceRegistry<A>
 where
-    A: App + ?Sized,
+    A: App + ?Sized + 'static,
 {
     pub(crate) context: AppContext<A::State>,
     pub(crate) services: BTreeMap<String, Box<dyn AppService<A>>>,
@@ -63,5 +64,75 @@ impl<A: App> ServiceRegistry<A> {
             bail!("Service `{}` was already registered", S::name());
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app::MockTestApp;
+    use crate::app_context::MockAppContext;
+    use crate::service::{MockAppService, MockAppServiceBuilder};
+    use rstest::rstest;
+
+    #[rstest]
+    #[case(true, 1)]
+    #[case(false, 0)]
+    fn register_service(#[case] service_enabled: bool, #[case] expected_count: usize) {
+        // Arrange
+        let mut context = MockAppContext::default();
+        context.expect_clone().returning(MockAppContext::default);
+
+        let service: MockAppService<MockTestApp> = MockAppService::default();
+        let enabled_ctx = MockAppService::<MockTestApp>::enabled_context();
+        enabled_ctx.expect().returning(move |_| service_enabled);
+        let name_ctx = MockAppService::<MockTestApp>::name_context();
+        name_ctx.expect().returning(|| "test".to_string());
+
+        // Act
+        let mut subject: ServiceRegistry<MockTestApp> = ServiceRegistry::new(&context);
+        subject.register_service(service).unwrap();
+
+        // Assert
+        assert_eq!(subject.services.len(), expected_count);
+        assert_eq!(subject.services.contains_key("test"), service_enabled);
+    }
+
+    #[rstest]
+    #[case(true, true, 1)]
+    #[case(false, true, 0)]
+    #[case(true, false, 0)]
+    #[case(false, false, 0)]
+    async fn register_builder(
+        #[case] service_enabled: bool,
+        #[case] builder_enabled: bool,
+        #[case] expected_count: usize,
+    ) {
+        // Arrange
+        let mut context = MockAppContext::default();
+        context.expect_clone().returning(MockAppContext::default);
+
+        let enabled_ctx = MockAppService::<MockTestApp>::enabled_context();
+        enabled_ctx.expect().returning(move |_| service_enabled);
+        let name_ctx = MockAppService::<MockTestApp>::name_context();
+        name_ctx.expect().returning(|| "test".to_string());
+
+        let mut builder = MockAppServiceBuilder::default();
+        builder.expect_enabled().returning(move |_| builder_enabled);
+        if expected_count > 0 {
+            builder
+                .expect_build()
+                .returning(|_| Box::pin(async move { Ok(MockAppService::default()) }));
+        } else {
+            builder.expect_build().never();
+        }
+
+        // Act
+        let mut subject: ServiceRegistry<MockTestApp> = ServiceRegistry::new(&context);
+        subject.register_builder(builder).await.unwrap();
+
+        // Assert
+        assert_eq!(subject.services.len(), expected_count);
+        assert_eq!(subject.services.contains_key("test"), expected_count > 0);
     }
 }

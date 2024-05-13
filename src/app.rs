@@ -1,4 +1,7 @@
+#[mockall_double::double]
 use crate::app_context::AppContext;
+#[cfg(all(test, feature = "cli"))]
+use crate::cli::MockCli;
 #[cfg(feature = "cli")]
 use crate::cli::{RoadsterCli, RunCommand, RunRoadsterCommand};
 use crate::config::app_config::AppConfig;
@@ -10,7 +13,11 @@ use async_trait::async_trait;
 #[cfg(feature = "cli")]
 use clap::{Args, Command, FromArgMatches};
 #[cfg(feature = "db-sql")]
-use sea_orm::{ConnectOptions, Database};
+use sea_orm::ConnectOptions;
+#[cfg(all(not(test), feature = "db-sql"))]
+use sea_orm::Database;
+#[cfg(all(test, feature = "db-sql"))]
+use sea_orm_migration::MigrationTrait;
 #[cfg(feature = "db-sql")]
 use sea_orm_migration::MigratorTrait;
 use std::future;
@@ -77,10 +84,10 @@ where
 
     A::init_tracing(&config)?;
 
-    #[cfg(feature = "db-sql")]
+    #[cfg(all(not(test), feature = "db-sql"))]
     let db = Database::connect(A::db_connection_options(&config)?).await?;
 
-    #[cfg(feature = "sidekiq")]
+    #[cfg(all(not(test), feature = "sidekiq"))]
     let (redis_enqueue, redis_fetch) = {
         let sidekiq_config = &config.service.sidekiq;
         let redis_config = &sidekiq_config.custom.redis;
@@ -116,6 +123,7 @@ where
         (redis_enqueue, redis_fetch)
     };
 
+    #[cfg(not(test))]
     let context = AppContext::<()>::new(
         config,
         #[cfg(feature = "db-sql")]
@@ -125,6 +133,8 @@ where
         #[cfg(feature = "sidekiq")]
         redis_fetch.clone(),
     )?;
+    #[cfg(test)]
+    let context = AppContext::<()>::default();
 
     let state = A::with_state(&context).await?;
     let context = context.with_custom(state);
@@ -270,7 +280,7 @@ pub trait App: Send + Sync {
     /// method is provided in case there's any additional work that needs to be done that the
     /// consumer can't put in a [`From<AppContext>`] implementation. For example, any
     /// configuration that needs to happen in an async method.
-    async fn with_state(context: &AppContext) -> anyhow::Result<Self::State>;
+    async fn with_state(context: &AppContext<()>) -> anyhow::Result<Self::State>;
 
     /// Provide the services to run in the app.
     async fn services(
@@ -394,4 +404,28 @@ where
     app_graceful_shutdown_result?;
 
     Ok(())
+}
+
+#[cfg(all(test, feature = "db-sql"))]
+mockall::mock! {
+    pub Migrator {}
+    #[async_trait]
+    impl MigratorTrait for Migrator {
+        fn migrations() -> Vec<Box<dyn MigrationTrait>>;
+    }
+}
+
+#[cfg(test)]
+mockall::mock! {
+    pub TestApp {}
+    #[async_trait]
+    impl App for TestApp {
+        type State = ();
+        #[cfg(feature = "cli")]
+        type Cli = MockCli;
+        #[cfg(feature = "db-sql")]
+        type M = MockMigrator;
+
+        async fn with_state(context: &AppContext<()>) -> anyhow::Result<<MockTestApp as App>::State>;
+    }
 }
