@@ -1,4 +1,5 @@
 use crate::app::App;
+#[mockall_double::double]
 use crate::app_context::AppContext;
 use crate::controller::default_routes;
 use crate::service::http::initializer::default::default_initializers;
@@ -25,7 +26,7 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 use tracing::info;
 
-pub struct HttpServiceBuilder<A: App> {
+pub struct HttpServiceBuilder<A: App + 'static> {
     #[cfg(not(feature = "open-api"))]
     router: Router<AppContext<A::State>>,
     #[cfg(feature = "open-api")]

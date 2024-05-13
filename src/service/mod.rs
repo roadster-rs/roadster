@@ -1,4 +1,5 @@
 use crate::app::App;
+#[mockall_double::double]
 use crate::app_context::AppContext;
 #[cfg(feature = "cli")]
 use crate::cli::RoadsterCli;
@@ -13,7 +14,8 @@ pub mod worker;
 /// include, but are not limited to: an [http API][crate::service::http::service::HttpService],
 /// a sidekiq processor, or a gRPC API.
 #[async_trait]
-pub trait AppService<A: App>: Send + Sync {
+#[cfg_attr(test, mockall::automock)]
+pub trait AppService<A: App + 'static>: Send + Sync {
     /// The name of the service.
     fn name() -> String
     where
@@ -58,9 +60,10 @@ pub trait AppService<A: App>: Send + Sync {
 /// in which case the [ServiceRegistry][crate::service::registry::ServiceRegistry] will only
 /// build and register the service if [AppService::enabled] is `true`.
 #[async_trait]
+#[cfg_attr(test, mockall::automock)]
 pub trait AppServiceBuilder<A, S>
 where
-    A: App,
+    A: App + 'static,
     S: AppService<A>,
 {
     fn enabled(&self, app_context: &AppContext<A::State>) -> bool {

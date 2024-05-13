@@ -1,6 +1,7 @@
 pub mod default;
 pub mod normalize_path;
 
+#[mockall_double::double]
 use crate::app_context::AppContext;
 use axum::Router;
 

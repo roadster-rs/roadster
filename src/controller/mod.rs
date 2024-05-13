@@ -4,6 +4,7 @@ use aide::axum::ApiRouter;
 use axum::Router;
 use itertools::Itertools;
 
+#[mockall_double::double]
 use crate::app_context::AppContext;
 use crate::config::app_config::AppConfig;
 

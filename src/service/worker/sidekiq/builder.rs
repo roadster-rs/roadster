@@ -1,4 +1,5 @@
 use crate::app::App;
+#[mockall_double::double]
 use crate::app_context::AppContext;
 use crate::config::service::worker::sidekiq::StaleCleanUpBehavior;
 use crate::service::worker::sidekiq::app_worker::AppWorker;
@@ -18,7 +19,7 @@ const PERIODIC_KEY: &str = "periodic";
 
 pub struct SidekiqWorkerServiceBuilder<A>
 where
-    A: App,
+    A: App + 'static,
 {
     state: BuilderState<A>,
 }
@@ -36,7 +37,7 @@ enum BuilderState<A: App> {
 #[async_trait]
 impl<A> AppServiceBuilder<A, SidekiqWorkerService> for SidekiqWorkerServiceBuilder<A>
 where
-    A: App + 'static,
+    A: App,
 {
     fn enabled(&self, app_context: &AppContext<A::State>) -> bool {
         match self.state {

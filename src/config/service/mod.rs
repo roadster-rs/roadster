@@ -1,6 +1,7 @@
 pub mod http;
 pub mod worker;
 
+#[mockall_double::double]
 use crate::app_context::AppContext;
 use crate::config::service::http::HttpServiceConfig;
 #[cfg(feature = "sidekiq")]

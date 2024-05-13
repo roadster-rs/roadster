@@ -1,3 +1,4 @@
+#[mockall_double::double]
 use crate::app_context::AppContext;
 use crate::service::http::initializer::normalize_path::NormalizePathInitializer;
 use crate::service::http::initializer::Initializer;

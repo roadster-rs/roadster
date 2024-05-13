@@ -1,4 +1,5 @@
 use crate::app::App;
+#[mockall_double::double]
 use crate::app_context::AppContext;
 #[cfg(all(feature = "cli", feature = "open-api"))]
 use crate::cli::RoadsterSubCommand;
@@ -30,7 +31,7 @@ pub struct HttpService {
 }
 
 #[async_trait]
-impl<A: App> AppService<A> for HttpService {
+impl<A: App + 'static> AppService<A> for HttpService {
     fn name() -> String {
         "http".to_string()
     }

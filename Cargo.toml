@@ -87,9 +87,14 @@ const_format = "0.2.32"
 typed-builder = "0.18.2"
 num-traits = "0.2.19"
 log = "0.4.21"
+mockall_double = "0.3.1"
 
 [dev-dependencies]
 cargo-husky = { version = "1.5.0", default-features = false, features = ["user-hooks"] }
+mockall = "0.12.1"
+rstest = "0.19.0"
+# Required by rstest (rstest doesn't support tokio)
+async-std = { version = "1.12.0", features = ["attributes"] }
 
 [workspace]
 members = [".", "examples/*"]

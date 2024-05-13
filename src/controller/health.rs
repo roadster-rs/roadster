@@ -29,6 +29,7 @@ use sidekiq::redis_rs::cmd;
 use tokio::time::timeout;
 use tracing::instrument;
 
+#[mockall_double::double]
 use crate::app_context::AppContext;
 use crate::controller::build_path;
 use crate::view::app_error::AppError;
