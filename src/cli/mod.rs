@@ -1,7 +1,7 @@
-use async_trait::async_trait;
-use clap::{Parser, Subcommand};
-
 use crate::app::App;
+#[cfg(test)]
+use crate::app::MockTestApp;
+#[mockall_double::double]
 use crate::app_context::AppContext;
 #[cfg(feature = "open-api")]
 use crate::cli::list_routes::ListRoutesArgs;
@@ -11,6 +11,8 @@ use crate::cli::migrate::MigrateArgs;
 use crate::cli::open_api_schema::OpenApiArgs;
 use crate::cli::print_config::PrintConfigArgs;
 use crate::config::environment::Environment;
+use async_trait::async_trait;
+use clap::{Parser, Subcommand};
 
 #[cfg(feature = "open-api")]
 pub mod list_routes;
@@ -199,5 +201,30 @@ where
             RoadsterSubCommand::Migrate(args) => args.run(app, cli, context).await,
             RoadsterSubCommand::PrintConfig(args) => args.run(app, cli, context).await,
         }
+    }
+}
+
+#[cfg(test)]
+mockall::mock! {
+    pub Cli {}
+
+    #[async_trait]
+    impl RunCommand<MockTestApp> for Cli {
+        async fn run(
+                &self,
+                app: &MockTestApp,
+                cli: &<MockTestApp as App>::Cli,
+                context: &AppContext<<MockTestApp as App>::State>,
+            ) -> anyhow::Result<bool>;
+    }
+
+    impl clap::FromArgMatches for Cli {
+        fn from_arg_matches(matches: &clap::ArgMatches) -> Result<Self, clap::Error>;
+        fn update_from_arg_matches(&mut self, matches: &clap::ArgMatches) -> Result<(), clap::Error>;
+    }
+
+    impl clap::Args for Cli {
+        fn augment_args(cmd: clap::Command) -> clap::Command;
+        fn augment_args_for_update(cmd: clap::Command) -> clap::Command;
     }
 }

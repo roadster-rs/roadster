@@ -5,6 +5,7 @@ use sea_orm_migration::MigratorTrait;
 use tracing::warn;
 
 use crate::app::App;
+#[mockall_double::double]
 use crate::app_context::AppContext;
 use crate::cli::{RoadsterCli, RunRoadsterCommand};
 

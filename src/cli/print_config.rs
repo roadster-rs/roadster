@@ -5,6 +5,7 @@ use strum_macros::{EnumString, IntoStaticStr};
 use tracing::info;
 
 use crate::app::App;
+#[mockall_double::double]
 use crate::app_context::AppContext;
 use crate::cli::{RoadsterCli, RunRoadsterCommand};
 

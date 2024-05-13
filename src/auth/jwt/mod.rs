@@ -3,6 +3,7 @@ pub mod ietf;
 #[cfg(feature = "jwt-openid")]
 pub mod openid;
 
+#[mockall_double::double]
 use crate::app_context::AppContext;
 #[cfg(feature = "jwt-ietf")]
 use crate::auth::jwt::ietf::Claims;
@@ -24,7 +25,6 @@ use jsonwebtoken::{decode, DecodingKey, Header, TokenData, Validation};
 use serde_derive::{Deserialize, Serialize};
 #[cfg(not(any(feature = "jwt-ietf", feature = "jwt-openid")))]
 use serde_json::Value as Claims;
-use std::sync::Arc;
 use url::Url;
 use uuid::Uuid;
 
@@ -49,16 +49,18 @@ where
 impl OperationInput for Jwt {}
 
 #[async_trait]
-impl<S, C> FromRequestParts<S> for Jwt<C>
+impl<S, C> FromRequestParts<AppContext<S>> for Jwt<C>
 where
-    S: Into<Arc<AppContext>> + Clone + Send + Sync,
+    S: Send + Sync,
     C: for<'de> serde::Deserialize<'de>,
 {
     type Rejection = AppError;
 
-    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppContext<S>,
+    ) -> Result<Self, Self::Rejection> {
         let auth_header = parts.extract::<BearerAuthHeader>().await?;
-        let state: Arc<AppContext> = state.clone().into();
         let token: TokenData<C> = decode_auth_token(
             auth_header.0.token(),
             &state.config().auth.jwt.secret,

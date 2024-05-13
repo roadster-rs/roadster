@@ -12,6 +12,8 @@ pub struct AppContext<T = ()> {
 }
 
 impl<T> AppContext<T> {
+    // This method isn't used when running tests; only the mocked version is used.
+    #[cfg_attr(test, allow(dead_code))]
     pub(crate) fn new(
         config: AppConfig,
         #[cfg(feature = "db-sql")] db: DatabaseConnection,
@@ -33,7 +35,7 @@ impl<T> AppContext<T> {
         })
     }
 
-    pub fn with_custom<NewT>(self, custom: NewT) -> AppContext<NewT> {
+    pub fn with_custom<NewT: 'static>(self, custom: NewT) -> AppContext<NewT> {
         AppContext {
             inner: self.inner,
             custom: Arc::new(custom),
@@ -76,4 +78,26 @@ struct AppContextInner {
     /// config is set to zero, in which case the [sidekiq::Processor] would also not be started.
     #[cfg(feature = "sidekiq")]
     redis_fetch: Option<sidekiq::RedisPool>,
+}
+
+#[cfg(test)]
+mockall::mock! {
+    pub AppContext<T: 'static = ()> {
+        pub fn config(&self) -> &AppConfig;
+
+        #[cfg(feature = "db-sql")]
+        pub fn db(&self) -> &DatabaseConnection;
+
+        #[cfg(feature = "sidekiq")]
+        pub fn redis_enqueue(&self) -> &sidekiq::RedisPool;
+
+        #[cfg(feature = "sidekiq")]
+        pub fn redis_fetch<'a>(&'a self) -> Option<&'a sidekiq::RedisPool>;
+
+        pub fn with_custom<NewT: 'static>(self, custom: NewT) -> MockAppContext<NewT>;
+    }
+
+    impl<T> Clone for AppContext<T> {
+        fn clone(&self) -> Self;
+    }
 }
