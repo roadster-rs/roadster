@@ -14,4 +14,6 @@ github_checks:
   # https://docs.codecov.com/docs/the-codecov-browser-extension
   annotations: false
 comment:
+  # https://docs.codecov.com/docs/pull-request-comments#layout
+  layout: "condensed_header, condensed_files, condensed_footer"
   require_changes: true
