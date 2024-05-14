@@ -32,7 +32,9 @@ impl RoadsterApp for App {
         context: &AppContext<Self::State>,
     ) -> anyhow::Result<()> {
         registry
-            .register_builder(HttpService::builder(BASE, context).router(controller::routes(BASE)))
+            .register_builder(
+                HttpService::builder(Some(BASE), context).router(controller::routes(BASE)),
+            )
             .await?;
 
         registry

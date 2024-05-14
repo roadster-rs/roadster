@@ -38,7 +38,7 @@ pub struct PropagateRequestIdConfig {
 }
 
 pub struct SetRequestIdMiddleware;
-impl<S> Middleware<S> for SetRequestIdMiddleware {
+impl<S: Send + Sync + 'static> Middleware<S> for SetRequestIdMiddleware {
     fn name(&self) -> String {
         "set-request-id".to_string()
     }
@@ -89,7 +89,7 @@ impl<S> Middleware<S> for SetRequestIdMiddleware {
 }
 
 pub struct PropagateRequestIdMiddleware;
-impl<S> Middleware<S> for PropagateRequestIdMiddleware {
+impl<S: Send + Sync + 'static> Middleware<S> for PropagateRequestIdMiddleware {
     fn name(&self) -> String {
         "propagate-request-id".to_string()
     }

@@ -90,7 +90,7 @@ impl<A: App + 'static> AppService<A> for HttpService {
 impl HttpService {
     /// Create a new [HttpServiceBuilder].
     pub fn builder<A: App>(
-        path_root: &str,
+        path_root: Option<&str>,
         context: &AppContext<A::State>,
     ) -> HttpServiceBuilder<A> {
         HttpServiceBuilder::new(path_root, context)

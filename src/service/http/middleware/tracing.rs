@@ -17,7 +17,7 @@ use tracing::{event, field, info_span, Level, Span, Value};
 pub struct TracingConfig {}
 
 pub struct TracingMiddleware;
-impl<S> Middleware<S> for TracingMiddleware {
+impl<S: Send + Sync + 'static> Middleware<S> for TracingMiddleware {
     fn name(&self) -> String {
         "tracing".to_string()
     }
