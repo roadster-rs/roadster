@@ -84,6 +84,7 @@ mod tests {
     struct TestAppServiceBuilder;
     #[async_trait]
     impl AppServiceBuilder<MockTestApp, MockAppService<MockTestApp>> for TestAppServiceBuilder {
+        #[cfg_attr(coverage, coverage(off))]
         async fn build(
             self,
             _context: &MockAppContext<()>,
