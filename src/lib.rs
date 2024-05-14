@@ -11,6 +11,7 @@
 //! - Uses `#![forbid(unsafe_code)]` to ensure all code in Roadster is 100% safe rust.
 
 #![forbid(unsafe_code)]
+#![cfg_attr(coverage, feature(coverage_attribute))]
 
 pub mod app;
 pub mod app_context;
