@@ -16,7 +16,7 @@ pub struct ResponseCompressionConfig {}
 pub struct RequestDecompressionConfig {}
 
 pub struct ResponseCompressionMiddleware;
-impl<S> Middleware<S> for ResponseCompressionMiddleware {
+impl<S: Send + Sync + 'static> Middleware<S> for ResponseCompressionMiddleware {
     fn name(&self) -> String {
         "response-compression".to_string()
     }
@@ -53,7 +53,7 @@ impl<S> Middleware<S> for ResponseCompressionMiddleware {
 }
 
 pub struct RequestDecompressionMiddleware;
-impl<S> Middleware<S> for RequestDecompressionMiddleware {
+impl<S: Send + Sync + 'static> Middleware<S> for RequestDecompressionMiddleware {
     fn name(&self) -> String {
         "request-decompression".to_string()
     }

@@ -12,7 +12,7 @@ pub struct NormalizePathConfig {}
 
 pub struct NormalizePathInitializer;
 
-impl<S> Initializer<S> for NormalizePathInitializer {
+impl<S: Send + Sync + 'static> Initializer<S> for NormalizePathInitializer {
     fn name(&self) -> String {
         "normalize-path".to_string()
     }

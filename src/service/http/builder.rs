@@ -27,6 +27,7 @@ use std::sync::Arc;
 use tracing::info;
 
 pub struct HttpServiceBuilder<A: App + 'static> {
+    context: AppContext<A::State>,
     #[cfg(not(feature = "open-api"))]
     router: Router<AppContext<A::State>>,
     #[cfg(feature = "open-api")]
@@ -38,17 +39,35 @@ pub struct HttpServiceBuilder<A: App + 'static> {
 }
 
 impl<A: App> HttpServiceBuilder<A> {
-    pub fn new(path_root: &str, context: &AppContext<A::State>) -> Self {
+    pub fn new(path_root: Option<&str>, context: &AppContext<A::State>) -> Self {
         #[cfg(feature = "open-api")]
         let app_name = context.config().app.name.clone();
         Self {
-            router: default_routes(path_root, context.config()),
+            context: context.clone(),
+            router: default_routes(path_root.unwrap_or_default(), context.config()),
             #[cfg(feature = "open-api")]
             api_docs: Box::new(move |api| {
                 api.title(&app_name).description(&format!("# {}", app_name))
             }),
             middleware: default_middleware(context),
             initializers: default_initializers(context),
+        }
+    }
+
+    #[cfg_attr(not(test), allow(dead_code))]
+    fn empty(context: &AppContext<A::State>) -> Self {
+        #[cfg(not(feature = "open-api"))]
+        let router = Router::<AppContext<A::State>>::new();
+        #[cfg(feature = "open-api")]
+        let router = ApiRouter::<AppContext<A::State>>::new();
+
+        Self {
+            context: context.clone(),
+            router,
+            #[cfg(feature = "open-api")]
+            api_docs: Box::new(|op| op),
+            middleware: Default::default(),
+            initializers: Default::default(),
         }
     }
 
@@ -73,14 +92,17 @@ impl<A: App> HttpServiceBuilder<A> {
         self
     }
 
-    pub fn initializer(
-        mut self,
-        initializer: Box<dyn Initializer<A::State>>,
-    ) -> anyhow::Result<Self> {
+    pub fn initializer<T>(mut self, initializer: T) -> anyhow::Result<Self>
+    where
+        T: Initializer<A::State> + 'static,
+    {
+        if !initializer.enabled(&self.context) {
+            return Ok(self);
+        }
         let name = initializer.name();
         if self
             .initializers
-            .insert(name.clone(), initializer)
+            .insert(name.clone(), Box::new(initializer))
             .is_some()
         {
             bail!("Initializer `{name}` was already registered");
@@ -88,9 +110,19 @@ impl<A: App> HttpServiceBuilder<A> {
         Ok(self)
     }
 
-    pub fn middleware(mut self, middleware: Box<dyn Middleware<A::State>>) -> anyhow::Result<Self> {
+    pub fn middleware<T>(mut self, middleware: T) -> anyhow::Result<Self>
+    where
+        T: Middleware<A::State> + 'static,
+    {
+        if !middleware.enabled(&self.context) {
+            return Ok(self);
+        }
         let name = middleware.name();
-        if self.middleware.insert(name.clone(), middleware).is_some() {
+        if self
+            .middleware
+            .insert(name.clone(), Box::new(middleware))
+            .is_some()
+        {
             bail!("Middleware `{name}` was already registered");
         }
         Ok(self)
@@ -167,5 +199,136 @@ impl<A: App> AppServiceBuilder<A, HttpService> for HttpServiceBuilder<A> {
         };
 
         Ok(service)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app::MockTestApp;
+    use crate::app_context::MockAppContext;
+    use crate::service::http::initializer::MockInitializer;
+    use crate::service::http::middleware::MockMiddleware;
+
+    #[test]
+    fn middleware() {
+        // Arrange
+        let mut context = MockAppContext::<()>::default();
+        context
+            .expect_clone()
+            .returning(MockAppContext::<()>::default);
+        let builder = HttpServiceBuilder::<MockTestApp>::empty(&context);
+
+        let mut middleware = MockMiddleware::default();
+        middleware.expect_enabled().returning(|_| true);
+        middleware.expect_name().returning(|| "test".to_string());
+
+        // Act
+        let builder = builder.middleware(middleware).unwrap();
+
+        // Assert
+        assert_eq!(builder.middleware.len(), 1);
+        assert!(builder.middleware.get("test").is_some());
+    }
+
+    #[test]
+    fn middleware_not_enabled() {
+        // Arrange
+        let mut context = MockAppContext::<()>::default();
+        context
+            .expect_clone()
+            .returning(MockAppContext::<()>::default);
+        let builder = HttpServiceBuilder::<MockTestApp>::empty(&context);
+
+        let mut middleware = MockMiddleware::default();
+        middleware.expect_enabled().returning(|_| false);
+
+        // Act
+        let builder = builder.middleware(middleware).unwrap();
+
+        // Assert
+        assert!(builder.middleware.is_empty());
+    }
+
+    #[test]
+    #[should_panic]
+    fn middleware_already_registered() {
+        // Arrange
+        let mut context = MockAppContext::<()>::default();
+        context
+            .expect_clone()
+            .returning(MockAppContext::<()>::default);
+        let builder = HttpServiceBuilder::<MockTestApp>::empty(&context);
+
+        let mut middleware = MockMiddleware::default();
+        middleware.expect_name().returning(|| "test".to_string());
+        let builder = builder.middleware(middleware).unwrap();
+
+        let mut middleware = MockMiddleware::default();
+        middleware.expect_name().returning(|| "test".to_string());
+
+        // Act
+        builder.middleware(middleware).unwrap();
+    }
+
+    #[test]
+    fn initializer() {
+        // Arrange
+        let mut context = MockAppContext::<()>::default();
+        context
+            .expect_clone()
+            .returning(MockAppContext::<()>::default);
+        let builder = HttpServiceBuilder::<MockTestApp>::empty(&context);
+
+        let mut initializer = MockInitializer::default();
+        initializer.expect_enabled().returning(|_| true);
+        initializer.expect_name().returning(|| "test".to_string());
+
+        // Act
+        let builder = builder.initializer(initializer).unwrap();
+
+        // Assert
+        assert_eq!(builder.initializers.len(), 1);
+        assert!(builder.initializers.get("test").is_some());
+    }
+
+    #[test]
+    fn initializer_not_enabled() {
+        // Arrange
+        let mut context = MockAppContext::<()>::default();
+        context
+            .expect_clone()
+            .returning(MockAppContext::<()>::default);
+        let builder = HttpServiceBuilder::<MockTestApp>::empty(&context);
+
+        let mut initializer = MockInitializer::default();
+        initializer.expect_enabled().returning(|_| false);
+
+        // Act
+        let builder = builder.initializer(initializer).unwrap();
+
+        // Assert
+        assert!(builder.initializers.is_empty());
+    }
+
+    #[test]
+    #[should_panic]
+    fn initializer_already_registered() {
+        // Arrange
+        let mut context = MockAppContext::<()>::default();
+        context
+            .expect_clone()
+            .returning(MockAppContext::<()>::default);
+        let builder = HttpServiceBuilder::<MockTestApp>::empty(&context);
+
+        let mut initializer = MockInitializer::default();
+        initializer.expect_name().returning(|| "test".to_string());
+        let builder = builder.initializer(initializer).unwrap();
+
+        let mut initializer = MockInitializer::default();
+        initializer.expect_name().returning(|| "test".to_string());
+
+        // Act
+        builder.initializer(initializer).unwrap();
     }
 }

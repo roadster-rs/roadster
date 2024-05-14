@@ -24,7 +24,7 @@ impl Default for TimeoutConfig {
 }
 
 pub struct TimeoutMiddleware;
-impl<S> Middleware<S> for TimeoutMiddleware {
+impl<S: Send + Sync + 'static> Middleware<S> for TimeoutMiddleware {
     fn name(&self) -> String {
         "timeout".to_string()
     }

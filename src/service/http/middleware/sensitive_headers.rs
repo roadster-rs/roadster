@@ -57,7 +57,7 @@ pub struct SensitiveResponseHeadersConfig {
 
 pub struct SensitiveRequestHeadersMiddleware;
 
-impl<S> Middleware<S> for SensitiveRequestHeadersMiddleware {
+impl<S: Send + Sync + 'static> Middleware<S> for SensitiveRequestHeadersMiddleware {
     fn name(&self) -> String {
         "sensitive-request-headers".to_string()
     }
@@ -105,7 +105,7 @@ impl<S> Middleware<S> for SensitiveRequestHeadersMiddleware {
 
 pub struct SensitiveResponseHeadersMiddleware;
 
-impl<S> Middleware<S> for SensitiveResponseHeadersMiddleware {
+impl<S: Send + Sync + 'static> Middleware<S> for SensitiveResponseHeadersMiddleware {
     fn name(&self) -> String {
         "sensitive-response-headers".to_string()
     }

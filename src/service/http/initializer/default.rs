@@ -4,7 +4,7 @@ use crate::service::http::initializer::normalize_path::NormalizePathInitializer;
 use crate::service::http::initializer::Initializer;
 use std::collections::BTreeMap;
 
-pub fn default_initializers<S>(
+pub fn default_initializers<S: Send + Sync + 'static>(
     context: &AppContext<S>,
 ) -> BTreeMap<String, Box<dyn Initializer<S>>> {
     let initializers: Vec<Box<dyn Initializer<S>>> = vec![Box::new(NormalizePathInitializer)];

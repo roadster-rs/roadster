@@ -10,7 +10,7 @@ use tower_http::catch_panic::CatchPanicLayer;
 pub struct CatchPanicConfig {}
 
 pub struct CatchPanicMiddleware;
-impl<S> Middleware<S> for CatchPanicMiddleware {
+impl<S: Send + Sync + 'static> Middleware<S> for CatchPanicMiddleware {
     fn name(&self) -> String {
         "catch-panic".to_string()
     }

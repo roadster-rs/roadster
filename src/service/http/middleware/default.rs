@@ -14,7 +14,9 @@ use crate::service::http::middleware::tracing::TracingMiddleware;
 use crate::service::http::middleware::Middleware;
 use std::collections::BTreeMap;
 
-pub fn default_middleware<S>(context: &AppContext<S>) -> BTreeMap<String, Box<dyn Middleware<S>>> {
+pub fn default_middleware<S: Send + Sync + 'static>(
+    context: &AppContext<S>,
+) -> BTreeMap<String, Box<dyn Middleware<S>>> {
     let middleware: Vec<Box<dyn Middleware<S>>> = vec![
         Box::new(SensitiveRequestHeadersMiddleware),
         Box::new(SensitiveResponseHeadersMiddleware),

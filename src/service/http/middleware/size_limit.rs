@@ -24,7 +24,7 @@ impl Default for SizeLimitConfig {
 }
 
 pub struct RequestBodyLimitMiddleware;
-impl<S> Middleware<S> for RequestBodyLimitMiddleware {
+impl<S: Send + Sync + 'static> Middleware<S> for RequestBodyLimitMiddleware {
     fn name(&self) -> String {
         "request-body-size-limit".to_string()
     }
