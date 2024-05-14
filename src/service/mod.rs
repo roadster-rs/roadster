@@ -74,7 +74,6 @@ where
 }
 
 #[cfg(test)]
-#[cfg_attr(coverage, coverage(off))]
 mod tests {
     use crate::app::MockTestApp;
     use crate::app_context::MockAppContext;
@@ -85,6 +84,7 @@ mod tests {
     struct TestAppServiceBuilder;
     #[async_trait]
     impl AppServiceBuilder<MockTestApp, MockAppService<MockTestApp>> for TestAppServiceBuilder {
+        #[cfg_attr(coverage_nightly, coverage(off))]
         async fn build(
             self,
             _context: &MockAppContext<()>,
