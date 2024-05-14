@@ -1,7 +1,9 @@
+# Test that test groups are assigned correctly using:
+# `cargo nextest show-config test-groups`
 [test-groups]
 # Mocks of static methods need to run sequentially. This test group is for tests that mock AppService's static methods.
 app-service-static-mock = { max-threads = 1 }
 
 [[profile.default.overrides]]
-filter = 'test(service::registry::tests::)'
+filter = 'test(#service::registry::tests::*) | test(#service::tests::*)'
 test-group = "app-service-static-mock"

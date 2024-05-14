@@ -72,3 +72,41 @@ where
 
     async fn build(self, context: &AppContext<A::State>) -> anyhow::Result<S>;
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::app::MockTestApp;
+    use crate::app_context::MockAppContext;
+    use crate::service::{AppServiceBuilder, MockAppService};
+    use async_trait::async_trait;
+    use rstest::rstest;
+
+    struct TestAppServiceBuilder;
+    #[async_trait]
+    impl AppServiceBuilder<MockTestApp, MockAppService<MockTestApp>> for TestAppServiceBuilder {
+        async fn build(
+            self,
+            _context: &MockAppContext<()>,
+        ) -> anyhow::Result<MockAppService<MockTestApp>> {
+            Ok(MockAppService::default())
+        }
+    }
+
+    #[rstest]
+    #[case(true)]
+    #[case(false)]
+    fn builder_enabled(#[case] service_enabled: bool) {
+        // Arrange
+        let mut context = MockAppContext::default();
+        context.expect_clone().returning(MockAppContext::default);
+
+        let enabled_ctx = MockAppService::<MockTestApp>::enabled_context();
+        enabled_ctx.expect().returning(move |_| service_enabled);
+
+        // Act
+        let builder = TestAppServiceBuilder;
+
+        // Assert
+        assert_eq!(builder.enabled(&context), service_enabled);
+    }
+}
