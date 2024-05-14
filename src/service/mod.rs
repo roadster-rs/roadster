@@ -74,7 +74,7 @@ where
 }
 
 #[cfg(test)]
-#[coverage(off)]
+#[cfg_attr(coverage, coverage(off))]
 mod tests {
     use crate::app::MockTestApp;
     use crate::app_context::MockAppContext;
