@@ -54,7 +54,7 @@ impl<A: App> HttpServiceBuilder<A> {
         }
     }
 
-    #[cfg_attr(not(test), allow(dead_code))]
+    #[cfg(test)]
     fn empty(context: &AppContext<A::State>) -> Self {
         #[cfg(not(feature = "open-api"))]
         let router = Router::<AppContext<A::State>>::new();
