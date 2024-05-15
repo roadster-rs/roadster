@@ -84,6 +84,39 @@ impl AppConfig {
 
         Ok(config)
     }
+
+    #[cfg(test)]
+    pub(crate) fn empty(config_str: Option<&str>) -> anyhow::Result<Self> {
+        let config = config_str.unwrap_or(
+            r#"
+            environment = "test"
+
+            [app]
+            name = "Test"
+
+            [tracing]
+            level = "debug"
+
+            [database]
+            uri = "postgres://example:example@localhost:5432/example_test"
+            auto-migrate = true
+            max-connections = 10
+
+            [auth.jwt]
+            secret = "secret-test"
+
+            [service.http]
+            host = "127.0.0.1"
+            port = 3000
+
+            [service.sidekiq.redis]
+            uri = "redis://localhost:6379"
+            "#,
+        );
+
+        let config = toml::from_str(config)?;
+        Ok(config)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -181,4 +214,14 @@ impl Database {
 pub struct CustomConfig {
     #[serde(flatten)]
     pub config: BTreeMap<String, Value>,
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::config::app_config::AppConfig;
+
+    #[test]
+    fn empty() {
+        AppConfig::empty(None).unwrap();
+    }
 }
