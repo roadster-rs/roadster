@@ -24,7 +24,9 @@ otel = ["dep:opentelemetry", "dep:opentelemetry_sdk", "dep:opentelemetry-otlp", 
 
 [dependencies]
 # Config
-config = "0.14.0"
+# We only support `toml` configs currently, and one of the default features (`rust-ini`) pulls in a dependency
+# that breaks the coverage build on nightly.
+config = { version = "0.14.0", default-features = false, features = ["toml", "convert-case"] }
 dotenvy = "0.15.7"
 
 # Tracing
