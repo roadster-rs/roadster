@@ -195,4 +195,30 @@ mod tests {
         // Act/Assert
         assert_eq!(middleware.enabled(&context), expected_enabled);
     }
+
+    #[rstest]
+    #[case(None, -9980)]
+    #[case(Some(1234), 1234)]
+    fn tracing_priority(#[case] override_priority: Option<i32>, #[case] expected_priority: i32) {
+        // Arrange
+        let mut config = AppConfig::empty(None).unwrap();
+        if let Some(priority) = override_priority {
+            config
+                .service
+                .http
+                .custom
+                .middleware
+                .tracing
+                .common
+                .priority = priority;
+        }
+
+        let mut context = MockAppContext::<()>::default();
+        context.expect_config().return_const(config);
+
+        let middleware = TracingMiddleware;
+
+        // Act/Assert
+        assert_eq!(middleware.priority(&context), expected_priority);
+    }
 }
