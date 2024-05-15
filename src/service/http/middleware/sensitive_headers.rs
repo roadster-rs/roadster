@@ -56,7 +56,6 @@ pub struct SensitiveResponseHeadersConfig {
 }
 
 pub struct SensitiveRequestHeadersMiddleware;
-
 impl<S: Send + Sync + 'static> Middleware<S> for SensitiveRequestHeadersMiddleware {
     fn name(&self) -> String {
         "sensitive-request-headers".to_string()
@@ -104,7 +103,6 @@ impl<S: Send + Sync + 'static> Middleware<S> for SensitiveRequestHeadersMiddlewa
 }
 
 pub struct SensitiveResponseHeadersMiddleware;
-
 impl<S: Send + Sync + 'static> Middleware<S> for SensitiveResponseHeadersMiddleware {
     fn name(&self) -> String {
         "sensitive-response-headers".to_string()
@@ -148,5 +146,71 @@ impl<S: Send + Sync + 'static> Middleware<S> for SensitiveResponseHeadersMiddlew
         let router = router.layer(SetSensitiveResponseHeadersLayer::new(headers));
 
         Ok(router)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app_context::MockAppContext;
+    use crate::config::app_config::AppConfig;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case(false, Some(true), true)]
+    #[case(false, Some(false), false)]
+    fn sensitive_request_headers_enabled(
+        #[case] default_enable: bool,
+        #[case] enable: Option<bool>,
+        #[case] expected_enabled: bool,
+    ) {
+        // Arrange
+        let mut config = AppConfig::empty(None).unwrap();
+        config.service.http.custom.middleware.default_enable = default_enable;
+        config
+            .service
+            .http
+            .custom
+            .middleware
+            .sensitive_request_headers
+            .common
+            .enable = enable;
+
+        let mut context = MockAppContext::<()>::default();
+        context.expect_config().return_const(config);
+
+        let middleware = SensitiveRequestHeadersMiddleware;
+
+        // Act/Assert
+        assert_eq!(middleware.enabled(&context), expected_enabled);
+    }
+
+    #[rstest]
+    #[case(false, Some(true), true)]
+    #[case(false, Some(false), false)]
+    fn sensitive_response_headers_enabled(
+        #[case] default_enable: bool,
+        #[case] enable: Option<bool>,
+        #[case] expected_enabled: bool,
+    ) {
+        // Arrange
+        let mut config = AppConfig::empty(None).unwrap();
+        config.service.http.custom.middleware.default_enable = default_enable;
+        config
+            .service
+            .http
+            .custom
+            .middleware
+            .sensitive_response_headers
+            .common
+            .enable = enable;
+
+        let mut context = MockAppContext::<()>::default();
+        context.expect_config().return_const(config);
+
+        let middleware = SensitiveResponseHeadersMiddleware;
+
+        // Act/Assert
+        assert_eq!(middleware.enabled(&context), expected_enabled);
     }
 }

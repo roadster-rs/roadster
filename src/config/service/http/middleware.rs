@@ -170,7 +170,38 @@ impl<T: Default> MiddlewareConfig<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::app_context::MockAppContext;
+    use crate::config::app_config::AppConfig;
+    use rstest::rstest;
     use serde_json::Value;
+
+    #[rstest]
+    #[case(true, None, true)]
+    #[case(true, Some(true), true)]
+    #[case(true, Some(false), false)]
+    #[case(false, None, false)]
+    #[case(false, Some(true), true)]
+    #[case(false, Some(false), false)]
+    fn common_config_enabled(
+        #[case] default_enable: bool,
+        #[case] enable: Option<bool>,
+        #[case] expected_enabled: bool,
+    ) {
+        // Arrange
+        let mut config = AppConfig::empty(None).unwrap();
+        config.service.http.custom.middleware.default_enable = default_enable;
+
+        let mut context = MockAppContext::<()>::default();
+        context.expect_config().return_const(config);
+
+        let common_config = CommonConfig {
+            enable,
+            ..Default::default()
+        };
+
+        // Act/Assert
+        assert_eq!(common_config.enabled(&context), expected_enabled);
+    }
 
     #[test]
     fn custom_config() {
