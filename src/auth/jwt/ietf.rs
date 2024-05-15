@@ -67,6 +67,7 @@ mod tests {
     const REQUIRED_CLAIMS: &[&str] = &[];
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn decode_token() {
         let jwt = build_token(false, None);
 
@@ -77,6 +78,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn decode_token_expired() {
         let (_, jwt) = build_token(true, None);
 
@@ -87,6 +89,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn decode_token_wrong_audience() {
         let (_, jwt) = build_token(false, Some("different-audience".to_string()));
 
@@ -134,6 +137,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn deserialize_audience_as_vec() {
         let value: Wrapper<Vec<UriOrString>> =
             from_str(r#"{"inner": ["https://example.com", "aud2"]}"#).unwrap();

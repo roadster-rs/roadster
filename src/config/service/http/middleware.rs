@@ -182,6 +182,7 @@ mod tests {
     #[case(false, None, false)]
     #[case(false, Some(true), true)]
     #[case(false, Some(false), false)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn common_config_enabled(
         #[case] default_enable: bool,
         #[case] enable: Option<bool>,
@@ -204,6 +205,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn custom_config() {
         // Note: since we're parsing into a Middleware config struct directly, we don't
         // need to prefix `foo` with `middleware`. If we want to actually provide custom middleware

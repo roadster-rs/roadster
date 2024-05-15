@@ -135,6 +135,7 @@ mod tests {
 
     #[test]
     #[cfg(feature = "open-api")]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn list_routes() {
         use super::*;
         use aide::axum::routing::{delete_with, get, get_with, post_with, put_with};

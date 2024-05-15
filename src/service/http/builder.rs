@@ -211,6 +211,7 @@ mod tests {
     use crate::service::http::middleware::MockMiddleware;
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn middleware() {
         // Arrange
         let mut context = MockAppContext::<()>::default();
@@ -232,6 +233,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn middleware_not_enabled() {
         // Arrange
         let mut context = MockAppContext::<()>::default();
@@ -251,6 +253,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     #[should_panic]
     fn middleware_already_registered() {
         // Arrange
@@ -272,6 +275,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn initializer() {
         // Arrange
         let mut context = MockAppContext::<()>::default();
@@ -293,6 +297,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn initializer_not_enabled() {
         // Arrange
         let mut context = MockAppContext::<()>::default();
@@ -312,6 +317,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     #[should_panic]
     fn initializer_already_registered() {
         // Arrange

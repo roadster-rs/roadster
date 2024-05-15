@@ -28,6 +28,7 @@ rustup toolchain install nightly
 # Todo: other methods of installing `genhtml`
 nix-env -iA nixpkgs.lcov
 # Build + run tests with coverage
+cargo +nightly llvm-cov clean
 cargo +nightly llvm-cov --no-report nextest --all-features 
 cargo +nightly llvm-cov --no-report --doc --all-features
 # Generate and open an HTML coverage report

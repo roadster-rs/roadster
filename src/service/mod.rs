@@ -86,6 +86,7 @@ mod tests {
     struct TestAppServiceBuilder;
     #[async_trait]
     impl AppServiceBuilder<MockTestApp, MockAppService<MockTestApp>> for TestAppServiceBuilder {
+        #[cfg_attr(coverage_nightly, coverage(off))]
         async fn build(
             self,
             _context: &MockAppContext<()>,
@@ -97,6 +98,7 @@ mod tests {
     #[rstest]
     #[case(true)]
     #[case(false)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn builder_enabled(#[case] service_enabled: bool) {
         // Arrange
         let mut context = MockAppContext::default();

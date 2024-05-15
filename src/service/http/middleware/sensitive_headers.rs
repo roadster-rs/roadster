@@ -159,6 +159,7 @@ mod tests {
     #[rstest]
     #[case(false, Some(true), true)]
     #[case(false, Some(false), false)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn sensitive_request_headers_enabled(
         #[case] default_enable: bool,
         #[case] enable: Option<bool>,
@@ -188,6 +189,7 @@ mod tests {
     #[rstest]
     #[case(None, -10000)]
     #[case(Some(1234), 1234)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn sensitive_request_headers_priority(
         #[case] override_priority: Option<i32>,
         #[case] expected_priority: i32,
@@ -217,6 +219,7 @@ mod tests {
     #[rstest]
     #[case(false, Some(true), true)]
     #[case(false, Some(false), false)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn sensitive_response_headers_enabled(
         #[case] default_enable: bool,
         #[case] enable: Option<bool>,
@@ -246,6 +249,7 @@ mod tests {
     #[rstest]
     #[case(None, 10000)]
     #[case(Some(1234), 1234)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn sensitive_response_headers_priority(
         #[case] override_priority: Option<i32>,
         #[case] expected_priority: i32,

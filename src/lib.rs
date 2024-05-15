@@ -11,6 +11,10 @@
 //! - Uses `#![forbid(unsafe_code)]` to ensure all code in Roadster is 100% safe rust.
 
 #![forbid(unsafe_code)]
+// Ignore the warning that the `coverage_nightly` cfg is not recognized.
+#![cfg_attr(test, allow(unexpected_cfgs))]
+// https://github.com/taiki-e/coverage-helper?tab=readme-ov-file#usage
+#![cfg_attr(all(test, coverage_nightly), feature(coverage_attribute))]
 
 pub mod app;
 pub mod app_context;

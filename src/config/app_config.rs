@@ -221,6 +221,7 @@ mod tests {
     use crate::config::app_config::AppConfig;
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn empty() {
         AppConfig::empty(None).unwrap();
     }

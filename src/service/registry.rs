@@ -78,6 +78,7 @@ mod tests {
     #[rstest]
     #[case(true, 1)]
     #[case(false, 0)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn register_service(#[case] service_enabled: bool, #[case] expected_count: usize) {
         // Arrange
         let mut context = MockAppContext::default();
@@ -104,6 +105,7 @@ mod tests {
     #[case(true, false, 0)]
     #[case(false, false, 0)]
     #[tokio::test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     async fn register_builder(
         #[case] service_enabled: bool,
         #[case] builder_enabled: bool,

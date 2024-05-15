@@ -141,6 +141,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn deserialize_subject_as_uri() {
         let value: Wrapper<Subject> = from_str(r#"{"inner": "https://example.com"}"#).unwrap();
         assert_eq!(
@@ -150,6 +151,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn deserialize_subject_as_uuid() {
         let uuid = uuid::Uuid::new_v4();
         let value: Wrapper<Subject> = from_str(&format!(r#"{{"inner": "{uuid}"}}"#)).unwrap();
@@ -157,6 +159,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn deserialize_subject_as_int() {
         let num = 100;
         let value: Wrapper<Subject> = from_str(&format!(r#"{{"inner": "{num}"}}"#)).unwrap();
@@ -164,6 +167,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn serialize_subject_int_as_string() {
         let num = 100;
         let value = Wrapper {
@@ -174,6 +178,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn deserialize_subject_as_string() {
         let value: Wrapper<Subject> = from_str(r#"{"inner": "invalid-uri"}"#).unwrap();
         assert_eq!(value.inner, Subject::String("invalid-uri".to_string()));
