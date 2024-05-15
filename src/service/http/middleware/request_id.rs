@@ -137,3 +137,69 @@ impl<S: Send + Sync + 'static> Middleware<S> for PropagateRequestIdMiddleware {
         Ok(router)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app_context::MockAppContext;
+    use crate::config::app_config::AppConfig;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case(false, Some(true), true)]
+    #[case(false, Some(false), false)]
+    fn set_request_id_enabled(
+        #[case] default_enable: bool,
+        #[case] enable: Option<bool>,
+        #[case] expected_enabled: bool,
+    ) {
+        // Arrange
+        let mut config = AppConfig::empty(None).unwrap();
+        config.service.http.custom.middleware.default_enable = default_enable;
+        config
+            .service
+            .http
+            .custom
+            .middleware
+            .set_request_id
+            .common
+            .enable = enable;
+
+        let mut context = MockAppContext::<()>::default();
+        context.expect_config().return_const(config);
+
+        let middleware = SetRequestIdMiddleware;
+
+        // Act/Assert
+        assert_eq!(middleware.enabled(&context), expected_enabled);
+    }
+
+    #[rstest]
+    #[case(false, Some(true), true)]
+    #[case(false, Some(false), false)]
+    fn propagate_request_id_enabled(
+        #[case] default_enable: bool,
+        #[case] enable: Option<bool>,
+        #[case] expected_enabled: bool,
+    ) {
+        // Arrange
+        let mut config = AppConfig::empty(None).unwrap();
+        config.service.http.custom.middleware.default_enable = default_enable;
+        config
+            .service
+            .http
+            .custom
+            .middleware
+            .propagate_request_id
+            .common
+            .enable = enable;
+
+        let mut context = MockAppContext::<()>::default();
+        context.expect_config().return_const(config);
+
+        let middleware = PropagateRequestIdMiddleware;
+
+        // Act/Assert
+        assert_eq!(middleware.enabled(&context), expected_enabled);
+    }
+}

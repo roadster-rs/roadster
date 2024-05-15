@@ -88,3 +88,69 @@ impl<S: Send + Sync + 'static> Middleware<S> for RequestDecompressionMiddleware 
         Ok(router)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app_context::MockAppContext;
+    use crate::config::app_config::AppConfig;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case(false, Some(true), true)]
+    #[case(false, Some(false), false)]
+    fn response_compression_enabled(
+        #[case] default_enable: bool,
+        #[case] enable: Option<bool>,
+        #[case] expected_enabled: bool,
+    ) {
+        // Arrange
+        let mut config = AppConfig::empty(None).unwrap();
+        config.service.http.custom.middleware.default_enable = default_enable;
+        config
+            .service
+            .http
+            .custom
+            .middleware
+            .response_compression
+            .common
+            .enable = enable;
+
+        let mut context = MockAppContext::<()>::default();
+        context.expect_config().return_const(config);
+
+        let middleware = ResponseCompressionMiddleware;
+
+        // Act/Assert
+        assert_eq!(middleware.enabled(&context), expected_enabled);
+    }
+
+    #[rstest]
+    #[case(false, Some(true), true)]
+    #[case(false, Some(false), false)]
+    fn request_decompression_enabled(
+        #[case] default_enable: bool,
+        #[case] enable: Option<bool>,
+        #[case] expected_enabled: bool,
+    ) {
+        // Arrange
+        let mut config = AppConfig::empty(None).unwrap();
+        config.service.http.custom.middleware.default_enable = default_enable;
+        config
+            .service
+            .http
+            .custom
+            .middleware
+            .request_decompression
+            .common
+            .enable = enable;
+
+        let mut context = MockAppContext::<()>::default();
+        context.expect_config().return_const(config);
+
+        let middleware = RequestDecompressionMiddleware;
+
+        // Act/Assert
+        assert_eq!(middleware.enabled(&context), expected_enabled);
+    }
+}

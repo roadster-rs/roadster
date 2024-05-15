@@ -77,3 +77,40 @@ impl<S: Send + Sync + 'static> Middleware<S> for RequestBodyLimitMiddleware {
         Ok(router)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app_context::MockAppContext;
+    use crate::config::app_config::AppConfig;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case(false, Some(true), true)]
+    #[case(false, Some(false), false)]
+    fn size_limit_enabled(
+        #[case] default_enable: bool,
+        #[case] enable: Option<bool>,
+        #[case] expected_enabled: bool,
+    ) {
+        // Arrange
+        let mut config = AppConfig::empty(None).unwrap();
+        config.service.http.custom.middleware.default_enable = default_enable;
+        config
+            .service
+            .http
+            .custom
+            .middleware
+            .size_limit
+            .common
+            .enable = enable;
+
+        let mut context = MockAppContext::<()>::default();
+        context.expect_config().return_const(config);
+
+        let middleware = RequestBodyLimitMiddleware;
+
+        // Act/Assert
+        assert_eq!(middleware.enabled(&context), expected_enabled);
+    }
+}
