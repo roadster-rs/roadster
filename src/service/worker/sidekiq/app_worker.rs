@@ -138,6 +138,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn deserialize_config_override_max_retries() {
         let max_retries = 1234;
         let value: Wrapper<AppWorkerConfig> = from_str(&format!(
@@ -148,6 +149,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn deserialize_config_override_timeout() {
         let value: Wrapper<AppWorkerConfig> =
             from_str(r#"{"inner": {"timeout": false } }"#).unwrap();
@@ -155,6 +157,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn deserialize_config_override_max_duration() {
         let max_duration = Duration::from_secs(1234);
         let value: Wrapper<AppWorkerConfig> = from_str(&format!(
@@ -166,6 +169,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn deserialize_config_override_disable_argument_coercion() {
         let value: Wrapper<AppWorkerConfig> =
             from_str(r#"{"inner": {"disable-argument-coercion": true } }"#).unwrap();

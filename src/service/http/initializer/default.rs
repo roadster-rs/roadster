@@ -24,6 +24,7 @@ mod tests {
     #[rstest]
     #[case(true, 1)]
     #[case(false, 0)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn default_initializers(#[case] default_enable: bool, #[case] expected_size: usize) {
         // Arrange
         let mut config = AppConfig::empty(None).unwrap();

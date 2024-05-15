@@ -99,6 +99,7 @@ mod tests {
     #[rstest]
     #[case(false, Some(true), true)]
     #[case(false, Some(false), false)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn response_compression_enabled(
         #[case] default_enable: bool,
         #[case] enable: Option<bool>,
@@ -128,6 +129,7 @@ mod tests {
     #[rstest]
     #[case(None, 0)]
     #[case(Some(1234), 1234)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn response_compression_priority(
         #[case] override_priority: Option<i32>,
         #[case] expected_priority: i32,
@@ -157,6 +159,7 @@ mod tests {
     #[rstest]
     #[case(false, Some(true), true)]
     #[case(false, Some(false), false)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn request_decompression_enabled(
         #[case] default_enable: bool,
         #[case] enable: Option<bool>,
@@ -186,6 +189,7 @@ mod tests {
     #[rstest]
     #[case(None, -9960)]
     #[case(Some(1234), 1234)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn request_decompression_priority(
         #[case] override_priority: Option<i32>,
         #[case] expected_priority: i32,

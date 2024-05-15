@@ -110,6 +110,7 @@ mod tests {
     use serde_json::Value;
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn custom_config() {
         // Note: since we're parsing into a Initializer config struct directly, we don't
         // need to prefix `foo` with `initializer`. If we want to actually provide custom initializer

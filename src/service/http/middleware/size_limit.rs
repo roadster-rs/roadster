@@ -88,6 +88,7 @@ mod tests {
     #[rstest]
     #[case(false, Some(true), true)]
     #[case(false, Some(false), false)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn size_limit_enabled(
         #[case] default_enable: bool,
         #[case] enable: Option<bool>,
@@ -117,6 +118,7 @@ mod tests {
     #[rstest]
     #[case(None, -9970)]
     #[case(Some(1234), 1234)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn size_limit_priority(#[case] override_priority: Option<i32>, #[case] expected_priority: i32) {
         // Arrange
         let mut config = AppConfig::empty(None).unwrap();

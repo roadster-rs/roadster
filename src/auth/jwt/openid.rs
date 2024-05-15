@@ -80,6 +80,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn deserialize_acr_as_uri() {
         let value: Wrapper<Acr> = from_str(r#"{"inner": "https://example.com"}"#).unwrap();
         assert_eq!(
@@ -89,6 +90,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn deserialize_acr_as_int() {
         let num = 100;
         let value: Wrapper<Acr> = from_str(&format!(r#"{{"inner": "{num}"}}"#)).unwrap();
@@ -96,6 +98,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn serialize_arc_int_as_string() {
         let num = 100;
         let value = Wrapper {
@@ -106,6 +109,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn deserialize_acr_as_string() {
         let value: Wrapper<Acr> = from_str(r#"{"inner": "invalid-uri"}"#).unwrap();
         assert_eq!(value.inner, Acr::String("invalid-uri".to_string()));

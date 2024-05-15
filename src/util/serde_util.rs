@@ -68,6 +68,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn deserialize_uri_or_string_as_uri() {
         let value: Wrapper<UriOrString> = from_str(r#"{"inner": "https://example.com"}"#).unwrap();
         assert_eq!(
@@ -77,6 +78,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn serialize_uri_as_string() {
         let value = Wrapper {
             inner: UriOrString::Uri(Url::from_str("https://example.com").unwrap()),
@@ -86,24 +88,28 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn uri_or_string_uri_variant_to_string() {
         let uri = UriOrString::Uri(Url::from_str("https://example.com").unwrap());
         assert_eq!("https://example.com/", uri.to_string());
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn uri_or_string_string_variant_to_string() {
         let uri = UriOrString::String("foo".to_string());
         assert_eq!("foo", uri.to_string());
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn deserialize_uri_or_string_as_string() {
         let value: Wrapper<UriOrString> = from_str(r#"{"inner": "invalid-uri"}"#).unwrap();
         assert_eq!(value.inner, UriOrString::String("invalid-uri".to_string()));
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn default_true_returns_true() {
         assert!(default_true());
     }
