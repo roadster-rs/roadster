@@ -12,7 +12,9 @@ jobs:
     name: Collect test coverage
     runs-on: ubuntu-latest
     env:
-      RUSTFLAGS: -D warnings
+      # The `coverage_nightly` cfg value is not recognized, so we need to allow unknown
+      # cfg values in order to have the build succeed.
+      RUSTFLAGS: -D warnings -A unexpected_cfgs
       CARGO_TERM_COLOR: always
     steps:
       - uses: dtolnay/rust-toolchain@nightly
@@ -25,9 +27,6 @@ jobs:
 
       - name: Collect coverage data
         # Generate coverage report using nextest.
-        # Not generating report using doctest data currently as it requires nightly rust.
-        # See https://nexte.st/book/test-coverage for how to use doctest data once it works on
-        # stable rust.
         run: |
           cargo llvm-cov --no-report nextest --all-features
           cargo llvm-cov --no-report --doc --all-features
