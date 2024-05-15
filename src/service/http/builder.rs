@@ -229,7 +229,7 @@ mod tests {
 
         // Assert
         assert_eq!(builder.middleware.len(), 1);
-        assert!(builder.middleware.get("test").is_some());
+        assert!(builder.middleware.contains_key("test"));
     }
 
     #[test]
@@ -293,7 +293,7 @@ mod tests {
 
         // Assert
         assert_eq!(builder.initializers.len(), 1);
-        assert!(builder.initializers.get("test").is_some());
+        assert!(builder.initializers.contains_key("test"));
     }
 
     #[test]
