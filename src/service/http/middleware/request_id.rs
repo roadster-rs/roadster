@@ -175,6 +175,35 @@ mod tests {
     }
 
     #[rstest]
+    #[case(None, -9990)]
+    #[case(Some(1234), 1234)]
+    fn set_request_id_priority(
+        #[case] override_priority: Option<i32>,
+        #[case] expected_priority: i32,
+    ) {
+        // Arrange
+        let mut config = AppConfig::empty(None).unwrap();
+        if let Some(priority) = override_priority {
+            config
+                .service
+                .http
+                .custom
+                .middleware
+                .set_request_id
+                .common
+                .priority = priority;
+        }
+
+        let mut context = MockAppContext::<()>::default();
+        context.expect_config().return_const(config);
+
+        let middleware = SetRequestIdMiddleware;
+
+        // Act/Assert
+        assert_eq!(middleware.priority(&context), expected_priority);
+    }
+
+    #[rstest]
     #[case(false, Some(true), true)]
     #[case(false, Some(false), false)]
     fn propagate_request_id_enabled(
@@ -201,5 +230,34 @@ mod tests {
 
         // Act/Assert
         assert_eq!(middleware.enabled(&context), expected_enabled);
+    }
+
+    #[rstest]
+    #[case(None, 9990)]
+    #[case(Some(1234), 1234)]
+    fn propagate_request_id_priority(
+        #[case] override_priority: Option<i32>,
+        #[case] expected_priority: i32,
+    ) {
+        // Arrange
+        let mut config = AppConfig::empty(None).unwrap();
+        if let Some(priority) = override_priority {
+            config
+                .service
+                .http
+                .custom
+                .middleware
+                .propagate_request_id
+                .common
+                .priority = priority;
+        }
+
+        let mut context = MockAppContext::<()>::default();
+        context.expect_config().return_const(config);
+
+        let middleware = PropagateRequestIdMiddleware;
+
+        // Act/Assert
+        assert_eq!(middleware.priority(&context), expected_priority);
     }
 }

@@ -186,6 +186,35 @@ mod tests {
     }
 
     #[rstest]
+    #[case(None, -10000)]
+    #[case(Some(1234), 1234)]
+    fn sensitive_request_headers_priority(
+        #[case] override_priority: Option<i32>,
+        #[case] expected_priority: i32,
+    ) {
+        // Arrange
+        let mut config = AppConfig::empty(None).unwrap();
+        if let Some(priority) = override_priority {
+            config
+                .service
+                .http
+                .custom
+                .middleware
+                .sensitive_request_headers
+                .common
+                .priority = priority;
+        }
+
+        let mut context = MockAppContext::<()>::default();
+        context.expect_config().return_const(config);
+
+        let middleware = SensitiveRequestHeadersMiddleware;
+
+        // Act/Assert
+        assert_eq!(middleware.priority(&context), expected_priority);
+    }
+
+    #[rstest]
     #[case(false, Some(true), true)]
     #[case(false, Some(false), false)]
     fn sensitive_response_headers_enabled(
@@ -212,5 +241,34 @@ mod tests {
 
         // Act/Assert
         assert_eq!(middleware.enabled(&context), expected_enabled);
+    }
+
+    #[rstest]
+    #[case(None, 10000)]
+    #[case(Some(1234), 1234)]
+    fn sensitive_response_headers_priority(
+        #[case] override_priority: Option<i32>,
+        #[case] expected_priority: i32,
+    ) {
+        // Arrange
+        let mut config = AppConfig::empty(None).unwrap();
+        if let Some(priority) = override_priority {
+            config
+                .service
+                .http
+                .custom
+                .middleware
+                .sensitive_response_headers
+                .common
+                .priority = priority;
+        }
+
+        let mut context = MockAppContext::<()>::default();
+        context.expect_config().return_const(config);
+
+        let middleware = SensitiveResponseHeadersMiddleware;
+
+        // Act/Assert
+        assert_eq!(middleware.priority(&context), expected_priority);
     }
 }
