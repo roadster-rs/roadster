@@ -5,13 +5,15 @@ use crate::config::service::worker::sidekiq::StaleCleanUpBehavior;
 use crate::service::worker::sidekiq::app_worker::AppWorker;
 use crate::service::worker::sidekiq::roadster_worker::RoadsterWorker;
 use crate::service::worker::sidekiq::service::SidekiqWorkerService;
+#[mockall_double::double]
+use crate::service::worker::sidekiq::Processor;
 use crate::service::{AppService, AppServiceBuilder};
 use anyhow::{anyhow, bail};
 use async_trait::async_trait;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
 use serde::Serialize;
-use sidekiq::{periodic, Processor, ProcessorConfig};
+use sidekiq::{periodic, ProcessorConfig};
 use std::collections::HashSet;
 use tracing::{debug, info, warn};
 
@@ -24,9 +26,9 @@ where
     state: BuilderState<A>,
 }
 
-enum BuilderState<A: App> {
+enum BuilderState<A: App + 'static> {
     Enabled {
-        processor: Processor,
+        processor: Processor<A>,
         context: AppContext<A::State>,
         registered_workers: HashSet<String>,
         registered_periodic_workers: HashSet<String>,
@@ -56,7 +58,9 @@ where
                 ..
             } => {
                 Self::remove_stale_periodic_jobs(context, &registered_periodic_workers).await?;
-                SidekiqWorkerService { processor }
+                SidekiqWorkerService {
+                    processor: processor.into_sidekiq_processor(),
+                }
             }
             BuilderState::Disabled => {
                 bail!("This builder is not enabled; it's build method should not have been called.")
@@ -73,9 +77,9 @@ where
 {
     pub async fn with_processor(
         context: &AppContext<A::State>,
-        processor: Processor,
+        processor: sidekiq::Processor,
     ) -> anyhow::Result<Self> {
-        Self::new(context.clone(), Some(processor)).await
+        Self::new(context.clone(), Some(Processor::new(processor))).await
     }
 
     pub async fn with_default_processor(
@@ -118,7 +122,9 @@ where
                     })?;
                 let processor_config: ProcessorConfig = Default::default();
                 let processor_config = processor_config.num_workers(num_workers);
-                Processor::new(redis_fetch.clone(), queues.clone()).with_config(processor_config)
+                let processor = sidekiq::Processor::new(redis_fetch.clone(), queues.clone())
+                    .with_config(processor_config);
+                Processor::new(processor)
             };
 
             Some(processor)
@@ -134,7 +140,7 @@ where
 
     async fn new(
         context: AppContext<A::State>,
-        processor: Option<Processor>,
+        processor: Option<Processor<A>>,
     ) -> anyhow::Result<Self> {
         let processor = if <SidekiqWorkerService as AppService<A>>::enabled(&context) {
             processor
@@ -260,7 +266,9 @@ where
                     "Periodic worker `{class_name}` was already registered; full job: {job_json}"
                 );
             }
-            builder.register(processor, roadster_worker).await?;
+            processor
+                .register_periodic(builder, roadster_worker)
+                .await?;
         }
 
         Ok(self)
@@ -315,5 +323,180 @@ where
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app::MockTestApp;
+    use crate::app_context::MockAppContext;
+    use crate::config::app_config::AppConfig;
+    use crate::service::worker::sidekiq::MockProcessor;
+    use bb8::Pool;
+    use futures::StreamExt;
+    use rstest::rstest;
+    use sidekiq::{RedisConnectionManager, Worker};
+
+    #[rstest]
+    #[case(true, 1, vec![MockTestAppWorker::class_name()])]
+    #[case(false, 0, Default::default())]
+    #[tokio::test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    async fn register_app_worker(
+        #[case] enabled: bool,
+        #[case] expected_size: usize,
+        #[case] expected_class_names: Vec<String>,
+    ) {
+        // Arrange
+        let builder = setup(enabled, expected_size, 0).await;
+
+        // Act
+        let builder = builder
+            .register_app_worker(MockTestAppWorker::default())
+            .unwrap();
+
+        // Assert
+        validate_registered_workers(&builder, enabled, expected_size, expected_class_names);
+        validate_registered_periodic_workers(&builder, enabled, 0, Default::default());
+    }
+
+    #[tokio::test]
+    #[should_panic]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    async fn register_app_worker_register_twice() {
+        // Arrange
+        let builder = setup(true, 2, 0).await;
+
+        // Act
+        builder
+            .register_app_worker(MockTestAppWorker::default())
+            .unwrap()
+            .register_app_worker(MockTestAppWorker::default())
+            .unwrap();
+    }
+
+    #[rstest]
+    #[case(true, vec!["foo".to_string()])]
+    #[case(true, vec!["foo".to_string(), "bar".to_string()])]
+    #[tokio::test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    async fn register_periodic_app_worker(#[case] enabled: bool, #[case] job_names: Vec<String>) {
+        // Arrange
+        let builder = setup(true, 0, job_names.len()).await;
+
+        // Act
+        let builder = futures::stream::iter(job_names.clone())
+            .fold(builder, |builder, name| async move {
+                builder
+                    .register_periodic_app_worker(
+                        periodic::builder("* * * * * *").unwrap().name(name),
+                        MockTestAppWorker::default(),
+                        (),
+                    )
+                    .await
+                    .unwrap()
+            })
+            .await;
+
+        // Assert
+        validate_registered_workers(&builder, enabled, 0, Default::default());
+        validate_registered_periodic_workers(&builder, enabled, job_names.len(), job_names)
+    }
+
+    mockall::mock! {
+        TestAppWorker{}
+
+        #[async_trait]
+        impl Worker<()> for TestAppWorker {
+            async fn perform(&self, args: ()) -> sidekiq::Result<()>;
+        }
+
+        #[async_trait]
+        impl AppWorker<MockTestApp, ()> for TestAppWorker
+        {
+            fn build(context: &MockAppContext<()>) -> Self;
+        }
+    }
+
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    async fn setup(
+        enabled: bool,
+        register_count: usize,
+        periodic_count: usize,
+    ) -> SidekiqWorkerServiceBuilder<MockTestApp> {
+        let mut config = AppConfig::empty(None).unwrap();
+        config.service.default_enable = enabled;
+        config.service.sidekiq.custom.num_workers = 1;
+        config.service.sidekiq.custom.queues = vec!["foo".to_string()];
+
+        let mut context = MockAppContext::default();
+        context.expect_config().return_const(config);
+        let redis_fetch = RedisConnectionManager::new("redis://invalid_host:1234").unwrap();
+        let pool = Pool::builder().build_unchecked(redis_fetch);
+        context.expect_redis_fetch().return_const(Some(pool));
+
+        let mut processor = MockProcessor::<MockTestApp>::default();
+        processor
+            .expect_register::<(), MockTestAppWorker>()
+            .times(register_count)
+            .returning(|_| ());
+        processor
+            .expect_register_periodic::<(), MockTestAppWorker>()
+            .times(periodic_count)
+            .returning(|_, _| Ok(()));
+
+        SidekiqWorkerServiceBuilder::<MockTestApp>::new(context, Some(processor))
+            .await
+            .unwrap()
+    }
+
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn validate_registered_workers(
+        builder: &SidekiqWorkerServiceBuilder<MockTestApp>,
+        enabled: bool,
+        size: usize,
+        class_names: Vec<String>,
+    ) {
+        match &builder.state {
+            BuilderState::Enabled {
+                registered_workers, ..
+            } => {
+                assert!(enabled, "Builder should be disabled!");
+                assert_eq!(registered_workers.len(), size);
+                class_names
+                    .iter()
+                    .for_each(|class_name| assert!(registered_workers.contains(class_name)));
+            }
+            BuilderState::Disabled => {
+                assert!(!enabled, "Builder should not be disabled!");
+            }
+        }
+    }
+
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn validate_registered_periodic_workers(
+        builder: &SidekiqWorkerServiceBuilder<MockTestApp>,
+        enabled: bool,
+        size: usize,
+        job_names: Vec<String>,
+    ) {
+        match &builder.state {
+            BuilderState::Enabled {
+                registered_periodic_workers,
+                ..
+            } => {
+                assert!(enabled, "Builder should be disabled!");
+                assert_eq!(registered_periodic_workers.len(), size);
+                job_names.iter().for_each(|job_string| {
+                    assert!(registered_periodic_workers
+                        .iter()
+                        .any(|registered| registered.contains(job_string)));
+                });
+            }
+            BuilderState::Disabled => {
+                assert!(!enabled, "Builder should not be disabled!");
+            }
+        }
     }
 }
