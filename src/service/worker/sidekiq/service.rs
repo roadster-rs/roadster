@@ -89,3 +89,56 @@ impl SidekiqWorkerService {
         SidekiqWorkerServiceBuilder::with_default_processor(context, None).await
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app::MockTestApp;
+    use crate::app_context::MockAppContext;
+    use crate::config::app_config::AppConfig;
+    use bb8::Pool;
+    use rstest::rstest;
+    use sidekiq::RedisConnectionManager;
+
+    #[rstest]
+    #[case(false, None, 0, Default::default(), false, false)]
+    #[case(true, None, 1, vec!["foo".to_string()], true, true)]
+    #[case(false, Some(true), 1, vec!["foo".to_string()], true, true)]
+    #[case(false, Some(false), 1, vec!["foo".to_string()], true, false)]
+    #[case(true, None, 0, vec!["foo".to_string()], true, false)]
+    #[case(true, None, 1, Default::default(), true, false)]
+    #[case(true, None, 1, vec!["foo".to_string()], false, false)]
+    #[tokio::test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    async fn foo(
+        #[case] default_enabled: bool,
+        #[case] enabled: Option<bool>,
+        #[case] num_workers: u32,
+        #[case] queues: Vec<String>,
+        #[case] has_redis_fetch: bool,
+        #[case] expected_enabled: bool,
+    ) {
+        let mut config = AppConfig::empty(None).unwrap();
+        config.service.default_enable = default_enabled;
+        config.service.sidekiq.common.enable = enabled;
+        config.service.sidekiq.custom.num_workers = num_workers;
+        config.service.sidekiq.custom.queues = queues;
+
+        let mut context = MockAppContext::default();
+        context.expect_config().return_const(config);
+
+        let pool = if has_redis_fetch {
+            let redis_fetch = RedisConnectionManager::new("redis://invalid_host:1234").unwrap();
+            let pool = Pool::builder().build_unchecked(redis_fetch);
+            Some(pool)
+        } else {
+            None
+        };
+        context.expect_redis_fetch().return_const(pool);
+
+        assert_eq!(
+            <SidekiqWorkerService as AppService<MockTestApp>>::enabled(&context),
+            expected_enabled
+        );
+    }
+}
