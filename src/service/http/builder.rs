@@ -1,7 +1,10 @@
 use crate::app::App;
 #[mockall_double::double]
 use crate::app_context::AppContext;
-use crate::controller::default_routes;
+#[cfg(feature = "open-api")]
+use crate::controller::http::default_api_routes;
+#[cfg(not(feature = "open-api"))]
+use crate::controller::http::default_routes;
 use crate::service::http::initializer::default::default_initializers;
 use crate::service::http::initializer::Initializer;
 use crate::service::http::middleware::default::default_middleware;
@@ -18,7 +21,6 @@ use anyhow::bail;
 use async_trait::async_trait;
 #[cfg(feature = "open-api")]
 use axum::Extension;
-#[cfg(not(feature = "open-api"))]
 use axum::Router;
 use itertools::Itertools;
 use std::collections::BTreeMap;
@@ -28,10 +30,9 @@ use tracing::info;
 
 pub struct HttpServiceBuilder<A: App + 'static> {
     context: AppContext<A::State>,
-    #[cfg(not(feature = "open-api"))]
     router: Router<AppContext<A::State>>,
     #[cfg(feature = "open-api")]
-    router: ApiRouter<AppContext<A::State>>,
+    api_router: ApiRouter<AppContext<A::State>>,
     #[cfg(feature = "open-api")]
     api_docs: Box<dyn Fn(TransformOpenApi) -> TransformOpenApi + Send>,
     middleware: BTreeMap<String, Box<dyn Middleware<A::State>>>,
@@ -40,11 +41,21 @@ pub struct HttpServiceBuilder<A: App + 'static> {
 
 impl<A: App> HttpServiceBuilder<A> {
     pub fn new(path_root: Option<&str>, context: &AppContext<A::State>) -> Self {
+        // Normally, enabling a feature shouldn't remove things. In this case, however, we don't
+        // want to include the default routes in the axum::Router if the `open-api` features is
+        // enabled. Otherwise, we'll get a route conflict when the two routers are merged.
+        #[cfg(not(feature = "open-api"))]
+        let router = default_routes(path_root.unwrap_or_default(), context);
+        #[cfg(feature = "open-api")]
+        let router = Router::<AppContext<A::State>>::new();
+
         #[cfg(feature = "open-api")]
         let app_name = context.config().app.name.clone();
         Self {
             context: context.clone(),
-            router: default_routes(path_root.unwrap_or_default(), context.config()),
+            router,
+            #[cfg(feature = "open-api")]
+            api_router: default_api_routes(path_root.unwrap_or_default(), context),
             #[cfg(feature = "open-api")]
             api_docs: Box::new(move |api| {
                 api.title(&app_name).description(&format!("# {}", app_name))
@@ -56,14 +67,11 @@ impl<A: App> HttpServiceBuilder<A> {
 
     #[cfg(test)]
     fn empty(context: &AppContext<A::State>) -> Self {
-        #[cfg(not(feature = "open-api"))]
-        let router = Router::<AppContext<A::State>>::new();
-        #[cfg(feature = "open-api")]
-        let router = ApiRouter::<AppContext<A::State>>::new();
-
         Self {
             context: context.clone(),
-            router,
+            router: Router::<AppContext<A::State>>::new(),
+            #[cfg(feature = "open-api")]
+            api_router: ApiRouter::<AppContext<A::State>>::new(),
             #[cfg(feature = "open-api")]
             api_docs: Box::new(|op| op),
             middleware: Default::default(),
@@ -71,14 +79,13 @@ impl<A: App> HttpServiceBuilder<A> {
         }
     }
 
-    #[cfg(not(feature = "open-api"))]
     pub fn router(mut self, router: Router<AppContext<A::State>>) -> Self {
         self.router = self.router.merge(router);
         self
     }
 
     #[cfg(feature = "open-api")]
-    pub fn router(mut self, router: ApiRouter<AppContext<A::State>>) -> Self {
+    pub fn api_router(mut self, router: ApiRouter<AppContext<A::State>>) -> Self {
         self.router = self.router.merge(router);
         self
     }
@@ -132,14 +139,14 @@ impl<A: App> HttpServiceBuilder<A> {
 #[async_trait]
 impl<A: App> AppServiceBuilder<A, HttpService> for HttpServiceBuilder<A> {
     async fn build(self, context: &AppContext<A::State>) -> anyhow::Result<HttpService> {
-        #[cfg(not(feature = "open-api"))]
         let router = self.router;
 
         #[cfg(feature = "open-api")]
         let (router, api) = {
             let mut api = OpenApi::default();
             let api_docs = self.api_docs;
-            let router = self.router.finish_api_with(&mut api, api_docs);
+            let api_router = self.api_router.finish_api_with(&mut api, api_docs);
+            let router = router.merge(api_router);
             // Arc is very important here or we will face massive memory and performance issues
             let api = Arc::new(api);
             let router = router.layer(Extension(api.clone()));

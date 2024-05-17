@@ -1,7 +1,7 @@
-#[cfg(feature = "sidekiq")]
-use std::time::Duration;
-use std::time::Instant;
-
+#[mockall_double::double]
+use crate::app_context::AppContext;
+use crate::controller::http::build_path;
+use crate::view::http::app_error::AppError;
 #[cfg(feature = "open-api")]
 use aide::axum::routing::get_with;
 #[cfg(feature = "open-api")]
@@ -12,11 +12,8 @@ use aide::transform::TransformOperation;
 use anyhow::bail;
 #[cfg(any(feature = "sidekiq", feature = "db-sql"))]
 use axum::extract::State;
-#[cfg(not(feature = "open-api"))]
 use axum::routing::get;
-use axum::Json;
-#[cfg(not(feature = "open-api"))]
-use axum::Router;
+use axum::{Json, Router};
 #[cfg(feature = "open-api")]
 use schemars::JsonSchema;
 #[cfg(feature = "db-sql")]
@@ -26,36 +23,60 @@ use serde_with::{serde_as, skip_serializing_none};
 #[cfg(feature = "sidekiq")]
 use sidekiq::redis_rs::cmd;
 #[cfg(feature = "sidekiq")]
+use std::time::Duration;
+use std::time::Instant;
+#[cfg(feature = "sidekiq")]
 use tokio::time::timeout;
 use tracing::instrument;
 
-#[mockall_double::double]
-use crate::app_context::AppContext;
-use crate::controller::build_path;
-use crate::view::app_error::AppError;
-
-const BASE: &str = "/_health";
 #[cfg(feature = "open-api")]
 const TAG: &str = "Health";
 
-#[cfg(not(feature = "open-api"))]
-pub fn routes<S>(parent: &str) -> Router<AppContext<S>>
+pub fn routes<S>(parent: &str, context: &AppContext<S>) -> Router<AppContext<S>>
 where
     S: Clone + Send + Sync + 'static,
 {
-    let root = build_path(parent, BASE);
-
-    Router::new().route(&root, get(health_get::<S>))
+    let router = Router::new();
+    if !enabled(context) {
+        return router;
+    }
+    let root = build_path(parent, route(context));
+    router.route(&root, get(health_get::<S>))
 }
 
 #[cfg(feature = "open-api")]
-pub fn routes<S>(parent: &str) -> ApiRouter<AppContext<S>>
+pub fn api_routes<S>(parent: &str, context: &AppContext<S>) -> ApiRouter<AppContext<S>>
 where
     S: Clone + Send + Sync + 'static,
 {
-    let root = build_path(parent, BASE);
+    let router = ApiRouter::new();
+    if !enabled(context) {
+        return router;
+    }
+    let root = build_path(parent, route(context));
+    router.api_route(&root, get_with(health_get::<S>, health_get_docs))
+}
 
-    ApiRouter::new().api_route(&root, get_with(health_get::<S>, health_get_docs))
+fn enabled<S>(context: &AppContext<S>) -> bool {
+    context
+        .config()
+        .service
+        .http
+        .custom
+        .default_routes
+        .health
+        .enabled(context)
+}
+
+fn route<S>(context: &AppContext<S>) -> &str {
+    &context
+        .config()
+        .service
+        .http
+        .custom
+        .default_routes
+        .health
+        .route
 }
 
 #[serde_as]
@@ -173,7 +194,7 @@ async fn redis_health(redis: &sidekiq::RedisPool) -> ResourceHealth {
 #[instrument(skip_all)]
 async fn ping_redis(redis: &sidekiq::RedisPool) -> anyhow::Result<(Duration, Duration)> {
     let timer = Instant::now();
-    let mut conn = timeout(Duration::from_secs(5), redis.get()).await??;
+    let mut conn = timeout(Duration::from_secs(1), redis.get()).await??;
     let acquire_conn_latency = timer.elapsed();
 
     let timer = Instant::now();

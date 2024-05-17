@@ -1,4 +1,4 @@
-use crate::auth::jwt::Subject;
+use crate::middleware::http::auth::jwt::Subject;
 use chrono::serde::ts_seconds;
 use chrono::{DateTime, Utc};
 use serde_derive::{Deserialize, Serialize};

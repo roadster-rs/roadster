@@ -18,11 +18,12 @@
 
 pub mod app;
 pub mod app_context;
-pub mod auth;
 #[cfg(feature = "cli")]
 pub mod cli;
 pub mod config;
+#[cfg(feature = "http")]
 pub mod controller;
+pub mod middleware;
 pub mod service;
 pub mod tracing;
 pub mod util;
