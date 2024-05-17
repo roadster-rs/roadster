@@ -18,6 +18,15 @@ cargo test
 
 Code coverage stats are generated automatically in CI. To generate coverage stats locally, run the following:
 
+### If you have `just` installed
+
+```shell
+just coverage-dependencies
+just coverage-open
+```
+
+### Without `just`
+
 ```shell
 # Install coverage dependencies
 cargo binstall cargo-llvm-cov
