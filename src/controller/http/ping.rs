@@ -1,43 +1,69 @@
-use crate::controller::build_path;
-use crate::view::app_error::AppError;
+#[mockall_double::double]
+use crate::app_context::AppContext;
+use crate::controller::http::build_path;
+use crate::view::http::app_error::AppError;
 #[cfg(feature = "open-api")]
 use aide::axum::routing::get_with;
 #[cfg(feature = "open-api")]
 use aide::axum::ApiRouter;
 #[cfg(feature = "open-api")]
 use aide::transform::TransformOperation;
-#[cfg(not(feature = "open-api"))]
 use axum::routing::get;
 use axum::Json;
-#[cfg(not(feature = "open-api"))]
 use axum::Router;
 #[cfg(feature = "open-api")]
 use schemars::JsonSchema;
 use serde_derive::{Deserialize, Serialize};
 use tracing::instrument;
 
-const BASE: &str = "/_ping";
 #[cfg(feature = "open-api")]
 const TAG: &str = "Ping";
 
-#[cfg(not(feature = "open-api"))]
-pub fn routes<S>(parent: &str) -> Router<S>
+pub fn routes<S>(parent: &str, context: &AppContext<S>) -> Router<AppContext<S>>
 where
     S: Clone + Send + Sync + 'static,
 {
-    let root = build_path(parent, BASE);
-
-    Router::new().route(&root, get(ping_get))
+    let router = Router::new();
+    if !enabled(context) {
+        return router;
+    }
+    let root = build_path(parent, route(context));
+    router.route(&root, get(ping_get))
 }
 
 #[cfg(feature = "open-api")]
-pub fn routes<S>(parent: &str) -> ApiRouter<S>
+pub fn api_routes<S>(parent: &str, context: &AppContext<S>) -> ApiRouter<AppContext<S>>
 where
     S: Clone + Send + Sync + 'static,
 {
-    let root = build_path(parent, BASE);
+    let router = ApiRouter::new();
+    if !enabled(context) {
+        return router;
+    }
+    let root = build_path(parent, route(context));
+    router.api_route(&root, get_with(ping_get, ping_get_docs))
+}
 
-    ApiRouter::new().api_route(&root, get_with(ping_get, ping_get_docs))
+fn enabled<S>(context: &AppContext<S>) -> bool {
+    context
+        .config()
+        .service
+        .http
+        .custom
+        .default_routes
+        .ping
+        .enabled(context)
+}
+
+fn route<S>(context: &AppContext<S>) -> &str {
+    &context
+        .config()
+        .service
+        .http
+        .custom
+        .default_routes
+        .ping
+        .route
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

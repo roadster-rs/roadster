@@ -6,6 +6,7 @@ use crate::cli::RoadsterCli;
 use async_trait::async_trait;
 use tokio_util::sync::CancellationToken;
 
+#[cfg(feature = "http")]
 pub mod http;
 pub mod registry;
 pub mod worker;

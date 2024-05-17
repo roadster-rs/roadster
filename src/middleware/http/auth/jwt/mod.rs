@@ -6,11 +6,11 @@ pub mod openid;
 #[mockall_double::double]
 use crate::app_context::AppContext;
 #[cfg(feature = "jwt-ietf")]
-use crate::auth::jwt::ietf::Claims;
+use crate::middleware::http::auth::jwt::ietf::Claims;
 #[cfg(all(feature = "jwt-openid", not(feature = "jwt-ietf")))]
-use crate::auth::jwt::openid::Claims;
+use crate::middleware::http::auth::jwt::openid::Claims;
 use crate::util::serde_util::{deserialize_from_str, serialize_to_str};
-use crate::view::app_error::AppError;
+use crate::view::http::app_error::AppError;
 #[cfg(feature = "open-api")]
 use aide::OperationInput;
 use async_trait::async_trait;

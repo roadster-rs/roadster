@@ -1,4 +1,4 @@
-use crate::auth::jwt::Subject;
+use crate::middleware::http::auth::jwt::Subject;
 use crate::util::serde_util::UriOrString;
 use chrono::serde::ts_seconds;
 use chrono::{DateTime, Utc};
@@ -52,7 +52,7 @@ pub struct Claims {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::auth::jwt::decode_auth_token;
+    use crate::middleware::http::auth::jwt::decode_auth_token;
     use crate::util::serde_util::UriOrString;
     use chrono::{TimeDelta, Utc};
     use jsonwebtoken::{encode, EncodingKey, Header, TokenData};
