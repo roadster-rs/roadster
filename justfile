@@ -26,3 +26,7 @@ coverage: coverage-clean
 
 coverage-open: coverage
     open target/llvm-cov-target/debug/coverage/index.html
+
+update:
+    cargo upgrade
+

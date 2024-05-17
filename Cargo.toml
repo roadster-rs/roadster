@@ -73,14 +73,14 @@ clap = { version = "4.5.4", features = ["derive", "string"], optional = true }
 
 # Others
 anyhow = "1.0.83"
-serde = "1.0.201"
-serde_derive = "1.0.201"
+serde = "1.0.202"
+serde_derive = "1.0.202"
 serde_with = { version = "3.8.1", features = ["macros", "chrono_0_4"] }
 strum = "0.26.2"
 strum_macros = "0.26.2"
 itertools = "0.12.1"
 serde_json = "1.0.117"
-toml = "0.8.12"
+toml = "0.8.13"
 url = { version = "2.5.0", features = ["serde"] }
 uuid = { version = "1.8.0", features = ["v4", "serde"] }
 futures-core = "0.3.30"
