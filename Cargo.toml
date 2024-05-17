@@ -8,6 +8,8 @@ repository = "https://github.com/roadster-rs/roadster"
 license = "MIT OR Apache-2.0"
 keywords = ["web", "framework"]
 categories = ["web-programming", "web-programming::http-server"]
+# Determined using `cargo msrv` -- https://github.com/foresterre/cargo-msrv
+rust-version = "1.74.1"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

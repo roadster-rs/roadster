@@ -12,8 +12,8 @@ env:
 jobs:
   # `cargo hack --each-feature` runs the given command for each feature, including "no features", "all features",
   # and the `default` feature.
-  roadster_each_feature:
-    name: Each feature
+  test:
+    name: Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,12 +22,46 @@ jobs:
       - uses: taiki-e/install-action@nextest
       - name: Test
         run: cargo hack nextest run --no-fail-fast --each-feature --workspace
+
+  doc_test:
+    name: Doc tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@cargo-hack
       - name: Doc test
         run: cargo hack test --doc --no-fail-fast --each-feature --workspace
+
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@cargo-hack
       - name: Check
         run: cargo hack check --each-feature --no-dev-deps --workspace
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@cargo-hack
       - name: Clippy
         run: cargo hack clippy --workspace --all-targets --each-feature -- -D warnings
+
+  # https://doc.rust-lang.org/cargo/guide/continuous-integration.html#verifying-rust-version
+  msrv:
+    name: Check MSRV
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@cargo-hack
+      - run: cargo hack check --rust-version --workspace --all-targets --ignore-private
 
   check_formatting:
     name: Formatting
