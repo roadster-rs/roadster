@@ -2,10 +2,10 @@ default:
   @just --list --justfile {{justfile()}}
 
 test:
-    cargo nextest run
+    cargo nextest run --all-features
 
 test-watch:
-    cargo watch -x 'nextest run'
+    cargo watch -x 'nextest run --all-features'
 
 coverage-dependencies:
     cargo binstall cargo-llvm-cov
