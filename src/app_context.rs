@@ -57,8 +57,8 @@ impl<T> AppContext<T> {
     }
 
     #[cfg(feature = "sidekiq")]
-    pub fn redis_fetch(&self) -> Option<&sidekiq::RedisPool> {
-        self.inner.redis_fetch.as_ref()
+    pub fn redis_fetch(&self) -> &Option<sidekiq::RedisPool> {
+        &self.inner.redis_fetch
     }
 
     pub fn custom(&self) -> &T {
@@ -92,7 +92,7 @@ mockall::mock! {
         pub fn redis_enqueue(&self) -> &sidekiq::RedisPool;
 
         #[cfg(feature = "sidekiq")]
-        pub fn redis_fetch<'a>(&'a self) -> Option<&'a sidekiq::RedisPool>;
+        pub fn redis_fetch(&self) -> &Option<sidekiq::RedisPool>;
 
         pub fn with_custom<NewT: 'static>(self, custom: NewT) -> MockAppContext<NewT>;
     }
