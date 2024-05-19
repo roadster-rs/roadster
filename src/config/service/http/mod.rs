@@ -77,21 +77,27 @@ impl Default for DefaultRoutes {
     }
 }
 
-fn validate_default_routes(default_routes: &DefaultRoutes) -> Result<(), ValidationError> {
-    let default_enable = default_routes.default_enable;
-    let api_schema_enabled = default_routes.api_schema.enable.unwrap_or(default_enable);
-    let scalar_enabled = default_routes.scalar.enable.unwrap_or(default_enable);
-    let redoc_enabled = default_routes.redoc.enable.unwrap_or(default_enable);
+fn validate_default_routes(
+    // This parameter isn't used for some feature flag combinations
+    #[allow(unused)] default_routes: &DefaultRoutes,
+) -> Result<(), ValidationError> {
+    #[cfg(feature = "open-api")]
+    {
+        let default_enable = default_routes.default_enable;
+        let api_schema_enabled = default_routes.api_schema.enable.unwrap_or(default_enable);
+        let scalar_enabled = default_routes.scalar.enable.unwrap_or(default_enable);
+        let redoc_enabled = default_routes.redoc.enable.unwrap_or(default_enable);
 
-    if scalar_enabled && !api_schema_enabled {
-        return Err(ValidationError::new(
-            "The Open API schema route must be enabled in order to use the Scalar docs route.",
-        ));
-    }
-    if redoc_enabled && !api_schema_enabled {
-        return Err(ValidationError::new(
-            "The Open API schema route must be enabled in order to use the Redoc docs route.",
-        ));
+        if scalar_enabled && !api_schema_enabled {
+            return Err(ValidationError::new(
+                "The Open API schema route must be enabled in order to use the Scalar docs route.",
+            ));
+        }
+        if redoc_enabled && !api_schema_enabled {
+            return Err(ValidationError::new(
+                "The Open API schema route must be enabled in order to use the Redoc docs route.",
+            ));
+        }
     }
 
     Ok(())
