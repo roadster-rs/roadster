@@ -19,19 +19,6 @@ pub fn routes<S>(parent: &str, context: &AppContext<S>) -> ApiRouter<AppContext<
 where
     S: Clone + Send + Sync + 'static,
 {
-    if scalar_enabled(context) && !api_schema_enabled(context) {
-        debug_assert!(
-            false,
-            "The Open API schema route must be enabled in order to use the Scalar docs route."
-        );
-    }
-    if redoc_enabled(context) && !api_schema_enabled(context) {
-        debug_assert!(
-            false,
-            "The Open API schema route must be enabled in order to use the Redoc docs route."
-        );
-    }
-
     let open_api_schema_path = build_path(parent, api_schema_route(context));
 
     let router = ApiRouter::new();

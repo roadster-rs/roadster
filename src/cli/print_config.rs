@@ -42,19 +42,19 @@ where
     ) -> anyhow::Result<bool> {
         match self.format {
             Format::Debug => {
-                info!("{:?}", context.config())
+                info!("\n{:?}", context.config())
             }
             Format::Json => {
-                info!("{}", serde_json::to_string(&context.config())?)
+                info!("\n{}", serde_json::to_string(&context.config())?)
             }
             Format::JsonPretty => {
-                info!("{}", serde_json::to_string_pretty(&context.config())?)
+                info!("\n{}", serde_json::to_string_pretty(&context.config())?)
             }
             Format::Toml => {
-                info!("{}", toml::to_string(&context.config())?)
+                info!("\n{}", toml::to_string(&context.config())?)
             }
             Format::TomlPretty => {
-                info!("{}", toml::to_string_pretty(&context.config())?)
+                info!("\n{}", toml::to_string_pretty(&context.config())?)
             }
         }
 
