@@ -8,6 +8,7 @@
 [![codecov](https://codecov.io/gh/roadster-rs/roadster/graph/badge.svg?token=JIMN3U8K88)](https://codecov.io/gh/roadster-rs/roadster)
 [![Checks](https://github.com/roadster-rs/roadster/actions/workflows/ci.yml/badge.svg)](https://github.com/roadster-rs/roadster/actions/workflows/ci.yml)
 [![Feature Powerset](https://github.com/roadster-rs/roadster/actions/workflows/feature_powerset.yml/badge.svg)](https://github.com/roadster-rs/roadster/actions/workflows/feature_powerset.yml)
+[![dependency status](https://deps.rs/crate/roadster/latest/status.svg)](https://deps.rs/crate/roadster/)
 
 A "Batteries Included" web framework for rust designed to get you moving fast 🏎️. Inspired by other fully-featured
 frameworks such
