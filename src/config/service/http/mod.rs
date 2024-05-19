@@ -153,3 +153,64 @@ impl DefaultRouteConfig {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case(false, false)]
+    #[case(true, false)]
+    #[cfg(not(feature = "open-api"))]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn validate_default_routes(#[case] default_enable: bool, #[case] validation_error: bool) {
+        // Arrange
+        #[allow(clippy::field_reassign_with_default)]
+        let config = {
+            let mut config = DefaultRoutes::default();
+            config.default_enable = default_enable;
+            config
+        };
+
+        // Act
+        let result = config.validate();
+
+        // Assert
+        assert_eq!(result.is_err(), validation_error);
+    }
+
+    #[rstest]
+    #[case(false, None, None, None, false)]
+    #[case(true, None, None, None, false)]
+    #[case(false, None, Some(true), None, true)]
+    #[case(false, None, None, Some(true), true)]
+    #[case(false, Some(true), Some(true), None, false)]
+    #[case(false, Some(true), None, Some(true), false)]
+    #[cfg(feature = "open-api")]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn validate_default_routes(
+        #[case] default_enable: bool,
+        #[case] api_schema_enabled: Option<bool>,
+        #[case] scalar_enabled: Option<bool>,
+        #[case] redoc_enabled: Option<bool>,
+        #[case] validation_error: bool,
+    ) {
+        // Arrange
+        #[allow(clippy::field_reassign_with_default)]
+        let config = {
+            let mut config = DefaultRoutes::default();
+            config.default_enable = default_enable;
+            config.api_schema.enable = api_schema_enabled;
+            config.scalar.enable = scalar_enabled;
+            config.redoc.enable = redoc_enabled;
+            config
+        };
+
+        // Act
+        let result = config.validate();
+
+        // Assert
+        assert_eq!(result.is_err(), validation_error);
+    }
+}
