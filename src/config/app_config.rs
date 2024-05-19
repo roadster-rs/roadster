@@ -13,16 +13,22 @@ use std::collections::BTreeMap;
 use std::time::Duration;
 #[cfg(any(feature = "otel", feature = "db-sql"))]
 use url::Url;
+use validator::Validate;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct AppConfig {
+    #[validate(nested)]
     pub app: App,
+    #[validate(nested)]
     pub service: Service,
+    #[validate(nested)]
     pub auth: Auth,
+    #[validate(nested)]
     pub tracing: Tracing,
     pub environment: Environment,
     #[cfg(feature = "db-sql")]
+    #[validate(nested)]
     pub database: Database,
     /// Allows providing custom config values. Any configs that aren't pre-defined above
     /// will be collected here.
@@ -119,7 +125,7 @@ impl AppConfig {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct App {
     pub name: String,
@@ -128,21 +134,23 @@ pub struct App {
     pub shutdown_on_error: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Auth {
+    #[validate(nested)]
     pub jwt: Jwt,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Jwt {
     pub secret: String,
     #[serde(default)]
+    #[validate(nested)]
     pub claims: JwtClaims,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Validate, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JwtClaims {
     // Todo: Default to the server URL?
@@ -151,7 +159,7 @@ pub struct JwtClaims {
     pub required_claims: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Tracing {
     pub level: String,
@@ -173,7 +181,7 @@ pub struct Tracing {
 
 #[cfg(feature = "db-sql")]
 #[serde_as]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Database {
     /// This can be overridden with an environment variable, e.g. `ROADSTER.DATABASE.URI=postgres://example:example@example:1234/example_app`

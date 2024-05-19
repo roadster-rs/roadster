@@ -71,6 +71,11 @@ pub struct RoadsterCli {
     #[clap(short, long)]
     pub environment: Option<Environment>,
 
+    /// Skip validation of the app config. This can be useful for debugging the app config
+    /// when used in conjunction with the `print-config` command.
+    #[clap(long, action)]
+    pub skip_validate_config: bool,
+
     /// Allow dangerous/destructive operations when running in the `production` environment. If
     /// this argument is not provided, dangerous/destructive operations will not be performed
     /// when running in `production`.

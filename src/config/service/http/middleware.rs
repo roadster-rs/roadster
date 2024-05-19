@@ -14,11 +14,12 @@ use crate::service::http::middleware::timeout::TimeoutConfig;
 use crate::service::http::middleware::tracing::TracingConfig;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+use validator::Validate;
 
 pub const PRIORITY_FIRST: i32 = -10_000;
 pub const PRIORITY_LAST: i32 = 10_000;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
 pub struct Middleware {
     pub default_enable: bool,

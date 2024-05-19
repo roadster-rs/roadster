@@ -2,10 +2,12 @@ use crate::service::worker::sidekiq::app_worker::AppWorkerConfig;
 use serde_derive::{Deserialize, Serialize};
 use strum_macros::{EnumString, IntoStaticStr};
 use url::Url;
+use validator::Validate;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct SidekiqServiceConfig {
+    #[validate(nested)]
     pub redis: Redis,
 
     /// The number of Sidekiq workers that can run at the same time. Adjust as needed based on
@@ -25,11 +27,13 @@ pub struct SidekiqServiceConfig {
     pub queues: Vec<String>,
 
     #[serde(default)]
+    #[validate(nested)]
     pub periodic: Periodic,
 
     /// The default app worker config. Values can be overridden on a per-worker basis by
     /// implementing the corresponding [crate::service::worker::sidekiq::app_worker::AppWorker] methods.
     #[serde(default, flatten)]
+    #[validate(nested)]
     pub worker_config: AppWorkerConfig,
 }
 
@@ -39,7 +43,7 @@ impl SidekiqServiceConfig {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Periodic {
     pub stale_cleanup: StaleCleanUpBehavior,
@@ -67,20 +71,22 @@ pub enum StaleCleanUpBehavior {
     AutoCleanStale,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Redis {
     pub uri: Url,
     /// The configuration for the Redis connection pool used for enqueuing Sidekiq jobs in Redis.
     #[serde(default)]
+    #[validate(nested)]
     pub enqueue_pool: ConnectionPool,
     /// The configuration for the Redis connection pool used by [sidekiq::Processor] to fetch
     /// Sidekiq jobs from Redis.
     #[serde(default)]
+    #[validate(nested)]
     pub fetch_pool: ConnectionPool,
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Validate, Clone, Serialize, Deserialize)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct ConnectionPool {
     pub min_idle: Option<u32>,

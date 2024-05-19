@@ -4,11 +4,12 @@ use crate::config::app_config::CustomConfig;
 use crate::service::http::initializer::normalize_path::NormalizePathConfig;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+use validator::Validate;
 
 pub const PRIORITY_FIRST: i32 = -10_000;
 pub const PRIORITY_LAST: i32 = 10_000;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
 pub struct Initializer {
     pub default_enable: bool,

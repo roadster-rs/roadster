@@ -10,15 +10,18 @@ use crate::config::service::http::HttpServiceConfig;
 use crate::config::service::worker::sidekiq::SidekiqServiceConfig;
 use crate::util::serde_util::default_true;
 use serde_derive::{Deserialize, Serialize};
+use validator::Validate;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Service {
     #[serde(default = "default_true")]
     pub default_enable: bool,
     #[cfg(feature = "http")]
+    #[validate(nested)]
     pub http: ServiceConfig<HttpServiceConfig>,
     #[cfg(feature = "sidekiq")]
+    #[validate(nested)]
     pub sidekiq: ServiceConfig<SidekiqServiceConfig>,
 }
 
@@ -39,11 +42,12 @@ impl CommonConfig {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub struct ServiceConfig<T> {
+pub struct ServiceConfig<T: Validate> {
     #[serde(flatten, default)]
     pub common: CommonConfig,
     #[serde(flatten)]
+    #[validate(nested)]
     pub custom: T,
 }

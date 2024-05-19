@@ -7,13 +7,14 @@ use serde_with::{serde_as, skip_serializing_none};
 use sidekiq::Worker;
 use std::time::Duration;
 use typed_builder::TypedBuilder;
+use validator::Validate;
 
 /// Additional configuration options that can be configured via the app's configuration files.
 /// The options can also be overridden on a per-worker basis by implementing the corresponding
 /// method in the [AppWorker] trait.
 #[serde_as]
 #[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize, TypedBuilder)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize, TypedBuilder)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct AppWorkerConfig {
     /// The maximum number of times a job should be retried on failure.

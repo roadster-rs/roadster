@@ -25,6 +25,7 @@ use std::future::Future;
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, instrument, warn};
+use validator::Validate;
 
 // todo: this method is getting unweildy, we should break it up
 pub async fn start<A>(
@@ -83,6 +84,11 @@ where
     let config = AppConfig::new(environment)?;
 
     A::init_tracing(&config)?;
+
+    #[cfg(not(feature = "cli"))]
+    validate_config(&config, true)?;
+    #[cfg(feature = "cli")]
+    validate_config(&config, !roadster_cli.skip_validate_config)?;
 
     #[cfg(all(not(test), feature = "db-sql"))]
     let db = Database::connect(A::db_connection_options(&config)?).await?;
@@ -239,6 +245,16 @@ where
 
     info!("Shutdown complete");
 
+    Ok(())
+}
+
+fn validate_config(config: &AppConfig, exit_on_error: bool) -> anyhow::Result<()> {
+    let result = config.validate();
+    if exit_on_error {
+        result?;
+    } else if let Err(err) = result {
+        warn!("An error occurred when validating the app config: {}", err);
+    }
     Ok(())
 }
 
