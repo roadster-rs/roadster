@@ -1,10 +1,12 @@
 use crate::app::App;
 #[mockall_double::double]
 use crate::app_context::AppContext;
-#[cfg(all(feature = "cli", feature = "open-api"))]
-use crate::cli::RoadsterSubCommand;
 #[cfg(feature = "cli")]
-use crate::cli::{RoadsterCli, RoadsterCommand};
+use crate::cli::roadster::RoadsterCli;
+#[cfg(feature = "cli")]
+use crate::cli::roadster::RoadsterCommand;
+#[cfg(all(feature = "cli", feature = "open-api"))]
+use crate::cli::roadster::RoadsterSubCommand;
 use crate::service::http::builder::HttpServiceBuilder;
 use crate::service::AppService;
 #[cfg(feature = "open-api")]
