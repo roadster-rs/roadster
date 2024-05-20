@@ -7,6 +7,7 @@ permissions:
   contents: write
 
 on:
+  workflow_dispatch:
   workflow_run:
     # Release PRs are created after the `Feature Powerset` workflow completes successfully. Currently,
     # `Feature Powerset` runs once a week, so release PRs will also be created once a week.
