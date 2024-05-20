@@ -3,24 +3,11 @@ use crate::app::App;
 use crate::app::MockTestApp;
 #[mockall_double::double]
 use crate::app_context::AppContext;
-#[cfg(feature = "open-api")]
-use crate::cli::list_routes::ListRoutesArgs;
-#[cfg(feature = "db-sql")]
-use crate::cli::migrate::MigrateArgs;
-#[cfg(feature = "open-api")]
-use crate::cli::open_api_schema::OpenApiArgs;
-use crate::cli::print_config::PrintConfigArgs;
-use crate::config::environment::Environment;
+use crate::cli::roadster::{RoadsterCli, RunRoadsterCommand};
 use async_trait::async_trait;
-use clap::{Parser, Subcommand};
+use clap::{Args, Command, FromArgMatches};
 
-#[cfg(feature = "open-api")]
-pub mod list_routes;
-#[cfg(feature = "db-sql")]
-pub mod migrate;
-#[cfg(feature = "open-api")]
-pub mod open_api_schema;
-pub mod print_config;
+pub mod roadster;
 
 /// Implement to enable Roadster to run your custom CLI commands.
 #[async_trait]
@@ -45,168 +32,65 @@ where
     ) -> anyhow::Result<bool>;
 }
 
-/// Internal version of [RunCommand] that uses the [RoadsterCli] and [AppContext] instead of
-/// the consuming app's versions of these objects. This (slightly) reduces the boilerplate
-/// required to implement a Roadster command.
-#[async_trait]
-pub(crate) trait RunRoadsterCommand<A>
+pub(crate) fn parse_cli<A>() -> anyhow::Result<(RoadsterCli, A::Cli)>
 where
     A: App,
 {
-    async fn run(
-        &self,
-        app: &A,
-        cli: &RoadsterCli,
-        context: &AppContext<A::State>,
-    ) -> anyhow::Result<bool>;
+    // Build the CLI by augmenting a default Command with both the roadster and app-specific CLIs
+    let cli = Command::default();
+    // Add the roadster CLI. Save the shared attributes to use after adding the app-specific CLI
+    let cli = RoadsterCli::augment_args(cli);
+    let about = cli.get_about().cloned();
+    let long_about = cli.get_long_about().cloned();
+    let version = cli.get_version().map(|x| x.to_string());
+    let long_version = cli.get_long_version().map(|x| x.to_string());
+    // Add the app-specific CLI. This will override the shared attributes, so we need to
+    // combine them with the roadster CLI attributes.
+    let cli = A::Cli::augment_args(cli);
+    let cli = if let Some((a, b)) = about.zip(cli.get_about().cloned()) {
+        cli.about(format!("{a}\n\n{b}"))
+    } else {
+        cli
+    };
+    let cli = if let Some((a, b)) = long_about.zip(cli.get_long_about().cloned()) {
+        cli.long_about(format!("{a}\n\n{b}"))
+    } else {
+        cli
+    };
+    let cli = if let Some((a, b)) = version.zip(cli.get_version().map(|x| x.to_string())) {
+        cli.version(format!("roadster: {a}, app: {b}"))
+    } else {
+        cli
+    };
+    let cli = if let Some((a, b)) = long_version.zip(cli.get_long_version().map(|x| x.to_string()))
+    {
+        cli.long_version(format!("roadster: {a}\n\napp: {b}"))
+    } else {
+        cli
+    };
+    // Build each CLI from the CLI args
+    let matches = cli.get_matches();
+    let roadster_cli = RoadsterCli::from_arg_matches(&matches)?;
+    let app_cli = A::Cli::from_arg_matches(&matches)?;
+    Ok((roadster_cli, app_cli))
 }
 
-/// Roadster: The Roadster CLI provides various utilities for managing your application. If no subcommand
-/// is matched, Roadster will default to running/serving your application.
-#[derive(Debug, Parser)]
-#[command(version, about)]
-pub struct RoadsterCli {
-    /// Specify the environment to use to run the application. This overrides the corresponding
-    /// environment variable if it's set.
-    #[clap(short, long)]
-    pub environment: Option<Environment>,
-
-    /// Skip validation of the app config. This can be useful for debugging the app config
-    /// when used in conjunction with the `print-config` command.
-    #[clap(long, action)]
-    pub skip_validate_config: bool,
-
-    /// Allow dangerous/destructive operations when running in the `production` environment. If
-    /// this argument is not provided, dangerous/destructive operations will not be performed
-    /// when running in `production`.
-    #[clap(long, action)]
-    pub allow_dangerous: bool,
-
-    #[command(subcommand)]
-    pub command: Option<RoadsterCommand>,
-}
-
-impl RoadsterCli {
-    pub fn allow_dangerous<S>(&self, context: &AppContext<S>) -> bool {
-        context.config().environment != Environment::Production || self.allow_dangerous
-    }
-}
-
-#[async_trait]
-impl<A> RunRoadsterCommand<A> for RoadsterCli
+pub(crate) async fn handle_cli<A>(
+    app: &A,
+    roadster_cli: &RoadsterCli,
+    app_cli: &A::Cli,
+    context: &AppContext<A::State>,
+) -> anyhow::Result<()>
 where
     A: App,
 {
-    async fn run(
-        &self,
-        app: &A,
-        cli: &RoadsterCli,
-        context: &AppContext<A::State>,
-    ) -> anyhow::Result<bool> {
-        if let Some(command) = self.command.as_ref() {
-            command.run(app, cli, context).await
-        } else {
-            Ok(false)
-        }
+    if roadster_cli.run(app, roadster_cli, context).await? {
+        return Ok(());
     }
-}
-
-#[derive(Debug, Subcommand)]
-pub enum RoadsterCommand {
-    /// Roadster subcommands. Subcommands provided by Roadster are listed under this subcommand in
-    /// order to avoid naming conflicts with the consumer's subcommands.
-    #[clap(visible_alias = "r")]
-    Roadster(RoadsterArgs),
-}
-
-#[async_trait]
-impl<A> RunRoadsterCommand<A> for RoadsterCommand
-where
-    A: App,
-{
-    async fn run(
-        &self,
-        app: &A,
-        cli: &RoadsterCli,
-        context: &AppContext<A::State>,
-    ) -> anyhow::Result<bool> {
-        match self {
-            RoadsterCommand::Roadster(args) => args.run(app, cli, context).await,
-        }
+    if app_cli.run(app, app_cli, context).await? {
+        return Ok(());
     }
-}
-
-#[derive(Debug, Parser)]
-pub struct RoadsterArgs {
-    #[command(subcommand)]
-    pub command: RoadsterSubCommand,
-}
-
-#[async_trait]
-impl<A> RunRoadsterCommand<A> for RoadsterArgs
-where
-    A: App,
-{
-    async fn run(
-        &self,
-        app: &A,
-        cli: &RoadsterCli,
-        context: &AppContext<A::State>,
-    ) -> anyhow::Result<bool> {
-        self.command.run(app, cli, context).await
-    }
-}
-
-#[derive(Debug, Subcommand)]
-pub enum RoadsterSubCommand {
-    /// List the API routes available in the app. Note: only the routes defined
-    /// using the `Aide` crate will be included in the output.
-    #[cfg(feature = "open-api")]
-    ListRoutes(ListRoutesArgs),
-
-    /// Generate an OpenAPI 3.1 schema for the app's API routes. Note: only the routes defined
-    /// using the `Aide` crate will be included in the schema.
-    #[cfg(feature = "open-api")]
-    OpenApi(OpenApiArgs),
-
-    /// Perform DB operations using SeaORM migrations.
-    #[cfg(feature = "db-sql")]
-    #[clap(visible_aliases = ["m", "migration"])]
-    Migrate(MigrateArgs),
-
-    /// Print the AppConfig
-    PrintConfig(PrintConfigArgs),
-}
-
-#[async_trait]
-impl<A> RunRoadsterCommand<A> for RoadsterSubCommand
-where
-    A: App,
-{
-    async fn run(
-        &self,
-        app: &A,
-        cli: &RoadsterCli,
-        context: &AppContext<A::State>,
-    ) -> anyhow::Result<bool> {
-        match self {
-            #[cfg(feature = "open-api")]
-            RoadsterSubCommand::ListRoutes(_) => {
-                #[allow(unused_doc_comments)]
-                /// Implemented by [crate::service::http::service::HttpService]
-                Ok(false)
-            }
-            #[cfg(feature = "open-api")]
-            RoadsterSubCommand::OpenApi(_) => {
-                #[allow(unused_doc_comments)]
-                /// Implemented by [crate::service::http::service::HttpService]
-                Ok(false)
-            }
-            #[cfg(feature = "db-sql")]
-            RoadsterSubCommand::Migrate(args) => args.run(app, cli, context).await,
-            RoadsterSubCommand::PrintConfig(args) => args.run(app, cli, context).await,
-        }
-    }
+    Ok(())
 }
 
 #[cfg(test)]

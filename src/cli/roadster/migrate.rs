@@ -7,7 +7,7 @@ use tracing::warn;
 use crate::app::App;
 #[mockall_double::double]
 use crate::app_context::AppContext;
-use crate::cli::{RoadsterCli, RunRoadsterCommand};
+use crate::cli::roadster::{RoadsterCli, RunRoadsterCommand};
 
 #[derive(Debug, Parser)]
 pub struct MigrateArgs {

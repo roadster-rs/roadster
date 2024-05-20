@@ -3,7 +3,7 @@ use roadster::app;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    app::start(App).await?;
+    app::run(App).await?;
 
     Ok(())
 }

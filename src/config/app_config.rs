@@ -11,6 +11,7 @@ use serde_with::serde_as;
 use std::collections::BTreeMap;
 #[cfg(feature = "db-sql")]
 use std::time::Duration;
+use tracing::warn;
 #[cfg(any(feature = "otel", feature = "db-sql"))]
 use url::Url;
 use validator::Validate;
@@ -122,6 +123,16 @@ impl AppConfig {
 
         let config = toml::from_str(config)?;
         Ok(config)
+    }
+
+    pub(crate) fn validate(&self, exit_on_error: bool) -> anyhow::Result<()> {
+        let result = Validate::validate(self);
+        if exit_on_error {
+            result?;
+        } else if let Err(err) = result {
+            warn!("An error occurred when validating the app config: {}", err);
+        }
+        Ok(())
     }
 }
 

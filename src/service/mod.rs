@@ -2,13 +2,14 @@ use crate::app::App;
 #[mockall_double::double]
 use crate::app_context::AppContext;
 #[cfg(feature = "cli")]
-use crate::cli::RoadsterCli;
+use crate::cli::roadster::RoadsterCli;
 use async_trait::async_trait;
 use tokio_util::sync::CancellationToken;
 
 #[cfg(feature = "http")]
 pub mod http;
 pub mod registry;
+pub(crate) mod runner;
 pub mod worker;
 
 /// Trait to represent a service (e.g., a persistent task) to run in the app. Example services
