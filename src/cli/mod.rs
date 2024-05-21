@@ -131,7 +131,7 @@ mod tests {
 
     #[fixture]
     fn case() -> TestCase {
-        TestCase::default()
+        Default::default()
     }
 
     #[rstest]
