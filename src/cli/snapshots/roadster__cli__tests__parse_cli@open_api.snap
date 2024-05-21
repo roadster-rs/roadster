@@ -1,0 +1,13 @@
+---
+source: src/cli/mod.rs
+expression: roadster_cli
+---
+skip_validate_config = false
+allow_dangerous = false
+
+[command]
+type = 'Roadster'
+
+[command.command]
+type = 'OpenApi'
+pretty_print = false

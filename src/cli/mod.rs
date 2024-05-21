@@ -6,6 +6,7 @@ use crate::app_context::AppContext;
 use crate::cli::roadster::{RoadsterCli, RunRoadsterCommand};
 use async_trait::async_trait;
 use clap::{Args, Command, FromArgMatches};
+use std::ffi::OsString;
 
 pub mod roadster;
 
@@ -32,9 +33,11 @@ where
     ) -> anyhow::Result<bool>;
 }
 
-pub(crate) fn parse_cli<A>() -> anyhow::Result<(RoadsterCli, A::Cli)>
+pub(crate) fn parse_cli<A, I, T>(args: I) -> anyhow::Result<(RoadsterCli, A::Cli)>
 where
     A: App,
+    I: IntoIterator<Item = T>,
+    T: Into<OsString> + Clone,
 {
     // Build the CLI by augmenting a default Command with both the roadster and app-specific CLIs
     let cli = Command::default();
@@ -69,7 +72,7 @@ where
         cli
     };
     // Build each CLI from the CLI args
-    let matches = cli.get_matches();
+    let matches = cli.get_matches_from(args);
     let roadster_cli = RoadsterCli::from_arg_matches(&matches)?;
     let app_cli = A::Cli::from_arg_matches(&matches)?;
     Ok((roadster_cli, app_cli))
@@ -115,5 +118,61 @@ mockall::mock! {
     impl clap::Args for Cli {
         fn augment_args(cmd: clap::Command) -> clap::Command;
         fn augment_args_for_update(cmd: clap::Command) -> clap::Command;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::util::test_util::TestCase;
+    use insta::assert_toml_snapshot;
+    use itertools::Itertools;
+    use rstest::{fixture, rstest};
+
+    #[fixture]
+    fn case() -> TestCase {
+        TestCase::default()
+    }
+
+    #[rstest]
+    #[case(None, None)]
+    #[case(Some("--environment test"), None)]
+    #[case(Some("--skip-validate-config"), None)]
+    #[case(Some("--allow-dangerous"), None)]
+    #[cfg_attr(
+        feature = "open-api",
+        case::list_routes(Some("roadster list-routes"), None)
+    )]
+    #[cfg_attr(feature = "open-api", case::list_routes(Some("r list-routes"), None))]
+    #[cfg_attr(feature = "open-api", case::open_api(Some("r open-api"), None))]
+    #[cfg_attr(feature = "db-sql", case::migrate(Some("r migrate up"), None))]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn parse_cli(_case: TestCase, #[case] args: Option<&str>, #[case] arg_list: Option<Vec<&str>>) {
+        // Arrange
+        let augment_args_context = MockCli::augment_args_context();
+        augment_args_context.expect().returning(|c| c);
+        let from_arg_matches_context = MockCli::from_arg_matches_context();
+        from_arg_matches_context
+            .expect()
+            .returning(|_| Ok(MockCli::default()));
+
+        let args = if let Some(args) = args {
+            args.split(' ').collect_vec()
+        } else if let Some(args) = arg_list {
+            args
+        } else {
+            Default::default()
+        };
+        // The first word is interpreted as the binary name
+        let args = vec!["binary_name"]
+            .into_iter()
+            .chain(args.into_iter())
+            .collect_vec();
+
+        // Act
+        let (roadster_cli, _a) = super::parse_cli::<MockTestApp, _, _>(args).unwrap();
+
+        // Assert
+        assert_toml_snapshot!(roadster_cli);
     }
 }

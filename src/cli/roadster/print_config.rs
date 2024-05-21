@@ -9,7 +9,7 @@ use crate::app::App;
 use crate::app_context::AppContext;
 use crate::cli::roadster::{RoadsterCli, RunRoadsterCommand};
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, Serialize)]
 pub struct PrintConfigArgs {
     /// Print the config with the specified format.
     #[clap(short, long, default_value = "debug")]
@@ -19,7 +19,7 @@ pub struct PrintConfigArgs {
 #[derive(
     Debug, Clone, Eq, PartialEq, Serialize, Deserialize, EnumString, IntoStaticStr, clap::ValueEnum,
 )]
-#[serde(rename_all = "kebab-case")]
+#[serde(rename_all = "kebab-case", tag = "type")]
 #[strum(serialize_all = "kebab-case")]
 pub enum Format {
     Debug,

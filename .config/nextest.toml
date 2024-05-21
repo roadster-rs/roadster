@@ -3,7 +3,12 @@
 [test-groups]
 # Mocks of static methods need to run sequentially. This test group is for tests that mock AppService's static methods.
 app-service-static-mock = { max-threads = 1 }
+cli-static-mock = { max-threads = 1 }
 
 [[profile.default.overrides]]
 filter = 'test(#service::registry::tests::*) | test(#service::tests::*)'
 test-group = "app-service-static-mock"
+
+[[profile.default.overrides]]
+filter = 'test(#cli::tests::*)'
+test-group = "cli-static-mock"

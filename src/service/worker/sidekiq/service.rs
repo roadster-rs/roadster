@@ -110,9 +110,9 @@ mod tests {
     #[case(true, None, 1, vec!["foo".to_string()], false, false)]
     #[tokio::test]
     #[cfg_attr(coverage_nightly, coverage(off))]
-    async fn foo(
+    async fn enabled(
         #[case] default_enabled: bool,
-        #[case] enabled: Option<bool>,
+        #[case] sidekiq_enabled: Option<bool>,
         #[case] num_workers: u32,
         #[case] queues: Vec<String>,
         #[case] has_redis_fetch: bool,
@@ -120,7 +120,7 @@ mod tests {
     ) {
         let mut config = AppConfig::empty(None).unwrap();
         config.service.default_enable = default_enabled;
-        config.service.sidekiq.common.enable = enabled;
+        config.service.sidekiq.common.enable = sidekiq_enabled;
         config.service.sidekiq.custom.num_workers = num_workers;
         config.service.sidekiq.custom.queues = queues;
 
