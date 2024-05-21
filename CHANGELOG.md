@@ -6,6 +6,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.1.1...roadster-v0.2.0) - 2024-05-21
+
+### Other
+- Allow running the release_pr workflow manually
+- foo
+- Add code owners to automatically request reviews on PRs
+- Add documentation for the TestCase utility class
+- Use stable rust for coverage
+- Add tests for sidekiq builder and roadster cli
+- Run release pr workflow with manual dispatch
+- Separate different parts of the app::start method into respective mods
+- Add tests for the `DefaultRoutes` config validator
+- Fix `DefaultRoutes` validator when open-api feature is not enabled
+- Add validation of the AppConfig
+- Add deps.rs badge to readme
+- Group `http` and `open-api` features in the feature_powerset workflow
+- Update the codecov PR comment config
+- Add tests for `remove_stale_periodic_jobs`
+- Update dependencies that can be updated
+- Add a feature flag to entirely disable the http service
+- Add comments to justfile
+- Update dependencies and add `just` command to update deps
+- Add MSRV tag to readme
+- Add MSRV and add CI step to validate
+- Add some tests for `SidekiqWorkerServiceBuilder`
+- Add justfile
+- Add tests for `SidekiqWorkerService::enabled`
+- Fix clippy warning
+- Allow unknown cfg in coverage workflow
+- Disable coverage for tests
+- Enable running coverage using the nightly toolchain
+- Add tests for the Middleware::priority methods for each middleware
+- Add tests for the Middleware::enabled method for each middleware
+- Add tests for the default_middleware and default_initializers methods
+- Add tests for middleware/initializer registration in HttpServiceBuilder
+- Don’t use coverage(off) for now because it’s unstable
+- Use coverage instead of coverage_nightly
+- Apply coverage(off) directly to the desired method
+- Use coverage(off) only with cfg_attr(coverage)
+- Disable coverage for service mod test impls
+- Add small test for service builder
+- Remove async-std from dev deps
+- Remove Tokio from non-async test
+- Use Tokio for rstest tests
+- Run `cargo upgrade` to update dependencies
+- Update the code coverage comment format
+- Set up mocking using `mockall` crate
+- Do some test cleanup
+- Add test for route that isn't documented
+- Add test for the HttpService::list_routes method/cli command
+- Rename the custom context in the minimal example
+- Remove unnecessary `From...` impl for `AppContext`
+- Pass config and context by reference in all public APIs
+- Custom state as member of `AppContext`
+- Add methods to AppContext instead of direct field access
+- Fix codecov config
+- Add tests to serde_util
+- Add codecov config file
+- Update instructions to run CI locally
+- Add coverage badge to the readme
+- Add workflow to generate code coverage stats
+- Disallow registering things multiple times
+- Create FUNDING.yml
+- Update feature_powerset.yml schedule
+- Rearrange and enhance the status badges in the readme
+- Add a Discord badge
+- Have docs.rs pass --all-features to ensure all features have docs built
+
 ## [0.1.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.1.0...roadster-v0.1.1) - 2024-05-05
 
 ### Other
