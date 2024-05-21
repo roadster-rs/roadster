@@ -2,6 +2,7 @@ use anyhow::bail;
 use async_trait::async_trait;
 use clap::{Parser, Subcommand};
 use sea_orm_migration::MigratorTrait;
+use serde_derive::Serialize;
 use tracing::warn;
 
 use crate::app::App;
@@ -9,7 +10,7 @@ use crate::app::App;
 use crate::app_context::AppContext;
 use crate::cli::roadster::{RoadsterCli, RunRoadsterCommand};
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, Serialize)]
 pub struct MigrateArgs {
     #[clap(subcommand)]
     pub command: MigrateCommand,
@@ -30,7 +31,8 @@ where
     }
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Subcommand, Serialize)]
+#[serde(tag = "type")]
 pub enum MigrateCommand {
     /// Apply pending migrations
     Up(UpArgs),
@@ -78,14 +80,14 @@ where
     }
 }
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, Serialize)]
 pub struct UpArgs {
     /// The number of pending migration steps to apply.
     #[clap(short = 'n', long)]
     pub steps: Option<u32>,
 }
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, Serialize)]
 pub struct DownArgs {
     /// The number of applied migration steps to rollback.
     #[clap(short = 'n', long)]

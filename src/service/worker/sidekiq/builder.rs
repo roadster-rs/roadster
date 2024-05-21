@@ -541,6 +541,37 @@ mod tests {
     }
 
     #[rstest]
+    #[case(true, true)]
+    #[case(false, false)]
+    #[tokio::test]
+    async fn clean_up_periodic_jobs_already_registered(
+        #[case] enabled: bool,
+        #[case] expect_err: bool,
+    ) {
+        // Arrange
+        let register_count = if enabled { 1 } else { 0 };
+        let builder = setup(enabled, 0, register_count).await;
+        let builder = if enabled {
+            builder
+                .register_periodic_app_worker(
+                    periodic::builder("* * * * * *").unwrap().name("foo"),
+                    MockTestAppWorker::default(),
+                    (),
+                )
+                .await
+                .unwrap()
+        } else {
+            builder
+        };
+
+        // Act
+        let result = builder.clean_up_periodic_jobs().await;
+
+        // Assert
+        assert_eq!(result.is_err(), expect_err);
+    }
+
+    #[rstest]
     #[case(false, Default::default(), Default::default(), Default::default())]
     #[case(true, Default::default(), Default::default(), Default::default())]
     #[case(true, Default::default(), vec!["foo".to_string()], vec!["foo".to_string()])]

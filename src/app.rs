@@ -18,6 +18,8 @@ use sea_orm::ConnectOptions;
 use sea_orm_migration::MigrationTrait;
 #[cfg(feature = "db-sql")]
 use sea_orm_migration::MigratorTrait;
+#[cfg(feature = "cli")]
+use std::env;
 use std::future;
 use tracing::{instrument, warn};
 
@@ -30,7 +32,7 @@ where
     A: App + Default + Send + Sync + 'static,
 {
     #[cfg(feature = "cli")]
-    let (roadster_cli, app_cli) = parse_cli::<A>()?;
+    let (roadster_cli, app_cli) = parse_cli::<A, _, _>(env::args_os())?;
 
     #[cfg(feature = "cli")]
     let environment = roadster_cli.environment.clone();

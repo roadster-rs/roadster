@@ -11,6 +11,7 @@ use crate::cli::roadster::print_config::PrintConfigArgs;
 use crate::config::environment::Environment;
 use async_trait::async_trait;
 use clap::{Parser, Subcommand};
+use serde_derive::Serialize;
 
 #[cfg(feature = "open-api")]
 pub mod list_routes;
@@ -38,7 +39,7 @@ where
 
 /// Roadster: The Roadster CLI provides various utilities for managing your application. If no subcommand
 /// is matched, Roadster will default to running/serving your application.
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, Serialize)]
 #[command(version, about)]
 pub struct RoadsterCli {
     /// Specify the environment to use to run the application. This overrides the corresponding
@@ -86,7 +87,8 @@ where
     }
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Subcommand, Serialize)]
+#[serde(tag = "type")]
 pub enum RoadsterCommand {
     /// Roadster subcommands. Subcommands provided by Roadster are listed under this subcommand in
     /// order to avoid naming conflicts with the consumer's subcommands.
@@ -111,7 +113,7 @@ where
     }
 }
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, Serialize)]
 pub struct RoadsterArgs {
     #[command(subcommand)]
     pub command: RoadsterSubCommand,
@@ -163,7 +165,8 @@ where
     }
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Subcommand, Serialize)]
+#[serde(tag = "type")]
 pub enum RoadsterSubCommand {
     /// List the API routes available in the app. Note: only the routes defined
     /// using the `Aide` crate will be included in the output.
