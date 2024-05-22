@@ -83,17 +83,17 @@ pub(crate) async fn handle_cli<A>(
     roadster_cli: &RoadsterCli,
     app_cli: &A::Cli,
     context: &AppContext<A::State>,
-) -> anyhow::Result<()>
+) -> anyhow::Result<bool>
 where
     A: App,
 {
     if roadster_cli.run(app, roadster_cli, context).await? {
-        return Ok(());
+        return Ok(true);
     }
     if app_cli.run(app, app_cli, context).await? {
-        return Ok(());
+        return Ok(true);
     }
-    Ok(())
+    Ok(false)
 }
 
 #[cfg(test)]
