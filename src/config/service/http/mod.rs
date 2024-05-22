@@ -2,7 +2,6 @@
 use crate::app_context::AppContext;
 use crate::config::service::http::initializer::Initializer;
 use crate::config::service::http::middleware::Middleware;
-use crate::controller::http::build_path;
 use crate::util::serde_util::default_true;
 use serde_derive::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
@@ -40,41 +39,25 @@ impl Address {
     }
 }
 
-#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[validate(schema(function = "validate_default_routes"))]
 pub struct DefaultRoutes {
     #[serde(default = "default_true")]
     pub default_enable: bool,
-    #[serde(default = "DefaultRouteConfig::default_ping")]
+    #[serde(default)]
     pub ping: DefaultRouteConfig,
-    #[serde(default = "DefaultRouteConfig::default_health")]
+    #[serde(default)]
     pub health: DefaultRouteConfig,
     #[cfg(feature = "open-api")]
-    #[serde(default = "DefaultRouteConfig::default_api_schema")]
+    #[serde(default)]
     pub api_schema: DefaultRouteConfig,
     #[cfg(feature = "open-api")]
-    #[serde(default = "DefaultRouteConfig::default_scalar")]
+    #[serde(default)]
     pub scalar: DefaultRouteConfig,
     #[cfg(feature = "open-api")]
-    #[serde(default = "DefaultRouteConfig::default_redoc")]
+    #[serde(default)]
     pub redoc: DefaultRouteConfig,
-}
-
-impl Default for DefaultRoutes {
-    fn default() -> Self {
-        Self {
-            default_enable: default_true(),
-            ping: DefaultRouteConfig::default_ping(),
-            health: DefaultRouteConfig::default_health(),
-            #[cfg(feature = "open-api")]
-            api_schema: DefaultRouteConfig::default_api_schema(),
-            #[cfg(feature = "open-api")]
-            scalar: DefaultRouteConfig::default_scalar(),
-            #[cfg(feature = "open-api")]
-            redoc: DefaultRouteConfig::default_redoc(),
-        }
-    }
 }
 
 fn validate_default_routes(
@@ -103,44 +86,14 @@ fn validate_default_routes(
     Ok(())
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct DefaultRouteConfig {
     pub enable: Option<bool>,
-    pub route: String,
+    pub route: Option<String>,
 }
 
 impl DefaultRouteConfig {
-    fn new(route: &str) -> Self {
-        Self {
-            enable: None,
-            route: build_path("", route),
-        }
-    }
-
-    fn default_ping() -> Self {
-        DefaultRouteConfig::new("_ping")
-    }
-
-    fn default_health() -> Self {
-        DefaultRouteConfig::new("_health")
-    }
-
-    #[cfg(feature = "open-api")]
-    fn default_api_schema() -> Self {
-        DefaultRouteConfig::new("_docs/api.json")
-    }
-
-    #[cfg(feature = "open-api")]
-    fn default_scalar() -> Self {
-        DefaultRouteConfig::new("_docs")
-    }
-
-    #[cfg(feature = "open-api")]
-    fn default_redoc() -> Self {
-        DefaultRouteConfig::new("_docs/redoc")
-    }
-
     pub fn enabled<S>(&self, context: &AppContext<S>) -> bool {
         self.enable.unwrap_or(
             context

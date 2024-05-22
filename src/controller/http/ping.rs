@@ -1,5 +1,6 @@
 #[mockall_double::double]
 use crate::app_context::AppContext;
+use crate::config::app_config::AppConfig;
 use crate::controller::http::build_path;
 use crate::view::http::app_error::AppError;
 #[cfg(feature = "open-api")]
@@ -27,7 +28,7 @@ where
     if !enabled(context) {
         return router;
     }
-    let root = build_path(parent, route(context));
+    let root = build_path(parent, &route(context));
     router.route(&root, get(ping_get))
 }
 
@@ -40,7 +41,7 @@ where
     if !enabled(context) {
         return router;
     }
-    let root = build_path(parent, route(context));
+    let root = build_path(parent, &route(context));
     router.api_route(&root, get_with(ping_get, ping_get_docs))
 }
 
@@ -55,15 +56,17 @@ fn enabled<S>(context: &AppContext<S>) -> bool {
         .enabled(context)
 }
 
-fn route<S>(context: &AppContext<S>) -> &str {
-    &context
-        .config()
+fn route<S>(context: &AppContext<S>) -> String {
+    let config: &AppConfig = context.config();
+    config
         .service
         .http
         .custom
         .default_routes
         .ping
         .route
+        .clone()
+        .unwrap_or_else(|| "_ping".to_string())
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -81,4 +84,47 @@ fn ping_get_docs(op: TransformOperation) -> TransformOperation {
     op.description("Ping the server to confirm that it is running.")
         .tag(TAG)
         .response_with::<200, Json<PingResponse>, _>(|res| res.example(PingResponse::default()))
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::app::MockTestApp;
+    use crate::app_context::MockAppContext;
+    use crate::config::app_config::AppConfig;
+    use rstest::rstest;
+
+    // Todo: Is there a better way to structure this test (and the ones in `health` and `ping`)
+    //  to reduce duplication?
+    #[rstest]
+    #[case(false, None, None, false)]
+    #[case(false, Some(false), None, false)]
+    #[case(true, None, Some("/foo".to_string()), true)]
+    #[case(false, Some(true), None, true)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn ping(
+        #[case] default_enable: bool,
+        #[case] enable: Option<bool>,
+        #[case] route: Option<String>,
+        #[case] enabled: bool,
+    ) {
+        let mut config = AppConfig::empty(None).unwrap();
+        config.service.http.custom.default_routes.default_enable = default_enable;
+        config.service.http.custom.default_routes.ping.enable = enable;
+        config
+            .service
+            .http
+            .custom
+            .default_routes
+            .ping
+            .route
+            .clone_from(&route);
+        let mut context = MockAppContext::<MockTestApp>::default();
+        context.expect_config().return_const(config);
+
+        assert_eq!(super::enabled(&context), enabled);
+        assert_eq!(
+            super::route(&context),
+            route.unwrap_or_else(|| "_ping".to_string())
+        );
+    }
 }
