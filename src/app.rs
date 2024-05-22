@@ -57,14 +57,19 @@ where
     let context = context.with_custom(state);
 
     #[cfg(feature = "cli")]
-    crate::cli::handle_cli(&app, &roadster_cli, &app_cli, &context).await?;
+    if crate::cli::handle_cli(&app, &roadster_cli, &app_cli, &context).await? {
+        return Ok(());
+    }
 
     let mut service_registry = ServiceRegistry::new(&context);
     A::services(&mut service_registry, &context).await?;
 
     #[cfg(feature = "cli")]
-    crate::service::runner::handle_cli(&roadster_cli, &app_cli, &service_registry, &context)
-        .await?;
+    if crate::service::runner::handle_cli(&roadster_cli, &app_cli, &service_registry, &context)
+        .await?
+    {
+        return Ok(());
+    }
 
     if service_registry.services.is_empty() {
         warn!("No enabled services were registered, exiting.");

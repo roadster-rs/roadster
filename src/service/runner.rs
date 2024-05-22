@@ -15,16 +15,16 @@ pub(crate) async fn handle_cli<A>(
     app_cli: &A::Cli,
     service_registry: &ServiceRegistry<A>,
     context: &AppContext<A::State>,
-) -> anyhow::Result<()>
+) -> anyhow::Result<bool>
 where
     A: App,
 {
     for (_name, service) in service_registry.services.iter() {
         if service.handle_cli(roadster_cli, app_cli, context).await? {
-            break;
+            return Ok(true);
         }
     }
-    Ok(())
+    Ok(false)
 }
 
 pub(crate) async fn run<A>(
