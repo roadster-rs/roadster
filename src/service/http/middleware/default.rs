@@ -1,4 +1,3 @@
-#[mockall_double::double]
 use crate::app_context::AppContext;
 use crate::service::http::middleware::catch_panic::CatchPanicMiddleware;
 use crate::service::http::middleware::compression::RequestDecompressionMiddleware;
@@ -37,7 +36,7 @@ pub fn default_middleware<S: Send + Sync + 'static>(
 
 #[cfg(test)]
 mod tests {
-    use crate::app_context::MockAppContext;
+    use crate::app_context::AppContext;
     use crate::config::app_config::AppConfig;
     use rstest::rstest;
 
@@ -47,11 +46,10 @@ mod tests {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn default_middleware(#[case] default_enable: bool, #[case] expected_size: usize) {
         // Arrange
-        let mut config = AppConfig::empty(None).unwrap();
+        let mut config = AppConfig::test(None).unwrap();
         config.service.http.custom.middleware.default_enable = default_enable;
 
-        let mut context = MockAppContext::<()>::default();
-        context.expect_config().return_const(config);
+        let context = AppContext::<()>::test(Some(config), None).unwrap();
 
         // Act
         let middleware = super::default_middleware(&context);

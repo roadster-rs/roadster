@@ -6,7 +6,6 @@ use serde_derive::Serialize;
 use tracing::warn;
 
 use crate::app::App;
-#[mockall_double::double]
 use crate::app_context::AppContext;
 use crate::cli::roadster::{RoadsterCli, RunRoadsterCommand};
 

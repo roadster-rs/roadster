@@ -1,11 +1,10 @@
 use crate::app::App;
-#[mockall_double::double]
 use crate::app_context::AppContext;
 use crate::config::service::worker::sidekiq::StaleCleanUpBehavior;
 use crate::service::worker::sidekiq::app_worker::AppWorker;
 use crate::service::worker::sidekiq::roadster_worker::RoadsterWorker;
 use crate::service::worker::sidekiq::service::SidekiqWorkerService;
-#[mockall_double::double]
+#[cfg_attr(test, mockall_double::double)]
 use crate::service::worker::sidekiq::Processor;
 use crate::service::{AppService, AppServiceBuilder};
 use anyhow::{anyhow, bail};
@@ -371,7 +370,7 @@ impl<'a> RedisCommands for PooledConnection<'a, RedisConnectionManager> {
 mod tests {
     use super::*;
     use crate::app::MockApp;
-    use crate::app_context::MockAppContext;
+    use crate::app_context::AppContext;
     use crate::config::app_config::AppConfig;
     use crate::service::worker::sidekiq::MockProcessor;
     use bb8::Pool;
@@ -456,7 +455,7 @@ mod tests {
         #[async_trait]
         impl AppWorker<MockApp, ()> for TestAppWorker
         {
-            fn build(context: &MockAppContext<()>) -> Self;
+            fn build(context: &AppContext<()>) -> Self;
         }
     }
 
@@ -466,16 +465,14 @@ mod tests {
         register_count: usize,
         periodic_count: usize,
     ) -> SidekiqWorkerServiceBuilder<MockApp> {
-        let mut config = AppConfig::empty(None).unwrap();
+        let mut config = AppConfig::test(None).unwrap();
         config.service.default_enable = enabled;
         config.service.sidekiq.custom.num_workers = 1;
         config.service.sidekiq.custom.queues = vec!["foo".to_string()];
 
-        let mut context = MockAppContext::default();
-        context.expect_config().return_const(config);
         let redis_fetch = RedisConnectionManager::new("redis://invalid_host:1234").unwrap();
         let pool = Pool::builder().build_unchecked(redis_fetch);
-        context.expect_redis_fetch().return_const(Some(pool));
+        let context = AppContext::<()>::test(Some(config), Some(pool)).unwrap();
 
         let mut processor = MockProcessor::<MockApp>::default();
         processor
@@ -587,7 +584,7 @@ mod tests {
         #[case] jobs_in_redis: Vec<String>,
         #[case] expected_jobs_removed: Vec<String>,
     ) {
-        let mut config = AppConfig::empty(None).unwrap();
+        let mut config = AppConfig::test(None).unwrap();
         if clean_stale {
             config.service.sidekiq.custom.periodic.stale_cleanup =
                 StaleCleanUpBehavior::AutoCleanStale;
@@ -595,8 +592,7 @@ mod tests {
             config.service.sidekiq.custom.periodic.stale_cleanup = StaleCleanUpBehavior::Manual;
         }
 
-        let mut context = MockAppContext::<MockApp>::default();
-        context.expect_config().return_const(config);
+        let context = AppContext::<()>::test(Some(config), None).unwrap();
 
         let mut redis = MockRedisCommands::default();
         redis

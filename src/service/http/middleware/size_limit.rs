@@ -1,4 +1,3 @@
-#[mockall_double::double]
 use crate::app_context::AppContext;
 use crate::service::http::middleware::Middleware;
 use anyhow::bail;
@@ -81,7 +80,6 @@ impl<S: Send + Sync + 'static> Middleware<S> for RequestBodyLimitMiddleware {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app_context::MockAppContext;
     use crate::config::app_config::AppConfig;
     use rstest::rstest;
 
@@ -95,7 +93,7 @@ mod tests {
         #[case] expected_enabled: bool,
     ) {
         // Arrange
-        let mut config = AppConfig::empty(None).unwrap();
+        let mut config = AppConfig::test(None).unwrap();
         config.service.http.custom.middleware.default_enable = default_enable;
         config
             .service
@@ -106,8 +104,7 @@ mod tests {
             .common
             .enable = enable;
 
-        let mut context = MockAppContext::<()>::default();
-        context.expect_config().return_const(config);
+        let context = AppContext::<()>::test(Some(config), None).unwrap();
 
         let middleware = RequestBodyLimitMiddleware;
 
@@ -121,7 +118,7 @@ mod tests {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn size_limit_priority(#[case] override_priority: Option<i32>, #[case] expected_priority: i32) {
         // Arrange
-        let mut config = AppConfig::empty(None).unwrap();
+        let mut config = AppConfig::test(None).unwrap();
         if let Some(priority) = override_priority {
             config
                 .service
@@ -133,8 +130,7 @@ mod tests {
                 .priority = priority;
         }
 
-        let mut context = MockAppContext::<()>::default();
-        context.expect_config().return_const(config);
+        let context = AppContext::<()>::test(Some(config), None).unwrap();
 
         let middleware = RequestBodyLimitMiddleware;
 

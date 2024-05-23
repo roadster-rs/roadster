@@ -1,7 +1,6 @@
 use crate::app::App;
 #[cfg(test)]
 use crate::app::MockApp;
-#[mockall_double::double]
 use crate::app_context::AppContext;
 use crate::cli::roadster::{RoadsterCli, RunRoadsterCommand};
 use async_trait::async_trait;

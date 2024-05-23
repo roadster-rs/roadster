@@ -1,8 +1,4 @@
-#[mockall_double::double]
 use crate::app_context::AppContext;
-use std::ops::Deref;
-use std::sync::Arc;
-
 use crate::config::app_config::AppConfig;
 use crate::controller::http::build_path;
 use aide::axum::routing::get_with;
@@ -12,6 +8,8 @@ use aide::redoc::Redoc;
 use aide::scalar::Scalar;
 use axum::response::IntoResponse;
 use axum::{Extension, Json};
+use std::ops::Deref;
+use std::sync::Arc;
 
 const BASE: &str = "_docs";
 const TAG: &str = "Docs";
@@ -146,8 +144,6 @@ fn api_schema_route<S>(context: &AppContext<S>) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::MockApp;
-    use crate::app_context::MockAppContext;
     use crate::config::app_config::AppConfig;
     use rstest::rstest;
 
@@ -165,7 +161,7 @@ mod tests {
         #[case] route: Option<String>,
         #[case] enabled: bool,
     ) {
-        let mut config = AppConfig::empty(None).unwrap();
+        let mut config = AppConfig::test(None).unwrap();
         config.service.http.custom.default_routes.default_enable = default_enable;
         config.service.http.custom.default_routes.scalar.enable = enable;
         config
@@ -176,8 +172,7 @@ mod tests {
             .scalar
             .route
             .clone_from(&route);
-        let mut context = MockAppContext::<MockApp>::default();
-        context.expect_config().return_const(config);
+        let context = AppContext::<()>::test(Some(config), None).unwrap();
 
         assert_eq!(scalar_enabled(&context), enabled);
         assert_eq!(
@@ -198,7 +193,7 @@ mod tests {
         #[case] route: Option<String>,
         #[case] enabled: bool,
     ) {
-        let mut config = AppConfig::empty(None).unwrap();
+        let mut config = AppConfig::test(None).unwrap();
         config.service.http.custom.default_routes.default_enable = default_enable;
         config.service.http.custom.default_routes.redoc.enable = enable;
         config
@@ -209,8 +204,7 @@ mod tests {
             .redoc
             .route
             .clone_from(&route);
-        let mut context = MockAppContext::<MockApp>::default();
-        context.expect_config().return_const(config);
+        let context = AppContext::<()>::test(Some(config), None).unwrap();
 
         assert_eq!(redoc_enabled(&context), enabled);
         assert_eq!(
@@ -231,7 +225,7 @@ mod tests {
         #[case] route: Option<String>,
         #[case] enabled: bool,
     ) {
-        let mut config = AppConfig::empty(None).unwrap();
+        let mut config = AppConfig::test(None).unwrap();
         config.service.http.custom.default_routes.default_enable = default_enable;
         config.service.http.custom.default_routes.api_schema.enable = enable;
         config
@@ -242,8 +236,7 @@ mod tests {
             .api_schema
             .route
             .clone_from(&route);
-        let mut context = MockAppContext::<MockApp>::default();
-        context.expect_config().return_const(config);
+        let context = AppContext::<()>::test(Some(config), None).unwrap();
 
         assert_eq!(api_schema_enabled(&context), enabled);
         assert_eq!(

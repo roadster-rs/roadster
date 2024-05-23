@@ -1,4 +1,3 @@
-#[mockall_double::double]
 use crate::app_context::AppContext;
 #[cfg(feature = "cli")]
 use crate::cli::parse_cli;
@@ -51,7 +50,7 @@ where
     #[cfg(not(test))]
     let context = AppContext::<()>::new::<A>(config).await?;
     #[cfg(test)]
-    let context = AppContext::<()>::default();
+    let context = AppContext::<()>::test(Some(config), None)?;
 
     let state = A::with_state(&context).await?;
     let context = context.with_custom(state);

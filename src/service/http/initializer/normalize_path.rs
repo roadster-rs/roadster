@@ -1,4 +1,3 @@
-#[mockall_double::double]
 use crate::app_context::AppContext;
 use crate::service::http::initializer::Initializer;
 use axum::Router;

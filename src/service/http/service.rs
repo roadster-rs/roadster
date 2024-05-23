@@ -1,5 +1,4 @@
 use crate::app::App;
-#[mockall_double::double]
 use crate::app_context::AppContext;
 #[cfg(feature = "cli")]
 use crate::cli::roadster::RoadsterCli;

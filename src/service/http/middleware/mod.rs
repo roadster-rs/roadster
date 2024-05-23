@@ -7,7 +7,6 @@ pub mod size_limit;
 pub mod timeout;
 pub mod tracing;
 
-#[mockall_double::double]
 use crate::app_context::AppContext;
 use axum::Router;
 

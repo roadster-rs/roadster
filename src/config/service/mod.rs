@@ -2,7 +2,6 @@
 pub mod http;
 pub mod worker;
 
-#[mockall_double::double]
 use crate::app_context::AppContext;
 #[cfg(feature = "http")]
 use crate::config::service::http::HttpServiceConfig;
