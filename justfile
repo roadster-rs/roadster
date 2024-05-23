@@ -42,5 +42,6 @@ update:
 check:
     .cargo-husky/hooks/pre-push
 
+# Check if the Codecov config is valid
 validate-codecov-config:
     curl -X POST --data-binary @codecov.yml https://codecov.io/validate
