@@ -9,7 +9,10 @@ use axum::Router;
 /// anything that needs to be done during a specific stage of startup. The type `S` is the
 /// custom [crate::app::App::State] defined for the app.
 #[cfg_attr(test, mockall::automock)]
-pub trait Initializer<S: Send + Sync + 'static>: Send {
+pub trait Initializer<S>: Send
+where
+    S: Send + Sync + 'static,
+{
     fn name(&self) -> String;
 
     fn enabled(&self, context: &AppContext<S>) -> bool;
