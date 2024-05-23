@@ -70,7 +70,7 @@ impl<A: App> ServiceRegistry<A> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::MockTestApp;
+    use crate::app::MockApp;
     use crate::app_context::MockAppContext;
     use crate::service::{MockAppService, MockAppServiceBuilder};
     use rstest::rstest;
@@ -84,14 +84,14 @@ mod tests {
         let mut context = MockAppContext::default();
         context.expect_clone().returning(MockAppContext::default);
 
-        let service: MockAppService<MockTestApp> = MockAppService::default();
-        let enabled_ctx = MockAppService::<MockTestApp>::enabled_context();
+        let service: MockAppService<MockApp> = MockAppService::default();
+        let enabled_ctx = MockAppService::<MockApp>::enabled_context();
         enabled_ctx.expect().returning(move |_| service_enabled);
-        let name_ctx = MockAppService::<MockTestApp>::name_context();
+        let name_ctx = MockAppService::<MockApp>::name_context();
         name_ctx.expect().returning(|| "test".to_string());
 
         // Act
-        let mut subject: ServiceRegistry<MockTestApp> = ServiceRegistry::new(&context);
+        let mut subject: ServiceRegistry<MockApp> = ServiceRegistry::new(&context);
         subject.register_service(service).unwrap();
 
         // Assert
@@ -115,9 +115,9 @@ mod tests {
         let mut context = MockAppContext::default();
         context.expect_clone().returning(MockAppContext::default);
 
-        let enabled_ctx = MockAppService::<MockTestApp>::enabled_context();
+        let enabled_ctx = MockAppService::<MockApp>::enabled_context();
         enabled_ctx.expect().returning(move |_| service_enabled);
-        let name_ctx = MockAppService::<MockTestApp>::name_context();
+        let name_ctx = MockAppService::<MockApp>::name_context();
         name_ctx.expect().returning(|| "test".to_string());
 
         let mut builder = MockAppServiceBuilder::default();
@@ -131,7 +131,7 @@ mod tests {
         }
 
         // Act
-        let mut subject: ServiceRegistry<MockTestApp> = ServiceRegistry::new(&context);
+        let mut subject: ServiceRegistry<MockApp> = ServiceRegistry::new(&context);
         subject.register_builder(builder).await.unwrap();
 
         // Assert

@@ -333,6 +333,7 @@ async fn remove_stale_periodic_jobs<S, C: RedisCommands>(
 
 /// Trait to help with mocking responses from Redis.
 // Todo: Make available to other parts of the project?
+#[cfg_attr(test, mockall::automock)]
 #[async_trait]
 trait RedisCommands {
     async fn zrange(
@@ -369,7 +370,7 @@ impl<'a> RedisCommands for PooledConnection<'a, RedisConnectionManager> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::MockTestApp;
+    use crate::app::MockApp;
     use crate::app_context::MockAppContext;
     use crate::config::app_config::AppConfig;
     use crate::service::worker::sidekiq::MockProcessor;
@@ -453,7 +454,7 @@ mod tests {
         }
 
         #[async_trait]
-        impl AppWorker<MockTestApp, ()> for TestAppWorker
+        impl AppWorker<MockApp, ()> for TestAppWorker
         {
             fn build(context: &MockAppContext<()>) -> Self;
         }
@@ -464,7 +465,7 @@ mod tests {
         enabled: bool,
         register_count: usize,
         periodic_count: usize,
-    ) -> SidekiqWorkerServiceBuilder<MockTestApp> {
+    ) -> SidekiqWorkerServiceBuilder<MockApp> {
         let mut config = AppConfig::empty(None).unwrap();
         config.service.default_enable = enabled;
         config.service.sidekiq.custom.num_workers = 1;
@@ -476,7 +477,7 @@ mod tests {
         let pool = Pool::builder().build_unchecked(redis_fetch);
         context.expect_redis_fetch().return_const(Some(pool));
 
-        let mut processor = MockProcessor::<MockTestApp>::default();
+        let mut processor = MockProcessor::<MockApp>::default();
         processor
             .expect_register::<(), MockTestAppWorker>()
             .times(register_count)
@@ -486,14 +487,14 @@ mod tests {
             .times(periodic_count)
             .returning(|_, _| Ok(()));
 
-        SidekiqWorkerServiceBuilder::<MockTestApp>::new(context, Some(processor))
+        SidekiqWorkerServiceBuilder::<MockApp>::new(context, Some(processor))
             .await
             .unwrap()
     }
 
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn validate_registered_workers(
-        builder: &SidekiqWorkerServiceBuilder<MockTestApp>,
+        builder: &SidekiqWorkerServiceBuilder<MockApp>,
         enabled: bool,
         size: usize,
         class_names: Vec<String>,
@@ -516,7 +517,7 @@ mod tests {
 
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn validate_registered_periodic_workers(
-        builder: &SidekiqWorkerServiceBuilder<MockTestApp>,
+        builder: &SidekiqWorkerServiceBuilder<MockApp>,
         enabled: bool,
         size: usize,
         job_names: Vec<String>,
@@ -594,10 +595,10 @@ mod tests {
             config.service.sidekiq.custom.periodic.stale_cleanup = StaleCleanUpBehavior::Manual;
         }
 
-        let mut context = MockAppContext::<MockTestApp>::default();
+        let mut context = MockAppContext::<MockApp>::default();
         context.expect_config().return_const(config);
 
-        let mut redis = MockTestRedisCommands::default();
+        let mut redis = MockRedisCommands::default();
         redis
             .expect_zrange()
             .times(1)
@@ -618,23 +619,5 @@ mod tests {
         super::remove_stale_periodic_jobs(&mut redis, &context, &registered_jobs)
             .await
             .unwrap();
-    }
-
-    mockall::mock! {
-        TestRedisCommands {}
-
-        #[async_trait]
-        impl RedisCommands for TestRedisCommands {
-            async fn zrange(
-                & mut self,
-                key: String,
-                lower: isize,
-                upper: isize,
-            ) -> Result<Vec<String>, RedisError>;
-
-            async fn zrem<V>(&mut self, key: String, value: V) -> Result<bool, RedisError>
-            where
-                V: ToRedisArgs + Send + Sync + 'static;
-        }
     }
 }

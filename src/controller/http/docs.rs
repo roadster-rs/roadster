@@ -146,7 +146,7 @@ fn api_schema_route<S>(context: &AppContext<S>) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::MockTestApp;
+    use crate::app::MockApp;
     use crate::app_context::MockAppContext;
     use crate::config::app_config::AppConfig;
     use rstest::rstest;
@@ -176,7 +176,7 @@ mod tests {
             .scalar
             .route
             .clone_from(&route);
-        let mut context = MockAppContext::<MockTestApp>::default();
+        let mut context = MockAppContext::<MockApp>::default();
         context.expect_config().return_const(config);
 
         assert_eq!(scalar_enabled(&context), enabled);
@@ -209,7 +209,7 @@ mod tests {
             .redoc
             .route
             .clone_from(&route);
-        let mut context = MockAppContext::<MockTestApp>::default();
+        let mut context = MockAppContext::<MockApp>::default();
         context.expect_config().return_const(config);
 
         assert_eq!(redoc_enabled(&context), enabled);
@@ -242,7 +242,7 @@ mod tests {
             .api_schema
             .route
             .clone_from(&route);
-        let mut context = MockAppContext::<MockTestApp>::default();
+        let mut context = MockAppContext::<MockApp>::default();
         context.expect_config().return_const(config);
 
         assert_eq!(api_schema_enabled(&context), enabled);

@@ -79,7 +79,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::app::MockTestApp;
+    use crate::app::MockApp;
     use crate::app_context::MockAppContext;
     use crate::service::{AppServiceBuilder, MockAppService};
     use async_trait::async_trait;
@@ -87,12 +87,12 @@ mod tests {
 
     struct TestAppServiceBuilder;
     #[async_trait]
-    impl AppServiceBuilder<MockTestApp, MockAppService<MockTestApp>> for TestAppServiceBuilder {
+    impl AppServiceBuilder<MockApp, MockAppService<MockApp>> for TestAppServiceBuilder {
         #[cfg_attr(coverage_nightly, coverage(off))]
         async fn build(
             self,
             _context: &MockAppContext<()>,
-        ) -> anyhow::Result<MockAppService<MockTestApp>> {
+        ) -> anyhow::Result<MockAppService<MockApp>> {
             Ok(MockAppService::default())
         }
     }
@@ -106,7 +106,7 @@ mod tests {
         let mut context = MockAppContext::default();
         context.expect_clone().returning(MockAppContext::default);
 
-        let enabled_ctx = MockAppService::<MockTestApp>::enabled_context();
+        let enabled_ctx = MockAppService::<MockApp>::enabled_context();
         enabled_ctx.expect().returning(move |_| service_enabled);
 
         // Act

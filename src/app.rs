@@ -86,6 +86,7 @@ where
     Ok(())
 }
 
+#[cfg_attr(test, mockall::automock(type State = (); type Cli = MockCli; type M = MockMigrator;))]
 #[async_trait]
 pub trait App: Send + Sync {
     // Todo: Are clone, etc necessary if we store it inside an Arc?
@@ -155,20 +156,5 @@ mockall::mock! {
     #[async_trait]
     impl MigratorTrait for Migrator {
         fn migrations() -> Vec<Box<dyn MigrationTrait>>;
-    }
-}
-
-#[cfg(test)]
-mockall::mock! {
-    pub TestApp {}
-    #[async_trait]
-    impl App for TestApp {
-        type State = ();
-        #[cfg(feature = "cli")]
-        type Cli = MockCli;
-        #[cfg(feature = "db-sql")]
-        type M = MockMigrator;
-
-        async fn with_state(context: &AppContext<()>) -> anyhow::Result<<MockTestApp as App>::State>;
     }
 }
