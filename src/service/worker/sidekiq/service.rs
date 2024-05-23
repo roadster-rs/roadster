@@ -93,7 +93,7 @@ impl SidekiqWorkerService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::MockTestApp;
+    use crate::app::MockApp;
     use crate::app_context::MockAppContext;
     use crate::config::app_config::AppConfig;
     use bb8::Pool;
@@ -137,7 +137,7 @@ mod tests {
         context.expect_redis_fetch().return_const(pool);
 
         assert_eq!(
-            <SidekiqWorkerService as AppService<MockTestApp>>::enabled(&context),
+            <SidekiqWorkerService as AppService<MockApp>>::enabled(&context),
             expected_enabled
         );
     }

@@ -88,7 +88,7 @@ fn ping_get_docs(op: TransformOperation) -> TransformOperation {
 
 #[cfg(test)]
 mod tests {
-    use crate::app::MockTestApp;
+    use crate::app::MockApp;
     use crate::app_context::MockAppContext;
     use crate::config::app_config::AppConfig;
     use rstest::rstest;
@@ -118,7 +118,7 @@ mod tests {
             .ping
             .route
             .clone_from(&route);
-        let mut context = MockAppContext::<MockTestApp>::default();
+        let mut context = MockAppContext::<MockApp>::default();
         context.expect_config().return_const(config);
 
         assert_eq!(super::enabled(&context), enabled);

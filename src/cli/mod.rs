@@ -1,6 +1,6 @@
 use crate::app::App;
 #[cfg(test)]
-use crate::app::MockTestApp;
+use crate::app::MockApp;
 #[mockall_double::double]
 use crate::app_context::AppContext;
 use crate::cli::roadster::{RoadsterCli, RunRoadsterCommand};
@@ -101,12 +101,12 @@ mockall::mock! {
     pub Cli {}
 
     #[async_trait]
-    impl RunCommand<MockTestApp> for Cli {
+    impl RunCommand<MockApp> for Cli {
         async fn run(
                 &self,
-                app: &MockTestApp,
-                cli: &<MockTestApp as App>::Cli,
-                context: &AppContext<<MockTestApp as App>::State>,
+                app: &MockApp,
+                cli: &<MockApp as App>::Cli,
+                context: &AppContext<<MockApp as App>::State>,
             ) -> anyhow::Result<bool>;
     }
 
@@ -170,7 +170,7 @@ mod tests {
             .collect_vec();
 
         // Act
-        let (roadster_cli, _a) = super::parse_cli::<MockTestApp, _, _>(args).unwrap();
+        let (roadster_cli, _a) = super::parse_cli::<MockApp, _, _>(args).unwrap();
 
         // Assert
         assert_toml_snapshot!(roadster_cli);

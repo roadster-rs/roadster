@@ -212,7 +212,7 @@ impl<A: App> AppServiceBuilder<A, HttpService> for HttpServiceBuilder<A> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::MockTestApp;
+    use crate::app::MockApp;
     use crate::app_context::MockAppContext;
     use crate::service::http::initializer::MockInitializer;
     use crate::service::http::middleware::MockMiddleware;
@@ -225,7 +225,7 @@ mod tests {
         context
             .expect_clone()
             .returning(MockAppContext::<()>::default);
-        let builder = HttpServiceBuilder::<MockTestApp>::empty(&context);
+        let builder = HttpServiceBuilder::<MockApp>::empty(&context);
 
         let mut middleware = MockMiddleware::default();
         middleware.expect_enabled().returning(|_| true);
@@ -247,7 +247,7 @@ mod tests {
         context
             .expect_clone()
             .returning(MockAppContext::<()>::default);
-        let builder = HttpServiceBuilder::<MockTestApp>::empty(&context);
+        let builder = HttpServiceBuilder::<MockApp>::empty(&context);
 
         let mut middleware = MockMiddleware::default();
         middleware.expect_enabled().returning(|_| false);
@@ -268,7 +268,7 @@ mod tests {
         context
             .expect_clone()
             .returning(MockAppContext::<()>::default);
-        let builder = HttpServiceBuilder::<MockTestApp>::empty(&context);
+        let builder = HttpServiceBuilder::<MockApp>::empty(&context);
 
         let mut middleware = MockMiddleware::default();
         middleware.expect_name().returning(|| "test".to_string());
@@ -289,7 +289,7 @@ mod tests {
         context
             .expect_clone()
             .returning(MockAppContext::<()>::default);
-        let builder = HttpServiceBuilder::<MockTestApp>::empty(&context);
+        let builder = HttpServiceBuilder::<MockApp>::empty(&context);
 
         let mut initializer = MockInitializer::default();
         initializer.expect_enabled().returning(|_| true);
@@ -311,7 +311,7 @@ mod tests {
         context
             .expect_clone()
             .returning(MockAppContext::<()>::default);
-        let builder = HttpServiceBuilder::<MockTestApp>::empty(&context);
+        let builder = HttpServiceBuilder::<MockApp>::empty(&context);
 
         let mut initializer = MockInitializer::default();
         initializer.expect_enabled().returning(|_| false);
@@ -332,7 +332,7 @@ mod tests {
         context
             .expect_clone()
             .returning(MockAppContext::<()>::default);
-        let builder = HttpServiceBuilder::<MockTestApp>::empty(&context);
+        let builder = HttpServiceBuilder::<MockApp>::empty(&context);
 
         let mut initializer = MockInitializer::default();
         initializer.expect_name().returning(|| "test".to_string());
