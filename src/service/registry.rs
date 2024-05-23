@@ -1,5 +1,4 @@
 use crate::app::App;
-#[mockall_double::double]
 use crate::app_context::AppContext;
 use crate::service::{AppService, AppServiceBuilder};
 use anyhow::bail;
@@ -71,7 +70,6 @@ impl<A: App> ServiceRegistry<A> {
 mod tests {
     use super::*;
     use crate::app::MockApp;
-    use crate::app_context::MockAppContext;
     use crate::service::{MockAppService, MockAppServiceBuilder};
     use rstest::rstest;
 
@@ -81,8 +79,7 @@ mod tests {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn register_service(#[case] service_enabled: bool, #[case] expected_count: usize) {
         // Arrange
-        let mut context = MockAppContext::default();
-        context.expect_clone().returning(MockAppContext::default);
+        let context = AppContext::<()>::test(None, None).unwrap();
 
         let service: MockAppService<MockApp> = MockAppService::default();
         let enabled_ctx = MockAppService::<MockApp>::enabled_context();
@@ -112,8 +109,7 @@ mod tests {
         #[case] expected_count: usize,
     ) {
         // Arrange
-        let mut context = MockAppContext::default();
-        context.expect_clone().returning(MockAppContext::default);
+        let context = AppContext::<()>::test(None, None).unwrap();
 
         let enabled_ctx = MockAppService::<MockApp>::enabled_context();
         enabled_ctx.expect().returning(move |_| service_enabled);

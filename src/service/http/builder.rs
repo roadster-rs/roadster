@@ -1,5 +1,4 @@
 use crate::app::App;
-#[mockall_double::double]
 use crate::app_context::AppContext;
 #[cfg(feature = "open-api")]
 use crate::controller::http::default_api_routes;
@@ -213,7 +212,7 @@ impl<A: App> AppServiceBuilder<A, HttpService> for HttpServiceBuilder<A> {
 mod tests {
     use super::*;
     use crate::app::MockApp;
-    use crate::app_context::MockAppContext;
+    use crate::app_context::AppContext;
     use crate::service::http::initializer::MockInitializer;
     use crate::service::http::middleware::MockMiddleware;
 
@@ -221,10 +220,7 @@ mod tests {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn middleware() {
         // Arrange
-        let mut context = MockAppContext::<()>::default();
-        context
-            .expect_clone()
-            .returning(MockAppContext::<()>::default);
+        let context = AppContext::<()>::test(None, None).unwrap();
         let builder = HttpServiceBuilder::<MockApp>::empty(&context);
 
         let mut middleware = MockMiddleware::default();
@@ -243,10 +239,7 @@ mod tests {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn middleware_not_enabled() {
         // Arrange
-        let mut context = MockAppContext::<()>::default();
-        context
-            .expect_clone()
-            .returning(MockAppContext::<()>::default);
+        let context = AppContext::<()>::test(None, None).unwrap();
         let builder = HttpServiceBuilder::<MockApp>::empty(&context);
 
         let mut middleware = MockMiddleware::default();
@@ -264,10 +257,7 @@ mod tests {
     #[should_panic]
     fn middleware_already_registered() {
         // Arrange
-        let mut context = MockAppContext::<()>::default();
-        context
-            .expect_clone()
-            .returning(MockAppContext::<()>::default);
+        let context = AppContext::<()>::test(None, None).unwrap();
         let builder = HttpServiceBuilder::<MockApp>::empty(&context);
 
         let mut middleware = MockMiddleware::default();
@@ -285,10 +275,7 @@ mod tests {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn initializer() {
         // Arrange
-        let mut context = MockAppContext::<()>::default();
-        context
-            .expect_clone()
-            .returning(MockAppContext::<()>::default);
+        let context = AppContext::<()>::test(None, None).unwrap();
         let builder = HttpServiceBuilder::<MockApp>::empty(&context);
 
         let mut initializer = MockInitializer::default();
@@ -307,10 +294,7 @@ mod tests {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn initializer_not_enabled() {
         // Arrange
-        let mut context = MockAppContext::<()>::default();
-        context
-            .expect_clone()
-            .returning(MockAppContext::<()>::default);
+        let context = AppContext::<()>::test(None, None).unwrap();
         let builder = HttpServiceBuilder::<MockApp>::empty(&context);
 
         let mut initializer = MockInitializer::default();
@@ -328,10 +312,7 @@ mod tests {
     #[should_panic]
     fn initializer_already_registered() {
         // Arrange
-        let mut context = MockAppContext::<()>::default();
-        context
-            .expect_clone()
-            .returning(MockAppContext::<()>::default);
+        let context = AppContext::<()>::test(None, None).unwrap();
         let builder = HttpServiceBuilder::<MockApp>::empty(&context);
 
         let mut initializer = MockInitializer::default();

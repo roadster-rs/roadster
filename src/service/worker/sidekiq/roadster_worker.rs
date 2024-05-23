@@ -1,5 +1,4 @@
 use crate::app::App;
-#[mockall_double::double]
 use crate::app_context::AppContext;
 use crate::service::worker::sidekiq::app_worker::AppWorker;
 use crate::service::worker::sidekiq::app_worker::AppWorkerConfig;

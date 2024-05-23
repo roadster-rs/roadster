@@ -1,5 +1,4 @@
 use crate::app::App;
-#[mockall_double::double]
 use crate::app_context::AppContext;
 #[cfg(feature = "cli")]
 use crate::cli::roadster::RoadsterCli;
@@ -80,7 +79,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::app::MockApp;
-    use crate::app_context::MockAppContext;
+    use crate::app_context::AppContext;
     use crate::service::{AppServiceBuilder, MockAppService};
     use async_trait::async_trait;
     use rstest::rstest;
@@ -89,10 +88,7 @@ mod tests {
     #[async_trait]
     impl AppServiceBuilder<MockApp, MockAppService<MockApp>> for TestAppServiceBuilder {
         #[cfg_attr(coverage_nightly, coverage(off))]
-        async fn build(
-            self,
-            _context: &MockAppContext<()>,
-        ) -> anyhow::Result<MockAppService<MockApp>> {
+        async fn build(self, _context: &AppContext<()>) -> anyhow::Result<MockAppService<MockApp>> {
             Ok(MockAppService::default())
         }
     }
@@ -103,8 +99,7 @@ mod tests {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn builder_enabled(#[case] service_enabled: bool) {
         // Arrange
-        let mut context = MockAppContext::default();
-        context.expect_clone().returning(MockAppContext::default);
+        let context = AppContext::<()>::test(None, None).unwrap();
 
         let enabled_ctx = MockAppService::<MockApp>::enabled_context();
         enabled_ctx.expect().returning(move |_| service_enabled);

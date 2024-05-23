@@ -3,7 +3,6 @@ pub mod ietf;
 #[cfg(feature = "jwt-openid")]
 pub mod openid;
 
-#[mockall_double::double]
 use crate::app_context::AppContext;
 #[cfg(feature = "jwt-ietf")]
 use crate::middleware::http::auth::jwt::ietf::Claims;

@@ -1,5 +1,4 @@
 use crate::app::App;
-#[mockall_double::double]
 use crate::app_context::AppContext;
 use crate::service::worker::sidekiq::builder::SidekiqWorkerServiceBuilder;
 use crate::service::AppService;
@@ -94,7 +93,7 @@ impl SidekiqWorkerService {
 mod tests {
     use super::*;
     use crate::app::MockApp;
-    use crate::app_context::MockAppContext;
+    use crate::app_context::AppContext;
     use crate::config::app_config::AppConfig;
     use bb8::Pool;
     use rstest::rstest;
@@ -118,14 +117,11 @@ mod tests {
         #[case] has_redis_fetch: bool,
         #[case] expected_enabled: bool,
     ) {
-        let mut config = AppConfig::empty(None).unwrap();
+        let mut config = AppConfig::test(None).unwrap();
         config.service.default_enable = default_enabled;
         config.service.sidekiq.common.enable = sidekiq_enabled;
         config.service.sidekiq.custom.num_workers = num_workers;
         config.service.sidekiq.custom.queues = queues;
-
-        let mut context = MockAppContext::default();
-        context.expect_config().return_const(config);
 
         let pool = if has_redis_fetch {
             let redis_fetch = RedisConnectionManager::new("redis://invalid_host:1234").unwrap();
@@ -134,7 +130,8 @@ mod tests {
         } else {
             None
         };
-        context.expect_redis_fetch().return_const(pool);
+
+        let context = AppContext::<()>::test(Some(config), pool).unwrap();
 
         assert_eq!(
             <SidekiqWorkerService as AppService<MockApp>>::enabled(&context),

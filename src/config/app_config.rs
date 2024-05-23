@@ -93,7 +93,7 @@ impl AppConfig {
     }
 
     #[cfg(test)]
-    pub(crate) fn empty(config_str: Option<&str>) -> anyhow::Result<Self> {
+    pub(crate) fn test(config_str: Option<&str>) -> anyhow::Result<Self> {
         let config = config_str.unwrap_or(
             r#"
             environment = "test"
@@ -242,6 +242,6 @@ mod tests {
     #[test]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn empty() {
-        AppConfig::empty(None).unwrap();
+        AppConfig::test(None).unwrap();
     }
 }

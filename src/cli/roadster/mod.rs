@@ -1,5 +1,4 @@
 use crate::app::App;
-#[mockall_double::double]
 use crate::app_context::AppContext;
 #[cfg(feature = "open-api")]
 use crate::cli::roadster::list_routes::ListRoutesArgs;
