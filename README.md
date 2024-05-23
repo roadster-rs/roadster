@@ -4,7 +4,7 @@
 [![docs.rs](https://img.shields.io/docsrs/roadster?logo=docsdotrs)](https://docs.rs/roadster/latest/roadster/)
 [![Crates.io MSRV](https://img.shields.io/crates/msrv/roadster)](https://crates.io/crates/roadster)
 [![Crates.io License](https://img.shields.io/crates/l/roadster)](https://crates.io/crates/roadster)
-[![Discord](https://img.shields.io/discord/1234415847666094120?logo=discord&label=Discord)](https://discord.gg/yb2m7SKb73)
+[![GitHub Discussions](https://img.shields.io/github/discussions/roadster-rs/roadster?logo=github)](https://github.com/roadster-rs/roadster/discussions)
 [![codecov](https://codecov.io/gh/roadster-rs/roadster/graph/badge.svg?token=JIMN3U8K88)](https://codecov.io/gh/roadster-rs/roadster)
 [![Checks](https://github.com/roadster-rs/roadster/actions/workflows/ci.yml/badge.svg)](https://github.com/roadster-rs/roadster/actions/workflows/ci.yml)
 [![Feature Powerset](https://github.com/roadster-rs/roadster/actions/workflows/feature_powerset.yml/badge.svg)](https://github.com/roadster-rs/roadster/actions/workflows/feature_powerset.yml)
