@@ -1,0 +1,10 @@
+---
+source: src/config/auth/mod.rs
+expression: auth
+---
+[jwt]
+secret = 'foo'
+
+[jwt.claims]
+audience = []
+required-claims = ['baz']

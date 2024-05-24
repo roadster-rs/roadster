@@ -83,7 +83,7 @@ where
             .service
             .sidekiq
             .custom
-            .worker_config
+            .app_worker
             .max_retries
     }
 
@@ -91,13 +91,7 @@ where
     ///
     /// The default implementation uses the value from the app's config file.
     fn timeout(&self, context: &AppContext<A::State>) -> bool {
-        context
-            .config()
-            .service
-            .sidekiq
-            .custom
-            .worker_config
-            .timeout
+        context.config().service.sidekiq.custom.app_worker.timeout
     }
 
     /// See [AppWorkerConfig::max_duration].
@@ -109,7 +103,7 @@ where
             .service
             .sidekiq
             .custom
-            .worker_config
+            .app_worker
             .max_duration
     }
 
@@ -122,7 +116,7 @@ where
             .service
             .sidekiq
             .custom
-            .worker_config
+            .app_worker
             .disable_argument_coercion
     }
 }
@@ -174,5 +168,48 @@ mod tests {
         let value: Wrapper<AppWorkerConfig> =
             from_str(r#"{"inner": {"disable-argument-coercion": true } }"#).unwrap();
         assert!(value.inner.disable_argument_coercion);
+    }
+}
+
+#[cfg(test)]
+mod deserialize_tests {
+    use super::*;
+    use crate::util::test_util::TestCase;
+    use insta::assert_toml_snapshot;
+    use rstest::{fixture, rstest};
+
+    #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn case() -> TestCase {
+        Default::default()
+    }
+
+    #[rstest]
+    #[case("")]
+    #[case(
+        r#"
+        max-retries = 1
+        "#
+    )]
+    #[case(
+        r#"
+        timeout = false
+        "#
+    )]
+    #[case(
+        r#"
+        max-duration = 1234
+        "#
+    )]
+    #[case(
+        r#"
+        disable-argument-coercion = true
+        "#
+    )]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn app_worker(_case: TestCase, #[case] config: &str) {
+        let app_worker: AppWorkerConfig = toml::from_str(config).unwrap();
+
+        assert_toml_snapshot!(app_worker);
     }
 }

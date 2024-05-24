@@ -1,0 +1,6 @@
+---
+source: src/config/tracing.rs
+expression: tracing
+---
+level = 'debug'
+trace-propagation = true

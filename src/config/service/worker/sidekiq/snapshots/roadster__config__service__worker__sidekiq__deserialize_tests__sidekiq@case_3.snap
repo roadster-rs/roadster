@@ -1,0 +1,22 @@
+---
+source: src/config/service/worker/sidekiq/mod.rs
+expression: sidekiq
+---
+num-workers = 1
+queues = ['foo']
+
+[redis]
+uri = 'redis://localhost:6379'
+
+[redis.enqueue-pool]
+
+[redis.fetch-pool]
+
+[periodic]
+stale-cleanup = 'auto-clean-stale'
+
+[app-worker]
+max-retries = 5
+timeout = true
+max-duration = 60
+disable-argument-coercion = false

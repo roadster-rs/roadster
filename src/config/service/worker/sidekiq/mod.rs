@@ -7,9 +7,6 @@ use validator::Validate;
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct SidekiqServiceConfig {
-    #[validate(nested)]
-    pub redis: Redis,
-
     /// The number of Sidekiq workers that can run at the same time. Adjust as needed based on
     /// your workload and resource (cpu/memory/etc) usage.
     ///
@@ -26,15 +23,18 @@ pub struct SidekiqServiceConfig {
     #[serde(default)]
     pub queues: Vec<String>,
 
+    #[validate(nested)]
+    pub redis: Redis,
+
     #[serde(default)]
     #[validate(nested)]
     pub periodic: Periodic,
 
     /// The default app worker config. Values can be overridden on a per-worker basis by
     /// implementing the corresponding [crate::service::worker::sidekiq::app_worker::AppWorker] methods.
-    #[serde(default, flatten)]
+    #[serde(default)]
     #[validate(nested)]
-    pub worker_config: AppWorkerConfig,
+    pub app_worker: AppWorkerConfig,
 }
 
 impl SidekiqServiceConfig {
@@ -91,4 +91,81 @@ pub struct Redis {
 pub struct ConnectionPool {
     pub min_idle: Option<u32>,
     pub max_connections: Option<u32>,
+}
+
+#[cfg(test)]
+mod deserialize_tests {
+    use super::*;
+    use crate::util::test_util::TestCase;
+    use insta::assert_toml_snapshot;
+    use rstest::{fixture, rstest};
+
+    #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn case() -> TestCase {
+        Default::default()
+    }
+
+    #[rstest]
+    #[case(
+        r#"
+        # The default `num-workers` is the same as the number of cpu cores, so we always set
+        # this in our tests so they always pass regardless of the host's hardware.
+        num-workers = 1
+        [redis]
+        uri = "redis://localhost:6379"
+        "#
+    )]
+    #[case(
+        r#"
+        num-workers = 1
+        [redis]
+        uri = "redis://localhost:6379"
+        "#
+    )]
+    #[case(
+        r#"
+        num-workers = 1
+        queues = ["foo"]
+        [redis]
+        uri = "redis://localhost:6379"
+        "#
+    )]
+    #[case(
+        r#"
+        num-workers = 1
+        [redis]
+        uri = "redis://localhost:6379"
+        [redis.enqueue-pool]
+        min-idle = 1
+        [redis.fetch-pool]
+        min-idle = 2
+        "#
+    )]
+    #[case(
+        r#"
+        num-workers = 1
+        [redis]
+        uri = "redis://localhost:6379"
+        [redis.enqueue-pool]
+        max-connections = 1
+        [redis.fetch-pool]
+        max-connections = 2
+        "#
+    )]
+    #[case(
+        r#"
+        num-workers = 1
+        [redis]
+        uri = "redis://localhost:6379"
+        [periodic]
+        stale-cleanup = "auto-clean-stale"
+        "#
+    )]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn sidekiq(_case: TestCase, #[case] config: &str) {
+        let sidekiq: SidekiqServiceConfig = toml::from_str(config).unwrap();
+
+        assert_toml_snapshot!(sidekiq);
+    }
 }
