@@ -1,20 +1,20 @@
+use crate::config::auth::Auth;
+#[cfg(feature = "db-sql")]
+use crate::config::database::Database;
 use crate::config::environment::{Environment, ENVIRONMENT_ENV_VAR_NAME};
 use crate::config::service::Service;
-use crate::util::serde_util::{default_true, UriOrString};
+use crate::config::tracing::Tracing;
+use crate::util::serde_util::default_true;
 use anyhow::anyhow;
 use config::{Case, Config};
 use dotenvy::dotenv;
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
-#[cfg(feature = "db-sql")]
-use serde_with::serde_as;
 use std::collections::BTreeMap;
-#[cfg(feature = "db-sql")]
-use std::time::Duration;
 use tracing::warn;
-#[cfg(any(feature = "otel", feature = "db-sql"))]
-use url::Url;
 use validator::Validate;
+
+pub type CustomConfig = BTreeMap<String, Value>;
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -117,7 +117,7 @@ impl AppConfig {
             port = 3000
 
             [service.sidekiq.redis]
-            uri = "redis://localhost:6379"
+            uri = "redis://invalid_host:1234"
             "#,
         );
 
@@ -143,96 +143,6 @@ pub struct App {
     /// Shutdown the whole app if an error occurs in one of the app's top-level tasks (API, workers, etc).
     #[serde(default = "default_true")]
     pub shutdown_on_error: bool,
-}
-
-#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct Auth {
-    #[validate(nested)]
-    pub jwt: Jwt,
-}
-
-#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct Jwt {
-    pub secret: String,
-    #[serde(default)]
-    #[validate(nested)]
-    pub claims: JwtClaims,
-}
-
-#[derive(Debug, Clone, Validate, Default, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct JwtClaims {
-    // Todo: Default to the server URL?
-    pub audience: Vec<UriOrString>,
-    /// Claim names to require, in addition to the default-required `exp` claim.
-    pub required_claims: Vec<String>,
-}
-
-#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct Tracing {
-    pub level: String,
-
-    /// The name of the service to use for the OpenTelemetry `service.name` field. If not provided,
-    /// will use the [`App::name`][App] config value, translated to `snake_case`.
-    #[cfg(feature = "otel")]
-    pub service_name: Option<String>,
-
-    /// Propagate traces across service boundaries. Mostly useful in microservice architectures.
-    #[serde(default = "default_true")]
-    #[cfg(feature = "otel")]
-    pub trace_propagation: bool,
-
-    /// URI of the OTLP exporter where traces/metrics/logs will be sent.
-    #[cfg(feature = "otel")]
-    pub otlp_endpoint: Option<Url>,
-}
-
-#[cfg(feature = "db-sql")]
-#[serde_as]
-#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct Database {
-    /// This can be overridden with an environment variable, e.g. `ROADSTER.DATABASE.URI=postgres://example:example@example:1234/example_app`
-    pub uri: Url,
-    /// Whether to automatically apply migrations during the app's start up. Migrations can also
-    /// be manually performed via the `roadster migration [COMMAND]` CLI command.
-    pub auto_migrate: bool,
-    #[serde(default = "Database::default_connect_timeout")]
-    #[serde_as(as = "serde_with::DurationMilliSeconds")]
-    pub connect_timeout: Duration,
-    #[serde(default = "Database::default_acquire_timeout")]
-    #[serde_as(as = "serde_with::DurationMilliSeconds")]
-    pub acquire_timeout: Duration,
-    #[serde_as(as = "Option<serde_with::DurationSeconds>")]
-    pub idle_timeout: Option<Duration>,
-    #[serde_as(as = "Option<serde_with::DurationSeconds>")]
-    pub max_lifetime: Option<Duration>,
-    #[serde(default)]
-    pub min_connections: u32,
-    pub max_connections: u32,
-}
-
-#[cfg(feature = "db-sql")]
-impl Database {
-    fn default_connect_timeout() -> Duration {
-        Duration::from_millis(1000)
-    }
-
-    fn default_acquire_timeout() -> Duration {
-        Duration::from_millis(1000)
-    }
-}
-
-/// General struct to capture custom config values that don't exist in a pre-defined
-/// config struct.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case", default)]
-pub struct CustomConfig {
-    #[serde(flatten)]
-    pub config: BTreeMap<String, Value>,
 }
 
 #[cfg(test)]

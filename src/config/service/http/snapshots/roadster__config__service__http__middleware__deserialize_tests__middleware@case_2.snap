@@ -1,0 +1,61 @@
+---
+source: src/config/service/http/middleware.rs
+expression: middleware
+---
+default-enable = true
+
+[sensitive-request-headers]
+enable = false
+priority = -10000
+header-names = [
+    'authorization',
+    'proxy-authorization',
+    'cookie',
+    'set-cookie',
+]
+
+[sensitive-response-headers]
+enable = false
+priority = 10000
+header-names = [
+    'authorization',
+    'proxy-authorization',
+    'cookie',
+    'set-cookie',
+]
+
+[set-request-id]
+enable = false
+priority = -9990
+header-name = 'request-id'
+
+[propagate-request-id]
+enable = false
+priority = 9990
+header-name = 'request-id'
+
+[tracing]
+enable = false
+priority = -9980
+
+[catch-panic]
+enable = false
+priority = 0
+
+[response-compression]
+enable = false
+priority = 0
+
+[request-decompression]
+enable = false
+priority = -9960
+
+[timeout]
+enable = false
+priority = 0
+timeout = 10000
+
+[size-limit]
+enable = false
+priority = -9970
+limit = '5 MB'

@@ -1,5 +1,4 @@
 use crate::app_context::AppContext;
-use crate::config::app_config::AppConfig;
 use crate::controller::http::build_path;
 use crate::view::http::app_error::AppError;
 #[cfg(feature = "open-api")]
@@ -27,7 +26,7 @@ where
     if !enabled(context) {
         return router;
     }
-    let root = build_path(parent, &route(context));
+    let root = build_path(parent, route(context));
     router.route(&root, get(ping_get))
 }
 
@@ -40,7 +39,7 @@ where
     if !enabled(context) {
         return router;
     }
-    let root = build_path(parent, &route(context));
+    let root = build_path(parent, route(context));
     router.api_route(&root, get_with(ping_get, ping_get_docs))
 }
 
@@ -55,17 +54,15 @@ fn enabled<S>(context: &AppContext<S>) -> bool {
         .enabled(context)
 }
 
-fn route<S>(context: &AppContext<S>) -> String {
-    let config: &AppConfig = context.config();
-    config
+fn route<S>(context: &AppContext<S>) -> &str {
+    &context
+        .config()
         .service
         .http
         .custom
         .default_routes
         .ping
         .route
-        .clone()
-        .unwrap_or_else(|| "_ping".to_string())
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -108,14 +105,16 @@ mod tests {
         let mut config = AppConfig::test(None).unwrap();
         config.service.http.custom.default_routes.default_enable = default_enable;
         config.service.http.custom.default_routes.ping.enable = enable;
-        config
-            .service
-            .http
-            .custom
-            .default_routes
-            .ping
-            .route
-            .clone_from(&route);
+        if let Some(route) = route.as_ref() {
+            config
+                .service
+                .http
+                .custom
+                .default_routes
+                .ping
+                .route
+                .clone_from(route);
+        }
         let context = AppContext::<()>::test(Some(config), None).unwrap();
 
         assert_eq!(super::enabled(&context), enabled);

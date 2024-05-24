@@ -1,0 +1,7 @@
+---
+source: src/config/tracing.rs
+expression: tracing
+---
+level = 'info'
+service-name = 'foo'
+trace-propagation = true

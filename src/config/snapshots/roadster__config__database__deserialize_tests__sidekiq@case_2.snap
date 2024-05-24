@@ -1,0 +1,12 @@
+---
+source: src/config/database.rs
+expression: database
+---
+uri = 'https://example.com:1234/'
+auto-migrate = true
+connect-timeout = 1000
+acquire-timeout = 2000
+idle-timeout = 3000
+max-lifetime = 4000
+min-connections = 0
+max-connections = 1

@@ -1,0 +1,9 @@
+---
+source: src/config/service/http/initializer.rs
+expression: initializer
+---
+default-enable = false
+
+[normalize-path]
+enable = false
+priority = 1234

@@ -1,5 +1,4 @@
 use crate::app_context::AppContext;
-use crate::config::app_config::AppConfig;
 use crate::controller::http::build_path;
 use aide::axum::routing::get_with;
 use aide::axum::{ApiRouter, IntoApiResponse};
@@ -20,7 +19,7 @@ where
     S: Clone + Send + Sync + 'static,
 {
     let parent = build_path(parent, BASE);
-    let open_api_schema_path = build_path(&parent, &api_schema_route(context));
+    let open_api_schema_path = build_path(&parent, api_schema_route(context));
 
     let router = ApiRouter::new();
     if !api_schema_enabled(context) {
@@ -34,7 +33,7 @@ where
 
     let router = if scalar_enabled(context) {
         router.api_route_with(
-            &build_path(&parent, &scalar_route(context)),
+            &build_path(&parent, scalar_route(context)),
             get_with(
                 Scalar::new(&open_api_schema_path)
                     .with_title(&context.config().app.name)
@@ -49,7 +48,7 @@ where
 
     let router = if redoc_enabled(context) {
         router.api_route_with(
-            &build_path(&parent, &redoc_route(context)),
+            &build_path(&parent, redoc_route(context)),
             get_with(
                 Redoc::new(&open_api_schema_path)
                     .with_title(&context.config().app.name)
@@ -80,17 +79,15 @@ fn scalar_enabled<S>(context: &AppContext<S>) -> bool {
         .enabled(context)
 }
 
-fn scalar_route<S>(context: &AppContext<S>) -> String {
-    let config: &AppConfig = context.config();
-    config
+fn scalar_route<S>(context: &AppContext<S>) -> &str {
+    &context
+        .config()
         .service
         .http
         .custom
         .default_routes
         .scalar
         .route
-        .clone()
-        .unwrap_or_else(|| "/".to_string())
 }
 
 fn redoc_enabled<S>(context: &AppContext<S>) -> bool {
@@ -104,17 +101,15 @@ fn redoc_enabled<S>(context: &AppContext<S>) -> bool {
         .enabled(context)
 }
 
-fn redoc_route<S>(context: &AppContext<S>) -> String {
-    let config: &AppConfig = context.config();
-    config
+fn redoc_route<S>(context: &AppContext<S>) -> &str {
+    &context
+        .config()
         .service
         .http
         .custom
         .default_routes
         .redoc
         .route
-        .clone()
-        .unwrap_or_else(|| "redoc".to_string())
 }
 
 fn api_schema_enabled<S>(context: &AppContext<S>) -> bool {
@@ -128,17 +123,15 @@ fn api_schema_enabled<S>(context: &AppContext<S>) -> bool {
         .enabled(context)
 }
 
-fn api_schema_route<S>(context: &AppContext<S>) -> String {
-    let config: &AppConfig = context.config();
-    config
+fn api_schema_route<S>(context: &AppContext<S>) -> &str {
+    &context
+        .config()
         .service
         .http
         .custom
         .default_routes
         .api_schema
         .route
-        .clone()
-        .unwrap_or_else(|| "api.json".to_string())
 }
 
 #[cfg(test)]
@@ -164,20 +157,22 @@ mod tests {
         let mut config = AppConfig::test(None).unwrap();
         config.service.http.custom.default_routes.default_enable = default_enable;
         config.service.http.custom.default_routes.scalar.enable = enable;
-        config
-            .service
-            .http
-            .custom
-            .default_routes
-            .scalar
-            .route
-            .clone_from(&route);
+        if let Some(route) = route.as_ref() {
+            config
+                .service
+                .http
+                .custom
+                .default_routes
+                .scalar
+                .route
+                .clone_from(route);
+        }
         let context = AppContext::<()>::test(Some(config), None).unwrap();
 
         assert_eq!(scalar_enabled(&context), enabled);
         assert_eq!(
             scalar_route(&context),
-            route.unwrap_or_else(|| "/".to_string())
+            route.unwrap_or_else(|| "_docs".to_string())
         );
     }
 
@@ -196,20 +191,22 @@ mod tests {
         let mut config = AppConfig::test(None).unwrap();
         config.service.http.custom.default_routes.default_enable = default_enable;
         config.service.http.custom.default_routes.redoc.enable = enable;
-        config
-            .service
-            .http
-            .custom
-            .default_routes
-            .redoc
-            .route
-            .clone_from(&route);
+        if let Some(route) = route.as_ref() {
+            config
+                .service
+                .http
+                .custom
+                .default_routes
+                .redoc
+                .route
+                .clone_from(route);
+        }
         let context = AppContext::<()>::test(Some(config), None).unwrap();
 
         assert_eq!(redoc_enabled(&context), enabled);
         assert_eq!(
             redoc_route(&context),
-            route.unwrap_or_else(|| "redoc".to_string())
+            route.unwrap_or_else(|| "_docs/redoc".to_string())
         );
     }
 
@@ -228,20 +225,22 @@ mod tests {
         let mut config = AppConfig::test(None).unwrap();
         config.service.http.custom.default_routes.default_enable = default_enable;
         config.service.http.custom.default_routes.api_schema.enable = enable;
-        config
-            .service
-            .http
-            .custom
-            .default_routes
-            .api_schema
-            .route
-            .clone_from(&route);
+        if let Some(route) = route.as_ref() {
+            config
+                .service
+                .http
+                .custom
+                .default_routes
+                .api_schema
+                .route
+                .clone_from(route);
+        }
         let context = AppContext::<()>::test(Some(config), None).unwrap();
 
         assert_eq!(api_schema_enabled(&context), enabled);
         assert_eq!(
             api_schema_route(&context),
-            route.unwrap_or_else(|| "api.json".to_string())
+            route.unwrap_or_else(|| "_docs/api.json".to_string())
         );
     }
 }

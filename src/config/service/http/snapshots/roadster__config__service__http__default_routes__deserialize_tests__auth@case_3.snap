@@ -1,0 +1,25 @@
+---
+source: src/config/service/http/default_routes.rs
+expression: default_routes
+---
+default-enable = false
+
+[ping]
+enable = false
+route = '_ping'
+
+[health]
+enable = false
+route = '_health'
+
+[api-schema]
+enable = false
+route = '_docs/api.json'
+
+[scalar]
+enable = false
+route = '_docs'
+
+[redoc]
+enable = false
+route = '_docs/redoc'
