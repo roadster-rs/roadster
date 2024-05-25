@@ -2,7 +2,7 @@ use crate::app::App;
 use crate::app_context::AppContext;
 #[cfg(feature = "open-api")]
 use crate::cli::roadster::list_routes::ListRoutesArgs;
-#[cfg(feature = "open-api")]
+#[cfg(feature = "db-sql")]
 use crate::cli::roadster::migrate::MigrateArgs;
 #[cfg(feature = "open-api")]
 use crate::cli::roadster::open_api_schema::OpenApiArgs;
