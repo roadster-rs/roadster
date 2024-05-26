@@ -95,6 +95,9 @@ log = "0.4.21"
 futures = "0.3.30"
 validator = { version = "0.18.1", features = ["derive"] }
 thiserror = "1.0.61"
+# Add latest version of `time` to resolve a build error on nightly
+# https://github.com/time-rs/time/issues/681
+time = "0.3.36"
 
 [dev-dependencies]
 cargo-husky = { version = "1.5.0", default-features = false, features = ["user-hooks"] }
