@@ -94,6 +94,7 @@ num-traits = "0.2.19"
 log = "0.4.21"
 futures = "0.3.30"
 validator = { version = "0.18.1", features = ["derive"] }
+thiserror = "1.0.61"
 
 [dev-dependencies]
 cargo-husky = { version = "1.5.0", default-features = false, features = ["user-hooks"] }

@@ -6,6 +6,7 @@ use crate::cli::roadster::RoadsterCli;
 use crate::cli::roadster::RoadsterCommand;
 #[cfg(all(feature = "cli", feature = "open-api"))]
 use crate::cli::roadster::RoadsterSubCommand;
+use crate::error::RoadsterResult;
 use crate::service::http::builder::HttpServiceBuilder;
 use crate::service::AppService;
 #[cfg(feature = "open-api")]
@@ -47,7 +48,7 @@ impl<A: App + 'static> AppService<A> for HttpService {
         roadster_cli: &RoadsterCli,
         _app_cli: &A::Cli,
         _app_context: &AppContext<A::State>,
-    ) -> anyhow::Result<bool> {
+    ) -> RoadsterResult<bool> {
         if let Some(command) = roadster_cli.command.as_ref() {
             match command {
                 RoadsterCommand::Roadster(args) => match &args.command {
@@ -75,7 +76,7 @@ impl<A: App + 'static> AppService<A> for HttpService {
         &self,
         app_context: &AppContext<A::State>,
         cancel_token: CancellationToken,
-    ) -> anyhow::Result<()> {
+    ) -> RoadsterResult<()> {
         let server_addr = app_context.config().service.http.custom.address.url();
         info!("Server will start at {server_addr}");
 
@@ -114,7 +115,7 @@ impl HttpService {
         &self,
         pretty_print: bool,
         output: Option<&PathBuf>,
-    ) -> anyhow::Result<()> {
+    ) -> RoadsterResult<()> {
         let schema_json = if pretty_print {
             serde_json::to_string_pretty(self.api.as_ref())?
         } else {

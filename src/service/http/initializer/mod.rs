@@ -2,6 +2,7 @@ pub mod default;
 pub mod normalize_path;
 
 use crate::app_context::AppContext;
+use crate::error::RoadsterResult;
 use axum::Router;
 
 /// Provides hooks into various stages of the app's startup to allow initializing and installing
@@ -27,7 +28,7 @@ where
     /// safe to set its priority as `0`.
     fn priority(&self, context: &AppContext<S>) -> i32;
 
-    fn after_router(&self, router: Router, _context: &AppContext<S>) -> anyhow::Result<Router> {
+    fn after_router(&self, router: Router, _context: &AppContext<S>) -> RoadsterResult<Router> {
         Ok(router)
     }
 
@@ -35,15 +36,15 @@ where
         &self,
         router: Router,
         _context: &AppContext<S>,
-    ) -> anyhow::Result<Router> {
+    ) -> RoadsterResult<Router> {
         Ok(router)
     }
 
-    fn after_middleware(&self, router: Router, _context: &AppContext<S>) -> anyhow::Result<Router> {
+    fn after_middleware(&self, router: Router, _context: &AppContext<S>) -> RoadsterResult<Router> {
         Ok(router)
     }
 
-    fn before_serve(&self, router: Router, _context: &AppContext<S>) -> anyhow::Result<Router> {
+    fn before_serve(&self, router: Router, _context: &AppContext<S>) -> RoadsterResult<Router> {
         Ok(router)
     }
 }

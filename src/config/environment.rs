@@ -9,6 +9,7 @@ use serde_derive::{Deserialize, Serialize};
 use strum_macros::{EnumString, IntoStaticStr};
 
 use crate::config::app_config::{ENV_VAR_PREFIX, ENV_VAR_SEPARATOR};
+use crate::error::RoadsterResult;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, EnumString, IntoStaticStr)]
 #[cfg_attr(feature = "cli", derive(ValueEnum))]
@@ -29,7 +30,7 @@ impl Environment {
     // This runs before tracing is initialized, so we need to use `println` in order to
     // log from this method.
     #[allow(clippy::disallowed_macros)]
-    pub fn new() -> anyhow::Result<Self> {
+    pub fn new() -> RoadsterResult<Self> {
         // Get the stage, and validate it by parsing to the Environment enum
         let environment = env::var(ENV_VAR_WITH_PREFIX)
             .map_err(|_| anyhow!("Env var `{ENV_VAR_WITH_PREFIX}` not defined."))?;

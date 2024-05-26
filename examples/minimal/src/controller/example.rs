@@ -5,9 +5,9 @@ use aide::axum::ApiRouter;
 use aide::transform::TransformOperation;
 use axum::extract::State;
 use axum::Json;
-use roadster::controller::http::build_path;
+use roadster::api::http::build_path;
+use roadster::error::RoadsterResult;
 use roadster::service::worker::sidekiq::app_worker::AppWorker;
-use roadster::view::http::app_error::AppError;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
@@ -26,7 +26,7 @@ pub fn routes(parent: &str) -> ApiRouter<AppState> {
 pub struct ExampleResponse {}
 
 #[instrument(skip_all)]
-async fn example_get(State(state): State<AppState>) -> Result<Json<ExampleResponse>, AppError> {
+async fn example_get(State(state): State<AppState>) -> RoadsterResult<Json<ExampleResponse>> {
     ExampleWorker::enqueue(&state, "Example".to_string()).await?;
     Ok(Json(ExampleResponse {}))
 }

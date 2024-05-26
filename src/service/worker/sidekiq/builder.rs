@@ -1,13 +1,14 @@
 use crate::app::App;
 use crate::app_context::AppContext;
 use crate::config::service::worker::sidekiq::StaleCleanUpBehavior;
+use crate::error::RoadsterResult;
 use crate::service::worker::sidekiq::app_worker::AppWorker;
 use crate::service::worker::sidekiq::roadster_worker::RoadsterWorker;
 use crate::service::worker::sidekiq::service::SidekiqWorkerService;
 #[cfg_attr(test, mockall_double::double)]
 use crate::service::worker::sidekiq::Processor;
 use crate::service::{AppService, AppServiceBuilder};
-use anyhow::{anyhow, bail};
+use anyhow::anyhow;
 use async_trait::async_trait;
 use bb8::PooledConnection;
 use itertools::Itertools;
@@ -51,7 +52,7 @@ where
         }
     }
 
-    async fn build(self, context: &AppContext<A::State>) -> anyhow::Result<SidekiqWorkerService> {
+    async fn build(self, context: &AppContext<A::State>) -> RoadsterResult<SidekiqWorkerService> {
         let service = match self.state {
             BuilderState::Enabled {
                 processor,
@@ -66,7 +67,10 @@ where
                 }
             }
             BuilderState::Disabled => {
-                bail!("This builder is not enabled; it's build method should not have been called.")
+                return Err(anyhow!(
+                    "This builder is not enabled; it's build method should not have been called."
+                )
+                .into());
             }
         };
 
@@ -81,14 +85,14 @@ where
     pub async fn with_processor(
         context: &AppContext<A::State>,
         processor: sidekiq::Processor,
-    ) -> anyhow::Result<Self> {
+    ) -> RoadsterResult<Self> {
         Self::new(context.clone(), Some(Processor::new(processor))).await
     }
 
     pub async fn with_default_processor(
         context: &AppContext<A::State>,
         worker_queues: Option<Vec<String>>,
-    ) -> anyhow::Result<Self> {
+    ) -> RoadsterResult<Self> {
         let processor = if !<SidekiqWorkerService as AppService<A>>::enabled(context) {
             debug!("Sidekiq service not enabled, not creating the Sidekiq processor");
             None
@@ -144,7 +148,7 @@ where
     async fn new(
         context: AppContext<A::State>,
         processor: Option<Processor<A>>,
-    ) -> anyhow::Result<Self> {
+    ) -> RoadsterResult<Self> {
         let processor = if <SidekiqWorkerService as AppService<A>>::enabled(&context) {
             processor
         } else {
@@ -165,7 +169,7 @@ where
         Ok(Self { state })
     }
 
-    async fn auto_clean_periodic(context: &AppContext<A::State>) -> anyhow::Result<()> {
+    async fn auto_clean_periodic(context: &AppContext<A::State>) -> RoadsterResult<()> {
         if context
             .config()
             .service
@@ -191,7 +195,7 @@ where
     /// Periodic jobs can also be cleaned up automatically by setting the
     /// [service.sidekiq.periodic.stale-cleanup][crate::config::service::worker::sidekiq::StaleCleanUpBehavior]
     /// to `auto-clean-all` or `auto-clean-stale`.
-    pub async fn clean_up_periodic_jobs(self) -> anyhow::Result<Self> {
+    pub async fn clean_up_periodic_jobs(self) -> RoadsterResult<Self> {
         if let BuilderState::Enabled {
             registered_periodic_workers,
             context,
@@ -199,7 +203,7 @@ where
         } = &self.state
         {
             if !registered_periodic_workers.is_empty() {
-                bail!("Can only clean up previous periodic jobs if no periodic jobs have been registered yet.")
+                return Err(anyhow!("Can only clean up previous periodic jobs if no periodic jobs have been registered yet.").into());
             }
             periodic::destroy_all(context.redis_enqueue().clone()).await?;
         }
@@ -211,7 +215,7 @@ where
     ///
     /// The worker will be wrapped by a [RoadsterWorker], which provides some common behavior, such
     /// as enforcing a timeout/max duration of worker jobs.
-    pub fn register_app_worker<Args, W>(mut self, worker: W) -> anyhow::Result<Self>
+    pub fn register_app_worker<Args, W>(mut self, worker: W) -> RoadsterResult<Self>
     where
         Args: Sync + Send + Serialize + for<'de> serde::Deserialize<'de> + 'static,
         W: AppWorker<A, Args> + 'static,
@@ -226,7 +230,7 @@ where
             let class_name = W::class_name();
             debug!(worker = %class_name, "Registering worker");
             if !registered_workers.insert(class_name.clone()) {
-                bail!("Worker `{class_name}` was already registered");
+                return Err(anyhow!("Worker `{class_name}` was already registered").into());
             }
             let roadster_worker = RoadsterWorker::new(worker, context);
             processor.register(roadster_worker);
@@ -247,7 +251,7 @@ where
         builder: periodic::Builder,
         worker: W,
         args: Args,
-    ) -> anyhow::Result<Self>
+    ) -> RoadsterResult<Self>
     where
         Args: Sync + Send + Serialize + for<'de> serde::Deserialize<'de> + 'static,
         W: AppWorker<A, Args> + 'static,
@@ -265,9 +269,10 @@ where
             let builder = builder.args(args)?;
             let job_json = serde_json::to_string(&builder.into_periodic_job(class_name.clone())?)?;
             if !registered_periodic_workers.insert(job_json.clone()) {
-                bail!(
+                return Err(anyhow!(
                     "Periodic worker `{class_name}` was already registered; full job: {job_json}"
-                );
+                )
+                .into());
             }
             processor
                 .register_periodic(builder, roadster_worker)
@@ -290,7 +295,7 @@ async fn remove_stale_periodic_jobs<S, C: RedisCommands>(
     conn: &mut C,
     context: &AppContext<S>,
     registered_periodic_workers: &HashSet<String>,
-) -> anyhow::Result<()> {
+) -> RoadsterResult<()> {
     let stale_jobs = conn
         .zrange(PERIODIC_KEY.to_string(), 0, -1)
         .await?

@@ -1,4 +1,5 @@
 use crate::app_context::AppContext;
+use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
 use axum::Router;
 use serde_derive::{Deserialize, Serialize};
@@ -52,7 +53,7 @@ impl<S: Send + Sync + 'static> Middleware<S> for TimeoutMiddleware {
             .priority
     }
 
-    fn install(&self, router: Router, context: &AppContext<S>) -> anyhow::Result<Router> {
+    fn install(&self, router: Router, context: &AppContext<S>) -> RoadsterResult<Router> {
         let timeout = &context
             .config()
             .service

@@ -1,5 +1,6 @@
 use crate::app::App;
 use crate::config::app_config::AppConfig;
+use crate::error::RoadsterResult;
 #[cfg(feature = "db-sql")]
 use sea_orm::DatabaseConnection;
 use std::sync::Arc;
@@ -20,7 +21,7 @@ impl<T> AppContext<T> {
     #[cfg_attr(test, allow(dead_code))]
     // The `A` type parameter isn't used in some feature configurations
     #[allow(clippy::extra_unused_type_parameters)]
-    pub(crate) async fn new<A>(config: AppConfig) -> anyhow::Result<AppContext<()>>
+    pub(crate) async fn new<A>(config: AppConfig) -> RoadsterResult<AppContext<()>>
     where
         A: App,
     {
@@ -90,7 +91,7 @@ impl<T> AppContext<T> {
         config: Option<AppConfig>,
         #[cfg(not(feature = "sidekiq"))] _redis: Option<()>,
         #[cfg(feature = "sidekiq")] redis: Option<sidekiq::RedisPool>,
-    ) -> anyhow::Result<AppContext<()>> {
+    ) -> RoadsterResult<AppContext<()>> {
         let mut inner = MockAppContextInner::default();
         inner
             .expect_config()

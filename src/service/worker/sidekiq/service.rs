@@ -1,5 +1,6 @@
 use crate::app::App;
 use crate::app_context::AppContext;
+use crate::error::RoadsterResult;
 use crate::service::worker::sidekiq::builder::SidekiqWorkerServiceBuilder;
 use crate::service::AppService;
 use async_trait::async_trait;
@@ -49,7 +50,7 @@ impl<A: App + 'static> AppService<A> for SidekiqWorkerService {
         &self,
         _app_context: &AppContext<A::State>,
         cancel_token: CancellationToken,
-    ) -> anyhow::Result<()> {
+    ) -> RoadsterResult<()> {
         let processor = self.processor.clone();
         let sidekiq_cancel_token = processor.get_cancellation_token();
 
@@ -81,7 +82,7 @@ impl<A: App + 'static> AppService<A> for SidekiqWorkerService {
 impl SidekiqWorkerService {
     pub async fn builder<A>(
         context: &AppContext<A::State>,
-    ) -> anyhow::Result<SidekiqWorkerServiceBuilder<A>>
+    ) -> RoadsterResult<SidekiqWorkerServiceBuilder<A>>
     where
         A: App + 'static,
     {

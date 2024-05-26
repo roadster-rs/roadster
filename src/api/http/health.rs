@@ -1,6 +1,6 @@
+use crate::api::http::build_path;
 use crate::app_context::AppContext;
-use crate::controller::http::build_path;
-use crate::view::http::app_error::AppError;
+use crate::error::RoadsterResult;
 #[cfg(feature = "open-api")]
 use aide::axum::routing::get_with;
 #[cfg(feature = "open-api")]
@@ -8,7 +8,7 @@ use aide::axum::ApiRouter;
 #[cfg(feature = "open-api")]
 use aide::transform::TransformOperation;
 #[cfg(feature = "sidekiq")]
-use anyhow::bail;
+use anyhow::anyhow;
 #[cfg(any(feature = "sidekiq", feature = "db-sql"))]
 use axum::extract::State;
 use axum::routing::get;
@@ -122,7 +122,7 @@ pub enum Status {
 #[instrument(skip_all)]
 async fn health_get<S>(
     #[cfg(any(feature = "sidekiq", feature = "db-sql"))] State(state): State<AppContext<S>>,
-) -> Result<Json<HeathCheckResponse>, AppError>
+) -> RoadsterResult<Json<HeathCheckResponse>>
 where
     S: Clone + Send + Sync + 'static,
 {
@@ -167,7 +167,7 @@ where
 
 #[cfg(feature = "db-sql")]
 #[instrument(skip_all)]
-async fn ping_db(db: &DatabaseConnection) -> anyhow::Result<()> {
+async fn ping_db(db: &DatabaseConnection) -> RoadsterResult<()> {
     db.ping().await?;
     Ok(())
 }
@@ -191,7 +191,7 @@ async fn redis_health(redis: &sidekiq::RedisPool) -> ResourceHealth {
 
 #[cfg(feature = "sidekiq")]
 #[instrument(skip_all)]
-async fn ping_redis(redis: &sidekiq::RedisPool) -> anyhow::Result<(Duration, Duration)> {
+async fn ping_redis(redis: &sidekiq::RedisPool) -> RoadsterResult<(Duration, Duration)> {
     let timer = Instant::now();
     let mut conn = timeout(Duration::from_secs(1), redis.get()).await??;
     let acquire_conn_latency = timer.elapsed();
@@ -207,7 +207,7 @@ async fn ping_redis(redis: &sidekiq::RedisPool) -> anyhow::Result<(Duration, Dur
     if pong == msg {
         Ok((acquire_conn_latency, ping_latency))
     } else {
-        bail!("Ping response does not match input.")
+        Err(anyhow!("Ping response does not match input.").into())
     }
 }
 

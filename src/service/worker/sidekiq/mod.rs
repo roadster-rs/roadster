@@ -1,4 +1,5 @@
 use crate::app::App;
+use crate::error::RoadsterResult;
 use crate::service::worker::sidekiq::app_worker::AppWorker;
 use crate::service::worker::sidekiq::roadster_worker::RoadsterWorker;
 use serde::Serialize;
@@ -48,7 +49,7 @@ where
         &mut self,
         builder: periodic::Builder,
         worker: RoadsterWorker<A, Args, W>,
-    ) -> anyhow::Result<()>
+    ) -> RoadsterResult<()>
     where
         Args: Sync + Send + Serialize + for<'de> serde::Deserialize<'de> + 'static,
         W: AppWorker<A, Args> + 'static,
@@ -77,7 +78,7 @@ mockall::mock! {
             &mut self,
             builder: periodic::Builder,
             worker: RoadsterWorker<A, Args, W>,
-        ) -> anyhow::Result<()>
+        ) -> RoadsterResult<()>
         where
             Args: Sync + Send + Serialize + for<'de> serde::Deserialize<'de> + 'static,
             W: AppWorker<A, Args> + 'static;

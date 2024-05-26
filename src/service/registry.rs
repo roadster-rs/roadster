@@ -1,7 +1,8 @@
 use crate::app::App;
 use crate::app_context::AppContext;
+use crate::error::RoadsterResult;
 use crate::service::{AppService, AppServiceBuilder};
-use anyhow::bail;
+use anyhow::anyhow;
 use std::collections::BTreeMap;
 use tracing::info;
 
@@ -24,7 +25,7 @@ impl<A: App> ServiceRegistry<A> {
 
     /// Register a new service. If the service is not enabled (e.g., [AppService::enabled] is `false`),
     /// the service will not be registered.
-    pub fn register_service<S>(&mut self, service: S) -> anyhow::Result<()>
+    pub fn register_service<S>(&mut self, service: S) -> RoadsterResult<()>
     where
         S: AppService<A> + 'static,
     {
@@ -37,7 +38,7 @@ impl<A: App> ServiceRegistry<A> {
 
     /// Build and register a new service. If the service is not enabled (e.g.,
     /// [AppService::enabled] is `false`), the service will not be built or registered.
-    pub async fn register_builder<S, B>(&mut self, builder: B) -> anyhow::Result<()>
+    pub async fn register_builder<S, B>(&mut self, builder: B) -> RoadsterResult<()>
     where
         S: AppService<A> + 'static,
         B: AppServiceBuilder<A, S>,
@@ -53,14 +54,14 @@ impl<A: App> ServiceRegistry<A> {
         self.register_internal(service)
     }
 
-    fn register_internal<S>(&mut self, service: S) -> anyhow::Result<()>
+    fn register_internal<S>(&mut self, service: S) -> RoadsterResult<()>
     where
         S: AppService<A> + 'static,
     {
         info!(service = %S::name(), "Registering service");
 
         if self.services.insert(S::name(), Box::new(service)).is_some() {
-            bail!("Service `{}` was already registered", S::name());
+            return Err(anyhow!("Service `{}` was already registered", S::name()).into());
         }
         Ok(())
     }

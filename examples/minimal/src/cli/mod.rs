@@ -3,6 +3,7 @@ use clap::{Parser, Subcommand};
 use roadster::app_context::AppContext;
 
 use roadster::cli::RunCommand;
+use roadster::error::RoadsterResult;
 
 use crate::app::App;
 use crate::app_state::CustomAppContext;
@@ -24,7 +25,7 @@ impl RunCommand<App> for AppCli {
         app: &App,
         cli: &AppCli,
         context: &AppContext<CustomAppContext>,
-    ) -> anyhow::Result<bool> {
+    ) -> RoadsterResult<bool> {
         if let Some(command) = self.command.as_ref() {
             command.run(app, cli, context).await
         } else {
@@ -46,7 +47,7 @@ impl RunCommand<App> for AppCommand {
         _app: &App,
         _cli: &AppCli,
         _context: &AppContext<CustomAppContext>,
-    ) -> anyhow::Result<bool> {
+    ) -> RoadsterResult<bool> {
         Ok(false)
     }
 }

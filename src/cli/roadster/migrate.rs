@@ -1,4 +1,4 @@
-use anyhow::bail;
+use anyhow::anyhow;
 use async_trait::async_trait;
 use clap::{Parser, Subcommand};
 use sea_orm_migration::MigratorTrait;
@@ -8,6 +8,7 @@ use tracing::warn;
 use crate::app::App;
 use crate::app_context::AppContext;
 use crate::cli::roadster::{RoadsterCli, RunRoadsterCommand};
+use crate::error::RoadsterResult;
 
 #[derive(Debug, Parser, Serialize)]
 pub struct MigrateArgs {
@@ -25,7 +26,7 @@ where
         app: &A,
         cli: &RoadsterCli,
         context: &AppContext<A::State>,
-    ) -> anyhow::Result<bool> {
+    ) -> RoadsterResult<bool> {
         self.command.run(app, cli, context).await
     }
 }
@@ -57,9 +58,9 @@ where
         _app: &A,
         cli: &RoadsterCli,
         context: &AppContext<A::State>,
-    ) -> anyhow::Result<bool> {
+    ) -> RoadsterResult<bool> {
         if is_destructive(self) && !cli.allow_dangerous(context) {
-            bail!("Running destructive command `{:?}` is not allowed in environment `{:?}`. To override, provide the `--allow-dangerous` CLI arg.", self, context.config().environment);
+            return Err(anyhow!("Running destructive command `{:?}` is not allowed in environment `{:?}`. To override, provide the `--allow-dangerous` CLI arg.", self, context.config().environment).into());
         } else if is_destructive(self) {
             warn!(
                 "Running destructive command `{:?}` in environment `{:?}`",

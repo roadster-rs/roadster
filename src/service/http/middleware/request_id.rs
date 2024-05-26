@@ -1,4 +1,5 @@
 use crate::app_context::AppContext;
+use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
 use axum::http::HeaderName;
 use axum::Router;
@@ -66,7 +67,7 @@ impl<S: Send + Sync + 'static> Middleware<S> for SetRequestIdMiddleware {
             .priority
     }
 
-    fn install(&self, router: Router, context: &AppContext<S>) -> anyhow::Result<Router> {
+    fn install(&self, router: Router, context: &AppContext<S>) -> RoadsterResult<Router> {
         let header_name = &context
             .config()
             .service
@@ -117,7 +118,7 @@ impl<S: Send + Sync + 'static> Middleware<S> for PropagateRequestIdMiddleware {
             .priority
     }
 
-    fn install(&self, router: Router, context: &AppContext<S>) -> anyhow::Result<Router> {
+    fn install(&self, router: Router, context: &AppContext<S>) -> RoadsterResult<Router> {
         let header_name = &context
             .config()
             .service

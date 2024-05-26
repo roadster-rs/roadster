@@ -20,9 +20,10 @@ use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::EnvFilter;
 
 use crate::config::app_config::AppConfig;
+use crate::error::RoadsterResult;
 
 // Todo: make this configurable
-pub fn init_tracing(config: &AppConfig) -> anyhow::Result<()> {
+pub fn init_tracing(config: &AppConfig) -> RoadsterResult<()> {
     // Stdout Layer
     let stdout_layer = tracing_subscriber::fmt::layer();
 

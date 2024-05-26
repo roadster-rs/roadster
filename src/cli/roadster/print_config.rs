@@ -7,6 +7,7 @@ use tracing::info;
 use crate::app::App;
 use crate::app_context::AppContext;
 use crate::cli::roadster::{RoadsterCli, RunRoadsterCommand};
+use crate::error::RoadsterResult;
 
 #[derive(Debug, Parser, Serialize)]
 pub struct PrintConfigArgs {
@@ -38,7 +39,7 @@ where
         _app: &A,
         _cli: &RoadsterCli,
         context: &AppContext<A::State>,
-    ) -> anyhow::Result<bool> {
+    ) -> RoadsterResult<bool> {
         match self.format {
             Format::Debug => {
                 info!("\n{:?}", context.config())
