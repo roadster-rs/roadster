@@ -82,6 +82,7 @@ jobs:
 
   powerset_clippy:
     name: Powerset Clippy
+    needs: check_trigger
     if: ${{ needs.check_trigger.outputs.should_run1 == 'true' || needs.check_trigger.outputs.should_run2 == 'true' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
