@@ -41,43 +41,52 @@ jobs:
         if: ${{ github.event_name == 'pull_request' && github.event.label.name == 'powerset_check' }}
         run: echo "should_run=true" >> "$GITHUB_OUTPUT"
 
-  roadster_feature_powerset:
+  powerset_test:
+    name: Powerset Tests
     needs: check_trigger
     if: ${{ needs.check_trigger.outputs.should_run1 == 'true' || needs.check_trigger.outputs.should_run2 == 'true' || github.event_name == 'workflow_dispatch' }}
-    name: Feature powerset
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-hack
       - uses: taiki-e/install-action@nextest
-
       - name: Test
         run: cargo hack nextest run --no-fail-fast --feature-powerset --skip default --group-features jwt-ietf,jwt --group-features jwt-openid,jwt --group-features open-api,http --clean-per-run --log-group github-actions --exclude-no-default-features --exclude-all-features
       - name: Check disk usage
         run: df -h
 
-      - name: Clean
-        run: cargo clean
-      - name: Check disk usage
-        run: df -h
-
+  powerset_doc_test:
+    name: Powerset Doc tests
+    needs: check_trigger
+    if: ${{ needs.check_trigger.outputs.should_run1 == 'true' || needs.check_trigger.outputs.should_run2 == 'true' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@cargo-hack
       - name: Doc test
         run: cargo hack test --doc --no-fail-fast --feature-powerset --skip default --group-features jwt-ietf,jwt --group-features jwt-openid,jwt --group-features open-api,http --clean-per-run --log-group github-actions --exclude-no-default-features --exclude-all-features
-      - name: Check disk usage
-        run: df -h
 
+  powerset_check:
+    name: Powerset Check
+    needs: check_trigger
+    if: ${{ needs.check_trigger.outputs.should_run1 == 'true' || needs.check_trigger.outputs.should_run2 == 'true' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@cargo-hack
       - name: Check
         run: cargo hack check --feature-powerset --no-dev-deps --skip default --group-features jwt-ietf,jwt --group-features jwt-openid,jwt --group-features open-api,http --clean-per-run --log-group github-actions --exclude-no-default-features --exclude-all-features
-      - name: Check disk usage
-        run: df -h
 
-      - name: Clean
-        run: cargo clean
-      - name: Check disk usage
-        run: df -h
-
+  powerset_clippy:
+    name: Powerset Clippy
+    if: ${{ needs.check_trigger.outputs.should_run1 == 'true' || needs.check_trigger.outputs.should_run2 == 'true' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@cargo-hack
       - name: Clippy
         run: cargo hack clippy --all-targets --feature-powerset --skip default --group-features jwt-ietf,jwt --group-features jwt-openid,jwt --group-features open-api,http --clean-per-run --log-group github-actions --exclude-no-default-features --exclude-all-features -- -D warnings
-      - name: Check disk usage
-        run: df -h
