@@ -3,6 +3,7 @@ use crate::app::App;
 use crate::app::MockApp;
 use crate::app_context::AppContext;
 use crate::cli::roadster::{RoadsterCli, RunRoadsterCommand};
+use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use clap::{Args, Command, FromArgMatches};
 use std::ffi::OsString;
@@ -29,10 +30,10 @@ where
         app: &A,
         cli: &A::Cli,
         context: &AppContext<A::State>,
-    ) -> anyhow::Result<bool>;
+    ) -> RoadsterResult<bool>;
 }
 
-pub(crate) fn parse_cli<A, I, T>(args: I) -> anyhow::Result<(RoadsterCli, A::Cli)>
+pub(crate) fn parse_cli<A, I, T>(args: I) -> RoadsterResult<(RoadsterCli, A::Cli)>
 where
     A: App,
     I: IntoIterator<Item = T>,
@@ -82,7 +83,7 @@ pub(crate) async fn handle_cli<A>(
     roadster_cli: &RoadsterCli,
     app_cli: &A::Cli,
     context: &AppContext<A::State>,
-) -> anyhow::Result<bool>
+) -> RoadsterResult<bool>
 where
     A: App,
 {
@@ -106,7 +107,7 @@ mockall::mock! {
                 app: &MockApp,
                 cli: &<MockApp as App>::Cli,
                 context: &AppContext<<MockApp as App>::State>,
-            ) -> anyhow::Result<bool>;
+            ) -> RoadsterResult<bool>;
     }
 
     impl clap::FromArgMatches for Cli {

@@ -16,15 +16,15 @@
 // https://github.com/taiki-e/coverage-helper?tab=readme-ov-file#usage
 #![cfg_attr(all(test, coverage_nightly), feature(coverage_attribute))]
 
+#[cfg(feature = "http")]
+pub mod api;
 pub mod app;
 pub mod app_context;
 #[cfg(feature = "cli")]
 pub mod cli;
 pub mod config;
-#[cfg(feature = "http")]
-pub mod controller;
+pub mod error;
 pub mod middleware;
 pub mod service;
 pub mod tracing;
 pub mod util;
-pub mod view;

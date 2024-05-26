@@ -1,5 +1,5 @@
+use crate::api::http::build_path;
 use crate::app_context::AppContext;
-use crate::controller::http::build_path;
 use aide::axum::routing::get_with;
 use aide::axum::{ApiRouter, IntoApiResponse};
 use aide::openapi::OpenApi;
@@ -10,7 +10,6 @@ use axum::{Extension, Json};
 use std::ops::Deref;
 use std::sync::Arc;
 
-const BASE: &str = "_docs";
 const TAG: &str = "Docs";
 
 /// This API is only available when using Aide.
@@ -18,8 +17,7 @@ pub fn routes<S>(parent: &str, context: &AppContext<S>) -> ApiRouter<AppContext<
 where
     S: Clone + Send + Sync + 'static,
 {
-    let parent = build_path(parent, BASE);
-    let open_api_schema_path = build_path(&parent, api_schema_route(context));
+    let open_api_schema_path = build_path(parent, api_schema_route(context));
 
     let router = ApiRouter::new();
     if !api_schema_enabled(context) {
@@ -33,7 +31,7 @@ where
 
     let router = if scalar_enabled(context) {
         router.api_route_with(
-            &build_path(&parent, scalar_route(context)),
+            &build_path(parent, scalar_route(context)),
             get_with(
                 Scalar::new(&open_api_schema_path)
                     .with_title(&context.config().app.name)
@@ -48,7 +46,7 @@ where
 
     let router = if redoc_enabled(context) {
         router.api_route_with(
-            &build_path(&parent, redoc_route(context)),
+            &build_path(parent, redoc_route(context)),
             get_with(
                 Redoc::new(&open_api_schema_path)
                     .with_title(&context.config().app.name)

@@ -8,6 +8,7 @@ pub mod timeout;
 pub mod tracing;
 
 use crate::app_context::AppContext;
+use crate::error::RoadsterResult;
 use axum::Router;
 
 /// Allows initializing and installing middleware on the app's [Router]. The type `S` is the
@@ -43,5 +44,5 @@ pub trait Middleware<S: Send + Sync + 'static>: Send {
     /// with priority `-10` will be _installed after_ a middleware with priority `10`, which will
     /// allow the middleware with priority `-10` to _run before_ a middleware with priority `10`.
     fn priority(&self, context: &AppContext<S>) -> i32;
-    fn install(&self, router: Router, context: &AppContext<S>) -> anyhow::Result<Router>;
+    fn install(&self, router: Router, context: &AppContext<S>) -> RoadsterResult<Router>;
 }

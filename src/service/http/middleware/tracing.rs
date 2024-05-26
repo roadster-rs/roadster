@@ -1,4 +1,5 @@
 use crate::app_context::AppContext;
+use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
 use axum::extract::MatchedPath;
 use axum::http::{Request, Response};
@@ -45,7 +46,7 @@ impl<S: Send + Sync + 'static> Middleware<S> for TracingMiddleware {
             .priority
     }
 
-    fn install(&self, router: Router, context: &AppContext<S>) -> anyhow::Result<Router> {
+    fn install(&self, router: Router, context: &AppContext<S>) -> RoadsterResult<Router> {
         let request_id_header_name = &context
             .config()
             .service

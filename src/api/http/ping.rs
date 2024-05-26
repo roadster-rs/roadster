@@ -1,6 +1,6 @@
+use crate::api::http::build_path;
 use crate::app_context::AppContext;
-use crate::controller::http::build_path;
-use crate::view::http::app_error::AppError;
+use crate::error::RoadsterResult;
 #[cfg(feature = "open-api")]
 use aide::axum::routing::get_with;
 #[cfg(feature = "open-api")]
@@ -71,7 +71,7 @@ fn route<S>(context: &AppContext<S>) -> &str {
 pub struct PingResponse {}
 
 #[instrument(skip_all)]
-async fn ping_get() -> Result<Json<PingResponse>, AppError> {
+async fn ping_get() -> RoadsterResult<Json<PingResponse>> {
     Ok(Json(PingResponse::default()))
 }
 

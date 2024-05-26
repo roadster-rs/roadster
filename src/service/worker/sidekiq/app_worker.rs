@@ -1,5 +1,6 @@
 use crate::app::App;
 use crate::app_context::AppContext;
+use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
@@ -57,7 +58,7 @@ where
     /// Enqueue the worker into its Sidekiq queue. This is a helper method around [Worker::perform_async]
     /// so the caller can simply provide the [state][App::State] instead of needing to access the
     /// [sidekiq::RedisPool] from inside the [state][App::State].
-    async fn enqueue(context: &AppContext<A::State>, args: Args) -> anyhow::Result<()> {
+    async fn enqueue(context: &AppContext<A::State>, args: Args) -> RoadsterResult<()> {
         Self::perform_async(context.redis_enqueue(), args).await?;
         Ok(())
     }

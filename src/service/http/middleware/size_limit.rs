@@ -1,6 +1,7 @@
 use crate::app_context::AppContext;
+use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
-use anyhow::bail;
+use anyhow::anyhow;
 use axum::Router;
 use byte_unit::rust_decimal::prelude::ToPrimitive;
 use byte_unit::Byte;
@@ -52,7 +53,7 @@ impl<S: Send + Sync + 'static> Middleware<S> for RequestBodyLimitMiddleware {
             .priority
     }
 
-    fn install(&self, router: Router, context: &AppContext<S>) -> anyhow::Result<Router> {
+    fn install(&self, router: Router, context: &AppContext<S>) -> RoadsterResult<Router> {
         let limit = &context
             .config()
             .service
@@ -68,7 +69,7 @@ impl<S: Send + Sync + 'static> Middleware<S> for RequestBodyLimitMiddleware {
         // Todo: is there a cleaner way to write this?
         let limit = match limit {
             Some(limit) => limit,
-            None => bail!("Unable to convert bytes from u64 to usize"),
+            None => return Err(anyhow!("Unable to convert bytes from u64 to usize").into()),
         };
 
         let router = router.layer(RequestBodyLimitLayer::new(*limit));

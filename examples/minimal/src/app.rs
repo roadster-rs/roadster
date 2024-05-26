@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use migration::Migrator;
 use roadster::app::App as RoadsterApp;
 use roadster::app_context::AppContext;
+use roadster::error::RoadsterResult;
 use roadster::service::http::service::HttpService;
 use roadster::service::registry::ServiceRegistry;
 use roadster::service::worker::sidekiq::app_worker::AppWorker;
@@ -23,14 +24,14 @@ impl RoadsterApp for App {
     type Cli = AppCli;
     type M = Migrator;
 
-    async fn with_state(_context: &AppContext) -> anyhow::Result<Self::State> {
+    async fn with_state(_context: &AppContext) -> RoadsterResult<Self::State> {
         Ok(())
     }
 
     async fn services(
         registry: &mut ServiceRegistry<Self>,
         context: &AppContext<Self::State>,
-    ) -> anyhow::Result<()> {
+    ) -> RoadsterResult<()> {
         registry
             .register_builder(
                 HttpService::builder(Some(BASE), context).api_router(controller::routes(BASE)),

@@ -8,6 +8,7 @@ use crate::cli::roadster::migrate::MigrateArgs;
 use crate::cli::roadster::open_api_schema::OpenApiArgs;
 use crate::cli::roadster::print_config::PrintConfigArgs;
 use crate::config::environment::Environment;
+use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use clap::{Parser, Subcommand};
 use serde_derive::Serialize;
@@ -33,7 +34,7 @@ where
         app: &A,
         cli: &RoadsterCli,
         context: &AppContext<A::State>,
-    ) -> anyhow::Result<bool>;
+    ) -> RoadsterResult<bool>;
 }
 
 /// Roadster: The Roadster CLI provides various utilities for managing your application. If no subcommand
@@ -77,7 +78,7 @@ where
         app: &A,
         cli: &RoadsterCli,
         context: &AppContext<A::State>,
-    ) -> anyhow::Result<bool> {
+    ) -> RoadsterResult<bool> {
         if let Some(command) = self.command.as_ref() {
             command.run(app, cli, context).await
         } else {
@@ -105,7 +106,7 @@ where
         app: &A,
         cli: &RoadsterCli,
         context: &AppContext<A::State>,
-    ) -> anyhow::Result<bool> {
+    ) -> RoadsterResult<bool> {
         match self {
             RoadsterCommand::Roadster(args) => args.run(app, cli, context).await,
         }
@@ -128,7 +129,7 @@ where
         app: &A,
         cli: &RoadsterCli,
         context: &AppContext<A::State>,
-    ) -> anyhow::Result<bool> {
+    ) -> RoadsterResult<bool> {
         self.command.run(app, cli, context).await
     }
 }
@@ -143,7 +144,7 @@ where
         app: &A,
         cli: &RoadsterCli,
         context: &AppContext<A::State>,
-    ) -> anyhow::Result<bool> {
+    ) -> RoadsterResult<bool> {
         match self {
             #[cfg(feature = "open-api")]
             RoadsterSubCommand::ListRoutes(_) => {

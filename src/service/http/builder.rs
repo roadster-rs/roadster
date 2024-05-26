@@ -1,9 +1,10 @@
+#[cfg(feature = "open-api")]
+use crate::api::http::default_api_routes;
+#[cfg(not(feature = "open-api"))]
+use crate::api::http::default_routes;
 use crate::app::App;
 use crate::app_context::AppContext;
-#[cfg(feature = "open-api")]
-use crate::controller::http::default_api_routes;
-#[cfg(not(feature = "open-api"))]
-use crate::controller::http::default_routes;
+use crate::error::RoadsterResult;
 use crate::service::http::initializer::default::default_initializers;
 use crate::service::http::initializer::Initializer;
 use crate::service::http::middleware::default::default_middleware;
@@ -16,7 +17,7 @@ use aide::axum::ApiRouter;
 use aide::openapi::OpenApi;
 #[cfg(feature = "open-api")]
 use aide::transform::TransformOpenApi;
-use anyhow::bail;
+use anyhow::anyhow;
 use async_trait::async_trait;
 #[cfg(feature = "open-api")]
 use axum::Extension;
@@ -98,7 +99,7 @@ impl<A: App> HttpServiceBuilder<A> {
         self
     }
 
-    pub fn initializer<T>(mut self, initializer: T) -> anyhow::Result<Self>
+    pub fn initializer<T>(mut self, initializer: T) -> RoadsterResult<Self>
     where
         T: Initializer<A::State> + 'static,
     {
@@ -111,12 +112,12 @@ impl<A: App> HttpServiceBuilder<A> {
             .insert(name.clone(), Box::new(initializer))
             .is_some()
         {
-            bail!("Initializer `{name}` was already registered");
+            return Err(anyhow!("Initializer `{name}` was already registered").into());
         }
         Ok(self)
     }
 
-    pub fn middleware<T>(mut self, middleware: T) -> anyhow::Result<Self>
+    pub fn middleware<T>(mut self, middleware: T) -> RoadsterResult<Self>
     where
         T: Middleware<A::State> + 'static,
     {
@@ -129,7 +130,7 @@ impl<A: App> HttpServiceBuilder<A> {
             .insert(name.clone(), Box::new(middleware))
             .is_some()
         {
-            bail!("Middleware `{name}` was already registered");
+            return Err(anyhow!("Middleware `{name}` was already registered").into());
         }
         Ok(self)
     }
@@ -137,7 +138,7 @@ impl<A: App> HttpServiceBuilder<A> {
 
 #[async_trait]
 impl<A: App> AppServiceBuilder<A, HttpService> for HttpServiceBuilder<A> {
-    async fn build(self, context: &AppContext<A::State>) -> anyhow::Result<HttpService> {
+    async fn build(self, context: &AppContext<A::State>) -> RoadsterResult<HttpService> {
         let router = self.router;
 
         #[cfg(feature = "open-api")]

@@ -6,6 +6,7 @@ use itertools::Itertools;
 use serde_derive::{Deserialize, Serialize};
 use std::str::FromStr;
 
+use crate::error::RoadsterResult;
 use tower_http::sensitive_headers::{
     SetSensitiveRequestHeadersLayer, SetSensitiveResponseHeadersLayer,
 };
@@ -30,7 +31,7 @@ impl Default for CommonSensitiveHeadersConfig {
 }
 
 impl CommonSensitiveHeadersConfig {
-    pub fn header_names(&self) -> anyhow::Result<Vec<HeaderName>> {
+    pub fn header_names(&self) -> RoadsterResult<Vec<HeaderName>> {
         let header_names = self
             .header_names
             .iter()
@@ -83,7 +84,7 @@ impl<S: Send + Sync + 'static> Middleware<S> for SensitiveRequestHeadersMiddlewa
             .common
             .priority
     }
-    fn install(&self, router: Router, context: &AppContext<S>) -> anyhow::Result<Router> {
+    fn install(&self, router: Router, context: &AppContext<S>) -> RoadsterResult<Router> {
         let headers = context
             .config()
             .service
@@ -130,7 +131,7 @@ impl<S: Send + Sync + 'static> Middleware<S> for SensitiveResponseHeadersMiddlew
             .common
             .priority
     }
-    fn install(&self, router: Router, context: &AppContext<S>) -> anyhow::Result<Router> {
+    fn install(&self, router: Router, context: &AppContext<S>) -> RoadsterResult<Router> {
         let headers = context
             .config()
             .service

@@ -4,8 +4,8 @@ use crate::config::database::Database;
 use crate::config::environment::{Environment, ENVIRONMENT_ENV_VAR_NAME};
 use crate::config::service::Service;
 use crate::config::tracing::Tracing;
+use crate::error::RoadsterResult;
 use crate::util::serde_util::default_true;
-use anyhow::anyhow;
 use config::{Case, Config};
 use dotenvy::dotenv;
 use serde_derive::{Deserialize, Serialize};
@@ -60,7 +60,7 @@ impl AppConfig {
     // This runs before tracing is initialized, so we need to use `println` in order to
     // log from this method.
     #[allow(clippy::disallowed_macros)]
-    pub fn new(environment: Option<Environment>) -> anyhow::Result<Self> {
+    pub fn new(environment: Option<Environment>) -> RoadsterResult<Self> {
         dotenv().ok();
 
         let environment = if let Some(environment) = environment {
@@ -86,14 +86,13 @@ impl AppConfig {
             )
             .set_override(ENVIRONMENT_ENV_VAR_NAME, environment_str)?
             .build()?
-            .try_deserialize()
-            .map_err(|err| anyhow!("Unable to deserialize app config: {err:?}"))?;
+            .try_deserialize()?;
 
         Ok(config)
     }
 
     #[cfg(test)]
-    pub(crate) fn test(config_str: Option<&str>) -> anyhow::Result<Self> {
+    pub(crate) fn test(config_str: Option<&str>) -> RoadsterResult<Self> {
         let config = config_str.unwrap_or(
             r#"
             environment = "test"
@@ -125,7 +124,7 @@ impl AppConfig {
         Ok(config)
     }
 
-    pub(crate) fn validate(&self, exit_on_error: bool) -> anyhow::Result<()> {
+    pub(crate) fn validate(&self, exit_on_error: bool) -> RoadsterResult<()> {
         let result = Validate::validate(self);
         if exit_on_error {
             result?;

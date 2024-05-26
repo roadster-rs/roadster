@@ -2,6 +2,7 @@ use crate::app::App;
 use crate::app_context::AppContext;
 #[cfg(feature = "cli")]
 use crate::cli::roadster::RoadsterCli;
+use crate::error::RoadsterResult;
 use crate::service::registry::ServiceRegistry;
 use std::future::Future;
 use tokio::task::JoinSet;
@@ -14,7 +15,7 @@ pub(crate) async fn handle_cli<A>(
     app_cli: &A::Cli,
     service_registry: &ServiceRegistry<A>,
     context: &AppContext<A::State>,
-) -> anyhow::Result<bool>
+) -> RoadsterResult<bool>
 where
     A: App,
 {
@@ -29,7 +30,7 @@ where
 pub(crate) async fn run<A>(
     service_registry: ServiceRegistry<A>,
     context: &AppContext<A::State>,
-) -> anyhow::Result<()>
+) -> RoadsterResult<()>
 where
     A: App,
 {
@@ -143,7 +144,7 @@ where
 async fn cancel_token_on_signal_received<F>(
     shutdown_signal: F,
     cancellation_token: CancellationToken,
-) -> anyhow::Result<()>
+) -> RoadsterResult<()>
 where
     F: Future<Output = ()> + Send + 'static,
 {
@@ -160,9 +161,9 @@ async fn cancel_on_error<T, F, S>(
     cancellation_token: CancellationToken,
     context: &AppContext<S>,
     f: F,
-) -> anyhow::Result<T>
+) -> RoadsterResult<T>
 where
-    F: Future<Output = anyhow::Result<T>> + Send + 'static,
+    F: Future<Output = RoadsterResult<T>> + Send + 'static,
 {
     let result = f.await;
     if result.is_err() && context.config().app.shutdown_on_error {
@@ -177,10 +178,10 @@ async fn graceful_shutdown<F1, F2, S>(
     app_graceful_shutdown: F2,
     // This parameter is (currently) not used when no features are enabled.
     #[allow(unused_variables)] context: AppContext<S>,
-) -> anyhow::Result<()>
+) -> RoadsterResult<()>
 where
     F1: Future<Output = ()> + Send + 'static,
-    F2: Future<Output = anyhow::Result<()>> + Send + 'static,
+    F2: Future<Output = RoadsterResult<()>> + Send + 'static,
 {
     shutdown_signal.await;
 

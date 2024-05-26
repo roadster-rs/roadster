@@ -2,6 +2,7 @@ use crate::app::App;
 use crate::app_context::AppContext;
 #[cfg(feature = "cli")]
 use crate::cli::roadster::RoadsterCli;
+use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use tokio_util::sync::CancellationToken;
 
@@ -42,7 +43,7 @@ pub trait AppService<A: App + 'static>: Send + Sync {
         _roadster_cli: &RoadsterCli,
         _app_cli: &A::Cli,
         _app_context: &AppContext<A::State>,
-    ) -> anyhow::Result<bool> {
+    ) -> RoadsterResult<bool> {
         Ok(false)
     }
 
@@ -54,7 +55,7 @@ pub trait AppService<A: App + 'static>: Send + Sync {
         &self,
         app_context: &AppContext<A::State>,
         cancel_token: CancellationToken,
-    ) -> anyhow::Result<()>;
+    ) -> RoadsterResult<()>;
 }
 
 /// Trait used to build an [AppService]. It's not a requirement that services implement this
@@ -73,13 +74,14 @@ where
         S::enabled(app_context)
     }
 
-    async fn build(self, context: &AppContext<A::State>) -> anyhow::Result<S>;
+    async fn build(self, context: &AppContext<A::State>) -> RoadsterResult<S>;
 }
 
 #[cfg(test)]
 mod tests {
     use crate::app::MockApp;
     use crate::app_context::AppContext;
+    use crate::error::RoadsterResult;
     use crate::service::{AppServiceBuilder, MockAppService};
     use async_trait::async_trait;
     use rstest::rstest;
@@ -88,7 +90,7 @@ mod tests {
     #[async_trait]
     impl AppServiceBuilder<MockApp, MockAppService<MockApp>> for TestAppServiceBuilder {
         #[cfg_attr(coverage_nightly, coverage(off))]
-        async fn build(self, _context: &AppContext<()>) -> anyhow::Result<MockAppService<MockApp>> {
+        async fn build(self, _context: &AppContext<()>) -> RoadsterResult<MockAppService<MockApp>> {
             Ok(MockAppService::default())
         }
     }

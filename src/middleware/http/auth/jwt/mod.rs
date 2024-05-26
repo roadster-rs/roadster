@@ -4,12 +4,12 @@ pub mod ietf;
 pub mod openid;
 
 use crate::app_context::AppContext;
+use crate::error::{Error, RoadsterResult};
 #[cfg(feature = "jwt-ietf")]
 use crate::middleware::http::auth::jwt::ietf::Claims;
 #[cfg(all(feature = "jwt-openid", not(feature = "jwt-ietf")))]
 use crate::middleware::http::auth::jwt::openid::Claims;
 use crate::util::serde_util::{deserialize_from_str, serialize_to_str};
-use crate::view::http::app_error::AppError;
 #[cfg(feature = "open-api")]
 use aide::OperationInput;
 use async_trait::async_trait;
@@ -53,7 +53,7 @@ where
     S: Send + Sync,
     C: for<'de> serde::Deserialize<'de>,
 {
-    type Rejection = AppError;
+    type Rejection = Error;
 
     async fn from_request_parts(
         parts: &mut Parts,
@@ -79,7 +79,7 @@ fn decode_auth_token<T1, T2, C>(
     jwt_secret: &str,
     audience: &[T1],
     required_claims: &[T2],
-) -> anyhow::Result<TokenData<C>>
+) -> RoadsterResult<TokenData<C>>
 where
     T1: ToString,
     T2: ToString,

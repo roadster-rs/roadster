@@ -52,6 +52,7 @@ pub struct Claims {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::RoadsterResult;
     use crate::middleware::http::auth::jwt::decode_auth_token;
     use crate::util::serde_util::UriOrString;
     use chrono::{TimeDelta, Utc};
@@ -82,7 +83,7 @@ mod tests {
     fn decode_token_expired() {
         let (_, jwt) = build_token(true, None);
 
-        let decoded: anyhow::Result<TokenData<Claims>> =
+        let decoded: RoadsterResult<TokenData<Claims>> =
             decode_auth_token(&jwt, TEST_JWT_SECRET, AUDIENCE, REQUIRED_CLAIMS);
 
         assert!(decoded.is_err());
@@ -93,7 +94,7 @@ mod tests {
     fn decode_token_wrong_audience() {
         let (_, jwt) = build_token(false, Some("different-audience".to_string()));
 
-        let decoded: anyhow::Result<TokenData<Claims>> =
+        let decoded: RoadsterResult<TokenData<Claims>> =
             decode_auth_token(&jwt, TEST_JWT_SECRET, AUDIENCE, REQUIRED_CLAIMS);
 
         assert!(decoded.is_err());

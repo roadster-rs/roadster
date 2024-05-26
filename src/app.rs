@@ -8,6 +8,7 @@ use crate::cli::RunCommand;
 use crate::config::app_config::AppConfig;
 #[cfg(not(feature = "cli"))]
 use crate::config::environment::Environment;
+use crate::error::RoadsterResult;
 use crate::service::registry::ServiceRegistry;
 use crate::tracing::init_tracing;
 use async_trait::async_trait;
@@ -26,7 +27,7 @@ use tracing::{instrument, warn};
 pub async fn run<A>(
     // This parameter is (currently) not used when no features are enabled.
     #[allow(unused_variables)] app: A,
-) -> anyhow::Result<()>
+) -> RoadsterResult<()>
 where
     A: App + Default + Send + Sync + 'static,
 {
@@ -47,10 +48,12 @@ where
     #[cfg(feature = "cli")]
     config.validate(!roadster_cli.skip_validate_config)?;
 
+    // The `config.clone()` here is technically not necessary. However, without it, RustRover
+    // is giving a "value used after move" error when creating an actual `AppContext` below.
+    #[cfg(test)]
+    let context = AppContext::<()>::test(Some(config.clone()), None)?;
     #[cfg(not(test))]
     let context = AppContext::<()>::new::<A>(config).await?;
-    #[cfg(test)]
-    let context = AppContext::<()>::test(Some(config), None)?;
 
     let state = A::with_state(&context).await?;
     let context = context.with_custom(state);
@@ -95,14 +98,14 @@ pub trait App: Send + Sync {
     #[cfg(feature = "db-sql")]
     type M: MigratorTrait;
 
-    fn init_tracing(config: &AppConfig) -> anyhow::Result<()> {
+    fn init_tracing(config: &AppConfig) -> RoadsterResult<()> {
         init_tracing(config)?;
 
         Ok(())
     }
 
     #[cfg(feature = "db-sql")]
-    fn db_connection_options(config: &AppConfig) -> anyhow::Result<ConnectOptions> {
+    fn db_connection_options(config: &AppConfig) -> RoadsterResult<ConnectOptions> {
         let mut options = ConnectOptions::new(config.database.uri.to_string());
         options
             .connect_timeout(config.database.connect_timeout)
@@ -124,13 +127,13 @@ pub trait App: Send + Sync {
     /// method is provided in case there's any additional work that needs to be done that the
     /// consumer can't put in a [`From<AppContext>`] implementation. For example, any
     /// configuration that needs to happen in an async method.
-    async fn with_state(context: &AppContext<()>) -> anyhow::Result<Self::State>;
+    async fn with_state(context: &AppContext<()>) -> RoadsterResult<Self::State>;
 
     /// Provide the services to run in the app.
     async fn services(
         _registry: &mut ServiceRegistry<Self>,
         _context: &AppContext<Self::State>,
-    ) -> anyhow::Result<()> {
+    ) -> RoadsterResult<()> {
         Ok(())
     }
 
@@ -144,7 +147,7 @@ pub trait App: Send + Sync {
     /// Override to provide custom graceful shutdown logic to clean up any resources created by
     /// the app. Roadster will take care of cleaning up the resources it created.
     #[instrument(skip_all)]
-    async fn graceful_shutdown(_context: &AppContext<Self::State>) -> anyhow::Result<()> {
+    async fn graceful_shutdown(_context: &AppContext<Self::State>) -> RoadsterResult<()> {
         Ok(())
     }
 }

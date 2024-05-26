@@ -1,4 +1,5 @@
 use crate::app_context::AppContext;
+use crate::error::RoadsterResult;
 use crate::service::http::initializer::Initializer;
 use axum::Router;
 use serde_derive::{Deserialize, Serialize};
@@ -40,7 +41,7 @@ impl<S: Send + Sync + 'static> Initializer<S> for NormalizePathInitializer {
             .priority
     }
 
-    fn before_serve(&self, router: Router, _context: &AppContext<S>) -> anyhow::Result<Router> {
+    fn before_serve(&self, router: Router, _context: &AppContext<S>) -> RoadsterResult<Router> {
         let router = NormalizePathLayer::trim_trailing_slash().layer(router);
         let router = Router::new().nest_service("/", router);
         Ok(router)
