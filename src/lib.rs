@@ -16,7 +16,6 @@
 // https://github.com/taiki-e/coverage-helper?tab=readme-ov-file#usage
 #![cfg_attr(all(test, coverage_nightly), feature(coverage_attribute))]
 
-#[cfg(feature = "http")]
 pub mod api;
 pub mod app;
 pub mod app_context;
