@@ -1,7 +1,7 @@
+#[cfg(feature = "cli")]
+use crate::api::cli::roadster::RoadsterCli;
 use crate::app::App;
 use crate::app_context::AppContext;
-#[cfg(feature = "cli")]
-use crate::cli::roadster::RoadsterCli;
 use crate::error::RoadsterResult;
 use crate::service::registry::ServiceRegistry;
 use std::future::Future;

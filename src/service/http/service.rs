@@ -1,11 +1,11 @@
+#[cfg(feature = "cli")]
+use crate::api::cli::roadster::RoadsterCli;
+#[cfg(feature = "cli")]
+use crate::api::cli::roadster::RoadsterCommand;
+#[cfg(all(feature = "cli", feature = "open-api"))]
+use crate::api::cli::roadster::RoadsterSubCommand;
 use crate::app::App;
 use crate::app_context::AppContext;
-#[cfg(feature = "cli")]
-use crate::cli::roadster::RoadsterCli;
-#[cfg(feature = "cli")]
-use crate::cli::roadster::RoadsterCommand;
-#[cfg(all(feature = "cli", feature = "open-api"))]
-use crate::cli::roadster::RoadsterSubCommand;
 use crate::error::RoadsterResult;
 use crate::service::http::builder::HttpServiceBuilder;
 use crate::service::AppService;
