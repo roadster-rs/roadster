@@ -1,5 +1,1 @@
-use clap::Parser;
-use serde_derive::Serialize;
-
-#[derive(Debug, Parser, Serialize)]
-pub struct ListRoutesArgs {}
+pub use crate::api::cli::roadster::list_routes::ListRoutesArgs;

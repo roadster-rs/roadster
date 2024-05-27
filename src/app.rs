@@ -1,10 +1,10 @@
-use crate::app_context::AppContext;
 #[cfg(feature = "cli")]
-use crate::cli::parse_cli;
+use crate::api::cli::parse_cli;
 #[cfg(all(test, feature = "cli"))]
-use crate::cli::MockCli;
+use crate::api::cli::MockCli;
 #[cfg(feature = "cli")]
-use crate::cli::RunCommand;
+use crate::api::cli::RunCommand;
+use crate::app_context::AppContext;
 use crate::config::app_config::AppConfig;
 #[cfg(not(feature = "cli"))]
 use crate::config::environment::Environment;
@@ -59,7 +59,7 @@ where
     let context = context.with_custom(state);
 
     #[cfg(feature = "cli")]
-    if crate::cli::handle_cli(&app, &roadster_cli, &app_cli, &context).await? {
+    if crate::api::cli::handle_cli(&app, &roadster_cli, &app_cli, &context).await? {
         return Ok(());
     }
 

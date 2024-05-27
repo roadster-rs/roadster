@@ -1,7 +1,7 @@
+#[cfg(feature = "cli")]
+use crate::api::cli::roadster::RoadsterCli;
 use crate::app::App;
 use crate::app_context::AppContext;
-#[cfg(feature = "cli")]
-use crate::cli::roadster::RoadsterCli;
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use tokio_util::sync::CancellationToken;
@@ -32,10 +32,10 @@ pub trait AppService<A: App + 'static>: Send + Sync {
 
     /// Called when the app is starting up allow the service to handle CLI commands.
     ///
-    /// Note: this is called after attempting to handle the CLI commands via [crate::cli::RunCommand]
+    /// Note: this is called after attempting to handle the CLI commands via [crate::api::cli::RunCommand]
     /// implementations and won't be called if the command was already handled.
     ///
-    /// See [crate::cli::RunCommand] for an explanation of the return values -- the behavior is
+    /// See [crate::api::cli::RunCommand] for an explanation of the return values -- the behavior is
     /// the same.
     #[cfg(feature = "cli")]
     async fn handle_cli(

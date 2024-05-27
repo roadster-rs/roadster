@@ -10,5 +10,5 @@ filter = 'test(#service::registry::tests::*) | test(#service::tests::*)'
 test-group = "app-service-static-mock"
 
 [[profile.default.overrides]]
-filter = 'test(#cli::tests::*)'
+filter = 'test(#api::cli::tests::*)'
 test-group = "cli-static-mock"
