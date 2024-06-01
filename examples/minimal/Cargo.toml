@@ -8,7 +8,7 @@ publish = false
 
 [dependencies]
 roadster = { version = "0.2", path = "../.." }
-tokio = { version = "1.37.0", features = ["full"] }
+tokio = { version = "1.38.0", features = ["full"] }
 anyhow = "1.0.86"
 tracing = { version = "0.1.40", features = ["async-await"] }
 async-trait = "0.1.80"
