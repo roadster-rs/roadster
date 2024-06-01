@@ -61,7 +61,7 @@ num_cpus = { version = "1.16.0", optional = true }
 
 # Rust async
 # Todo: minimize tokio features included in `roadster`
-tokio = { version = "1.37.0", features = ["full"] }
+tokio = { version = "1.38.0", features = ["full"] }
 # For CancellationToken
 tokio-util = { version = "0.7.11" }
 async-trait = "0.1.80"
@@ -104,7 +104,7 @@ cargo-husky = { version = "1.5.0", default-features = false, features = ["user-h
 insta = { version = "1.39.0", features = ["toml"] }
 mockall = "0.12.1"
 mockall_double = "0.3.1"
-rstest = "0.19.0"
+rstest = "0.20.0"
 
 [workspace]
 members = [".", "examples/*"]
