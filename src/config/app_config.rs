@@ -131,6 +131,7 @@ impl AppConfig {
         Ok(config)
     }
 
+    #[allow(clippy::let_and_return)]
     fn default_config() -> ConfigBuilder<DefaultState> {
         let config = Config::builder()
             .add_source(config::File::from_str(
