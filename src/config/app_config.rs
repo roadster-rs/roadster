@@ -93,6 +93,7 @@ impl AppConfig {
     }
 
     #[cfg(test)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     pub(crate) fn test(config_str: Option<&str>) -> RoadsterResult<Self> {
         let config = Self::default_config()
             .add_source(config::File::from_str(
