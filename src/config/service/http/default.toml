@@ -1,0 +1,65 @@
+# Middleware
+[service.http.middleware]
+default-enable = true
+
+[service.http.middleware.sensitive-request-headers]
+priority = -10000
+header-names = ["authorization", "proxy-authorization", "cookie", "set-cookie"]
+
+[service.http.middleware.sensitive-response-headers]
+priority = 10000
+header-names = ["authorization", "proxy-authorization", "cookie", "set-cookie"]
+
+[service.http.middleware.set-request-id]
+priority = -9990
+header-name = "request-id"
+
+[service.http.middleware.propagate-request-id]
+priority = 9990
+header-name = "request-id"
+
+[service.http.middleware.tracing]
+priority = -9980
+
+[service.http.middleware.catch-panic]
+priority = 0
+
+[service.http.middleware.response-compression]
+priority = 0
+
+[service.http.middleware.request-decompression]
+priority = -9960
+
+[service.http.middleware.timeout]
+priority = 0
+timeout = 10000
+
+[service.http.middleware.size-limit]
+priority = -9970
+limit = "5 MB"
+
+# Initializers
+[service.http.initializer]
+default-enable = true
+
+[service.http.initializer.normalize-path]
+priority = 10000
+
+# Default routes
+[service.http.default-routes]
+default-enable = true
+
+[service.http.default-routes.ping]
+route = "_ping"
+
+[service.http.default-routes.health]
+route = "_health"
+
+[service.http.default-routes.api-schema]
+route = "_docs/api.json"
+
+[service.http.default-routes.scalar]
+route = "_docs"
+
+[service.http.default-routes.redoc]
+route = "_docs/redoc"

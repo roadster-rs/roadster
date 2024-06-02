@@ -1,0 +1,8 @@
+[service.sidekiq.periodic]
+stale-cleanup = "auto-clean-stale"
+
+[service.sidekiq.app-worker]
+max-retries = 25
+timeout = true
+max-duration = 60
+disable-argument-coercion = false

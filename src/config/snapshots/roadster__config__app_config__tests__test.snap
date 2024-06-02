@@ -1,0 +1,127 @@
+---
+source: src/config/app_config.rs
+expression: config
+---
+environment = 'test'
+
+[app]
+name = 'Test'
+shutdown-on-error = true
+
+[service]
+default-enable = true
+
+[service.http]
+host = '127.0.0.1'
+port = 3000
+
+[service.http.middleware]
+default-enable = true
+
+[service.http.middleware.sensitive-request-headers]
+priority = -10000
+header-names = [
+    'authorization',
+    'proxy-authorization',
+    'cookie',
+    'set-cookie',
+]
+
+[service.http.middleware.sensitive-response-headers]
+priority = 10000
+header-names = [
+    'authorization',
+    'proxy-authorization',
+    'cookie',
+    'set-cookie',
+]
+
+[service.http.middleware.set-request-id]
+priority = -9990
+header-name = 'request-id'
+
+[service.http.middleware.propagate-request-id]
+priority = 9990
+header-name = 'request-id'
+
+[service.http.middleware.tracing]
+priority = -9980
+
+[service.http.middleware.catch-panic]
+priority = 0
+
+[service.http.middleware.response-compression]
+priority = 0
+
+[service.http.middleware.request-decompression]
+priority = -9960
+
+[service.http.middleware.timeout]
+priority = 0
+timeout = 10000
+
+[service.http.middleware.size-limit]
+priority = -9970
+limit = '5 MB'
+
+[service.http.initializer]
+default-enable = true
+
+[service.http.initializer.normalize-path]
+priority = 10000
+
+[service.http.default-routes]
+default-enable = true
+
+[service.http.default-routes.ping]
+route = '_ping'
+
+[service.http.default-routes.health]
+route = '_health'
+
+[service.http.default-routes.api-schema]
+route = '_docs/api.json'
+
+[service.http.default-routes.scalar]
+route = '_docs'
+
+[service.http.default-routes.redoc]
+route = '_docs/redoc'
+
+[service.sidekiq]
+num-workers = 16
+queues = []
+
+[service.sidekiq.redis]
+uri = 'redis://invalid_host:1234'
+
+[service.sidekiq.redis.enqueue-pool]
+
+[service.sidekiq.redis.fetch-pool]
+
+[service.sidekiq.periodic]
+stale-cleanup = 'auto-clean-stale'
+
+[service.sidekiq.app-worker]
+max-retries = 25
+timeout = true
+max-duration = 60
+disable-argument-coercion = false
+[auth.jwt]
+secret = 'secret-test'
+
+[auth.jwt.claims]
+audience = []
+required-claims = []
+
+[tracing]
+level = 'debug'
+trace-propagation = true
+
+[database]
+uri = 'postgres://example:example@invalid_host:5432/example_test'
+auto-migrate = true
+connect-timeout = 1000
+acquire-timeout = 1000
+min-connections = 0
+max-connections = 10

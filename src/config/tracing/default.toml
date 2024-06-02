@@ -1,0 +1,2 @@
+[tracing]
+trace-propagation = true
