@@ -1,5 +1,4 @@
 use crate::app_context::AppContext;
-use crate::util::serde_util;
 use crate::util::serde_util::default_true;
 use serde_derive::{Deserialize, Serialize};
 use validator::Validate;
@@ -12,42 +11,18 @@ pub struct DefaultRoutes {
     #[serde(default = "default_true")]
     pub default_enable: bool,
 
-    #[serde(deserialize_with = "deserialize_ping", default = "default_ping")]
     pub ping: DefaultRouteConfig,
 
-    #[serde(deserialize_with = "deserialize_health", default = "default_health")]
     pub health: DefaultRouteConfig,
 
     #[cfg(feature = "open-api")]
-    #[serde(
-        deserialize_with = "deserialize_api_schema",
-        default = "default_api_schema"
-    )]
     pub api_schema: DefaultRouteConfig,
 
     #[cfg(feature = "open-api")]
-    #[serde(deserialize_with = "deserialize_scalar", default = "default_scalar")]
     pub scalar: DefaultRouteConfig,
 
     #[cfg(feature = "open-api")]
-    #[serde(deserialize_with = "deserialize_redoc", default = "default_redoc")]
     pub redoc: DefaultRouteConfig,
-}
-
-impl Default for DefaultRoutes {
-    fn default() -> Self {
-        Self {
-            default_enable: default_true(),
-            ping: default_ping(),
-            health: default_health(),
-            #[cfg(feature = "open-api")]
-            api_schema: default_api_schema(),
-            #[cfg(feature = "open-api")]
-            scalar: default_scalar(),
-            #[cfg(feature = "open-api")]
-            redoc: default_redoc(),
-        }
-    }
 }
 
 fn validate_default_routes(
@@ -98,99 +73,9 @@ impl DefaultRouteConfig {
     }
 }
 
-// This fun boilerplate allows the user to
-// 1. Partially override a config without needing to provide all of the required values for the config
-// 2. Prevent a type's `Default` implementation from being used and overriding the default we
-//    actually want. For example, we provide a default for the `route` fields, and we want that
-//    value to be used if the user doesn't provide one, not the type's default (`""` in this case).
-//
-// See: https://users.rust-lang.org/t/serde-default-value-for-struct-field-depending-on-parent/73452/2
-//
-// This is mainly needed because all of the default routes share a struct for their common configs,
-// so we can't simply set a default on the field directly with a serde annotation.
-// An alternative implementation could be to have different structs for each default route's common
-// config instead of sharing a struct type. However, that would still require a lot of boilerplate.
-
-#[derive(Debug, Clone, Default, Deserialize)]
-#[serde(rename_all = "kebab-case", default)]
-struct PartialDefaultRouteConfig {
-    pub enable: Option<bool>,
-    pub route: Option<String>,
-}
-
-fn deserialize_ping<'de, D>(deserializer: D) -> Result<DefaultRouteConfig, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    serde::Deserialize::deserialize(deserializer).map(map_empty_config("_ping".to_string()))
-}
-
-fn default_ping() -> DefaultRouteConfig {
-    deserialize_ping(serde_util::empty_json_object()).unwrap()
-}
-
-fn deserialize_health<'de, D>(deserializer: D) -> Result<DefaultRouteConfig, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    serde::Deserialize::deserialize(deserializer).map(map_empty_config("_health".to_string()))
-}
-
-fn default_health() -> DefaultRouteConfig {
-    deserialize_health(serde_util::empty_json_object()).unwrap()
-}
-
-#[cfg(feature = "open-api")]
-fn deserialize_api_schema<'de, D>(deserializer: D) -> Result<DefaultRouteConfig, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    serde::Deserialize::deserialize(deserializer)
-        .map(map_empty_config("_docs/api.json".to_string()))
-}
-
-#[cfg(feature = "open-api")]
-fn default_api_schema() -> DefaultRouteConfig {
-    deserialize_api_schema(serde_util::empty_json_object()).unwrap()
-}
-
-#[cfg(feature = "open-api")]
-fn deserialize_scalar<'de, D>(deserializer: D) -> Result<DefaultRouteConfig, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    serde::Deserialize::deserialize(deserializer).map(map_empty_config("_docs".to_string()))
-}
-
-#[cfg(feature = "open-api")]
-fn default_scalar() -> DefaultRouteConfig {
-    deserialize_scalar(serde_util::empty_json_object()).unwrap()
-}
-
-#[cfg(feature = "open-api")]
-fn deserialize_redoc<'de, D>(deserializer: D) -> Result<DefaultRouteConfig, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    serde::Deserialize::deserialize(deserializer).map(map_empty_config("_docs/redoc".to_string()))
-}
-
-#[cfg(feature = "open-api")]
-fn default_redoc() -> DefaultRouteConfig {
-    deserialize_redoc(serde_util::empty_json_object()).unwrap()
-}
-
-fn map_empty_config(
-    default_route: String,
-) -> impl FnOnce(PartialDefaultRouteConfig) -> DefaultRouteConfig {
-    move |PartialDefaultRouteConfig { enable, route }| DefaultRouteConfig {
-        enable,
-        route: route.unwrap_or(default_route),
-    }
-}
-
 #[cfg(test)]
 mod tests {
+    use crate::config::app_config::AppConfig;
     use crate::config::service::http::*;
     use rstest::rstest;
 
@@ -203,7 +88,12 @@ mod tests {
         // Arrange
         #[allow(clippy::field_reassign_with_default)]
         let config = {
-            let mut config = DefaultRoutes::default();
+            let mut config = AppConfig::test(None)
+                .unwrap()
+                .service
+                .http
+                .custom
+                .default_routes;
             config.default_enable = default_enable;
             config
         };
@@ -234,7 +124,12 @@ mod tests {
         // Arrange
         #[allow(clippy::field_reassign_with_default)]
         let config = {
-            let mut config = DefaultRoutes::default();
+            let mut config = AppConfig::test(None)
+                .unwrap()
+                .service
+                .http
+                .custom
+                .default_routes;
             config.default_enable = default_enable;
             config.api_schema.enable = api_schema_enabled;
             config.scalar.enable = scalar_enabled;
@@ -247,93 +142,5 @@ mod tests {
 
         // Assert
         assert_eq!(result.is_err(), validation_error);
-    }
-}
-
-// To simplify testing, these are only run when all of the config fields are available
-#[cfg(all(test, feature = "open-api"))]
-mod deserialize_tests {
-    use super::*;
-    use crate::util::test_util::TestCase;
-    use insta::assert_toml_snapshot;
-    use rstest::{fixture, rstest};
-
-    #[fixture]
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    fn case() -> TestCase {
-        Default::default()
-    }
-
-    #[rstest]
-    #[case("")]
-    #[case(
-        r#"
-        default-enable = false
-        [ping]
-        enable = true
-        [health]
-        enable = true
-        [api-schema]
-        enable = true
-        [scalar]
-        enable = true
-        [redoc]
-        enable = true
-        "#
-    )]
-    #[case(
-        r#"
-        default-enable = false
-        [ping]
-        enable = false
-        [health]
-        enable = false
-        [api-schema]
-        enable = false
-        [scalar]
-        enable = false
-        [redoc]
-        enable = false
-        "#
-    )]
-    #[case(
-        r#"
-        default-enable = false
-        [ping]
-        route = "a"
-        [health]
-        route = "b"
-        [api-schema]
-        route = "c"
-        [scalar]
-        route = "d"
-        [redoc]
-        route = "e"
-        "#
-    )]
-    #[case(
-        r#"
-        [ping]
-        enable = true
-        route = "a"
-        [health]
-        enable = true
-        route = "b"
-        [api-schema]
-        enable = true
-        route = "c"
-        [scalar]
-        enable = true
-        route = "d"
-        [redoc]
-        enable = true
-        route = "e"
-        "#
-    )]
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    fn auth(_case: TestCase, #[case] config: &str) {
-        let default_routes: DefaultRoutes = toml::from_str(config).unwrap();
-
-        assert_toml_snapshot!(default_routes);
     }
 }

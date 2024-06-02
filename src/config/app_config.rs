@@ -6,7 +6,8 @@ use crate::config::service::Service;
 use crate::config::tracing::Tracing;
 use crate::error::RoadsterResult;
 use crate::util::serde_util::default_true;
-use config::{Case, Config};
+use config::builder::DefaultState;
+use config::{Case, Config, ConfigBuilder, FileFormat};
 use dotenvy::dotenv;
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
@@ -19,6 +20,7 @@ pub type CustomConfig = BTreeMap<String, Value>;
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct AppConfig {
+    pub environment: Environment,
     #[validate(nested)]
     pub app: App,
     #[validate(nested)]
@@ -27,7 +29,6 @@ pub struct AppConfig {
     pub auth: Auth,
     #[validate(nested)]
     pub tracing: Tracing,
-    pub environment: Environment,
     #[cfg(feature = "db-sql")]
     #[validate(nested)]
     pub database: Database,
@@ -71,7 +72,7 @@ impl AppConfig {
         };
         let environment_str: &str = environment.into();
 
-        let config: AppConfig = Config::builder()
+        let config = Self::default_config()
             // Todo: allow other file formats?
             // Todo: allow splitting config into multiple files?
             .add_source(config::File::with_name("config/default.toml"))
@@ -85,43 +86,65 @@ impl AppConfig {
                     .separator(ENV_VAR_SEPARATOR),
             )
             .set_override(ENVIRONMENT_ENV_VAR_NAME, environment_str)?
-            .build()?
-            .try_deserialize()?;
+            .build()?;
+        let config: AppConfig = config.try_deserialize()?;
 
         Ok(config)
     }
 
     #[cfg(test)]
     pub(crate) fn test(config_str: Option<&str>) -> RoadsterResult<Self> {
-        let config = config_str.unwrap_or(
-            r#"
-            environment = "test"
+        let config = Self::default_config()
+            .add_source(config::File::from_str(
+                config_str.unwrap_or(
+                    r#"
+                    environment = "test"
 
-            [app]
-            name = "Test"
+                    [app]
+                    name = "Test"
 
-            [tracing]
-            level = "debug"
+                    [tracing]
+                    level = "debug"
 
-            [database]
-            uri = "postgres://example:example@localhost:5432/example_test"
-            auto-migrate = true
-            max-connections = 10
+                    [database]
+                    uri = "postgres://example:example@invalid_host:5432/example_test"
+                    auto-migrate = true
+                    max-connections = 10
 
-            [auth.jwt]
-            secret = "secret-test"
+                    [auth.jwt]
+                    secret = "secret-test"
 
-            [service.http]
-            host = "127.0.0.1"
-            port = 3000
+                    [service.http]
+                    host = "127.0.0.1"
+                    port = 3000
 
-            [service.sidekiq.redis]
-            uri = "redis://invalid_host:1234"
-            "#,
-        );
+                    [service.sidekiq.redis]
+                    uri = "redis://invalid_host:1234"
+                    "#,
+                ),
+                FileFormat::Toml,
+            ))
+            .build()?;
 
-        let config = toml::from_str(config)?;
+        let config: AppConfig = config.try_deserialize()?;
         Ok(config)
+    }
+
+    fn default_config() -> ConfigBuilder<DefaultState> {
+        let config = Config::builder()
+            .add_source(config::File::from_str(
+                include_str!("default.toml"),
+                FileFormat::Toml,
+            ))
+            .add_source(crate::config::tracing::default_config());
+
+        #[cfg(feature = "http")]
+        let config = config.add_source(crate::config::service::http::default_config());
+
+        #[cfg(feature = "sidekiq")]
+        let config = config.add_source(crate::config::service::worker::sidekiq::default_config());
+
+        config
     }
 
     pub(crate) fn validate(&self, exit_on_error: bool) -> RoadsterResult<()> {
@@ -146,11 +169,14 @@ pub struct App {
 
 #[cfg(test)]
 mod tests {
-    use crate::config::app_config::AppConfig;
+    use super::*;
+    use insta::assert_toml_snapshot;
 
     #[test]
     #[cfg_attr(coverage_nightly, coverage(off))]
-    fn empty() {
-        AppConfig::test(None).unwrap();
+    fn test() {
+        let config = AppConfig::test(None).unwrap();
+
+        assert_toml_snapshot!(config);
     }
 }

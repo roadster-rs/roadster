@@ -1,0 +1,5 @@
+[app]
+shutdown-on-error = true
+
+[service]
+default-enable = true
