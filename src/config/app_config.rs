@@ -175,7 +175,16 @@ pub struct App {
     pub shutdown_on_error: bool,
 }
 
-#[cfg(test)]
+#[cfg(all(
+    test,
+    feature = "http",
+    feature = "sidekiq",
+    feature = "db-sql",
+    feature = "open-api",
+    feature = "jwt",
+    feature = "jwt-ietf",
+    feature = "otel"
+))]
 mod tests {
     use super::*;
     use insta::assert_toml_snapshot;
