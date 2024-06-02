@@ -119,6 +119,12 @@ impl AppConfig {
                     host = "127.0.0.1"
                     port = 3000
 
+                    [service.sidekiq]
+                    # This field normally is determined by the number of CPU cores if not provided.
+                    # We provide it in the test config to avoid snapshot failures when running
+                    # on varying hardware.
+                    num-workers = 16
+
                     [service.sidekiq.redis]
                     uri = "redis://invalid_host:1234"
                     "#,
