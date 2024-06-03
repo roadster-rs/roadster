@@ -7,9 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.3.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.2.4...roadster-v0.3.0) - 2024-06-03
+## [0.2.5](https://github.com/roadster-rs/roadster/compare/roadster-v0.2.4...roadster-v0.3.0) - 2024-06-03
 
 ### Other
+
 - Only test the `AppConfig#test` method when all (most) features are enabled
 - Hard-code the number of sidekiq workers to avoid snapshot failures
 - Ignore a clippy error
@@ -21,11 +22,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.2.3...roadster-v0.2.4) - 2024-05-31
 
 ### Other
+
 - Upgrade dependencies
 
 ## [0.2.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.2.2...roadster-v0.2.3) - 2024-05-27
 
 ### Other
+
 - Remove `http` feature gate for `api` mod
 - Move cli mod to be a child of the api mod
 - Add semver checks to CI
@@ -34,11 +37,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.2](https://github.com/roadster-rs/roadster/compare/roadster-v0.2.1...roadster-v0.2.2) - 2024-05-26
 
 ### Other
-- Add latest version of `time` to workaround build issue on nightly 
+
+- Add latest version of `time` to workaround build issue on nightly
 
 ## [0.2.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.2.0...roadster-v0.2.1) - 2024-05-26
 
 ### Other
+
 - Add missing `needs` field to `powerset_clippy` workflow step
 - Run separate jobs for each feature powerset check
 
