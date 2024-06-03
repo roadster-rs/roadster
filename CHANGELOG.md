@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.2.4...roadster-v0.3.0) - 2024-06-03
+
+### Other
+- Only test the `AppConfig#test` method when all (most) features are enabled
+- Hard-code the number of sidekiq workers to avoid snapshot failures
+- Ignore a clippy error
+- Ignore coverage for the `AppConfig#test` method
+- Provide config defaults via config files
+- Move database and tracing mods to directories
+- Upgrade dependencies
+
 ## [0.2.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.2.3...roadster-v0.2.4) - 2024-05-31
 
 ### Other
