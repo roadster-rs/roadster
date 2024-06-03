@@ -7,7 +7,7 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-roadster = { version = "0.3", path = "../.." }
+roadster = { version = "0.2", path = "../.." }
 tokio = { version = "1.38.0", features = ["full"] }
 anyhow = "1.0.86"
 tracing = { version = "0.1.40", features = ["async-await"] }
