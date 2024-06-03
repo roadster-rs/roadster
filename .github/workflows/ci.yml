@@ -63,6 +63,17 @@ jobs:
       - uses: taiki-e/install-action@cargo-hack
       - run: cargo hack check --rust-version --workspace --all-targets --ignore-private
 
+  # https://doc.rust-lang.org/cargo/guide/continuous-integration.html#verifying-rust-version
+  minimal_direct_deps:
+    name: Direct dep min version check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@cargo-hack
+      - uses: taiki-e/install-action@cargo-minimal-versions
+      - run: cargo minimal-versions check --direct --all-features
+
   check_formatting:
     name: Formatting
     runs-on: ubuntu-latest
