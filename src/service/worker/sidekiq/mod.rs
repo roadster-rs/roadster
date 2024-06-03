@@ -3,7 +3,7 @@ use crate::error::RoadsterResult;
 use crate::service::worker::sidekiq::app_worker::AppWorker;
 use crate::service::worker::sidekiq::roadster_worker::RoadsterWorker;
 use serde::Serialize;
-use sidekiq::periodic;
+use sidekiq::{periodic, ServerMiddleware};
 use std::marker::PhantomData;
 
 pub mod app_worker;
@@ -59,6 +59,14 @@ where
     }
 
     #[cfg_attr(test, allow(dead_code))]
+    async fn middleware<M>(&mut self, middleware: M)
+    where
+        M: ServerMiddleware + Send + Sync + 'static,
+    {
+        self.inner.using(middleware).await;
+    }
+
+    #[cfg_attr(test, allow(dead_code))]
     fn into_sidekiq_processor(self) -> sidekiq::Processor {
         self.inner
     }
@@ -82,6 +90,10 @@ mockall::mock! {
         where
             Args: Sync + Send + Serialize + for<'de> serde::Deserialize<'de> + 'static,
             W: AppWorker<A, Args> + 'static;
+
+        async fn middleware<M>(&mut self, middleware: M)
+        where
+            M: ServerMiddleware + Send + Sync + 'static;
 
         fn into_sidekiq_processor(self) -> sidekiq::Processor;
     }

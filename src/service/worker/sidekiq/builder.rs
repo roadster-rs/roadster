@@ -15,7 +15,10 @@ use itertools::Itertools;
 use num_traits::ToPrimitive;
 use serde::Serialize;
 use sidekiq::redis_rs::ToRedisArgs;
-use sidekiq::{periodic, ProcessorConfig, RedisConnection, RedisConnectionManager, RedisError};
+use sidekiq::{
+    periodic, ProcessorConfig, RedisConnection, RedisConnectionManager, RedisError,
+    ServerMiddleware,
+};
 use std::collections::HashSet;
 use tracing::{debug, info, warn};
 
@@ -279,6 +282,16 @@ where
                 .await?;
         }
 
+        Ok(self)
+    }
+
+    pub async fn middleware<M>(mut self, middleware: M) -> RoadsterResult<Self>
+    where
+        M: ServerMiddleware + Send + Sync + 'static,
+    {
+        if let BuilderState::Enabled { processor, .. } = &mut self.state {
+            processor.middleware(middleware).await;
+        }
         Ok(self)
     }
 }
