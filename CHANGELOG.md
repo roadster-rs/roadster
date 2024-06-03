@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.6](https://github.com/roadster-rs/roadster/compare/roadster-v0.2.5...roadster-v0.2.6) - 2024-06-03
+
+### Other
+- Add builder method to add middleware for the sidekiq processor
+- Declare minimal version of dependencies that's actually needed
+- Add `cargo-minimal-versions` for direct dependencies
+
 ## [0.2.5](https://github.com/roadster-rs/roadster/compare/roadster-v0.2.4...roadster-v0.3.0) - 2024-06-03
 
 ### Other
