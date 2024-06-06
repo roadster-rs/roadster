@@ -51,7 +51,7 @@ impl<A: App + 'static> AppService<A> for SidekiqWorkerService {
         _app_context: &AppContext<A::State>,
         cancel_token: CancellationToken,
     ) -> RoadsterResult<()> {
-        let processor = self.processor.clone();
+        let processor = self.processor;
         let sidekiq_cancel_token = processor.get_cancellation_token();
 
         let mut join_set = JoinSet::new();

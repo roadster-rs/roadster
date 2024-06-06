@@ -8,8 +8,8 @@ use roadster::error::RoadsterResult;
 use crate::app::App;
 use crate::app_state::CustomAppContext;
 
-/// Minimal Example: Commands specific to managing the `minimal` app are provided in the CLI
-/// as well. Subcommands not listed under the `roadster` subcommand are specific to `minimal`.
+/// Full Example: Commands specific to managing the `full` app are provided in the CLI
+/// as well. Subcommands not listed under the `roadster` subcommand are specific to `full`.
 #[derive(Debug, Parser)]
 #[command(version, about)]
 pub struct AppCli {

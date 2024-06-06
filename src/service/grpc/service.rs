@@ -10,6 +10,8 @@ use tonic::transport::server::Router;
 use tracing::info;
 
 /// Simple wrapper around a tonic [Router] to run a gRPC service.
+// todo: enable adding middleware to the service?
+// todo: enable sharing middleware with the axum router?
 pub struct GrpcService {
     pub(crate) router: Mutex<Router>,
 }

@@ -1,10 +1,14 @@
 [package]
-name = "minimal"
+name = "full"
 version = "0.1.0"
 edition = "2021"
 publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = []
+grpc = ["roadster/grpc", "dep:tonic", "dep:tonic-reflection", "dep:prost"]
 
 [dependencies]
 roadster = { version = "0.2", path = "../.." }
@@ -12,9 +16,16 @@ tokio = { workspace = true }
 anyhow = { workspace = true }
 tracing = { workspace = true }
 async-trait = { workspace = true }
+
+# Http API
 aide = { workspace = true }
 axum = { workspace = true }
 schemars = { workspace = true }
+
+# gRPC API
+tonic = { workspace = true, optional = true }
+tonic-reflection = { version = "0.11.0", optional = true }
+prost = { version = "0.12", optional = true }
 
 # DB
 entity = { path = "entity" }
@@ -25,11 +36,14 @@ clap = { version = "4.3.0", features = ["derive"] }
 rusty-sidekiq = { version = "0.10.5", default-features = false }
 serde = { version = "1.0.184", features = ["derive"] }
 
+[build-dependencies]
+tonic-build = "0.11"
+
 [[bin]]
-name = "minimal"
+name = "full"
 path = "./src/main.rs"
 
 [lib]
-name = "minimal"
+name = "full"
 path = "./src/lib.rs"
 

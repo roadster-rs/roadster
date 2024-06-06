@@ -1,17 +1,20 @@
+#[cfg(feature = "grpc")]
+use crate::api::grpc::routes;
+use crate::api::http;
+use crate::app_state::CustomAppContext;
+use crate::cli::AppCli;
+use crate::worker::example::ExampleWorker;
 use async_trait::async_trait;
 use migration::Migrator;
 use roadster::app::App as RoadsterApp;
 use roadster::app_context::AppContext;
 use roadster::error::RoadsterResult;
+#[cfg(feature = "grpc")]
+use roadster::service::grpc::service::GrpcService;
 use roadster::service::http::service::HttpService;
 use roadster::service::registry::ServiceRegistry;
 use roadster::service::worker::sidekiq::app_worker::AppWorker;
 use roadster::service::worker::sidekiq::service::SidekiqWorkerService;
-
-use crate::app_state::CustomAppContext;
-use crate::cli::AppCli;
-use crate::controller;
-use crate::worker::example::ExampleWorker;
 
 const BASE: &str = "/api";
 
@@ -34,7 +37,7 @@ impl RoadsterApp for App {
     ) -> RoadsterResult<()> {
         registry
             .register_builder(
-                HttpService::builder(Some(BASE), context).api_router(controller::routes(BASE)),
+                HttpService::builder(Some(BASE), context).api_router(http::routes(BASE)),
             )
             .await?;
 
@@ -45,6 +48,9 @@ impl RoadsterApp for App {
                     .register_app_worker(ExampleWorker::build(context))?,
             )
             .await?;
+
+        #[cfg(feature = "grpc")]
+        registry.register_service(GrpcService::new(routes(context)?))?;
 
         Ok(())
     }
