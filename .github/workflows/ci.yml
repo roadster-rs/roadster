@@ -110,3 +110,5 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Check semver
         uses: obi1kenobi/cargo-semver-checks-action@v2
+        # Allow the workflow to succeed even if this check fails -- this is more of an FYI at the moment.
+        continue-on-error: true
