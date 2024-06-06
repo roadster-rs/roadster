@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.2.6...roadster-v0.3.0) - 2024-06-06
+
+### Other
+- Remove the old deprecated cli mod
+- Add basic grpc example
+- Add basic support for serving a gRPC service
+- Update rstest
+
 ## [0.2.6](https://github.com/roadster-rs/roadster/compare/roadster-v0.2.5...roadster-v0.2.6) - 2024-06-03
 
 ### Other
