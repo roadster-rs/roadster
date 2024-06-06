@@ -19,12 +19,6 @@
 pub mod api;
 pub mod app;
 pub mod app_context;
-#[cfg(feature = "cli")]
-#[deprecated(
-    since = "0.2.3",
-    note = "This module was moved to `api::cli`. The re-exports will be removed in version 0.3.x"
-)]
-pub mod cli;
 pub mod config;
 pub mod error;
 pub mod middleware;
