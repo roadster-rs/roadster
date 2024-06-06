@@ -2,7 +2,7 @@
 secret = "secret-test"
 
 [database]
-uri = "postgres://roadster:roadster@localhost:5433/minimal_test"
+uri = "postgres://roadster:roadster@localhost:5433/full_test"
 
 [service.sidekiq.redis]
 uri = "redis://localhost:6380"

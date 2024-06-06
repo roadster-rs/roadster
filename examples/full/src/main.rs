@@ -1,4 +1,4 @@
-use minimal::app::App;
+use full::app::App;
 use roadster::app;
 use roadster::error::RoadsterResult;
 

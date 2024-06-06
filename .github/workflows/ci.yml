@@ -20,6 +20,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-hack
       - uses: taiki-e/install-action@nextest
+      # protoc is needed to build examples that have grpc enabled
+      - uses: taiki-e/install-action@protoc
       - name: Test
         run: cargo hack nextest run --no-fail-fast --each-feature --workspace
 
@@ -30,6 +32,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-hack
+      # protoc is needed to build examples that have grpc enabled
+      - uses: taiki-e/install-action@protoc
       - name: Doc test
         run: cargo hack test --doc --no-fail-fast --each-feature --workspace
 
@@ -40,6 +44,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-hack
+      # protoc is needed to build examples that have grpc enabled
+      - uses: taiki-e/install-action@protoc
       - name: Check
         run: cargo hack check --each-feature --no-dev-deps --workspace
 
@@ -50,6 +56,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-hack
+      # protoc is needed to build examples that have grpc enabled
+      - uses: taiki-e/install-action@protoc
       - name: Clippy
         run: cargo hack clippy --workspace --all-targets --each-feature -- -D warnings
 

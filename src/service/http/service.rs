@@ -81,7 +81,7 @@ impl<A: App + 'static> AppService<A> for HttpService {
         info!("Http server will start at {server_addr}");
 
         let app_listener = tokio::net::TcpListener::bind(server_addr).await?;
-        axum::serve(app_listener, self.router.clone())
+        axum::serve(app_listener, self.router)
             .with_graceful_shutdown(Box::pin(async move { cancel_token.cancelled().await }))
             .await?;
 
