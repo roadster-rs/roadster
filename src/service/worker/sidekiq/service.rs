@@ -47,7 +47,7 @@ impl<A: App + 'static> AppService<A> for SidekiqWorkerService {
     }
 
     async fn run(
-        &self,
+        self: Box<Self>,
         _app_context: &AppContext<A::State>,
         cancel_token: CancellationToken,
     ) -> RoadsterResult<()> {

@@ -119,6 +119,10 @@ impl AppConfig {
                     host = "127.0.0.1"
                     port = 3000
 
+                    [service.grpc]
+                    host = "127.0.0.1"
+                    port = 3001
+
                     [service.sidekiq]
                     # This field normally is determined by the number of CPU cores if not provided.
                     # We provide it in the test config to avoid snapshot failures when running
@@ -149,6 +153,9 @@ impl AppConfig {
         #[cfg(feature = "http")]
         let config = config.add_source(crate::config::service::http::default_config());
 
+        #[cfg(feature = "grpc")]
+        let config = config.add_source(crate::config::service::grpc::default_config());
+
         #[cfg(feature = "sidekiq")]
         let config = config.add_source(crate::config::service::worker::sidekiq::default_config());
 
@@ -178,6 +185,7 @@ pub struct App {
 #[cfg(all(
     test,
     feature = "http",
+    feature = "grpc",
     feature = "sidekiq",
     feature = "db-sql",
     feature = "open-api",

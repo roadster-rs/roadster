@@ -1,8 +1,13 @@
+mod common;
+#[cfg(feature = "grpc")]
+pub mod grpc;
 #[cfg(feature = "http")]
 pub mod http;
 pub mod worker;
 
 use crate::app_context::AppContext;
+#[cfg(feature = "grpc")]
+use crate::config::service::grpc::GrpcServiceConfig;
 #[cfg(feature = "http")]
 use crate::config::service::http::HttpServiceConfig;
 #[cfg(feature = "sidekiq")]
@@ -16,9 +21,15 @@ use validator::Validate;
 pub struct Service {
     #[serde(default = "default_true")]
     pub default_enable: bool,
+
     #[cfg(feature = "http")]
     #[validate(nested)]
     pub http: ServiceConfig<HttpServiceConfig>,
+
+    #[cfg(feature = "grpc")]
+    #[validate(nested)]
+    pub grpc: ServiceConfig<GrpcServiceConfig>,
+
     #[cfg(feature = "sidekiq")]
     #[validate(nested)]
     pub sidekiq: ServiceConfig<SidekiqServiceConfig>,
