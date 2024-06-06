@@ -88,6 +88,10 @@ route = '_docs'
 [service.http.default-routes.redoc]
 route = '_docs/redoc'
 
+[service.grpc]
+host = '127.0.0.1'
+port = 3001
+
 [service.sidekiq]
 num-workers = 16
 queues = []

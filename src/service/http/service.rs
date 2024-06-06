@@ -73,12 +73,12 @@ impl<A: App + 'static> AppService<A> for HttpService {
     }
 
     async fn run(
-        &self,
+        self: Box<Self>,
         app_context: &AppContext<A::State>,
         cancel_token: CancellationToken,
     ) -> RoadsterResult<()> {
         let server_addr = app_context.config().service.http.custom.address.url();
-        info!("Server will start at {server_addr}");
+        info!("Http server will start at {server_addr}");
 
         let app_listener = tokio::net::TcpListener::bind(server_addr).await?;
         axum::serve(app_listener, self.router.clone())

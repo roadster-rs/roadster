@@ -8,6 +8,8 @@ pub mod serde;
 #[cfg(feature = "sidekiq")]
 pub mod sidekiq;
 pub mod tokio;
+#[cfg(feature = "grpc")]
+pub mod tonic;
 pub mod tracing;
 
 use crate::error::api::ApiError;
@@ -19,6 +21,8 @@ use crate::error::serde::SerdeError;
 #[cfg(feature = "sidekiq")]
 use crate::error::sidekiq::SidekiqError;
 use crate::error::tokio::TokioError;
+#[cfg(feature = "grpc")]
+use crate::error::tonic::TonicError;
 use crate::error::tracing::TracingError;
 #[cfg(feature = "http")]
 use ::axum::http::StatusCode;
@@ -71,6 +75,10 @@ pub enum Error {
     #[cfg(feature = "http")]
     #[error(transparent)]
     Axum(#[from] AxumError),
+
+    #[cfg(feature = "grpc")]
+    #[error(transparent)]
+    Tonic(#[from] TonicError),
 
     #[error(transparent)]
     Other(#[from] OtherError),

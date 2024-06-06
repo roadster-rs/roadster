@@ -6,6 +6,8 @@ use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use tokio_util::sync::CancellationToken;
 
+#[cfg(feature = "grpc")]
+pub mod grpc;
 #[cfg(feature = "http")]
 pub mod http;
 pub mod registry;
@@ -52,7 +54,7 @@ pub trait AppService<A: App + 'static>: Send + Sync {
     /// * cancel_token - A tokio [CancellationToken] to use as a signal to gracefully shut down
     /// the service.
     async fn run(
-        &self,
+        self: Box<Self>,
         app_context: &AppContext<A::State>,
         cancel_token: CancellationToken,
     ) -> RoadsterResult<()>;
