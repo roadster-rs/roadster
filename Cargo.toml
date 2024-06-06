@@ -101,7 +101,7 @@ cargo-husky = { version = "1.5.0", default-features = false, features = ["user-h
 insta = { version = "1.39.0", features = ["toml"] }
 mockall = "0.12.1"
 mockall_double = "0.3.1"
-rstest = "0.20.0"
+rstest = "0.21.0"
 
 [workspace]
 members = [".", "examples/*"]
