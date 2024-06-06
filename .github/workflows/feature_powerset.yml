@@ -51,6 +51,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-hack
       - uses: taiki-e/install-action@nextest
+      # protoc is needed to build examples that have grpc enabled
+      - uses: taiki-e/install-action@protoc
       - name: Test
         run: cargo hack nextest run --no-fail-fast --feature-powerset --skip default --group-features jwt-ietf,jwt --group-features jwt-openid,jwt --group-features open-api,http --clean-per-run --log-group github-actions --exclude-no-default-features --exclude-all-features
       - name: Check disk usage
@@ -65,6 +67,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-hack
+      # protoc is needed to build examples that have grpc enabled
+      - uses: taiki-e/install-action@protoc
       - name: Doc test
         run: cargo hack test --doc --no-fail-fast --feature-powerset --skip default --group-features jwt-ietf,jwt --group-features jwt-openid,jwt --group-features open-api,http --clean-per-run --log-group github-actions --exclude-no-default-features --exclude-all-features
 
@@ -77,6 +81,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-hack
+      # protoc is needed to build examples that have grpc enabled
+      - uses: taiki-e/install-action@protoc
       - name: Check
         run: cargo hack check --feature-powerset --no-dev-deps --skip default --group-features jwt-ietf,jwt --group-features jwt-openid,jwt --group-features open-api,http --clean-per-run --log-group github-actions --exclude-no-default-features --exclude-all-features
 
@@ -89,5 +95,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-hack
+      # protoc is needed to build examples that have grpc enabled
+      - uses: taiki-e/install-action@protoc
       - name: Clippy
         run: cargo hack clippy --all-targets --feature-powerset --skip default --group-features jwt-ietf,jwt --group-features jwt-openid,jwt --group-features open-api,http --clean-per-run --log-group github-actions --exclude-no-default-features --exclude-all-features -- -D warnings
