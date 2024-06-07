@@ -9,7 +9,7 @@ use crate::service::http::initializer::default::default_initializers;
 use crate::service::http::initializer::Initializer;
 use crate::service::http::middleware::default::default_middleware;
 use crate::service::http::middleware::Middleware;
-use crate::service::http::service::HttpService;
+use crate::service::http::service::{enabled, HttpService, NAME};
 use crate::service::AppServiceBuilder;
 #[cfg(feature = "open-api")]
 use aide::axum::ApiRouter;
@@ -138,6 +138,14 @@ impl<A: App> HttpServiceBuilder<A> {
 
 #[async_trait]
 impl<A: App> AppServiceBuilder<A, HttpService> for HttpServiceBuilder<A> {
+    fn name(&self) -> String {
+        NAME.to_string()
+    }
+
+    fn enabled(&self, app_context: &AppContext<A::State>) -> bool {
+        enabled(app_context)
+    }
+
     async fn build(self, context: &AppContext<A::State>) -> RoadsterResult<HttpService> {
         let router = self.router;
 

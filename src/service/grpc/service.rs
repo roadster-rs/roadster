@@ -26,17 +26,11 @@ impl GrpcService {
 
 #[async_trait]
 impl<A: App + 'static> AppService<A> for GrpcService {
-    fn name() -> String
-    where
-        Self: Sized,
-    {
+    fn name(&self) -> String {
         "grpc".to_string()
     }
 
-    fn enabled(context: &AppContext<A::State>) -> bool
-    where
-        Self: Sized,
-    {
+    fn enabled(&self, context: &AppContext<A::State>) -> bool {
         context.config().service.grpc.common.enabled(context)
     }
 

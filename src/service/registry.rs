@@ -29,10 +29,6 @@ impl<A: App> ServiceRegistry<A> {
     where
         S: AppService<A> + 'static,
     {
-        if !S::enabled(&self.context) {
-            info!(service = %S::name(), "Service is not enabled, skipping registration");
-            return Ok(());
-        }
         self.register_internal(service)
     }
 
@@ -43,12 +39,12 @@ impl<A: App> ServiceRegistry<A> {
         S: AppService<A> + 'static,
         B: AppServiceBuilder<A, S>,
     {
-        if !S::enabled(&self.context) || !builder.enabled(&self.context) {
-            info!(service = %S::name(), "Service is not enabled, skipping building and registration");
+        if !builder.enabled(&self.context) {
+            info!(service = %builder.name(), "Service is not enabled, skipping building and registration");
             return Ok(());
         }
 
-        info!(service = %S::name(), "Building service");
+        info!(service = %builder.name(), "Building service");
         let service = builder.build(&self.context).await?;
 
         self.register_internal(service)
@@ -58,10 +54,21 @@ impl<A: App> ServiceRegistry<A> {
     where
         S: AppService<A> + 'static,
     {
-        info!(service = %S::name(), "Registering service");
+        let name = service.name();
 
-        if self.services.insert(S::name(), Box::new(service)).is_some() {
-            return Err(anyhow!("Service `{}` was already registered", S::name()).into());
+        if !service.enabled(&self.context) {
+            info!(service = %name, "Service is not enabled, skipping registration");
+            return Ok(());
+        }
+
+        info!(service = %name, "Registering service");
+
+        if self
+            .services
+            .insert(name.clone(), Box::new(service))
+            .is_some()
+        {
+            return Err(anyhow!("Service `{}` was already registered", name).into());
         }
         Ok(())
     }
@@ -82,11 +89,9 @@ mod tests {
         // Arrange
         let context = AppContext::<()>::test(None, None).unwrap();
 
-        let service: MockAppService<MockApp> = MockAppService::default();
-        let enabled_ctx = MockAppService::<MockApp>::enabled_context();
-        enabled_ctx.expect().returning(move |_| service_enabled);
-        let name_ctx = MockAppService::<MockApp>::name_context();
-        name_ctx.expect().returning(|| "test".to_string());
+        let mut service: MockAppService<MockApp> = MockAppService::default();
+        service.expect_enabled().return_const(service_enabled);
+        service.expect_name().return_const("test".to_string());
 
         // Act
         let mut subject: ServiceRegistry<MockApp> = ServiceRegistry::new(&context);
@@ -112,20 +117,18 @@ mod tests {
         // Arrange
         let context = AppContext::<()>::test(None, None).unwrap();
 
-        let enabled_ctx = MockAppService::<MockApp>::enabled_context();
-        enabled_ctx.expect().returning(move |_| service_enabled);
-        let name_ctx = MockAppService::<MockApp>::name_context();
-        name_ctx.expect().returning(|| "test".to_string());
-
         let mut builder = MockAppServiceBuilder::default();
-        builder.expect_enabled().returning(move |_| builder_enabled);
-        if expected_count > 0 {
-            builder
-                .expect_build()
-                .returning(|_| Box::pin(async move { Ok(MockAppService::default()) }));
-        } else {
-            builder.expect_build().never();
-        }
+        builder.expect_enabled().return_const(builder_enabled);
+        builder.expect_name().return_const("test".to_string());
+        builder.expect_build().returning(move |_| {
+            Box::pin(async move {
+                let mut service: MockAppService<MockApp> = MockAppService::default();
+                service.expect_enabled().return_const(service_enabled);
+                service.expect_name().return_const("test".to_string());
+
+                Ok(service)
+            })
+        });
 
         // Act
         let mut subject: ServiceRegistry<MockApp> = ServiceRegistry::new(&context);

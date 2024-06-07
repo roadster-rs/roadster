@@ -13,6 +13,7 @@ grpc = ["roadster/grpc", "dep:tonic", "dep:tonic-reflection", "dep:prost"]
 [dependencies]
 roadster = { version = "0.2", path = "../.." }
 tokio = { workspace = true }
+tokio-util = { workspace = true }
 anyhow = { workspace = true }
 tracing = { workspace = true }
 async-trait = { workspace = true }

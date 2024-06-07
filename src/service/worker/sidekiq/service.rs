@@ -9,41 +9,41 @@ use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, error};
 
+pub(crate) const NAME: &str = "sidekiq";
+
+pub(crate) fn enabled<S>(context: &AppContext<S>) -> bool {
+    let sidekiq_config = &context.config().service.sidekiq;
+    if !sidekiq_config.common.enabled(context) {
+        debug!("Sidekiq is not enabled in the config.");
+        return false;
+    }
+    if sidekiq_config.custom.num_workers == 0 {
+        debug!("Sidekiq configured with 0 worker tasks.");
+        return false;
+    }
+    if sidekiq_config.custom.queues.is_empty() {
+        debug!("Sidekiq configured with 0 worker queues.");
+        return false;
+    }
+    if context.redis_fetch().is_none() {
+        debug!("No 'redis-fetch' pool connections available.");
+        return false;
+    }
+    true
+}
+
 pub struct SidekiqWorkerService {
     pub(crate) processor: Processor,
 }
 
 #[async_trait]
 impl<A: App + 'static> AppService<A> for SidekiqWorkerService {
-    fn name() -> String
-    where
-        Self: Sized,
-    {
-        "sidekiq".to_string()
+    fn name(&self) -> String {
+        NAME.to_string()
     }
 
-    fn enabled(context: &AppContext<A::State>) -> bool
-    where
-        Self: Sized,
-    {
-        let sidekiq_config = &context.config().service.sidekiq;
-        if !sidekiq_config.common.enabled(context) {
-            debug!("Sidekiq is not enabled in the config.");
-            return false;
-        }
-        if sidekiq_config.custom.num_workers == 0 {
-            debug!("Sidekiq configured with 0 worker tasks.");
-            return false;
-        }
-        if sidekiq_config.custom.queues.is_empty() {
-            debug!("Sidekiq configured with 0 worker queues.");
-            return false;
-        }
-        if context.redis_fetch().is_none() {
-            debug!("No 'redis-fetch' pool connections available.");
-            return false;
-        }
-        true
+    fn enabled(&self, context: &AppContext<A::State>) -> bool {
+        enabled(context)
     }
 
     async fn run(
@@ -92,8 +92,6 @@ impl SidekiqWorkerService {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::app::MockApp;
     use crate::app_context::AppContext;
     use crate::config::app_config::AppConfig;
     use bb8::Pool;
@@ -134,9 +132,6 @@ mod tests {
 
         let context = AppContext::<()>::test(Some(config), pool).unwrap();
 
-        assert_eq!(
-            <SidekiqWorkerService as AppService<MockApp>>::enabled(&context),
-            expected_enabled
-        );
+        assert_eq!(super::enabled(&context), expected_enabled);
     }
 }
