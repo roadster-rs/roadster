@@ -19,11 +19,17 @@ and [Poem](https://github.com/poem-web/poem).
 
 - Built on Tokio's web stack (axum, tower, hyper, tracing). App behavior can be easily extended by taking advantage of
   all the resources in the tokio ecosystem.
-- Provides sane defaults so you can focus on building your app.
-- Most of the built-in behavior can be customized or even disabled via per-environment configuration files.
+- Built-in support for HTTP APIs via [Axum](https://crates.io/crates/axum) (with the `http` feature) and gRPC APIs
+  via [Tonic](https://crates.io/crates/tonic) (with the `grpc` feature).
+- Auto-generates an OpenAPI schema for HTTP API routes defined with [aide](https://crates.io/crates/aide) (requires
+  the `open-api` feature).
+- Support for running arbitrary long-running services (e.g., an API format not supported out of the box) with minimal
+  boilerplate. Simply provide a
+  [FunctionService](https://docs.rs/roadster/latest/roadster/service/function/service/struct.FunctionService.html)
+  with your async function and register it in the `App#services` method.
+- Provides sane defaults so you can focus on building your app, but most (all?) of the built-in behavior can be
+  customized or disabled via per-environment configuration files.
 - Uses `#![forbid(unsafe_code)]` to ensure all code in Roadster is 100% safe rust.
-- Auto-generates an OpenAPI schema for routes defined with [aide](https://crates.io/crates/aide) (requires
-  the `open-api` feature)
 - Provides a CLI for common commands, and allows consumers to provide their own CLI commands
   using [clap](https://crates.io/crates/clap) (requires the `cli` feature)
 - Provides sample JWT extractor for Axum (requires the `jwt-ietf` and/or `jwt-openid` features). Also provides a general
