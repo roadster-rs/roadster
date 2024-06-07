@@ -26,6 +26,12 @@ use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 use tracing::info;
 
+pub(crate) const NAME: &str = "http";
+
+pub(crate) fn enabled<S>(context: &AppContext<S>) -> bool {
+    context.config().service.http.common.enabled(context)
+}
+
 pub struct HttpService {
     pub(crate) router: Router,
     #[cfg(feature = "open-api")]
@@ -34,12 +40,12 @@ pub struct HttpService {
 
 #[async_trait]
 impl<A: App + 'static> AppService<A> for HttpService {
-    fn name() -> String {
-        "http".to_string()
+    fn name(&self) -> String {
+        NAME.to_string()
     }
 
-    fn enabled(context: &AppContext<A::State>) -> bool {
-        context.config().service.http.common.enabled(context)
+    fn enabled(&self, context: &AppContext<A::State>) -> bool {
+        enabled(context)
     }
 
     #[cfg(feature = "cli")]

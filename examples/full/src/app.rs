@@ -3,12 +3,14 @@ use crate::api::grpc::routes;
 use crate::api::http;
 use crate::app_state::CustomAppContext;
 use crate::cli::AppCli;
+use crate::service::example::example_service;
 use crate::worker::example::ExampleWorker;
 use async_trait::async_trait;
 use migration::Migrator;
 use roadster::app::App as RoadsterApp;
 use roadster::app_context::AppContext;
 use roadster::error::RoadsterResult;
+use roadster::service::function::service::FunctionService;
 #[cfg(feature = "grpc")]
 use roadster::service::grpc::service::GrpcService;
 use roadster::service::http::service::HttpService;
@@ -48,6 +50,13 @@ impl RoadsterApp for App {
                     .register_app_worker(ExampleWorker::build(context))?,
             )
             .await?;
+
+        registry.register_service(
+            FunctionService::builder()
+                .name("example".to_string())
+                .function(example_service)
+                .build(),
+        )?;
 
         #[cfg(feature = "grpc")]
         registry.register_service(GrpcService::new(routes(context)?))?;

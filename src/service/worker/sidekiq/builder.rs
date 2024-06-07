@@ -4,10 +4,10 @@ use crate::config::service::worker::sidekiq::StaleCleanUpBehavior;
 use crate::error::RoadsterResult;
 use crate::service::worker::sidekiq::app_worker::AppWorker;
 use crate::service::worker::sidekiq::roadster_worker::RoadsterWorker;
-use crate::service::worker::sidekiq::service::SidekiqWorkerService;
+use crate::service::worker::sidekiq::service::{enabled, SidekiqWorkerService, NAME};
 #[cfg_attr(test, mockall_double::double)]
 use crate::service::worker::sidekiq::Processor;
-use crate::service::{AppService, AppServiceBuilder};
+use crate::service::AppServiceBuilder;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use bb8::PooledConnection;
@@ -46,11 +46,13 @@ impl<A> AppServiceBuilder<A, SidekiqWorkerService> for SidekiqWorkerServiceBuild
 where
     A: App,
 {
+    fn name(&self) -> String {
+        NAME.to_string()
+    }
+
     fn enabled(&self, app_context: &AppContext<A::State>) -> bool {
         match self.state {
-            BuilderState::Enabled { .. } => {
-                <SidekiqWorkerService as AppService<A>>::enabled(app_context)
-            }
+            BuilderState::Enabled { .. } => enabled(app_context),
             BuilderState::Disabled => false,
         }
     }
@@ -96,7 +98,7 @@ where
         context: &AppContext<A::State>,
         worker_queues: Option<Vec<String>>,
     ) -> RoadsterResult<Self> {
-        let processor = if !<SidekiqWorkerService as AppService<A>>::enabled(context) {
+        let processor = if !enabled(context) {
             debug!("Sidekiq service not enabled, not creating the Sidekiq processor");
             None
         } else if let Some(redis_fetch) = context.redis_fetch() {
@@ -152,11 +154,7 @@ where
         context: AppContext<A::State>,
         processor: Option<Processor<A>>,
     ) -> RoadsterResult<Self> {
-        let processor = if <SidekiqWorkerService as AppService<A>>::enabled(&context) {
-            processor
-        } else {
-            None
-        };
+        let processor = if enabled(&context) { processor } else { None };
 
         let state = if let Some(processor) = processor {
             BuilderState::Enabled {

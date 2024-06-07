@@ -6,6 +6,7 @@ use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use tokio_util::sync::CancellationToken;
 
+pub mod function;
 #[cfg(feature = "grpc")]
 pub mod grpc;
 #[cfg(feature = "http")]
@@ -22,15 +23,11 @@ pub mod worker;
 pub trait AppService<A: App + 'static>: Send + Sync {
     /// The name of the service.
     // todo: make this non-static? This would make some testing/mocking slightly easier
-    fn name() -> String
-    where
-        Self: Sized;
+    fn name(&self) -> String;
 
     /// Whether the service is enabled. If the service is not enabled, it will not be run.
     // todo: make this non-static? This would make some testing/mocking slightly easier
-    fn enabled(context: &AppContext<A::State>) -> bool
-    where
-        Self: Sized;
+    fn enabled(&self, context: &AppContext<A::State>) -> bool;
 
     /// Called when the app is starting up allow the service to handle CLI commands.
     ///
@@ -72,46 +69,9 @@ where
     A: App + 'static,
     S: AppService<A>,
 {
-    fn enabled(&self, app_context: &AppContext<A::State>) -> bool {
-        S::enabled(app_context)
-    }
+    fn name(&self) -> String;
+
+    fn enabled(&self, app_context: &AppContext<A::State>) -> bool;
 
     async fn build(self, context: &AppContext<A::State>) -> RoadsterResult<S>;
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::app::MockApp;
-    use crate::app_context::AppContext;
-    use crate::error::RoadsterResult;
-    use crate::service::{AppServiceBuilder, MockAppService};
-    use async_trait::async_trait;
-    use rstest::rstest;
-
-    struct TestAppServiceBuilder;
-    #[async_trait]
-    impl AppServiceBuilder<MockApp, MockAppService<MockApp>> for TestAppServiceBuilder {
-        #[cfg_attr(coverage_nightly, coverage(off))]
-        async fn build(self, _context: &AppContext<()>) -> RoadsterResult<MockAppService<MockApp>> {
-            Ok(MockAppService::default())
-        }
-    }
-
-    #[rstest]
-    #[case(true)]
-    #[case(false)]
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    fn builder_enabled(#[case] service_enabled: bool) {
-        // Arrange
-        let context = AppContext::<()>::test(None, None).unwrap();
-
-        let enabled_ctx = MockAppService::<MockApp>::enabled_context();
-        enabled_ctx.expect().returning(move |_| service_enabled);
-
-        // Act
-        let builder = TestAppServiceBuilder;
-
-        // Assert
-        assert_eq!(builder.enabled(&context), service_enabled);
-    }
 }
