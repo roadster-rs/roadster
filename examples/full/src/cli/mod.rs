@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use clap::{Parser, Subcommand};
-use roadster::app_context::AppContext;
+use roadster::app::context::AppContext;
 
 use roadster::api::cli::RunCommand;
 use roadster::error::RoadsterResult;

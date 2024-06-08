@@ -1,5 +1,5 @@
+use crate::app::context::AppContext;
 use crate::app::App;
-use crate::app_context::AppContext;
 use crate::config::service::worker::sidekiq::StaleCleanUpBehavior;
 use crate::error::RoadsterResult;
 use crate::service::worker::sidekiq::app_worker::AppWorker;
@@ -385,8 +385,8 @@ impl<'a> RedisCommands for PooledConnection<'a, RedisConnectionManager> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::app::context::AppContext;
     use crate::app::MockApp;
-    use crate::app_context::AppContext;
     use crate::config::app_config::AppConfig;
     use crate::service::worker::sidekiq::MockProcessor;
     use bb8::Pool;
@@ -488,7 +488,7 @@ mod tests {
 
         let redis_fetch = RedisConnectionManager::new("redis://invalid_host:1234").unwrap();
         let pool = Pool::builder().build_unchecked(redis_fetch);
-        let context = AppContext::<()>::test(Some(config), Some(pool)).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, Some(pool)).unwrap();
 
         let mut processor = MockProcessor::<MockApp>::default();
         processor
@@ -608,7 +608,7 @@ mod tests {
             config.service.sidekiq.custom.periodic.stale_cleanup = StaleCleanUpBehavior::Manual;
         }
 
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         let mut redis = MockRedisCommands::default();
         redis

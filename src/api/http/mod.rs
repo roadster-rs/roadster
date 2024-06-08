@@ -1,4 +1,4 @@
-use crate::app_context::AppContext;
+use crate::app::context::AppContext;
 #[cfg(feature = "open-api")]
 use aide::axum::ApiRouter;
 use axum::Router;

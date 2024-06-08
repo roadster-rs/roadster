@@ -6,8 +6,8 @@ use serde_derive::Serialize;
 use tracing::warn;
 
 use crate::api::cli::roadster::{RoadsterCli, RunRoadsterCommand};
+use crate::app::context::AppContext;
 use crate::app::App;
-use crate::app_context::AppContext;
 use crate::error::RoadsterResult;
 
 #[derive(Debug, Parser, Serialize)]

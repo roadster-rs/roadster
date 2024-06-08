@@ -5,8 +5,8 @@ use crate::api::cli::roadster::migrate::MigrateArgs;
 #[cfg(feature = "open-api")]
 use crate::api::cli::roadster::open_api_schema::OpenApiArgs;
 use crate::api::cli::roadster::print_config::PrintConfigArgs;
+use crate::app::context::AppContext;
 use crate::app::App;
-use crate::app_context::AppContext;
 use crate::config::environment::Environment;
 use crate::error::RoadsterResult;
 use async_trait::async_trait;

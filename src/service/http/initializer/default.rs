@@ -1,4 +1,4 @@
-use crate::app_context::AppContext;
+use crate::app::context::AppContext;
 use crate::service::http::initializer::normalize_path::NormalizePathInitializer;
 use crate::service::http::initializer::Initializer;
 use std::collections::BTreeMap;
@@ -16,7 +16,7 @@ pub fn default_initializers<S: Send + Sync + 'static>(
 
 #[cfg(test)]
 mod tests {
-    use crate::app_context::AppContext;
+    use crate::app::context::AppContext;
     use crate::config::app_config::AppConfig;
     use rstest::rstest;
 
@@ -29,7 +29,7 @@ mod tests {
         let mut config = AppConfig::test(None).unwrap();
         config.service.http.custom.initializer.default_enable = default_enable;
 
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         // Act
         let middleware = super::default_initializers(&context);

@@ -3,7 +3,7 @@ pub mod ietf;
 #[cfg(feature = "jwt-openid")]
 pub mod openid;
 
-use crate::app_context::AppContext;
+use crate::app::context::AppContext;
 use crate::error::{Error, RoadsterResult};
 #[cfg(feature = "jwt-ietf")]
 use crate::middleware::http::auth::jwt::ietf::Claims;

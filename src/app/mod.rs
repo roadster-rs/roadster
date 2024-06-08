@@ -1,10 +1,13 @@
+pub mod context;
+pub mod metadata;
+
 #[cfg(feature = "cli")]
 use crate::api::cli::parse_cli;
 #[cfg(all(test, feature = "cli"))]
 use crate::api::cli::MockCli;
 #[cfg(feature = "cli")]
 use crate::api::cli::RunCommand;
-use crate::app_context::AppContext;
+use crate::app::metadata::AppMetadata;
 use crate::config::app_config::AppConfig;
 #[cfg(not(feature = "cli"))]
 use crate::config::environment::Environment;
@@ -12,6 +15,7 @@ use crate::error::RoadsterResult;
 use crate::service::registry::ServiceRegistry;
 use crate::tracing::init_tracing;
 use async_trait::async_trait;
+use context::AppContext;
 #[cfg(feature = "db-sql")]
 use sea_orm::ConnectOptions;
 #[cfg(all(test, feature = "db-sql"))]
@@ -23,7 +27,6 @@ use std::env;
 use std::future;
 use tracing::{instrument, warn};
 
-// todo: this method is getting unweildy, we should break it up
 pub async fn run<A>(
     // This parameter is (currently) not used when no features are enabled.
     #[allow(unused_variables)] app: A,
@@ -48,12 +51,15 @@ where
     #[cfg(feature = "cli")]
     config.validate(!roadster_cli.skip_validate_config)?;
 
+    #[cfg(not(test))]
+    let metadata = A::metadata(&config)?;
+
     // The `config.clone()` here is technically not necessary. However, without it, RustRover
     // is giving a "value used after move" error when creating an actual `AppContext` below.
     #[cfg(test)]
-    let context = AppContext::<()>::test(Some(config.clone()), None)?;
+    let context = AppContext::<()>::test(Some(config.clone()), None, None)?;
     #[cfg(not(test))]
-    let context = AppContext::<()>::new::<A>(config).await?;
+    let context = AppContext::<()>::new::<A>(config, metadata).await?;
 
     let state = A::with_state(&context).await?;
     let context = context.with_custom(state);
@@ -99,9 +105,13 @@ pub trait App: Send + Sync {
     type M: MigratorTrait;
 
     fn init_tracing(config: &AppConfig) -> RoadsterResult<()> {
-        init_tracing(config)?;
+        init_tracing(config, &Self::metadata(config)?)?;
 
         Ok(())
+    }
+
+    fn metadata(_config: &AppConfig) -> RoadsterResult<AppMetadata> {
+        Ok(Default::default())
     }
 
     #[cfg(feature = "db-sql")]

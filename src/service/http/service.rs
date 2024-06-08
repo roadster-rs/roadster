@@ -4,8 +4,8 @@ use crate::api::cli::roadster::RoadsterCli;
 use crate::api::cli::roadster::RoadsterCommand;
 #[cfg(all(feature = "cli", feature = "open-api"))]
 use crate::api::cli::roadster::RoadsterSubCommand;
+use crate::app::context::AppContext;
 use crate::app::App;
-use crate::app_context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::http::builder::HttpServiceBuilder;
 use crate::service::AppService;

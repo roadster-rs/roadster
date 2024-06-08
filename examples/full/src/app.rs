@@ -7,8 +7,10 @@ use crate::service::example::example_service;
 use crate::worker::example::ExampleWorker;
 use async_trait::async_trait;
 use migration::Migrator;
+use roadster::app::context::AppContext;
+use roadster::app::metadata::AppMetadata;
 use roadster::app::App as RoadsterApp;
-use roadster::app_context::AppContext;
+use roadster::config::app_config::AppConfig;
 use roadster::error::RoadsterResult;
 use roadster::service::function::service::FunctionService;
 #[cfg(feature = "grpc")]
@@ -28,6 +30,12 @@ impl RoadsterApp for App {
     type State = CustomAppContext;
     type Cli = AppCli;
     type M = Migrator;
+
+    fn metadata(_config: &AppConfig) -> RoadsterResult<AppMetadata> {
+        Ok(AppMetadata::builder()
+            .version(env!("VERGEN_GIT_SHA").to_string())
+            .build())
+    }
 
     async fn with_state(_context: &AppContext) -> RoadsterResult<Self::State> {
         Ok(())

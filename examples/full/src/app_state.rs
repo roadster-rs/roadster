@@ -1,4 +1,4 @@
-use roadster::app_context::AppContext;
+use roadster::app::context::AppContext;
 
 pub type CustomAppContext = ();
 

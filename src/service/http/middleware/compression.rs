@@ -1,4 +1,4 @@
-use crate::app_context::AppContext;
+use crate::app::context::AppContext;
 use crate::service::http::middleware::Middleware;
 use axum::Router;
 use serde_derive::{Deserialize, Serialize};
@@ -92,7 +92,7 @@ impl<S: Send + Sync + 'static> Middleware<S> for RequestDecompressionMiddleware 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app_context::AppContext;
+    use crate::app::context::AppContext;
     use crate::config::app_config::AppConfig;
     use rstest::rstest;
 
@@ -117,7 +117,7 @@ mod tests {
             .common
             .enable = enable;
 
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         let middleware = ResponseCompressionMiddleware;
 
@@ -146,7 +146,7 @@ mod tests {
                 .priority = priority;
         }
 
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         let middleware = ResponseCompressionMiddleware;
 
@@ -175,7 +175,7 @@ mod tests {
             .common
             .enable = enable;
 
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         let middleware = RequestDecompressionMiddleware;
 
@@ -204,7 +204,7 @@ mod tests {
                 .priority = priority;
         }
 
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         let middleware = RequestDecompressionMiddleware;
 

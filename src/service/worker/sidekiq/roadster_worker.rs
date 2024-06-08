@@ -1,5 +1,5 @@
+use crate::app::context::AppContext;
 use crate::app::App;
-use crate::app_context::AppContext;
 use crate::service::worker::sidekiq::app_worker::AppWorker;
 use crate::service::worker::sidekiq::app_worker::AppWorkerConfig;
 use async_trait::async_trait;

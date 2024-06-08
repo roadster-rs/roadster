@@ -5,7 +5,7 @@ pub mod grpc;
 pub mod http;
 pub mod worker;
 
-use crate::app_context::AppContext;
+use crate::app::context::AppContext;
 #[cfg(feature = "grpc")]
 use crate::config::service::grpc::GrpcServiceConfig;
 #[cfg(feature = "http")]

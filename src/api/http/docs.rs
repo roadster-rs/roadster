@@ -1,5 +1,5 @@
 use crate::api::http::build_path;
-use crate::app_context::AppContext;
+use crate::app::context::AppContext;
 use aide::axum::routing::get_with;
 use aide::axum::{ApiRouter, IntoApiResponse};
 use aide::openapi::OpenApi;
@@ -165,7 +165,7 @@ mod tests {
                 .route
                 .clone_from(route);
         }
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         assert_eq!(scalar_enabled(&context), enabled);
         assert_eq!(
@@ -199,7 +199,7 @@ mod tests {
                 .route
                 .clone_from(route);
         }
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         assert_eq!(redoc_enabled(&context), enabled);
         assert_eq!(
@@ -233,7 +233,7 @@ mod tests {
                 .route
                 .clone_from(route);
         }
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         assert_eq!(api_schema_enabled(&context), enabled);
         assert_eq!(

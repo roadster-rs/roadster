@@ -1,5 +1,5 @@
 use crate::api::http::build_path;
-use crate::app_context::AppContext;
+use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 #[cfg(feature = "open-api")]
 use aide::axum::routing::get_with;
@@ -84,7 +84,7 @@ fn ping_get_docs(op: TransformOperation) -> TransformOperation {
 
 #[cfg(test)]
 mod tests {
-    use crate::app_context::AppContext;
+    use crate::app::context::AppContext;
     use crate::config::app_config::AppConfig;
     use rstest::rstest;
 
@@ -115,7 +115,7 @@ mod tests {
                 .route
                 .clone_from(route);
         }
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         assert_eq!(super::enabled(&context), enabled);
         assert_eq!(
