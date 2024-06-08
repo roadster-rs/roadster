@@ -5,10 +5,11 @@ help:
 # Run all of our unit tests.
 test:
     cargo nextest run --all-features
+    cargo test --doc --all-features
 
 # Run all of our unit tests whenever files in the repo change.
 test-watch:
-    cargo watch -x 'nextest run --all-features'
+    cargo watch -s 'just test'
 
 # Install dependencies required to generate code coverage.
 coverage-dependencies:
