@@ -134,7 +134,7 @@ rusty-sidekiq = { version = "0.10.5", default-features = false }
 tokio = { version = "1.28.0", features = ["full"] }
 # For CancellationToken
 tokio-util = { version = "0.7.10" }
-anyhow = "1.0.46"
+anyhow = "1.0.69"
 serde = { version = "1.0.184", features = ["derive"] }
 
 [package.metadata.docs.rs]

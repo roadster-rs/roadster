@@ -1,4 +1,4 @@
-use crate::app_context::AppContext;
+use crate::app::context::AppContext;
 use crate::config::app_config::CustomConfig;
 use crate::service::http::middleware::catch_panic::CatchPanicConfig;
 use crate::service::http::middleware::compression::{
@@ -134,7 +134,7 @@ mod tests {
         let mut config = AppConfig::test(None).unwrap();
         config.service.http.custom.middleware.default_enable = default_enable;
 
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         let common_config = CommonConfig {
             enable,

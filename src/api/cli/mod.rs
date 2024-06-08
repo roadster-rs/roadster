@@ -1,8 +1,8 @@
 use crate::api::cli::roadster::{RoadsterCli, RunRoadsterCommand};
+use crate::app::context::AppContext;
 use crate::app::App;
 #[cfg(test)]
 use crate::app::MockApp;
-use crate::app_context::AppContext;
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use clap::{Args, Command, FromArgMatches};

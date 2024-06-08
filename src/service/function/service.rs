@@ -1,5 +1,5 @@
+use crate::app::context::AppContext;
 use crate::app::App;
-use crate::app_context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::AppService;
 use async_trait::async_trait;
@@ -20,7 +20,7 @@ use typed_builder::TypedBuilder;
 # use sea_orm_migration::{MigrationTrait, MigratorTrait};
 use tokio_util::sync::CancellationToken;
 # use roadster::api::cli::RunCommand;
-use roadster::app_context::AppContext;
+use roadster::app::context::AppContext;
 use roadster::error::RoadsterResult;
 use roadster::service::function::service::FunctionService;
 use roadster::service::registry::ServiceRegistry;

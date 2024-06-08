@@ -1,5 +1,5 @@
+use crate::app::context::AppContext;
 use crate::app::App;
-use crate::app_context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::{AppService, AppServiceBuilder};
 use anyhow::anyhow;
@@ -87,7 +87,7 @@ mod tests {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn register_service(#[case] service_enabled: bool, #[case] expected_count: usize) {
         // Arrange
-        let context = AppContext::<()>::test(None, None).unwrap();
+        let context = AppContext::<()>::test(None, None, None).unwrap();
 
         let mut service: MockAppService<MockApp> = MockAppService::default();
         service.expect_enabled().return_const(service_enabled);
@@ -115,7 +115,7 @@ mod tests {
         #[case] expected_count: usize,
     ) {
         // Arrange
-        let context = AppContext::<()>::test(None, None).unwrap();
+        let context = AppContext::<()>::test(None, None, None).unwrap();
 
         let mut builder = MockAppServiceBuilder::default();
         builder.expect_enabled().return_const(builder_enabled);

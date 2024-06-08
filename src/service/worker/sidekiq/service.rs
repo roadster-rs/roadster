@@ -1,5 +1,5 @@
+use crate::app::context::AppContext;
 use crate::app::App;
-use crate::app_context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::worker::sidekiq::builder::SidekiqWorkerServiceBuilder;
 use crate::service::AppService;
@@ -92,7 +92,7 @@ impl SidekiqWorkerService {
 
 #[cfg(test)]
 mod tests {
-    use crate::app_context::AppContext;
+    use crate::app::context::AppContext;
     use crate::config::app_config::AppConfig;
     use bb8::Pool;
     use rstest::rstest;
@@ -130,7 +130,7 @@ mod tests {
             None
         };
 
-        let context = AppContext::<()>::test(Some(config), pool).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, pool).unwrap();
 
         assert_eq!(super::enabled(&context), expected_enabled);
     }

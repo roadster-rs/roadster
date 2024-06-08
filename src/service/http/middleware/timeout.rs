@@ -1,4 +1,4 @@
-use crate::app_context::AppContext;
+use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
 use axum::Router;
@@ -90,7 +90,7 @@ mod tests {
         config.service.http.custom.middleware.default_enable = default_enable;
         config.service.http.custom.middleware.timeout.common.enable = enable;
 
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         let middleware = TimeoutMiddleware;
 
@@ -116,7 +116,7 @@ mod tests {
                 .priority = priority;
         }
 
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         let middleware = TimeoutMiddleware;
 

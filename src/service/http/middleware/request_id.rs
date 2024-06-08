@@ -1,4 +1,4 @@
-use crate::app_context::AppContext;
+use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
 use axum::http::HeaderName;
@@ -165,7 +165,7 @@ mod tests {
             .common
             .enable = enable;
 
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         let middleware = SetRequestIdMiddleware;
 
@@ -194,7 +194,7 @@ mod tests {
                 .priority = priority;
         }
 
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         let middleware = SetRequestIdMiddleware;
 
@@ -223,7 +223,7 @@ mod tests {
             .common
             .enable = enable;
 
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         let middleware = PropagateRequestIdMiddleware;
 
@@ -252,7 +252,7 @@ mod tests {
                 .priority = priority;
         }
 
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         let middleware = PropagateRequestIdMiddleware;
 

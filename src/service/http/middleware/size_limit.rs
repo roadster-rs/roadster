@@ -1,4 +1,4 @@
-use crate::app_context::AppContext;
+use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
 use anyhow::anyhow;
@@ -105,7 +105,7 @@ mod tests {
             .common
             .enable = enable;
 
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         let middleware = RequestBodyLimitMiddleware;
 
@@ -131,7 +131,7 @@ mod tests {
                 .priority = priority;
         }
 
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         let middleware = RequestBodyLimitMiddleware;
 

@@ -1,4 +1,4 @@
-use crate::app_context::AppContext;
+use crate::app::context::AppContext;
 use crate::util::serde_util::default_true;
 use serde_derive::{Deserialize, Serialize};
 use validator::Validate;

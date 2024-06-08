@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+use crate::app::metadata::AppMetadata;
 #[cfg(feature = "otel")]
 use convert_case::{Case, Casing};
 #[cfg(feature = "otel")]
@@ -11,7 +12,7 @@ use opentelemetry_sdk::propagation::TraceContextPropagator;
 #[cfg(feature = "otel")]
 use opentelemetry_sdk::runtime::Tokio;
 #[cfg(feature = "otel")]
-use opentelemetry_semantic_conventions::resource::SERVICE_NAME;
+use opentelemetry_semantic_conventions::resource::{SERVICE_NAME, SERVICE_VERSION};
 use tracing::Level;
 #[cfg(feature = "otel")]
 use tracing_opentelemetry::MetricsLayer;
@@ -23,7 +24,11 @@ use crate::config::app_config::AppConfig;
 use crate::error::RoadsterResult;
 
 // Todo: make this configurable
-pub fn init_tracing(config: &AppConfig) -> RoadsterResult<()> {
+pub fn init_tracing(
+    config: &AppConfig,
+    #[allow(unused_variables)] // This parameter isn't used in some feature combinations
+    metadata: &AppMetadata,
+) -> RoadsterResult<()> {
     // Stdout Layer
     let stdout_layer = tracing_subscriber::fmt::layer();
 
@@ -38,11 +43,16 @@ pub fn init_tracing(config: &AppConfig) -> RoadsterResult<()> {
             .tracing
             .service_name
             .clone()
+            .or(metadata.name.clone())
             .unwrap_or(config.app.name.to_case(Case::Snake));
-        opentelemetry_sdk::Resource::new(vec![opentelemetry::KeyValue::new(
-            SERVICE_NAME,
-            service_name,
-        )])
+
+        let mut resource_metadata = vec![opentelemetry::KeyValue::new(SERVICE_NAME, service_name)];
+
+        if let Some(version) = metadata.version.clone() {
+            resource_metadata.push(opentelemetry::KeyValue::new(SERVICE_VERSION, version))
+        }
+
+        opentelemetry_sdk::Resource::new(resource_metadata)
     };
 
     // Trace layer

@@ -1,3 +1,4 @@
+use crate::app::metadata::AppMetadata;
 use crate::app::App;
 use crate::config::app_config::AppConfig;
 use crate::error::RoadsterResult;
@@ -21,14 +22,17 @@ impl<T> AppContext<T> {
     #[cfg_attr(test, allow(dead_code))]
     // The `A` type parameter isn't used in some feature configurations
     #[allow(clippy::extra_unused_type_parameters)]
-    pub(crate) async fn new<A>(config: AppConfig) -> RoadsterResult<AppContext<()>>
+    pub(crate) async fn new<A>(
+        config: AppConfig,
+        metadata: AppMetadata,
+    ) -> RoadsterResult<AppContext<()>>
     where
         A: App,
     {
         #[cfg(test)]
         // The `config.clone()` here is technically not necessary. However, without it, RustRover
         // is giving a "value used after move" error when creating an actual `AppContext` below.
-        let context = { Self::test(Some(config.clone()), None)? };
+        let context = { Self::test(Some(config.clone()), Some(metadata.clone()), None)? };
 
         #[cfg(not(test))]
         let context = {
@@ -70,6 +74,7 @@ impl<T> AppContext<T> {
             };
             let inner = AppContextInner {
                 config,
+                metadata,
                 #[cfg(feature = "db-sql")]
                 db,
                 #[cfg(feature = "sidekiq")]
@@ -89,6 +94,7 @@ impl<T> AppContext<T> {
     #[cfg(test)]
     pub(crate) fn test(
         config: Option<AppConfig>,
+        metadata: Option<AppMetadata>,
         #[cfg(not(feature = "sidekiq"))] _redis: Option<()>,
         #[cfg(feature = "sidekiq")] redis: Option<sidekiq::RedisPool>,
     ) -> RoadsterResult<AppContext<()>> {
@@ -96,6 +102,11 @@ impl<T> AppContext<T> {
         inner
             .expect_config()
             .return_const(config.unwrap_or(AppConfig::test(None)?));
+
+        inner
+            .expect_metadata()
+            .return_const(metadata.unwrap_or_default());
+
         #[cfg(feature = "sidekiq")]
         if let Some(redis) = redis {
             inner.expect_redis_enqueue().return_const(redis.clone());
@@ -120,6 +131,10 @@ impl<T> AppContext<T> {
         self.inner.config()
     }
 
+    pub fn metadata(&self) -> &AppMetadata {
+        self.inner.metadata()
+    }
+
     #[cfg(feature = "db-sql")]
     pub fn db(&self) -> &DatabaseConnection {
         self.inner.db()
@@ -142,6 +157,7 @@ impl<T> AppContext<T> {
 
 struct AppContextInner {
     config: AppConfig,
+    metadata: AppMetadata,
     #[cfg(feature = "db-sql")]
     db: DatabaseConnection,
     #[cfg(feature = "sidekiq")]
@@ -158,6 +174,10 @@ struct AppContextInner {
 impl AppContextInner {
     fn config(&self) -> &AppConfig {
         &self.config
+    }
+
+    fn metadata(&self) -> &AppMetadata {
+        &self.metadata
     }
 
     #[cfg(feature = "db-sql")]

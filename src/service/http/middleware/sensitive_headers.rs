@@ -1,4 +1,4 @@
-use crate::app_context::AppContext;
+use crate::app::context::AppContext;
 use crate::service::http::middleware::Middleware;
 use axum::http::{header, HeaderName};
 use axum::Router;
@@ -152,7 +152,7 @@ impl<S: Send + Sync + 'static> Middleware<S> for SensitiveResponseHeadersMiddlew
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app_context::AppContext;
+    use crate::app::context::AppContext;
     use crate::config::app_config::AppConfig;
     use rstest::rstest;
 
@@ -177,7 +177,7 @@ mod tests {
             .common
             .enable = enable;
 
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         let middleware = SensitiveRequestHeadersMiddleware;
 
@@ -206,7 +206,7 @@ mod tests {
                 .priority = priority;
         }
 
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         let middleware = SensitiveRequestHeadersMiddleware;
 
@@ -235,7 +235,7 @@ mod tests {
             .common
             .enable = enable;
 
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         let middleware = SensitiveResponseHeadersMiddleware;
 
@@ -264,7 +264,7 @@ mod tests {
                 .priority = priority;
         }
 
-        let context = AppContext::<()>::test(Some(config), None).unwrap();
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
 
         let middleware = SensitiveResponseHeadersMiddleware;
 
