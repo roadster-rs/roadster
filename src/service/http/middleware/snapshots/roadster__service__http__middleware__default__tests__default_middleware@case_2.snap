@@ -1,0 +1,16 @@
+---
+source: src/service/http/middleware/default.rs
+expression: middleware
+---
+[
+    'catch-panic',
+    'cors',
+    'propagate-request-id',
+    'request-body-size-limit',
+    'request-decompression',
+    'sensitive-request-headers',
+    'sensitive-response-headers',
+    'set-request-id',
+    'timeout',
+    'tracing',
+]

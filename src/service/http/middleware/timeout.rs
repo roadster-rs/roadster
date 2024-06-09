@@ -6,9 +6,10 @@ use serde_derive::{Deserialize, Serialize};
 use serde_with::serde_as;
 use std::time::Duration;
 use tower_http::timeout::TimeoutLayer;
+use validator::Validate;
 
 #[serde_as]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
 pub struct TimeoutConfig {
     #[serde_as(as = "serde_with::DurationMilliSeconds")]

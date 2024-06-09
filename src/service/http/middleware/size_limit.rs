@@ -8,8 +8,9 @@ use byte_unit::Byte;
 use byte_unit::Unit::MB;
 use serde_derive::{Deserialize, Serialize};
 use tower_http::limit::RequestBodyLimitLayer;
+use validator::Validate;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
 pub struct SizeLimitConfig {
     pub limit: Byte,

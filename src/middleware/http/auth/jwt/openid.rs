@@ -69,15 +69,10 @@ pub enum Acr {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_derive::{Deserialize, Serialize};
+    use crate::util::serde_util::Wrapper;
     use serde_json::from_str;
     use std::str::FromStr;
     use url::Url;
-
-    #[derive(Debug, Deserialize, Serialize)]
-    struct Wrapper<T> {
-        inner: T,
-    }
 
     #[test]
     #[cfg_attr(coverage_nightly, coverage(off))]

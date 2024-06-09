@@ -1,0 +1,7 @@
+---
+source: src/service/http/middleware/cors.rs
+expression: value
+---
+[inner]
+type = 'exact'
+method = 'foo'

@@ -1,0 +1,10 @@
+---
+source: src/service/http/middleware/cors.rs
+expression: value
+---
+[inner]
+type = 'list'
+headers = [
+    'foo',
+    'bar',
+]

@@ -11,8 +11,9 @@ use serde_derive::{Deserialize, Serialize};
 use std::time::Duration;
 use tower_http::trace::{DefaultOnResponse, MakeSpan, OnRequest, OnResponse, TraceLayer};
 use tracing::{event, field, info_span, Level, Span, Value};
+use validator::Validate;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
 pub struct TracingConfig {}
 

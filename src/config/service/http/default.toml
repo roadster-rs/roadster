@@ -38,6 +38,9 @@ timeout = 10000
 priority = -9970
 limit = "5 MB"
 
+[service.http.middleware.cors]
+priority = -9950
+
 # Initializers
 [service.http.initializer]
 default-enable = true

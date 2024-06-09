@@ -4,6 +4,7 @@ use crate::service::http::middleware::catch_panic::CatchPanicConfig;
 use crate::service::http::middleware::compression::{
     RequestDecompressionConfig, ResponseCompressionConfig,
 };
+use crate::service::http::middleware::cors::CorsConfig;
 use crate::service::http::middleware::request_id::{PropagateRequestIdConfig, SetRequestIdConfig};
 use crate::service::http::middleware::sensitive_headers::{
     SensitiveRequestHeadersConfig, SensitiveResponseHeadersConfig,
@@ -44,6 +45,9 @@ pub struct Middleware {
     pub timeout: MiddlewareConfig<TimeoutConfig>,
 
     pub size_limit: MiddlewareConfig<SizeLimitConfig>,
+
+    pub cors: MiddlewareConfig<CorsConfig>,
+
     /// Allows providing configs for custom middleware. Any configs that aren't pre-defined above
     /// will be collected here.
     ///
@@ -102,7 +106,7 @@ impl CommonConfig {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct MiddlewareConfig<T> {
     #[serde(flatten)]
