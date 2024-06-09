@@ -10,8 +10,9 @@ use crate::error::RoadsterResult;
 use tower_http::sensitive_headers::{
     SetSensitiveRequestHeadersLayer, SetSensitiveResponseHeadersLayer,
 };
+use validator::Validate;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
 pub struct CommonSensitiveHeadersConfig {
     pub header_names: Vec<String>,
@@ -41,14 +42,14 @@ impl CommonSensitiveHeadersConfig {
     }
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
 pub struct SensitiveRequestHeadersConfig {
     #[serde(flatten)]
     pub common: CommonSensitiveHeadersConfig,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
 pub struct SensitiveResponseHeadersConfig {
     #[serde(flatten)]
@@ -131,6 +132,7 @@ impl<S: Send + Sync + 'static> Middleware<S> for SensitiveResponseHeadersMiddlew
             .common
             .priority
     }
+
     fn install(&self, router: Router, context: &AppContext<S>) -> RoadsterResult<Router> {
         let headers = context
             .config()

@@ -6,12 +6,13 @@ use serde_derive::{Deserialize, Serialize};
 use crate::error::RoadsterResult;
 use tower_http::compression::CompressionLayer;
 use tower_http::decompression::RequestDecompressionLayer;
+use validator::Validate;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
 pub struct ResponseCompressionConfig {}
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
 pub struct RequestDecompressionConfig {}
 

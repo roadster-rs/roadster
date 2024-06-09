@@ -6,10 +6,11 @@ use axum::Router;
 use serde_derive::{Deserialize, Serialize};
 use std::str::FromStr;
 use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
+use validator::Validate;
 
 pub const REQUEST_ID_HEADER_NAME: &str = "request-id";
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
 pub struct CommonRequestIdConfig {
     pub header_name: String,
@@ -23,14 +24,14 @@ impl Default for CommonRequestIdConfig {
     }
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
 pub struct SetRequestIdConfig {
     #[serde(flatten)]
     pub common: CommonRequestIdConfig,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
 pub struct PropagateRequestIdConfig {
     #[serde(flatten)]

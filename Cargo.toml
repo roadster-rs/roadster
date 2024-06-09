@@ -46,7 +46,7 @@ tracing-opentelemetry = { version = "0.24.0", features = ["metrics"], optional =
 axum = { workspace = true, optional = true }
 axum-extra = { version = "0.9.0", features = ["typed-header"], optional = true }
 tower = { version = "0.4.13", optional = true }
-tower-http = { version = "0.5.0", features = ["trace", "timeout", "request-id", "util", "normalize-path", "sensitive-headers", "catch-panic", "compression-full", "decompression-full", "limit"], optional = true }
+tower-http = { version = "0.5.0", features = ["trace", "timeout", "request-id", "util", "normalize-path", "sensitive-headers", "catch-panic", "compression-full", "decompression-full", "limit", "cors"], optional = true }
 aide = { workspace = true, features = ["axum", "redoc", "scalar", "macros"], optional = true }
 schemars = { workspace = true, optional = true }
 

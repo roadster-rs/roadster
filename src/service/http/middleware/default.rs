@@ -1,6 +1,7 @@
 use crate::app::context::AppContext;
 use crate::service::http::middleware::catch_panic::CatchPanicMiddleware;
 use crate::service::http::middleware::compression::RequestDecompressionMiddleware;
+use crate::service::http::middleware::cors::CorsMiddleware;
 use crate::service::http::middleware::request_id::{
     PropagateRequestIdMiddleware, SetRequestIdMiddleware,
 };
@@ -26,6 +27,7 @@ pub fn default_middleware<S: Send + Sync + 'static>(
         Box::new(RequestDecompressionMiddleware),
         Box::new(TimeoutMiddleware),
         Box::new(RequestBodyLimitMiddleware),
+        Box::new(CorsMiddleware),
     ];
     middleware
         .into_iter()
@@ -38,13 +40,22 @@ pub fn default_middleware<S: Send + Sync + 'static>(
 mod tests {
     use crate::app::context::AppContext;
     use crate::config::app_config::AppConfig;
-    use rstest::rstest;
+    use crate::util::test_util::TestCase;
+    use insta::assert_toml_snapshot;
+    use itertools::Itertools;
+    use rstest::{fixture, rstest};
+
+    #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn case() -> TestCase {
+        Default::default()
+    }
 
     #[rstest]
-    #[case(true, 9)]
-    #[case(false, 0)]
+    #[case(false)]
+    #[case(true)]
     #[cfg_attr(coverage_nightly, coverage(off))]
-    fn default_middleware(#[case] default_enable: bool, #[case] expected_size: usize) {
+    fn default_middleware(_case: TestCase, #[case] default_enable: bool) {
         // Arrange
         let mut config = AppConfig::test(None).unwrap();
         config.service.http.custom.middleware.default_enable = default_enable;
@@ -53,8 +64,9 @@ mod tests {
 
         // Act
         let middleware = super::default_middleware(&context);
+        let middleware = middleware.keys().collect_vec();
 
         // Assert
-        assert_eq!(middleware.len(), expected_size);
+        assert_toml_snapshot!(middleware);
     }
 }

@@ -4,8 +4,9 @@ use crate::service::http::middleware::Middleware;
 use axum::Router;
 use serde_derive::{Deserialize, Serialize};
 use tower_http::catch_panic::CatchPanicLayer;
+use validator::Validate;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
 pub struct CatchPanicConfig {}
 

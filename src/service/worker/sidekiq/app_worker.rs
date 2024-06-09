@@ -125,12 +125,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::util::serde_util::Wrapper;
     use serde_json::from_str;
-
-    #[derive(Debug, Deserialize, Serialize)]
-    struct Wrapper<T> {
-        inner: T,
-    }
 
     #[test]
     #[cfg_attr(coverage_nightly, coverage(off))]
