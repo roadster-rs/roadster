@@ -35,7 +35,7 @@ clap = { version = "4.3.0", features = ["derive"] }
 
 # The default `rss-stats` feature has a dependency that currently can't be satisfied (memchr: ~2.3)
 rusty-sidekiq = { version = "0.10.5", default-features = false }
-serde = { version = "1.0.184", features = ["derive"] }
+serde = { workspace = true, features = ["derive"] }
 
 [build-dependencies]
 tonic-build = "0.11"
