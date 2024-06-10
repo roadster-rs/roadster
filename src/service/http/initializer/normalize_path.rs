@@ -8,6 +8,7 @@ use tower_http::normalize_path::NormalizePathLayer;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
+#[non_exhaustive]
 pub struct NormalizePathConfig {}
 
 pub struct NormalizePathInitializer;

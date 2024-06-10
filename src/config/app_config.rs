@@ -19,6 +19,7 @@ pub type CustomConfig = BTreeMap<String, Value>;
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct AppConfig {
     pub environment: Environment,
     #[validate(nested)]
@@ -175,6 +176,7 @@ impl AppConfig {
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct App {
     pub name: String,
     /// Shutdown the whole app if an error occurs in one of the app's top-level tasks (API, workers, etc).

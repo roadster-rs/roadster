@@ -16,6 +16,7 @@ use validator::Validate;
 #[skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize, TypedBuilder)]
 #[serde(default, rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct AppWorkerConfig {
     /// The maximum number of times a job should be retried on failure.
     #[builder(default = AppWorkerConfig::default().max_retries)]

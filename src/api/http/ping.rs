@@ -68,6 +68,7 @@ fn route<S>(context: &AppContext<S>) -> &str {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[cfg_attr(feature = "open-api", derive(JsonSchema))]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct PingResponse {}
 
 #[instrument(skip_all)]

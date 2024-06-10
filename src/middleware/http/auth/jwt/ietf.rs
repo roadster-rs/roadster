@@ -12,6 +12,7 @@ use std::collections::BTreeMap;
 /// See: <https://www.rfc-editor.org/rfc/rfc7519.html#section-4>
 #[serde_as]
 #[derive(Debug, Deserialize, Serialize)]
+#[non_exhaustive]
 pub struct Claims {
     /// See: <https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.1>
     #[serde(rename = "iss")]

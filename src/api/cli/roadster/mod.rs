@@ -41,6 +41,7 @@ where
 /// is matched, Roadster will default to running/serving your application.
 #[derive(Debug, Parser, Serialize)]
 #[command(version, about)]
+#[non_exhaustive]
 pub struct RoadsterCli {
     /// Specify the environment to use to run the application. This overrides the corresponding
     /// environment variable if it's set.
@@ -114,6 +115,7 @@ where
 }
 
 #[derive(Debug, Parser, Serialize)]
+#[non_exhaustive]
 pub struct RoadsterArgs {
     #[command(subcommand)]
     pub command: RoadsterSubCommand,

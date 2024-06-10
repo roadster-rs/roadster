@@ -14,6 +14,7 @@ use validator::Validate;
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
+#[non_exhaustive]
 pub struct CommonSensitiveHeadersConfig {
     pub header_names: Vec<String>,
 }
@@ -44,6 +45,7 @@ impl CommonSensitiveHeadersConfig {
 
 #[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
+#[non_exhaustive]
 pub struct SensitiveRequestHeadersConfig {
     #[serde(flatten)]
     pub common: CommonSensitiveHeadersConfig,
@@ -51,6 +53,7 @@ pub struct SensitiveRequestHeadersConfig {
 
 #[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
+#[non_exhaustive]
 pub struct SensitiveResponseHeadersConfig {
     #[serde(flatten)]
     pub common: CommonSensitiveHeadersConfig,

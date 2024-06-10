@@ -14,6 +14,7 @@ use crate::util::serde_util::{deserialize_from_str, serialize_to_str, UriOrStrin
 /// See: <https://openid.net/specs/openid-connect-core-1_0.html#IDToken>
 #[serde_as]
 #[derive(Debug, Deserialize, Serialize)]
+#[non_exhaustive]
 pub struct Claims {
     #[serde(rename = "iss")]
     pub issuer: Url,

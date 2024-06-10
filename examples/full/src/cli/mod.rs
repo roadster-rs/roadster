@@ -12,6 +12,7 @@ use crate::app_state::CustomAppContext;
 /// as well. Subcommands not listed under the `roadster` subcommand are specific to `full`.
 #[derive(Debug, Parser)]
 #[command(version, about)]
+#[non_exhaustive]
 pub struct AppCli {
     #[command(subcommand)]
     pub command: Option<AppCommand>,

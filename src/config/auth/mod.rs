@@ -4,6 +4,7 @@ use validator::Validate;
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct Auth {
     #[validate(nested)]
     pub jwt: Jwt,
@@ -11,6 +12,7 @@ pub struct Auth {
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct Jwt {
     pub secret: String,
     #[serde(default)]
@@ -20,6 +22,7 @@ pub struct Jwt {
 
 #[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
+#[non_exhaustive]
 pub struct JwtClaims {
     // Todo: Default to the server URL?
     #[serde(default)]
