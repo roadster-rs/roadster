@@ -116,9 +116,19 @@ pub struct ResourceHealth {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "open-api", derive(JsonSchema))]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub enum Status {
     Ok,
-    Err,
+    Err(ErrorData),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "open-api", derive(JsonSchema))]
+#[serde(rename_all = "camelCase")]
+#[non_exhaustive]
+pub struct ErrorData {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub msg: Option<String>,
 }
 
 #[instrument(skip_all)]
@@ -136,7 +146,7 @@ where
         let db_status = if ping_db(state.db()).await.is_ok() {
             Status::Ok
         } else {
-            Status::Err
+            Status::Err(ErrorData { msg: None })
         };
         let db_timer = db_timer.elapsed();
         ResourceHealth {
@@ -180,7 +190,13 @@ async fn redis_health(redis: &sidekiq::RedisPool) -> ResourceHealth {
     let redis_timer = Instant::now();
     let (redis_status, acquire_conn_latency, ping_latency) = match ping_redis(redis).await {
         Ok((a, b)) => (Status::Ok, Some(a.as_millis()), Some(b.as_millis())),
-        _ => (Status::Err, None, None),
+        Err(err) => (
+            Status::Err(ErrorData {
+                msg: Some(err.to_string()),
+            }),
+            None,
+            None,
+        ),
     };
     let redis_timer = redis_timer.elapsed();
     ResourceHealth {

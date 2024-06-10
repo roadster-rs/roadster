@@ -53,6 +53,7 @@ pub struct Claims {
     pub custom: BTreeMap<String, Value>,
 }
 
+// Intentionally not annotated with `#[non_exhaustive]`
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(untagged)]
 pub enum Acr {

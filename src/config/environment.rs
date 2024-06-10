@@ -15,6 +15,7 @@ use crate::error::RoadsterResult;
 #[cfg_attr(feature = "cli", derive(ValueEnum))]
 #[serde(rename_all = "kebab-case")]
 #[strum(serialize_all = "kebab-case")]
+#[non_exhaustive]
 pub enum Environment {
     Development,
     Test,

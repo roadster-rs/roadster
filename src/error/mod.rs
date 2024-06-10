@@ -35,6 +35,7 @@ use thiserror::Error;
 pub type RoadsterResult<T> = Result<T, Error>;
 
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum Error {
     #[error(transparent)]
     Api(#[from] ApiError),

@@ -1,6 +1,7 @@
 use crate::error::Error;
 
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum TracingError {
     /// An error that occurs during tracing initialization.
     #[error(transparent)]
@@ -11,6 +12,7 @@ pub enum TracingError {
 }
 
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum TracingInitError {
     #[cfg(feature = "otel")]
     #[error(transparent)]

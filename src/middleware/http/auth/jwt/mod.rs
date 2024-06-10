@@ -112,6 +112,7 @@ where
 /// to a simple String if the value can not be parsed into a UUID or Integer (or URI).
 /// See: <https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.2>
 /// See: <https://openid.net/specs/openid-connect-core-1_0.html#IDToken>
+// Intentionally not annotated with `#[non_exhaustive]`
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(untagged)]
 pub enum Subject {

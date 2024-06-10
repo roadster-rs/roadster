@@ -1,6 +1,7 @@
 use crate::error::Error;
 
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum TonicError {
     #[error(transparent)]
     Transport(#[from] tonic::transport::Error),

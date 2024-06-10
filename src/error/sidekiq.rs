@@ -1,6 +1,7 @@
 use crate::error::Error;
 
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum SidekiqError {
     #[error(transparent)]
     Sidekiq(#[from] sidekiq::Error),

@@ -35,6 +35,7 @@ where
 
 /// Type that can be used to deserialize a value to a URI or, if the value is not a valid URI, fall
 /// back to deserializing as a string.
+// Intentionally not annotated with `#[non_exhaustive]`
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(untagged)]
 pub enum UriOrString {
