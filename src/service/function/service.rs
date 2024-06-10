@@ -51,14 +51,17 @@ use roadster::app::App as RoadsterApp;
 #         Default::default()
 #     }
 # }
+
 async fn example_service(
     _state: AppContext<()>,
     _cancel_token: CancellationToken,
 ) -> RoadsterResult<()> {
     // Service logic here
-    Ok(())
+    todo!()
 }
+
 pub struct App;
+
 #[async_trait]
 impl RoadsterApp for App {
 #     type State = ();
@@ -66,7 +69,7 @@ impl RoadsterApp for App {
 #     type M = Migrator;
 #
 #     async fn with_state(_context: &AppContext) -> RoadsterResult<Self::State> {
-#         Ok(())
+#         todo!()
 #     }
     async fn services(
         registry: &mut ServiceRegistry<Self>,
@@ -77,7 +80,9 @@ impl RoadsterApp for App {
             .enabled(true)
             .function(example_service)
             .build();
+
         registry.register_service(service)?;
+
         Ok(())
     }
 }
