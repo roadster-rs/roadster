@@ -7,6 +7,7 @@ use validator::ValidationError;
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[validate(schema(function = "validate_default_routes"))]
+#[non_exhaustive]
 pub struct DefaultRoutes {
     #[serde(default = "default_true")]
     pub default_enable: bool,
@@ -53,6 +54,7 @@ fn validate_default_routes(
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct DefaultRouteConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enable: Option<bool>,

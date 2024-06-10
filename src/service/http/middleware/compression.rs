@@ -10,10 +10,12 @@ use validator::Validate;
 
 #[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
+#[non_exhaustive]
 pub struct ResponseCompressionConfig {}
 
 #[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
+#[non_exhaustive]
 pub struct RequestDecompressionConfig {}
 
 pub struct ResponseCompressionMiddleware;

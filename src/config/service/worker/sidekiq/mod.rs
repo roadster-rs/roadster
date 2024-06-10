@@ -11,6 +11,7 @@ pub fn default_config() -> config::File<FileSourceString, FileFormat> {
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct SidekiqServiceConfig {
     /// The number of Sidekiq workers that can run at the same time. Adjust as needed based on
     /// your workload and resource (cpu/memory/etc) usage.
@@ -50,6 +51,7 @@ impl SidekiqServiceConfig {
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct Periodic {
     pub stale_cleanup: StaleCleanUpBehavior,
 }
@@ -65,6 +67,7 @@ impl Default for Periodic {
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, EnumString, IntoStaticStr)]
 #[serde(rename_all = "kebab-case")]
 #[strum(serialize_all = "kebab-case")]
+#[non_exhaustive]
 pub enum StaleCleanUpBehavior {
     /// Do not automatically remove periodic jobs.
     Manual,
@@ -78,6 +81,7 @@ pub enum StaleCleanUpBehavior {
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct Redis {
     pub uri: Url,
     /// The configuration for the Redis connection pool used for enqueuing Sidekiq jobs in Redis.
@@ -93,6 +97,7 @@ pub struct Redis {
 
 #[derive(Debug, Default, Validate, Clone, Serialize, Deserialize)]
 #[serde(default, rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct ConnectionPool {
     pub min_idle: Option<u32>,
     pub max_connections: Option<u32>,

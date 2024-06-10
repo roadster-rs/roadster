@@ -12,6 +12,7 @@ use validator::Validate;
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
+#[non_exhaustive]
 pub struct SizeLimitConfig {
     pub limit: Byte,
 }

@@ -83,6 +83,7 @@ fn route<S>(context: &AppContext<S>) -> &str {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "open-api", derive(JsonSchema))]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct HeathCheckResponse {
     /// Total latency of checking the health of the app.
     pub latency: u128,
@@ -101,6 +102,7 @@ pub struct HeathCheckResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "open-api", derive(JsonSchema))]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct ResourceHealth {
     status: Status,
     /// How long it takes to acquire a connection from the pool.

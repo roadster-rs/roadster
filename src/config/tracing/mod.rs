@@ -12,6 +12,7 @@ pub fn default_config() -> config::File<FileSourceString, FileFormat> {
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct Tracing {
     pub level: String,
 

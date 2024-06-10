@@ -11,6 +11,7 @@ use crate::app::App;
 use crate::error::RoadsterResult;
 
 #[derive(Debug, Parser, Serialize)]
+#[non_exhaustive]
 pub struct MigrateArgs {
     #[clap(subcommand)]
     pub command: MigrateCommand,
@@ -81,6 +82,7 @@ where
 }
 
 #[derive(Debug, Parser, Serialize)]
+#[non_exhaustive]
 pub struct UpArgs {
     /// The number of pending migration steps to apply.
     #[clap(short = 'n', long)]
@@ -88,6 +90,7 @@ pub struct UpArgs {
 }
 
 #[derive(Debug, Parser, Serialize)]
+#[non_exhaustive]
 pub struct DownArgs {
     /// The number of applied migration steps to rollback.
     #[clap(short = 'n', long)]

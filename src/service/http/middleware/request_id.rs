@@ -12,6 +12,7 @@ pub const REQUEST_ID_HEADER_NAME: &str = "request-id";
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
+#[non_exhaustive]
 pub struct CommonRequestIdConfig {
     pub header_name: String,
 }
@@ -26,6 +27,7 @@ impl Default for CommonRequestIdConfig {
 
 #[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
+#[non_exhaustive]
 pub struct SetRequestIdConfig {
     #[serde(flatten)]
     pub common: CommonRequestIdConfig,
@@ -33,6 +35,7 @@ pub struct SetRequestIdConfig {
 
 #[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
+#[non_exhaustive]
 pub struct PropagateRequestIdConfig {
     #[serde(flatten)]
     pub common: CommonRequestIdConfig,

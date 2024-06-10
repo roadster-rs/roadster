@@ -18,6 +18,7 @@ use validator::Validate;
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct Service {
     #[serde(default = "default_true")]
     pub default_enable: bool,
@@ -37,6 +38,7 @@ pub struct Service {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
+#[non_exhaustive]
 pub struct CommonConfig {
     // Optional so we can tell the difference between a consumer explicitly enabling/disabling
     // the service, vs the service being enabled/disabled by default.
@@ -54,6 +56,7 @@ impl CommonConfig {
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct ServiceConfig<T: Validate> {
     #[serde(flatten, default)]
     pub common: CommonConfig,

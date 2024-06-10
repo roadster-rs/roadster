@@ -22,6 +22,7 @@ pub const PRIORITY_LAST: i32 = 10_000;
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct Middleware {
     #[serde(default = "default_true")]
     pub default_enable: bool,
@@ -82,6 +83,7 @@ pub struct Middleware {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct CommonConfig {
     // Optional so we can tell the difference between a consumer explicitly enabling/disabling
     // the middleware, vs the middleware being enabled/disabled by default.
@@ -108,6 +110,7 @@ impl CommonConfig {
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct MiddlewareConfig<T> {
     #[serde(flatten)]
     pub common: CommonConfig,

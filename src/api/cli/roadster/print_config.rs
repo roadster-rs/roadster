@@ -10,6 +10,7 @@ use crate::app::App;
 use crate::error::RoadsterResult;
 
 #[derive(Debug, Parser, Serialize)]
+#[non_exhaustive]
 pub struct PrintConfigArgs {
     /// Print the config with the specified format.
     #[clap(short, long, default_value = "debug")]

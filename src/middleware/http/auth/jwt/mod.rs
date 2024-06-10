@@ -35,6 +35,7 @@ type BearerAuthHeader = TypedHeader<Authorization<Bearer>>;
 /// to the claims from `jwt-ietf`. If neither feature is enabled (but `jwt` is enabled), then
 /// the default will simply be a [serde_json::Value]. In all cases, the type can be overridden
 /// by the consumer.
+#[non_exhaustive]
 pub struct Jwt<C = Claims>
 where
     C: for<'de> serde::Deserialize<'de>,

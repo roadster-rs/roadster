@@ -105,6 +105,7 @@ use std::fmt::{Display, Formatter};
 ///
 #[derive(Debug, Error, Serialize, Deserialize)]
 #[cfg_attr(feature = "open-api", derive(aide::OperationIo, schemars::JsonSchema))]
+#[non_exhaustive]
 pub struct HttpError {
     /// The HTTP status code for the error.
     ///

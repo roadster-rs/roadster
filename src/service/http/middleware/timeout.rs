@@ -11,6 +11,7 @@ use validator::Validate;
 #[serde_as]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
+#[non_exhaustive]
 pub struct TimeoutConfig {
     #[serde_as(as = "serde_with::DurationMilliSeconds")]
     pub timeout: Duration,

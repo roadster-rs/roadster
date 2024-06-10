@@ -15,6 +15,7 @@ use validator::Validate;
 
 #[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
+#[non_exhaustive]
 pub struct TracingConfig {}
 
 pub struct TracingMiddleware;
@@ -71,6 +72,7 @@ impl<S: Send + Sync + 'static> Middleware<S> for TracingMiddleware {
 }
 
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct CustomMakeSpan {
     pub request_id_header_name: String,
 }
