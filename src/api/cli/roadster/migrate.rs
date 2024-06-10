@@ -34,6 +34,7 @@ where
 
 #[derive(Debug, Subcommand, Serialize)]
 #[serde(tag = "type")]
+#[non_exhaustive]
 pub enum MigrateCommand {
     /// Apply pending migrations
     Up(UpArgs),

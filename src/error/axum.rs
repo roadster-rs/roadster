@@ -1,6 +1,7 @@
 use crate::error::Error;
 
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum AxumError {
     #[error(transparent)]
     InvalidHeaderName(#[from] axum::http::header::InvalidHeaderName),

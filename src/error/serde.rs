@@ -1,6 +1,7 @@
 use crate::error::Error;
 
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum SerdeError {
     #[error(transparent)]
     Json(#[from] serde_json::Error),

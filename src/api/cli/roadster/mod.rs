@@ -90,6 +90,7 @@ where
 
 #[derive(Debug, Subcommand, Serialize)]
 #[serde(tag = "type")]
+#[non_exhaustive]
 pub enum RoadsterCommand {
     /// Roadster subcommands. Subcommands provided by Roadster are listed under this subcommand in
     /// order to avoid naming conflicts with the consumer's subcommands.
@@ -169,6 +170,7 @@ where
 
 #[derive(Debug, Subcommand, Serialize)]
 #[serde(tag = "type")]
+#[non_exhaustive]
 pub enum RoadsterSubCommand {
     /// List the API routes available in the app. Note: only the routes defined
     /// using the `Aide` crate will be included in the output.

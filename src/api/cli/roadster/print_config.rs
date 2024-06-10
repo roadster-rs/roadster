@@ -22,6 +22,7 @@ pub struct PrintConfigArgs {
 )]
 #[serde(rename_all = "kebab-case", tag = "type")]
 #[strum(serialize_all = "kebab-case")]
+#[non_exhaustive]
 pub enum Format {
     Debug,
     Json,

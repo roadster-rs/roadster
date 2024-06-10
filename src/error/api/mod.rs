@@ -10,6 +10,7 @@ use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum ApiError {
     #[cfg(feature = "http")]
     #[error(transparent)]

@@ -1,6 +1,7 @@
 use crate::error::Error;
 
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum OtherError {
     #[error(transparent)]
     Anyhow(#[from] anyhow::Error),

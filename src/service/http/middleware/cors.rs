@@ -63,6 +63,7 @@ fn default_max_age() -> Duration {
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub enum CorsPreset {
     /// See <https://docs.rs/tower-http/latest/tower_http/cors/struct.CorsLayer.html#method.new>
     #[default]
@@ -75,6 +76,7 @@ pub enum CorsPreset {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
+#[non_exhaustive]
 pub enum CorsAllowHeaders {
     Any,
     MirrorRequest,
@@ -84,6 +86,7 @@ pub enum CorsAllowHeaders {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
+#[non_exhaustive]
 pub enum CorsAllowMethods {
     Any,
     MirrorRequest,
@@ -95,6 +98,7 @@ pub enum CorsAllowMethods {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
+#[non_exhaustive]
 pub enum CorsAllowOrigins {
     Any,
     MirrorRequest,
@@ -106,13 +110,14 @@ pub enum CorsAllowOrigins {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
+#[non_exhaustive]
 pub enum CorsExposeHeaders {
     Any,
     // Todo: deserialize as HeaderName directly instead of string
     List { headers: Vec<String> },
 }
 
-pub fn parse_header_names(header_names: &[String]) -> RoadsterResult<Vec<HeaderName>> {
+fn parse_header_names(header_names: &[String]) -> RoadsterResult<Vec<HeaderName>> {
     let header_names = header_names
         .iter()
         .map(|header_name| HeaderName::from_str(header_name))
@@ -120,7 +125,7 @@ pub fn parse_header_names(header_names: &[String]) -> RoadsterResult<Vec<HeaderN
     Ok(header_names)
 }
 
-pub fn parse_header_values(header_values: &[String]) -> RoadsterResult<Vec<HeaderValue>> {
+fn parse_header_values(header_values: &[String]) -> RoadsterResult<Vec<HeaderValue>> {
     let header_values = header_values
         .iter()
         .map(|header_value| HeaderValue::from_str(header_value))
@@ -128,7 +133,7 @@ pub fn parse_header_values(header_values: &[String]) -> RoadsterResult<Vec<Heade
     Ok(header_values)
 }
 
-pub fn parse_methods(methods: &[String]) -> RoadsterResult<Vec<Method>> {
+fn parse_methods(methods: &[String]) -> RoadsterResult<Vec<Method>> {
     let methods = methods
         .iter()
         .map(|method| Method::from_str(method))
