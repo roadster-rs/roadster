@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.3.0...roadster-v0.3.1) - 2024-06-11
+
+### Other
+- Implement the health check API as a protocol agnostic `core` module
+- Minor changes to the `FunctionService` doc example
+
 ## [0.3.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.2.6...roadster-v0.3.0) - 2024-06-10
 
 ### Other
