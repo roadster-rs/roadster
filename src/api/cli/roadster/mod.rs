@@ -1,3 +1,4 @@
+use crate::api::cli::roadster::health::HealthArgs;
 #[cfg(feature = "open-api")]
 use crate::api::cli::roadster::list_routes::ListRoutesArgs;
 #[cfg(feature = "db-sql")]
@@ -13,6 +14,7 @@ use async_trait::async_trait;
 use clap::{Parser, Subcommand};
 use serde_derive::Serialize;
 
+pub mod health;
 #[cfg(feature = "open-api")]
 pub mod list_routes;
 #[cfg(feature = "db-sql")]
@@ -164,6 +166,7 @@ where
             #[cfg(feature = "db-sql")]
             RoadsterSubCommand::Migrate(args) => args.run(app, cli, context).await,
             RoadsterSubCommand::PrintConfig(args) => args.run(app, cli, context).await,
+            RoadsterSubCommand::Health(args) => args.run(app, cli, context).await,
         }
     }
 }
@@ -189,4 +192,8 @@ pub enum RoadsterSubCommand {
 
     /// Print the AppConfig
     PrintConfig(PrintConfigArgs),
+
+    /// Check the health of the app's resources. Note: This runs without starting the app's service(s)
+    /// and only requires creating the [AppContext] that would normally be used by the app.
+    Health(HealthArgs),
 }
