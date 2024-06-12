@@ -41,22 +41,52 @@ and [Poem](https://github.com/poem-web/poem).
 - Structured logs/traces using tokio's [tracing](https://docs.rs/tracing/latest/tracing/) crate. Export traces/metrics
   using OpenTelemetry (requires the `otel` feature).
 
-# Start local DB
+## Goals
+
+- Currently, Roadster is focused on back-end API development with Rust. We leave it to the consumer to decide how they
+  prefer to add a front-end, e.g., using an established JS/TS framework ([React](https://react.dev/)
+  /[Next](https://nextjs.org/)/[Vue](https://vuejs.org/)/[Svelte](https://svelte.dev/)/etc) or
+  using a Rust front-end framework ([Yew](https://yew.rs/)/[Perseus](https://framesurge.sh/perseus/en-US/)/etc).
+
+## Future plans
+
+- In the future, we may provide a more opinionated approach to front-end development. At a minimum we plan to add
+  examples of how to integrate and deploy various front-end frameworks with or along-side Roadster.
+
+# Getting started
+
+## Start local DB
 
 ```shell
+# Replace `full_dev` with your app name, e.g., `myapp_dev` (unless you're using our `full` example, as demonstrated below)
 # Dev
-docker run -d -p 5432:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=myapp_dev -e POSTGRES_PASSWORD=roadster postgres:15.3-alpine
+docker run -d -p 5432:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=full_dev -e POSTGRES_PASSWORD=roadster postgres:15.3-alpine
 # Test
-docker run -d -p 5433:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=myapp_test -e POSTGRES_PASSWORD=roadster postgres:15.3-alpine
+docker run -d -p 5433:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=full_test -e POSTGRES_PASSWORD=roadster postgres:15.3-alpine
 ```
 
-# Start local Redis instance (for [Sidekiq.rs](https://crates.io/crates/rusty-sidekiq))
+## Start local Redis instance (for [Sidekiq.rs](https://crates.io/crates/rusty-sidekiq))
 
 ```shell
 # Dev
 docker run -d -p 6379:6379 redis:7.2-alpine
 # Test
 docker run -d -p 6380:6379 redis:7.2-alpine
+```
+
+## Create your app
+
+```shell
+# Todo: Add instructions for creating a new app
+# Using one of our examples for now 
+git clone https://github.com/roadster-rs/roadster.git
+cd roadster/examples/full
+```
+
+## Start your app
+
+```shell
+cargo run
 ```
 
 # Tracing + OpenTelemetry
