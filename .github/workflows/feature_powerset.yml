@@ -1,13 +1,15 @@
 # Check to build Roadster with all combinations (powerset) of features. Because we have a bunch of features, the
 # powerset of all features is quite large, meaning we need to run a large number of iterations of the tests. To
 # conserve CI usage, as well as mimimize CI time needed on PRs, we'll only run checks against the feature powerset
-# once a week, and only if a commit was merged in the past week.
+# twice a week, and only if a commit was merged in the past 5 days.
 name: Feature Powerset
 
 on:
   schedule:
     # Run once a week on Friday at 11PM UTC (Friday 4PM PST)
     - cron: '0 23 * * 5'
+    # Run once a week on Monday at 11PM UTC (Monday 4PM PST)
+    - cron: '0 23 * * 1'
   workflow_dispatch:
   pull_request:
     branches: [ main ]
@@ -31,9 +33,9 @@ jobs:
 
       - id: schedule_trigger
         continue-on-error: true
-        name: Check latest commit is less than a week
+        name: Check latest commit is less than 5 days ago
         if: ${{ github.event_name == 'schedule' }}
-        run: test $(git rev-list  --after="7 days"  ${{ github.sha }}) && echo "should_run=true" >> "$GITHUB_OUTPUT"
+        run: test $(git rev-list  --after="5 days"  ${{ github.sha }}) && echo "should_run=true" >> "$GITHUB_OUTPUT"
 
       - id: label_trigger
         continue-on-error: true
