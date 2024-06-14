@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2](https://github.com/roadster-rs/roadster/compare/roadster-v0.3.1...roadster-v0.3.2) - 2024-06-14
+
+### Other
+- Run Feature Powerset checks + perform a release twice a week
+- Add goals and future plans to readme + some getting started steps
+- Add github action to verify commits follow 'Conventional Commits' format
+
 ## [0.3.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.3.0...roadster-v0.3.1) - 2024-06-11
 
 ### Other
