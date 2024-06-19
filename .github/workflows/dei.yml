@@ -1,0 +1,23 @@
+name: DEI Checks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  inclusive_language:
+    name: Check for inclusive language
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inclusiveness Analyzer
+        uses: microsoft/InclusivenessAnalyzer@v1.0.1
+        with:
+          failOnNonInclusiveTerm: true
+          excludeUnchangedFiles: false

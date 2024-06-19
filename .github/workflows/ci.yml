@@ -101,14 +101,3 @@ jobs:
         env:
           RUSTDOCFLAGS: "-D rustdoc::all -A rustdoc::private_intra_doc_links"
         run: cargo doc --all-features
-
-  inclusive_language:
-    name: Check for inclusive language
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Inclusiveness Analyzer
-        uses: microsoft/InclusivenessAnalyzer@v1.0.1
-        with:
-          failOnNonInclusiveTerm: true
-          excludeUnchangedFiles: false
