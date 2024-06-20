@@ -159,10 +159,8 @@ mod tests {
 
         let args = if let Some(args) = args {
             args.split(' ').collect_vec()
-        } else if let Some(args) = arg_list {
-            args
         } else {
-            Default::default()
+            arg_list.unwrap_or_default()
         };
         // The first word is interpreted as the binary name
         let args = vec!["binary_name"]
