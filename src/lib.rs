@@ -6,7 +6,7 @@
 //!
 //! - Built on Tokio's web stack (axum, tower, hyper, tracing). App behavior can be easily extended by taking advantage of
 //!   all the resources in the tokio ecosystem.
-//! - Provides sane defaults so you can focus on building your app.
+//! - Provides sensible defaults so you can focus on building your app.
 //! - Most of the built-in behavior can be customized or even disabled via per-environment configuration files.
 //! - Uses `#![forbid(unsafe_code)]` to ensure all code in Roadster is 100% safe rust.
 

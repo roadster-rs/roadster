@@ -27,7 +27,7 @@ and [Poem](https://github.com/poem-web/poem).
   boilerplate. Simply provide a
   [FunctionService](https://docs.rs/roadster/latest/roadster/service/function/service/struct.FunctionService.html)
   with your async function and register it in the `App#services` method.
-- Provides sane defaults so you can focus on building your app, but most (all?) of the built-in behavior can be
+- Provides sensible defaults so you can focus on building your app, but most (all?) of the built-in behavior can be
   customized or disabled via per-environment configuration files.
 - Uses `#![forbid(unsafe_code)]` to ensure all code in Roadster is 100% safe rust.
 - Provides a CLI for common commands, and allows consumers to provide their own CLI commands
