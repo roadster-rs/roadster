@@ -1,5 +1,6 @@
 name: DEI Checks
 # whitelist
+# master
 
 on:
   push:

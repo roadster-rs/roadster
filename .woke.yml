@@ -1,0 +1,14 @@
+rules:
+  - name: master
+    terms:
+      - master
+    alternatives:
+      - main
+      - primary
+      - leader
+  - name: slave
+    terms:
+      - slave
+    alternatives:
+      - secondary
+      - follower
