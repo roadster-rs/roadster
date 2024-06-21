@@ -86,6 +86,15 @@ git clone https://github.com/roadster-rs/roadster.git
 cd roadster/examples/full
 ```
 
+## Set the environment (production/development/test)
+
+```shell
+# Either set it as an environment variable
+export ROADSTER__ENVIRONMENT=development
+# Or add it to a `.env` file
+echo ROADSTER__ENVIRONMENT=development >> .env
+```
+
 ## Start your app
 
 ```shell
@@ -107,7 +116,7 @@ You can also view traces locally using, for example, Jaeger or SigNoz.
 The easiest way to view OpenTelemetry Traces locally is by
 running [Jaeger](https://www.jaegertracing.io/docs/1.54/getting-started/).
 
-1. Set `ROADSTER.TRACING.OTLP_ENDPOINT="http://localhost:4317"` in your `.env` file, or in
+1. Set `ROADSTER__TRACING__OTLP_ENDPOINT="http://localhost:4317"` in your `.env` file, or in
    your `config/development.toml` or `config/test.toml` configs as appropriate.
 2. Run the following command:
     ```shell
@@ -131,7 +140,7 @@ running [Jaeger](https://www.jaegertracing.io/docs/1.54/getting-started/).
 
 Another option to view traces (and metrics) locally is to run [Signoz](https://signoz.io/docs/install/docker/).
 
-1. Set `ROADSTER.TRACING.OTLP_ENDPOINT="http://localhost:4317"` in your `.env` file, or in
+1. Set `ROADSTER__TRACING__OTLP_ENDPOINT="http://localhost:4317"` in your `.env` file, or in
    your `config/development.toml` or `config/test.toml` configs as appropriate.
 2. Install and run Signoz in a directory of your choice
    ```shell
