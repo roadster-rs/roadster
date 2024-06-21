@@ -11,27 +11,35 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  inclusive_language_warnings:
-    name: List of non-inclusive language
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-      - name: Inclusiveness Analyzer
-        uses: microsoft/InclusivenessAnalyzer@v1.0.1
-        with:
-          excludeUnchangedFiles: false
-
   inclusive_language:
     name: Check for inclusive language
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: get-woke/woke-action@v0
         with:
-          fetch-depth: 2
-      - name: Inclusiveness Analyzer
-        uses: microsoft/InclusivenessAnalyzer@v1.0.1
-        with:
-          failOnNonInclusiveTerm: true
-          excludeUnchangedFiles: false
+          fail-on-error: true
+#  inclusive_language_warnings:
+#    name: List of non-inclusive language
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          fetch-depth: 2
+#      - name: Inclusiveness Analyzer
+#        uses: microsoft/InclusivenessAnalyzer@v1.0.1
+#        with:
+#          excludeUnchangedFiles: false
+#
+#  inclusive_language:
+#    name: Check for inclusive language
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          fetch-depth: 2
+#      - name: Inclusiveness Analyzer
+#        uses: microsoft/InclusivenessAnalyzer@v1.0.1
+#        with:
+#          failOnNonInclusiveTerm: true
+#          excludeUnchangedFiles: false
