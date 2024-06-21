@@ -44,9 +44,12 @@ and [Poem](https://github.com/poem-web/poem).
 ## Goals
 
 - Currently, Roadster is focused on back-end API development with Rust. We leave it to the consumer to decide how they
-  prefer to add a front-end, e.g., using an established JS/TS framework ([React](https://react.dev/)
-  /[Next](https://nextjs.org/)/[Vue](https://vuejs.org/)/[Svelte](https://svelte.dev/)/etc) or
-  using a Rust front-end framework ([Yew](https://yew.rs/)/[Perseus](https://framesurge.sh/perseus/en-US/)/etc).
+  prefer to add a front-end, e.g., using an established JS/TS
+  framework ([React](https://react.dev/) / [Next](https://nextjs.org/) / [Vue](https://vuejs.org/) / [Svelte](https://svelte.dev/)/ [Solid](https://www.solidjs.com/)
+  / etc) or
+  using a Rust front-end
+  framework ([Leptos](https://github.com/leptos-rs/leptos) / [Yew](https://github.com/yewstack/yew) / [Perseus](https://github.com/framesurge/perseus/) / [Sycamore](https://github.com/sycamore-rs/sycamore)
+  / etc).
 
 ## Future plans
 
