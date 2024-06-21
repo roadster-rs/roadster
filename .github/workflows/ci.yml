@@ -61,6 +61,17 @@ jobs:
       - name: Clippy
         run: cargo hack clippy --workspace --all-targets --each-feature -- -D warnings
 
+  deny:
+    name: Deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v1
+        with:
+          command: check
+          arguments: --all-features
+          command-arguments: "-A duplicate advisories ban sources"
+
   # https://doc.rust-lang.org/cargo/guide/continuous-integration.html#verifying-rust-version
   msrv:
     name: Check MSRV
