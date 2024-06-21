@@ -1,0 +1,19 @@
+name: DEI Checks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  inclusive_language:
+    name: Check for inclusive language
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: get-woke/woke-action@v0
+        with:
+          fail-on-error: true
+          woke-args: -c .config/woke.yml
