@@ -12,6 +12,9 @@ rules:
       - primary
       - leader
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: whitelist
     terms:
@@ -19,6 +22,9 @@ rules:
       - white-list
       - white list
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: blacklist
     terms:
@@ -26,12 +32,18 @@ rules:
       - black-list
       - black list
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: minority
     terms:
       - minority
       - minorities
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: brown bag
     terms:
@@ -39,6 +51,9 @@ rules:
       - brownbag
       - brown-bag
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: white box
     terms:
@@ -46,6 +61,9 @@ rules:
       - whitebox
       - white-box
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: black box
     terms:
@@ -53,16 +71,25 @@ rules:
       - blackbox
       - black-box
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: culture fit
     terms:
       - culture fit
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: citizen
     terms:
       - citizen
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: guys
     terms:
@@ -72,6 +99,9 @@ rules:
       - all
       - y'all
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: gender specific pronouns
     terms:
@@ -86,6 +116,9 @@ rules:
       - them
       - theirs
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: manpower
     terms:
@@ -93,12 +126,18 @@ rules:
       - man-power
       - man power
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: man hours
     terms:
       - man hours
       - man-hours
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: mankind
     terms:
@@ -106,17 +145,26 @@ rules:
       - man kind
       - man-kind
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: chairman
     terms:
       - chairman
       - chair man
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: foreman
     terms:
       - foreman
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: middleman
     terms:
@@ -124,18 +172,27 @@ rules:
       - middle man
       - middle-man
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: mother
     terms:
       - mother
       - mothering
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: father
     terms:
       - father
       - fathering
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: gender specific partner terms
     terms:
@@ -148,6 +205,9 @@ rules:
       - spouse
       - significant other
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: gender specific nouns
     terms:
@@ -164,47 +224,74 @@ rules:
       - persons
       - people
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: mom test
     terms:
       - mom test
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: girlfriend test
     terms:
       - girlfriend test
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: ninja
     terms:
       - ninja
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: rock star
     terms:
       - rock star
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: housekeeping
     terms:
       - housekeeping
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: opposite sex
     terms:
       - opposite sex
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: grandfathered in
     terms:
       - grandfathered in
       - grandfathered
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: midget
     terms:
       - midget
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: sanity
     terms:
@@ -214,47 +301,74 @@ rules:
       - sane
       - sanity check
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: freak
     terms:
       - freak
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: tone deaf
     terms:
       - tone deaf
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: blind spot
     terms:
       - blind spot
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: OCD
     terms:
       - OCD
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: depressed
     terms:
       - depressed
       - depressing
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: handicap
     terms:
       - handicap
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: cripple
     terms:
       - cripple
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: retard
     terms:
       - retard
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
 
   - name: dummy
     terms:
@@ -263,3 +377,6 @@ rules:
     alternatives:
       - placeholder
     note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+    options:
+      include_note: true
+      word_boundary: true
