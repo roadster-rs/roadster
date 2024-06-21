@@ -1,5 +1,8 @@
-# Rules to use in addition to the defaults: https://github.com/get-woke/woke/blob/main/pkg/rule/default.yaml
+# Rules to use in addition to the defaults from https://github.com/get-woke/woke/blob/main/pkg/rule/default.yaml
+
 rules:
+  # These rules were pulled from https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json; refer to
+  # the original file for alternatives when not provided.
   # The default rules don't have `master`, only `master-slave`
   - name: master
     terms:
@@ -8,3 +11,255 @@ rules:
       - main
       - primary
       - leader
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: whitelist
+    terms:
+      - whitelist
+      - white-list
+      - white list
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: blacklist
+    terms:
+      - blacklist
+      - black-list
+      - black list
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: minority
+    terms:
+      - minority
+      - minorities
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: brown bag
+    terms:
+      - brown bag
+      - brownbag
+      - brown-bag
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: white box
+    terms:
+      - white box
+      - whitebox
+      - white-box
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: black box
+    terms:
+      - black box
+      - blackbox
+      - black-box
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: culture fit
+    terms:
+      - culture fit
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: citizen
+    terms:
+      - citizen
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: guys
+    terms:
+      - guys
+    alternatives:
+      - everyone
+      - all
+      - y'all
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: gender specific pronouns
+    terms:
+      - he
+      - him
+      - his
+      - she
+      - her
+      - hers
+    alternatives:
+      - they
+      - them
+      - theirs
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: manpower
+    terms:
+      - manpower
+      - man-power
+      - man power
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: man hours
+    terms:
+      - man hours
+      - man-hours
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: mankind
+    terms:
+      - mankind
+      - man kind
+      - man-kind
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: chairman
+    terms:
+      - chairman
+      - chair man
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: foreman
+    terms:
+      - foreman
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: middleman
+    terms:
+      - middleman
+      - middle man
+      - middle-man
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: mother
+    terms:
+      - mother
+      - mothering
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: father
+    terms:
+      - father
+      - fathering
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: gender specific partner terms
+    terms:
+      - wife
+      - husband
+      - boyfriend
+      - girlfriend
+    alternatives:
+      - partner
+      - spouse
+      - significant other
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: gender specific nouns
+    terms:
+      - girl
+      - girls
+      - female
+      - females
+      - boy
+      - boys
+      - male
+      - males
+    alternatives:
+      - person
+      - persons
+      - people
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: mom test
+    terms:
+      - mom test
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: girlfriend test
+    terms:
+      - girlfriend test
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: ninja
+    terms:
+      - ninja
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: rock star
+    terms:
+      - rock star
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: housekeeping
+    terms:
+      - housekeeping
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: opposite sex
+    terms:
+      - opposite sex
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: grandfathered in
+    terms:
+      - grandfathered in
+      - grandfathered
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: midget
+    terms:
+      - midget
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: sanity
+    terms:
+      - sanity
+      - crazy
+      - insane
+      - sane
+      - sanity check
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: freak
+    terms:
+      - freak
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: tone deaf
+    terms:
+      - tone deaf
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: blind spot
+    terms:
+      - blind spot
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: OCD
+    terms:
+      - OCD
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: depressed
+    terms:
+      - depressed
+      - depressing
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: handicap
+    terms:
+      - handicap
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: cripple
+    terms:
+      - cripple
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: retard
+    terms:
+      - retard
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
+
+  - name: dummy
+    terms:
+      - dummy value
+      - dummy
+    alternatives:
+      - placeholder
+    note: "See the following for other alternatives: https://github.com/microsoft/InclusivenessAnalyzer/blob/main/src/data.json"
