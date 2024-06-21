@@ -1,4 +1,6 @@
+# Rules to use in addition to the defaults: https://github.com/get-woke/woke/blob/main/pkg/rule/default.yaml
 rules:
+  # The default rules don't have `master`, only `master-slave`
   - name: master
     terms:
       - master
@@ -6,9 +8,3 @@ rules:
       - main
       - primary
       - leader
-  - name: slave
-    terms:
-      - slave
-    alternatives:
-      - secondary
-      - follower
