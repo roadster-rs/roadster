@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.3.3...roadster-v0.3.4) - 2024-06-21
+
+### Other
+- Update READMEs to use `__` as the env var separator instead of `.`
+- Update list of UI frameworks in readme
+- Set up `cargo deny`
+
 ## [0.3.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.3.2...roadster-v0.3.3) - 2024-06-21
 
 ### Fixed
