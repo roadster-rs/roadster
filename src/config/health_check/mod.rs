@@ -48,3 +48,35 @@ pub struct HealthCheckConfig<T> {
     #[serde(flatten)]
     pub custom: T,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::app_config::AppConfig;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case(true, None, true)]
+    #[case(true, Some(true), true)]
+    #[case(true, Some(false), false)]
+    #[case(false, None, false)]
+    #[case(false, Some(true), true)]
+    #[case(false, Some(false), false)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn common_config_enabled(
+        #[case] default_enable: bool,
+        #[case] enable: Option<bool>,
+        #[case] expected_enabled: bool,
+    ) {
+        // Arrange
+        let mut config = AppConfig::test(None).unwrap();
+        config.health_check.default_enable = default_enable;
+
+        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+
+        let common_config = CommonConfig { enable };
+
+        // Act/Assert
+        assert_eq!(common_config.enabled(&context), expected_enabled);
+    }
+}
