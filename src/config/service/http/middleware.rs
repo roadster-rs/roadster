@@ -70,9 +70,7 @@ pub struct Middleware {
     ///             priority: 10
     ///         },
     ///         MiddlewareConfig<CustomConfig>#custom: {
-    ///             config: {
-    ///                 "x": "y"
-    ///             }
+    ///             "x": "y"
     ///         }
     ///     }
     /// }
