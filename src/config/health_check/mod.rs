@@ -1,7 +1,9 @@
 use crate::app::context::AppContext;
+use crate::config::app_config::CustomConfig;
 use crate::util::serde_util::default_true;
 use config::{FileFormat, FileSourceString};
 use serde_derive::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use validator::Validate;
 
 pub fn default_config() -> config::File<FileSourceString, FileFormat> {
@@ -18,6 +20,33 @@ pub struct HealthCheck {
     pub database: HealthCheckConfig<()>,
     #[cfg(feature = "sidekiq")]
     pub sidekiq: HealthCheckConfig<()>,
+    /// Allows providing configs for custom health checks. Any configs that aren't pre-defined above
+    /// will be collected here.
+    ///
+    /// # Examples
+    ///
+    /// ```toml
+    /// [health-check.foo]
+    /// enable = true
+    /// x = "y"
+    /// ```
+    ///
+    /// This will be parsed as:
+    /// ```raw
+    /// HealthCheck#custom: {
+    ///     "foo": {
+    ///         HealthCheckConfig#common: {
+    ///             enable: true,
+    ///             priority: 10
+    ///         },
+    ///         HealthCheckConfig<CustomConfig>#custom: {
+    ///             "x": "y"
+    ///         }
+    ///     }
+    /// }
+    /// ```
+    #[serde(flatten)]
+    pub custom: BTreeMap<String, HealthCheckConfig<CustomConfig>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

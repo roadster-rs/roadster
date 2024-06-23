@@ -38,9 +38,7 @@ pub struct Initializer {
     ///             priority: 10
     ///         },
     ///         InitializerConfig<CustomConfig>#custom: {
-    ///             config: {
-    ///                 "x": "y"
-    ///             }
+    ///             "x": "y"
     ///         }
     ///     }
     /// }
