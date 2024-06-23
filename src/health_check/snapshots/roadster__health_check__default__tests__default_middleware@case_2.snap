@@ -1,0 +1,8 @@
+---
+source: src/health_check/default.rs
+expression: health_checks
+---
+[
+    'db',
+    'sidekiq',
+]

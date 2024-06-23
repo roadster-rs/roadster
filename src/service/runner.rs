@@ -27,6 +27,21 @@ where
     Ok(false)
 }
 
+pub(crate) async fn health_checks<A>(
+    service_registry: &ServiceRegistry<A>,
+    context: &AppContext<A::State>,
+) -> RoadsterResult<()>
+where
+    A: App,
+{
+    for (name, health_check) in service_registry.health_checks.iter() {
+        info!(name=%name, "Running health check");
+        health_check.check(context).await?;
+    }
+
+    Ok(())
+}
+
 pub(crate) async fn before_run<A>(
     service_registry: &ServiceRegistry<A>,
     context: &AppContext<A::State>,
@@ -35,7 +50,7 @@ where
     A: App,
 {
     for (name, service) in service_registry.services.iter() {
-        info!(service=%name, "Running `before run`");
+        info!(name=%name, "Running service::before_run");
         service.before_run(context).await?;
     }
 
@@ -57,7 +72,7 @@ where
         let context = context.clone();
         let cancel_token = cancel_token.clone();
         join_set.spawn(Box::pin(async move {
-            info!(service=%name, "Running service");
+            info!(name=%name, "Running service");
             service.run(&context, cancel_token).await
         }));
     }

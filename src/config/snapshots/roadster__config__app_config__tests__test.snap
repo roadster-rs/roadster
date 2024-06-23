@@ -8,6 +8,13 @@ environment = 'test'
 name = 'Test'
 shutdown-on-error = true
 
+[health-check]
+default-enable = true
+
+[health-check.database]
+
+[health-check.sidekiq]
+
 [service]
 default-enable = true
 

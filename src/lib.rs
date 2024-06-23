@@ -20,6 +20,7 @@ pub mod api;
 pub mod app;
 pub mod config;
 pub mod error;
+pub mod health_check;
 pub mod middleware;
 pub mod service;
 pub mod tracing;

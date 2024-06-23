@@ -3,3 +3,6 @@ shutdown-on-error = true
 
 [service]
 default-enable = true
+
+[health-check]
+default-enable = true

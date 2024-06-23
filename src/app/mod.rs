@@ -89,6 +89,8 @@ where
         A::M::up(context.db(), None).await?;
     }
 
+    crate::service::runner::health_checks(&service_registry, &context).await?;
+
     crate::service::runner::before_run(&service_registry, &context).await?;
 
     crate::service::runner::run(service_registry, &context).await?;
