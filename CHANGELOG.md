@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.3.3...roadster-v0.3.4) - 2024-06-23
+
+### Added
+- Add health checks to run before starting services ([#242](https://github.com/roadster-rs/roadster/pull/242))
+- Add `From` impl to convert db config to ConnectOptions ([#240](https://github.com/roadster-rs/roadster/pull/240))
+- Move sidekiq "stale cleanup" to new `before_run` service method ([#239](https://github.com/roadster-rs/roadster/pull/239))
+
+### Other
+- Add dependabot config to update github actions weekly ([#243](https://github.com/roadster-rs/roadster/pull/243))
+- Update READMEs to use `__` as the env var separator instead of `.`
+- Update list of UI frameworks in readme
+- Set up `cargo deny`
+
 ## [0.3.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.3.2...roadster-v0.3.3) - 2024-06-21
 
 ### Fixed
