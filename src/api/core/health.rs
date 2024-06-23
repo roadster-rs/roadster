@@ -81,19 +81,19 @@ where
     let timer = Instant::now();
 
     #[cfg(any(feature = "db-sql", feature = "sidekiq"))]
-    let timeout_duration = Duration::from_secs(1);
+    let timeout_duration = Some(Duration::from_secs(1));
 
     #[cfg(all(feature = "db-sql", feature = "sidekiq"))]
     let (db, (redis_enqueue, redis_fetch)) = tokio::join!(
         db_health(state, timeout_duration),
-        all_redis_health(state, timeout_duration)
+        all_sidekiq_redis_health(state, timeout_duration)
     );
 
     #[cfg(all(feature = "db-sql", not(feature = "sidekiq")))]
     let db = db_health(state, timeout_duration).await;
 
     #[cfg(all(not(feature = "db-sql"), feature = "sidekiq"))]
-    let (redis_enqueue, redis_fetch) = all_redis_health(state, timeout_duration).await;
+    let (redis_enqueue, redis_fetch) = all_sidekiq_redis_health(state, timeout_duration).await;
 
     Ok(HeathCheckResponse {
         latency: timer.elapsed().as_millis(),
@@ -107,7 +107,10 @@ where
 }
 
 #[cfg(feature = "db-sql")]
-pub(crate) async fn db_health<S>(state: &AppContext<S>, duration: Duration) -> ResourceHealth
+pub(crate) async fn db_health<S>(
+    state: &AppContext<S>,
+    duration: Option<Duration>,
+) -> ResourceHealth
 where
     S: Clone + Send + Sync + 'static,
 {
@@ -129,15 +132,19 @@ where
 
 #[cfg(feature = "db-sql")]
 #[instrument(skip_all)]
-async fn ping_db(db: &DatabaseConnection, duration: Duration) -> RoadsterResult<()> {
-    timeout(duration, db.ping()).await??;
+async fn ping_db(db: &DatabaseConnection, duration: Option<Duration>) -> RoadsterResult<()> {
+    if let Some(duration) = duration {
+        timeout(duration, db.ping()).await??;
+    } else {
+        db.ping().await?;
+    }
     Ok(())
 }
 
 #[cfg(feature = "sidekiq")]
-pub(crate) async fn all_redis_health<S>(
+pub(crate) async fn all_sidekiq_redis_health<S>(
     state: &AppContext<S>,
-    duration: Duration,
+    duration: Option<Duration>,
 ) -> (ResourceHealth, Option<ResourceHealth>)
 where
     S: Clone + Send + Sync + 'static,
@@ -156,7 +163,7 @@ where
 
 #[cfg(feature = "sidekiq")]
 #[instrument(skip_all)]
-async fn redis_health(redis: &sidekiq::RedisPool, duration: Duration) -> ResourceHealth {
+async fn redis_health(redis: &sidekiq::RedisPool, duration: Option<Duration>) -> ResourceHealth {
     let redis_timer = Instant::now();
     let (redis_status, acquire_conn_latency, ping_latency) = match ping_redis(redis, duration).await
     {
@@ -182,10 +189,14 @@ async fn redis_health(redis: &sidekiq::RedisPool, duration: Duration) -> Resourc
 #[instrument(skip_all)]
 async fn ping_redis(
     redis: &sidekiq::RedisPool,
-    duration: Duration,
+    duration: Option<Duration>,
 ) -> RoadsterResult<(Duration, Duration)> {
     let timer = Instant::now();
-    let mut conn = timeout(duration, redis.get()).await??;
+    let mut conn = if let Some(duration) = duration {
+        timeout(duration, redis.get()).await??
+    } else {
+        redis.get().await?
+    };
     let acquire_conn_latency = timer.elapsed();
 
     let timer = Instant::now();

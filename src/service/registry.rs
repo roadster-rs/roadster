@@ -1,6 +1,8 @@
 use crate::app::context::AppContext;
 use crate::app::App;
 use crate::error::RoadsterResult;
+use crate::health_check::default::default_health_checks;
+use crate::health_check::HealthCheck;
 use crate::service::{AppService, AppServiceBuilder};
 use anyhow::anyhow;
 use std::collections::BTreeMap;
@@ -12,6 +14,8 @@ where
     A: App + ?Sized + 'static,
 {
     pub(crate) context: AppContext<A::State>,
+    /// Health checks that need to succeed before any of the services can run.
+    pub(crate) health_checks: BTreeMap<String, Box<dyn HealthCheck<A>>>,
     pub(crate) services: BTreeMap<String, Box<dyn AppService<A>>>,
 }
 
@@ -19,8 +23,34 @@ impl<A: App> ServiceRegistry<A> {
     pub(crate) fn new(context: &AppContext<A::State>) -> Self {
         Self {
             context: context.clone(),
+            health_checks: default_health_checks(context),
             services: Default::default(),
         }
+    }
+
+    /// Register a health check that needs to succeed before any service can run.
+    // Todo: Would it make more sense to add a separate method to the `App` trait?
+    pub fn register_health_check<H>(&mut self, health_check: H) -> RoadsterResult<()>
+    where
+        H: HealthCheck<A> + 'static,
+    {
+        let name = health_check.name();
+
+        if !health_check.enabled(&self.context) {
+            info!(name=%name, "Health check is not enabled, skipping registration");
+            return Ok(());
+        }
+
+        info!(name=%name, "Registering health check");
+
+        if self
+            .health_checks
+            .insert(name.clone(), Box::new(health_check))
+            .is_some()
+        {
+            return Err(anyhow!("Health check `{}` was already registered", name).into());
+        }
+        Ok(())
     }
 
     /// Register a new service. If the service is not enabled (e.g., [AppService::enabled] is `false`),
@@ -40,11 +70,11 @@ impl<A: App> ServiceRegistry<A> {
         B: AppServiceBuilder<A, S>,
     {
         if !builder.enabled(&self.context) {
-            info!(service = %builder.name(), "Service is not enabled, skipping building and registration");
+            info!(name=%builder.name(), "Service is not enabled, skipping building and registration");
             return Ok(());
         }
 
-        info!(service = %builder.name(), "Building service");
+        info!(name=%builder.name(), "Building service");
         let service = builder.build(&self.context).await?;
 
         self.register_internal(service)
@@ -57,11 +87,11 @@ impl<A: App> ServiceRegistry<A> {
         let name = service.name();
 
         if !service.enabled(&self.context) {
-            info!(service = %name, "Service is not enabled, skipping registration");
+            info!(name=%name, "Service is not enabled, skipping registration");
             return Ok(());
         }
 
-        info!(service = %name, "Registering service");
+        info!(name=%name, "Registering service");
 
         if self
             .services

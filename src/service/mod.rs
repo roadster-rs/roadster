@@ -22,11 +22,9 @@ pub mod worker;
 #[cfg_attr(test, mockall::automock)]
 pub trait AppService<A: App + 'static>: Send + Sync {
     /// The name of the service.
-    // todo: make this non-static? This would make some testing/mocking slightly easier
     fn name(&self) -> String;
 
     /// Whether the service is enabled. If the service is not enabled, it will not be run.
-    // todo: make this non-static? This would make some testing/mocking slightly easier
     fn enabled(&self, context: &AppContext<A::State>) -> bool;
 
     /// Called when the app is starting up allow the service to handle CLI commands.

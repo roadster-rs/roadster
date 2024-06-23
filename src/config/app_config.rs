@@ -2,6 +2,7 @@ use crate::config::auth::Auth;
 #[cfg(feature = "db-sql")]
 use crate::config::database::Database;
 use crate::config::environment::{Environment, ENVIRONMENT_ENV_VAR_NAME};
+use crate::config::health_check::HealthCheck;
 use crate::config::service::Service;
 use crate::config::tracing::Tracing;
 use crate::error::RoadsterResult;
@@ -24,6 +25,8 @@ pub struct AppConfig {
     pub environment: Environment,
     #[validate(nested)]
     pub app: App,
+    #[validate(nested)]
+    pub health_check: HealthCheck,
     #[validate(nested)]
     pub service: Service,
     #[validate(nested)]
@@ -167,6 +170,8 @@ impl AppConfig {
 
         #[cfg(feature = "sidekiq")]
         let config = config.add_source(crate::config::service::worker::sidekiq::default_config());
+
+        let config = config.add_source(crate::config::health_check::default_config());
 
         config
     }

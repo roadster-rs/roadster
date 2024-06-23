@@ -191,7 +191,7 @@ impl<A: App> AppServiceBuilder<A, HttpService> for HttpServiceBuilder<A> {
             // Reverse due to how Axum's `Router#layer` method adds middleware.
             .rev()
             .try_fold(router, |router, middleware| {
-                info!(middleware=%middleware.name(), "Installing middleware");
+                info!(name=%middleware.name(), "Installing middleware");
                 middleware.install(router, context)
             })?;
 
