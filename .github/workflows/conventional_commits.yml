@@ -1,13 +1,22 @@
+# We use the "squash and merge" merge strategy, which by default uses the PR title for
+# the commit title. In order to ensure squashed/merged commits follow the "conventional commits"
+# pattern, we check that the PR title follows the pattern.
+
 name: Conventional Commits
 
 on:
   pull_request:
     branches: [ main ]
+    types: [ opened, synchronize, edited, reopened ]
+
+permissions:
+  pull-requests: read
 
 jobs:
   build:
-    name: Conventional Commits
+    name: Check PR title
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: webiny/action-conventional-commits@v1.3.0
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
