@@ -27,6 +27,21 @@ where
     Ok(false)
 }
 
+pub(crate) async fn before_run<A>(
+    service_registry: &ServiceRegistry<A>,
+    context: &AppContext<A::State>,
+) -> RoadsterResult<()>
+where
+    A: App,
+{
+    for (name, service) in service_registry.services.iter() {
+        info!(service=%name, "Running `before run`");
+        service.before_run(context).await?;
+    }
+
+    Ok(())
+}
+
 pub(crate) async fn run<A>(
     service_registry: ServiceRegistry<A>,
     context: &AppContext<A::State>,

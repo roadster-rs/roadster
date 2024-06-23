@@ -10,19 +10,14 @@ use crate::service::worker::sidekiq::Processor;
 use crate::service::AppServiceBuilder;
 use anyhow::anyhow;
 use async_trait::async_trait;
-use bb8::PooledConnection;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
 use serde::Serialize;
-use sidekiq::redis_rs::ToRedisArgs;
-use sidekiq::{
-    periodic, ProcessorConfig, RedisConnection, RedisConnectionManager, RedisError,
-    ServerMiddleware,
-};
+use sidekiq::{periodic, ProcessorConfig, ServerMiddleware};
 use std::collections::HashSet;
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
 
-const PERIODIC_KEY: &str = "periodic";
+pub(crate) const PERIODIC_KEY: &str = "periodic";
 
 pub struct SidekiqWorkerServiceBuilder<A>
 where
@@ -57,20 +52,16 @@ where
         }
     }
 
-    async fn build(self, context: &AppContext<A::State>) -> RoadsterResult<SidekiqWorkerService> {
+    async fn build(self, _context: &AppContext<A::State>) -> RoadsterResult<SidekiqWorkerService> {
         let service = match self.state {
             BuilderState::Enabled {
                 processor,
                 registered_periodic_workers,
                 ..
-            } => {
-                let mut conn = context.redis_enqueue().get().await?;
-                remove_stale_periodic_jobs(&mut conn, context, &registered_periodic_workers)
-                    .await?;
-                SidekiqWorkerService {
-                    processor: processor.into_sidekiq_processor(),
-                }
-            }
+            } => SidekiqWorkerService {
+                registered_periodic_workers,
+                processor: processor.into_sidekiq_processor(),
+            },
             BuilderState::Disabled => {
                 return Err(anyhow!(
                     "This builder is not enabled; it's build method should not have been called."
@@ -294,94 +285,6 @@ where
     }
 }
 
-/// Compares the list of periodic jobs that were registered by the app during app startup with
-/// the list of periodic jobs in Redis, and removes any that exist in Redis but weren't
-/// registered during start up.
-///
-/// The jobs are only removed if the [worker.sidekiq.periodic.stale-cleanup][crate::config::worker::Periodic]
-/// config is set to [auto-clean-stale][StaleCleanUpBehavior::AutoCleanStale].
-///
-/// This is run after all the app's periodic jobs have been registered.
-async fn remove_stale_periodic_jobs<S, C: RedisCommands>(
-    conn: &mut C,
-    context: &AppContext<S>,
-    registered_periodic_workers: &HashSet<String>,
-) -> RoadsterResult<()> {
-    let stale_jobs = conn
-        .zrange(PERIODIC_KEY.to_string(), 0, -1)
-        .await?
-        .into_iter()
-        .filter(|job| !registered_periodic_workers.contains(job))
-        .collect_vec();
-
-    if stale_jobs.is_empty() {
-        info!("No stale periodic jobs found");
-        return Ok(());
-    }
-
-    if context
-        .config()
-        .service
-        .sidekiq
-        .custom
-        .periodic
-        .stale_cleanup
-        == StaleCleanUpBehavior::AutoCleanStale
-    {
-        info!(
-            "Removing {} stale periodic jobs:\n{}",
-            stale_jobs.len(),
-            stale_jobs.join("\n")
-        );
-        conn.zrem(PERIODIC_KEY.to_string(), stale_jobs.clone())
-            .await?;
-    } else {
-        warn!(
-            "Found {} stale periodic jobs:\n{}",
-            stale_jobs.len(),
-            stale_jobs.join("\n")
-        );
-    }
-
-    Ok(())
-}
-
-/// Trait to help with mocking responses from Redis.
-// Todo: Make available to other parts of the project?
-#[cfg_attr(test, mockall::automock)]
-#[async_trait]
-trait RedisCommands {
-    async fn zrange(
-        &mut self,
-        key: String,
-        lower: isize,
-        upper: isize,
-    ) -> Result<Vec<String>, RedisError>;
-
-    async fn zrem<V>(&mut self, key: String, value: V) -> Result<bool, RedisError>
-    where
-        V: ToRedisArgs + Send + Sync + 'static;
-}
-
-#[async_trait]
-impl<'a> RedisCommands for PooledConnection<'a, RedisConnectionManager> {
-    async fn zrange(
-        &mut self,
-        key: String,
-        lower: isize,
-        upper: isize,
-    ) -> Result<Vec<String>, RedisError> {
-        RedisConnection::zrange(self, key, lower, upper).await
-    }
-
-    async fn zrem<V>(&mut self, key: String, value: V) -> Result<bool, RedisError>
-    where
-        V: ToRedisArgs + Send + Sync + 'static,
-    {
-        RedisConnection::zrem(self, key, value).await
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -583,53 +486,5 @@ mod tests {
 
         // Assert
         assert_eq!(result.is_err(), expect_err);
-    }
-
-    #[rstest]
-    #[case(false, Default::default(), Default::default(), Default::default())]
-    #[case(true, Default::default(), Default::default(), Default::default())]
-    #[case(true, Default::default(), vec!["foo".to_string()], vec!["foo".to_string()])]
-    #[case(true, vec!["foo".to_string()], vec!["foo".to_string()], Default::default())]
-    #[case(true, vec!["foo".to_string()], vec!["bar".to_string()], vec!["bar".to_string()])]
-    #[case(false, Default::default(), vec!["foo".to_string()], Default::default())]
-    #[tokio::test]
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    async fn remove_stale_periodic_jobs(
-        #[case] clean_stale: bool,
-        #[case] registered_jobs: Vec<String>,
-        #[case] jobs_in_redis: Vec<String>,
-        #[case] expected_jobs_removed: Vec<String>,
-    ) {
-        let mut config = AppConfig::test(None).unwrap();
-        if clean_stale {
-            config.service.sidekiq.custom.periodic.stale_cleanup =
-                StaleCleanUpBehavior::AutoCleanStale;
-        } else {
-            config.service.sidekiq.custom.periodic.stale_cleanup = StaleCleanUpBehavior::Manual;
-        }
-
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
-
-        let mut redis = MockRedisCommands::default();
-        redis
-            .expect_zrange()
-            .times(1)
-            .return_once(move |_, _, _| Ok(jobs_in_redis));
-
-        let zrem = redis.expect_zrem();
-        if clean_stale && !expected_jobs_removed.is_empty() {
-            zrem.times(1);
-        } else {
-            zrem.never();
-        }
-        zrem.withf(move |key, jobs| PERIODIC_KEY == key && expected_jobs_removed.iter().eq(jobs))
-            .return_once(|_, _: Vec<String>| Ok(true));
-
-        let registered_jobs: HashSet<String> =
-            registered_jobs.iter().map(|s| s.to_string()).collect();
-
-        super::remove_stale_periodic_jobs(&mut redis, &context, &registered_jobs)
-            .await
-            .unwrap();
     }
 }

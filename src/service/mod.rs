@@ -46,6 +46,14 @@ pub trait AppService<A: App + 'static>: Send + Sync {
         Ok(false)
     }
 
+    /// Perform any initialization work or other checks that should be done before the service runs.
+    ///
+    /// For example, checking that the service is healthy, removing stale items from the
+    /// service's queue, etc.
+    async fn before_run(&self, _app_context: &AppContext<A::State>) -> RoadsterResult<()> {
+        Ok(())
+    }
+
     /// Run the service in a new tokio task.
     ///
     /// * cancel_token - A tokio [CancellationToken] to use as a signal to gracefully shut down
