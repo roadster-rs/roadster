@@ -72,15 +72,15 @@ where
     let mut service_registry = ServiceRegistry::new(&context);
     A::services(&mut service_registry, &context).await?;
 
+    if service_registry.services.is_empty() {
+        warn!("No enabled services were registered, exiting.");
+        return Ok(());
+    }
+
     #[cfg(feature = "cli")]
     if crate::service::runner::handle_cli(&roadster_cli, &app_cli, &service_registry, &context)
         .await?
     {
-        return Ok(());
-    }
-
-    if service_registry.services.is_empty() {
-        warn!("No enabled services were registered, exiting.");
         return Ok(());
     }
 
@@ -118,20 +118,7 @@ pub trait App: Send + Sync {
 
     #[cfg(feature = "db-sql")]
     fn db_connection_options(config: &AppConfig) -> RoadsterResult<ConnectOptions> {
-        let mut options = ConnectOptions::new(config.database.uri.to_string());
-        options
-            .connect_timeout(config.database.connect_timeout)
-            .acquire_timeout(config.database.acquire_timeout)
-            .min_connections(config.database.min_connections)
-            .max_connections(config.database.max_connections)
-            .sqlx_logging(false);
-        if let Some(idle_timeout) = config.database.idle_timeout {
-            options.idle_timeout(idle_timeout);
-        }
-        if let Some(max_lifetime) = config.database.max_lifetime {
-            options.max_lifetime(max_lifetime);
-        }
-        Ok(options)
+        Ok(ConnectOptions::from(&config.database))
     }
 
     /// Convert the [AppContext] to the custom [Self::State] that will be used throughout the app.

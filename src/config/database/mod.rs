@@ -1,3 +1,4 @@
+use sea_orm::ConnectOptions;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::serde_as;
 use std::time::Duration;
@@ -9,7 +10,7 @@ use validator::Validate;
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct Database {
-    /// This can be overridden with an environment variable, e.g. `ROADSTER.DATABASE.URI=postgres://example:example@example:1234/example_app`
+    /// This can be overridden with an environment variable, e.g. `ROADSTER__DATABASE__URI=postgres://example:example@example:1234/example_app`
     pub uri: Url,
     /// Whether to automatically apply migrations during the app's start up. Migrations can also
     /// be manually performed via the `roadster migration [COMMAND]` CLI command.
@@ -39,11 +40,36 @@ impl Database {
     }
 }
 
+impl From<Database> for ConnectOptions {
+    fn from(database: Database) -> Self {
+        ConnectOptions::from(&database)
+    }
+}
+
+impl From<&Database> for ConnectOptions {
+    fn from(database: &Database) -> Self {
+        let mut options = ConnectOptions::new(database.uri.to_string());
+        options
+            .connect_timeout(database.connect_timeout)
+            .acquire_timeout(database.acquire_timeout)
+            .min_connections(database.min_connections)
+            .max_connections(database.max_connections)
+            .sqlx_logging(false);
+        if let Some(idle_timeout) = database.idle_timeout {
+            options.idle_timeout(idle_timeout);
+        }
+        if let Some(max_lifetime) = database.max_lifetime {
+            options.max_lifetime(max_lifetime);
+        }
+        options
+    }
+}
+
 #[cfg(test)]
 mod deserialize_tests {
     use super::*;
     use crate::util::test_util::TestCase;
-    use insta::assert_toml_snapshot;
+    use insta::{assert_debug_snapshot, assert_toml_snapshot};
     use rstest::{fixture, rstest};
 
     #[fixture]
@@ -76,5 +102,24 @@ mod deserialize_tests {
         let database: Database = toml::from_str(config).unwrap();
 
         assert_toml_snapshot!(database);
+    }
+
+    #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn db_config_to_connect_options() {
+        let db = Database {
+            uri: Url::parse("postgres://example:example@example:1234/example_app").unwrap(),
+            auto_migrate: true,
+            connect_timeout: Duration::from_secs(1),
+            acquire_timeout: Duration::from_secs(2),
+            idle_timeout: Some(Duration::from_secs(3)),
+            max_lifetime: Some(Duration::from_secs(4)),
+            min_connections: 10,
+            max_connections: 20,
+        };
+
+        let connect_options = ConnectOptions::from(&db);
+
+        assert_debug_snapshot!(connect_options);
     }
 }
