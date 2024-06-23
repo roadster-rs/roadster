@@ -1,0 +1,32 @@
+---
+source: src/config/database/mod.rs
+expression: connect_options
+---
+ConnectOptions {
+    url: "postgres://example:example@example:1234/example_app",
+    max_connections: Some(
+        20,
+    ),
+    min_connections: Some(
+        10,
+    ),
+    connect_timeout: Some(
+        1s,
+    ),
+    idle_timeout: Some(
+        3s,
+    ),
+    acquire_timeout: Some(
+        2s,
+    ),
+    max_lifetime: Some(
+        4s,
+    ),
+    sqlx_logging: false,
+    sqlx_logging_level: Info,
+    sqlx_slow_statements_logging_level: Off,
+    sqlx_slow_statements_logging_threshold: 1s,
+    sqlcipher_key: None,
+    schema_search_path: None,
+    test_before_acquire: true,
+}
