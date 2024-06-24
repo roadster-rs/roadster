@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.5](https://github.com/roadster-rs/roadster/compare/roadster-v0.3.4...roadster-v0.3.5) - 2024-06-24
+
+### Fixed
+- Health check config is missing a `custom` field ([#246](https://github.com/roadster-rs/roadster/pull/246))
+
+### Other
+- Check PR title for compliance with conventional commits ([#247](https://github.com/roadster-rs/roadster/pull/247))
+
 ## [0.3.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.3.3...roadster-v0.3.4) - 2024-06-23
 
 ### Added
