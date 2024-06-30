@@ -1,6 +1,7 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
+use axum::extract::FromRef;
 use axum::Router;
 use serde_derive::{Deserialize, Serialize};
 use tower_http::catch_panic::CatchPanicLayer;
@@ -12,13 +13,17 @@ use validator::Validate;
 pub struct CatchPanicConfig {}
 
 pub struct CatchPanicMiddleware;
-impl<S: Send + Sync + 'static> Middleware<S> for CatchPanicMiddleware {
+impl<S> Middleware<S> for CatchPanicMiddleware
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
     fn name(&self) -> String {
         "catch-panic".to_string()
     }
 
-    fn enabled(&self, context: &AppContext<S>) -> bool {
-        context
+    fn enabled(&self, state: &S) -> bool {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -26,11 +31,11 @@ impl<S: Send + Sync + 'static> Middleware<S> for CatchPanicMiddleware {
             .middleware
             .catch_panic
             .common
-            .enabled(context)
+            .enabled(state)
     }
 
-    fn priority(&self, context: &AppContext<S>) -> i32 {
-        context
+    fn priority(&self, state: &S) -> i32 {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -41,7 +46,7 @@ impl<S: Send + Sync + 'static> Middleware<S> for CatchPanicMiddleware {
             .priority
     }
 
-    fn install(&self, router: Router, _context: &AppContext<S>) -> RoadsterResult<Router> {
+    fn install(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
         let router = router.layer(CatchPanicLayer::new());
 
         Ok(router)
@@ -75,7 +80,7 @@ mod tests {
             .common
             .enable = enable;
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let middleware = CatchPanicMiddleware;
 
@@ -101,7 +106,7 @@ mod tests {
                 .priority = priority;
         }
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let middleware = CatchPanicMiddleware;
 

@@ -4,6 +4,7 @@ use crate::app::context::AppContext;
 use crate::app::App;
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
+use axum::extract::FromRef;
 use clap::Parser;
 use serde_derive::Serialize;
 use tracing::info;
@@ -13,21 +14,19 @@ use tracing::info;
 pub struct HealthArgs {}
 
 #[async_trait]
-impl<A> RunRoadsterCommand<A> for HealthArgs
+impl<A, S> RunRoadsterCommand<A, S> for HealthArgs
 where
-    A: App,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S>,
 {
     async fn run(
         &self,
         _app: &A,
         _cli: &RoadsterCli,
-        #[allow(unused_variables)] context: &AppContext<A::State>,
+        #[allow(unused_variables)] state: &S,
     ) -> RoadsterResult<bool> {
-        let health = health_check::<A::State>(
-            #[cfg(any(feature = "sidekiq", feature = "db-sql"))]
-            context,
-        )
-        .await?;
+        let health = health_check(state).await?;
         let health = serde_json::to_string_pretty(&health)?;
         info!("\n{health}");
         Ok(true)

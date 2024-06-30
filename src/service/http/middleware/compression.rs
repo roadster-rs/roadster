@@ -1,5 +1,6 @@
 use crate::app::context::AppContext;
 use crate::service::http::middleware::Middleware;
+use axum::extract::FromRef;
 use axum::Router;
 use serde_derive::{Deserialize, Serialize};
 
@@ -19,13 +20,17 @@ pub struct ResponseCompressionConfig {}
 pub struct RequestDecompressionConfig {}
 
 pub struct ResponseCompressionMiddleware;
-impl<S: Send + Sync + 'static> Middleware<S> for ResponseCompressionMiddleware {
+impl<S> Middleware<S> for ResponseCompressionMiddleware
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
     fn name(&self) -> String {
         "response-compression".to_string()
     }
 
-    fn enabled(&self, context: &AppContext<S>) -> bool {
-        context
+    fn enabled(&self, state: &S) -> bool {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -33,11 +38,11 @@ impl<S: Send + Sync + 'static> Middleware<S> for ResponseCompressionMiddleware {
             .middleware
             .response_compression
             .common
-            .enabled(context)
+            .enabled(state)
     }
 
-    fn priority(&self, context: &AppContext<S>) -> i32 {
-        context
+    fn priority(&self, state: &S) -> i32 {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -48,7 +53,7 @@ impl<S: Send + Sync + 'static> Middleware<S> for ResponseCompressionMiddleware {
             .priority
     }
 
-    fn install(&self, router: Router, _context: &AppContext<S>) -> RoadsterResult<Router> {
+    fn install(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
         let router = router.layer(CompressionLayer::new());
 
         Ok(router)
@@ -56,13 +61,17 @@ impl<S: Send + Sync + 'static> Middleware<S> for ResponseCompressionMiddleware {
 }
 
 pub struct RequestDecompressionMiddleware;
-impl<S: Send + Sync + 'static> Middleware<S> for RequestDecompressionMiddleware {
+impl<S> Middleware<S> for RequestDecompressionMiddleware
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
     fn name(&self) -> String {
         "request-decompression".to_string()
     }
 
-    fn enabled(&self, context: &AppContext<S>) -> bool {
-        context
+    fn enabled(&self, state: &S) -> bool {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -70,11 +79,11 @@ impl<S: Send + Sync + 'static> Middleware<S> for RequestDecompressionMiddleware 
             .middleware
             .request_decompression
             .common
-            .enabled(context)
+            .enabled(state)
     }
 
-    fn priority(&self, context: &AppContext<S>) -> i32 {
-        context
+    fn priority(&self, state: &S) -> i32 {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -85,7 +94,7 @@ impl<S: Send + Sync + 'static> Middleware<S> for RequestDecompressionMiddleware 
             .priority
     }
 
-    fn install(&self, router: Router, _context: &AppContext<S>) -> RoadsterResult<Router> {
+    fn install(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
         let router = router.layer(RequestDecompressionLayer::new());
 
         Ok(router)
@@ -120,7 +129,7 @@ mod tests {
             .common
             .enable = enable;
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let middleware = ResponseCompressionMiddleware;
 
@@ -149,7 +158,7 @@ mod tests {
                 .priority = priority;
         }
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let middleware = ResponseCompressionMiddleware;
 
@@ -178,7 +187,7 @@ mod tests {
             .common
             .enable = enable;
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let middleware = RequestDecompressionMiddleware;
 
@@ -207,7 +216,7 @@ mod tests {
                 .priority = priority;
         }
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let middleware = RequestDecompressionMiddleware;
 

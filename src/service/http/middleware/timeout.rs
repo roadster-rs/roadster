@@ -1,6 +1,7 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
+use axum::extract::FromRef;
 use axum::Router;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::serde_as;
@@ -26,13 +27,17 @@ impl Default for TimeoutConfig {
 }
 
 pub struct TimeoutMiddleware;
-impl<S: Send + Sync + 'static> Middleware<S> for TimeoutMiddleware {
+impl<S> Middleware<S> for TimeoutMiddleware
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
     fn name(&self) -> String {
         "timeout".to_string()
     }
 
-    fn enabled(&self, context: &AppContext<S>) -> bool {
-        context
+    fn enabled(&self, state: &S) -> bool {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -40,11 +45,11 @@ impl<S: Send + Sync + 'static> Middleware<S> for TimeoutMiddleware {
             .middleware
             .timeout
             .common
-            .enabled(context)
+            .enabled(state)
     }
 
-    fn priority(&self, context: &AppContext<S>) -> i32 {
-        context
+    fn priority(&self, state: &S) -> i32 {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -55,7 +60,8 @@ impl<S: Send + Sync + 'static> Middleware<S> for TimeoutMiddleware {
             .priority
     }
 
-    fn install(&self, router: Router, context: &AppContext<S>) -> RoadsterResult<Router> {
+    fn install(&self, router: Router, state: &S) -> RoadsterResult<Router> {
+        let context = AppContext::from_ref(state);
         let timeout = &context
             .config()
             .service
@@ -92,7 +98,7 @@ mod tests {
         config.service.http.custom.middleware.default_enable = default_enable;
         config.service.http.custom.middleware.timeout.common.enable = enable;
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let middleware = TimeoutMiddleware;
 
@@ -118,7 +124,7 @@ mod tests {
                 .priority = priority;
         }
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let middleware = TimeoutMiddleware;
 

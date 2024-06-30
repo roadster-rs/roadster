@@ -19,6 +19,7 @@ use aide::openapi::OpenApi;
 use aide::transform::TransformOpenApi;
 use anyhow::anyhow;
 use async_trait::async_trait;
+use axum::extract::FromRef;
 #[cfg(feature = "open-api")]
 use axum::Extension;
 use axum::Router;
@@ -28,50 +29,58 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 use tracing::info;
 
-pub struct HttpServiceBuilder<A: App + 'static> {
-    context: AppContext<A::State>,
-    router: Router<AppContext<A::State>>,
+pub struct HttpServiceBuilder<S>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    state: S,
+    router: Router<S>,
     #[cfg(feature = "open-api")]
-    api_router: ApiRouter<AppContext<A::State>>,
+    api_router: ApiRouter<S>,
     #[cfg(feature = "open-api")]
     api_docs: Box<dyn Fn(TransformOpenApi) -> TransformOpenApi + Send>,
-    middleware: BTreeMap<String, Box<dyn Middleware<A::State>>>,
-    initializers: BTreeMap<String, Box<dyn Initializer<A::State>>>,
+    middleware: BTreeMap<String, Box<dyn Middleware<S>>>,
+    initializers: BTreeMap<String, Box<dyn Initializer<S>>>,
 }
 
-impl<A: App> HttpServiceBuilder<A> {
-    pub fn new(path_root: Option<&str>, context: &AppContext<A::State>) -> Self {
+impl<S> HttpServiceBuilder<S>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    pub fn new(path_root: Option<&str>, state: &S) -> Self {
         // Normally, enabling a feature shouldn't remove things. In this case, however, we don't
         // want to include the default routes in the axum::Router if the `open-api` features is
         // enabled. Otherwise, we'll get a route conflict when the two routers are merged.
         #[cfg(not(feature = "open-api"))]
-        let router = default_routes(path_root.unwrap_or_default(), context);
+        let router = default_routes(path_root.unwrap_or_default(), state);
         #[cfg(feature = "open-api")]
-        let router = Router::<AppContext<A::State>>::new();
+        let router = Router::<S>::new();
 
         #[cfg(feature = "open-api")]
-        let app_name = context.config().app.name.clone();
+        let app_name = AppContext::from_ref(state).config().app.name.clone();
         Self {
-            context: context.clone(),
+            state: state.clone(),
             router,
             #[cfg(feature = "open-api")]
-            api_router: default_api_routes(path_root.unwrap_or_default(), context),
+            api_router: default_api_routes(path_root.unwrap_or_default(), state),
             #[cfg(feature = "open-api")]
             api_docs: Box::new(move |api| {
                 api.title(&app_name).description(&format!("# {}", app_name))
             }),
-            middleware: default_middleware(context),
-            initializers: default_initializers(context),
+            middleware: default_middleware(state),
+            initializers: default_initializers(state),
         }
     }
 
     #[cfg(test)]
-    fn empty(context: &AppContext<A::State>) -> Self {
+    fn empty(state: &S) -> Self {
         Self {
-            context: context.clone(),
-            router: Router::<AppContext<A::State>>::new(),
+            state: state.clone(),
+            router: Router::<S>::new(),
             #[cfg(feature = "open-api")]
-            api_router: ApiRouter::<AppContext<A::State>>::new(),
+            api_router: ApiRouter::<S>::new(),
             #[cfg(feature = "open-api")]
             api_docs: Box::new(|op| op),
             middleware: Default::default(),
@@ -79,13 +88,13 @@ impl<A: App> HttpServiceBuilder<A> {
         }
     }
 
-    pub fn router(mut self, router: Router<AppContext<A::State>>) -> Self {
+    pub fn router(mut self, router: Router<S>) -> Self {
         self.router = self.router.merge(router);
         self
     }
 
     #[cfg(feature = "open-api")]
-    pub fn api_router(mut self, router: ApiRouter<AppContext<A::State>>) -> Self {
+    pub fn api_router(mut self, router: ApiRouter<S>) -> Self {
         self.router = self.router.merge(router);
         self
     }
@@ -101,9 +110,9 @@ impl<A: App> HttpServiceBuilder<A> {
 
     pub fn initializer<T>(mut self, initializer: T) -> RoadsterResult<Self>
     where
-        T: Initializer<A::State> + 'static,
+        T: Initializer<S> + 'static,
     {
-        if !initializer.enabled(&self.context) {
+        if !initializer.enabled(&self.state) {
             return Ok(self);
         }
         let name = initializer.name();
@@ -119,9 +128,9 @@ impl<A: App> HttpServiceBuilder<A> {
 
     pub fn middleware<T>(mut self, middleware: T) -> RoadsterResult<Self>
     where
-        T: Middleware<A::State> + 'static,
+        T: Middleware<S> + 'static,
     {
-        if !middleware.enabled(&self.context) {
+        if !middleware.enabled(&self.state) {
             return Ok(self);
         }
         let name = middleware.name();
@@ -137,16 +146,21 @@ impl<A: App> HttpServiceBuilder<A> {
 }
 
 #[async_trait]
-impl<A: App> AppServiceBuilder<A, HttpService> for HttpServiceBuilder<A> {
+impl<A, S> AppServiceBuilder<A, S, HttpService> for HttpServiceBuilder<S>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S> + 'static,
+{
     fn name(&self) -> String {
         NAME.to_string()
     }
 
-    fn enabled(&self, app_context: &AppContext<A::State>) -> bool {
-        enabled(app_context)
+    fn enabled(&self, state: &S) -> bool {
+        enabled(&AppContext::from_ref(state))
     }
 
-    async fn build(self, context: &AppContext<A::State>) -> RoadsterResult<HttpService> {
+    async fn build(self, state: &S) -> RoadsterResult<HttpService> {
         let router = self.router;
 
         #[cfg(feature = "open-api")]
@@ -161,50 +175,50 @@ impl<A: App> AppServiceBuilder<A, HttpService> for HttpServiceBuilder<A> {
             (router, api)
         };
 
-        let router = router.with_state::<()>(context.clone());
+        let router = router.with_state::<()>(state.clone());
 
         let initializers = self
             .initializers
             .values()
-            .filter(|initializer| initializer.enabled(context))
-            .sorted_by(|a, b| Ord::cmp(&a.priority(context), &b.priority(context)))
+            .filter(|initializer| initializer.enabled(state))
+            .sorted_by(|a, b| Ord::cmp(&a.priority(state), &b.priority(state)))
             .collect_vec();
 
         let router = initializers
             .iter()
             .try_fold(router, |router, initializer| {
-                initializer.after_router(router, context)
+                initializer.after_router(router, state)
             })?;
 
         let router = initializers
             .iter()
             .try_fold(router, |router, initializer| {
-                initializer.before_middleware(router, context)
+                initializer.before_middleware(router, state)
             })?;
 
         info!("Installing middleware. Note: the order of installation is the inverse of the order middleware will run when handling a request.");
         let router = self
             .middleware
             .values()
-            .filter(|middleware| middleware.enabled(context))
-            .sorted_by(|a, b| Ord::cmp(&a.priority(context), &b.priority(context)))
+            .filter(|middleware| middleware.enabled(state))
+            .sorted_by(|a, b| Ord::cmp(&a.priority(state), &b.priority(state)))
             // Reverse due to how Axum's `Router#layer` method adds middleware.
             .rev()
             .try_fold(router, |router, middleware| {
                 info!(name=%middleware.name(), "Installing middleware");
-                middleware.install(router, context)
+                middleware.install(router, state)
             })?;
 
         let router = initializers
             .iter()
             .try_fold(router, |router, initializer| {
-                initializer.after_middleware(router, context)
+                initializer.after_middleware(router, state)
             })?;
 
         let router = initializers
             .iter()
             .try_fold(router, |router, initializer| {
-                initializer.before_serve(router, context)
+                initializer.before_serve(router, state)
             })?;
 
         let service = HttpService {
@@ -221,7 +235,6 @@ impl<A: App> AppServiceBuilder<A, HttpService> for HttpServiceBuilder<A> {
 mod tests {
     use super::*;
     use crate::app::context::AppContext;
-    use crate::app::MockApp;
     use crate::service::http::initializer::MockInitializer;
     use crate::service::http::middleware::MockMiddleware;
 
@@ -229,8 +242,8 @@ mod tests {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn middleware() {
         // Arrange
-        let context = AppContext::<()>::test(None, None, None).unwrap();
-        let builder = HttpServiceBuilder::<MockApp>::empty(&context);
+        let context = AppContext::test(None, None, None).unwrap();
+        let builder = HttpServiceBuilder::<AppContext>::empty(&context);
 
         let mut middleware = MockMiddleware::default();
         middleware.expect_enabled().returning(|_| true);
@@ -248,8 +261,8 @@ mod tests {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn middleware_not_enabled() {
         // Arrange
-        let context = AppContext::<()>::test(None, None, None).unwrap();
-        let builder = HttpServiceBuilder::<MockApp>::empty(&context);
+        let context = AppContext::test(None, None, None).unwrap();
+        let builder = HttpServiceBuilder::<AppContext>::empty(&context);
 
         let mut middleware = MockMiddleware::default();
         middleware.expect_enabled().returning(|_| false);
@@ -266,8 +279,8 @@ mod tests {
     #[should_panic]
     fn middleware_already_registered() {
         // Arrange
-        let context = AppContext::<()>::test(None, None, None).unwrap();
-        let builder = HttpServiceBuilder::<MockApp>::empty(&context);
+        let context = AppContext::test(None, None, None).unwrap();
+        let builder = HttpServiceBuilder::<AppContext>::empty(&context);
 
         let mut middleware = MockMiddleware::default();
         middleware.expect_name().returning(|| "test".to_string());
@@ -284,8 +297,8 @@ mod tests {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn initializer() {
         // Arrange
-        let context = AppContext::<()>::test(None, None, None).unwrap();
-        let builder = HttpServiceBuilder::<MockApp>::empty(&context);
+        let context = AppContext::test(None, None, None).unwrap();
+        let builder = HttpServiceBuilder::<AppContext>::empty(&context);
 
         let mut initializer = MockInitializer::default();
         initializer.expect_enabled().returning(|_| true);
@@ -303,8 +316,8 @@ mod tests {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn initializer_not_enabled() {
         // Arrange
-        let context = AppContext::<()>::test(None, None, None).unwrap();
-        let builder = HttpServiceBuilder::<MockApp>::empty(&context);
+        let context = AppContext::test(None, None, None).unwrap();
+        let builder = HttpServiceBuilder::<AppContext>::empty(&context);
 
         let mut initializer = MockInitializer::default();
         initializer.expect_enabled().returning(|_| false);
@@ -321,8 +334,8 @@ mod tests {
     #[should_panic]
     fn initializer_already_registered() {
         // Arrange
-        let context = AppContext::<()>::test(None, None, None).unwrap();
-        let builder = HttpServiceBuilder::<MockApp>::empty(&context);
+        let context = AppContext::test(None, None, None).unwrap();
+        let builder = HttpServiceBuilder::<AppContext>::empty(&context);
 
         let mut initializer = MockInitializer::default();
         initializer.expect_name().returning(|| "test".to_string());

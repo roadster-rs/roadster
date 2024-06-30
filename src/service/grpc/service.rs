@@ -4,6 +4,7 @@ use crate::error::RoadsterResult;
 use crate::service::AppService;
 use anyhow::anyhow;
 use async_trait::async_trait;
+use axum::extract::FromRef;
 use std::sync::Mutex;
 use tokio_util::sync::CancellationToken;
 use tonic::transport::server::Router;
@@ -25,21 +26,28 @@ impl GrpcService {
 }
 
 #[async_trait]
-impl<A: App + 'static> AppService<A> for GrpcService {
+impl<A, S> AppService<A, S> for GrpcService
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S> + 'static,
+{
     fn name(&self) -> String {
         "grpc".to_string()
     }
 
-    fn enabled(&self, context: &AppContext<A::State>) -> bool {
-        context.config().service.grpc.common.enabled(context)
+    fn enabled(&self, state: &S) -> bool {
+        let context = AppContext::from_ref(state);
+        context.config().service.grpc.common.enabled(&context)
     }
 
     async fn run(
         self: Box<Self>,
-        app_context: &AppContext<A::State>,
+        state: &S,
         cancel_token: CancellationToken,
     ) -> RoadsterResult<()> {
-        let server_addr = app_context.config().service.grpc.custom.address.url();
+        let context = AppContext::from_ref(state);
+        let server_addr = context.config().service.grpc.custom.address.url();
         info!("gRPC server will start at {server_addr}");
 
         self.router

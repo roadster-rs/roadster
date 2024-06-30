@@ -1,7 +1,7 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
-use axum::extract::MatchedPath;
+use axum::extract::{FromRef, MatchedPath};
 use axum::http::{Request, Response};
 use axum::Router;
 use opentelemetry_semantic_conventions::trace::{
@@ -19,13 +19,17 @@ use validator::Validate;
 pub struct TracingConfig {}
 
 pub struct TracingMiddleware;
-impl<S: Send + Sync + 'static> Middleware<S> for TracingMiddleware {
+impl<S> Middleware<S> for TracingMiddleware
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
     fn name(&self) -> String {
         "tracing".to_string()
     }
 
-    fn enabled(&self, context: &AppContext<S>) -> bool {
-        context
+    fn enabled(&self, state: &S) -> bool {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -33,11 +37,11 @@ impl<S: Send + Sync + 'static> Middleware<S> for TracingMiddleware {
             .middleware
             .tracing
             .common
-            .enabled(context)
+            .enabled(state)
     }
 
-    fn priority(&self, context: &AppContext<S>) -> i32 {
-        context
+    fn priority(&self, state: &S) -> i32 {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -48,7 +52,8 @@ impl<S: Send + Sync + 'static> Middleware<S> for TracingMiddleware {
             .priority
     }
 
-    fn install(&self, router: Router, context: &AppContext<S>) -> RoadsterResult<Router> {
+    fn install(&self, router: Router, state: &S) -> RoadsterResult<Router> {
+        let context = AppContext::from_ref(state);
         let request_id_header_name = &context
             .config()
             .service
@@ -190,7 +195,7 @@ mod tests {
         config.service.http.custom.middleware.default_enable = default_enable;
         config.service.http.custom.middleware.tracing.common.enable = enable;
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let middleware = TracingMiddleware;
 
@@ -216,7 +221,7 @@ mod tests {
                 .priority = priority;
         }
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let middleware = TracingMiddleware;
 

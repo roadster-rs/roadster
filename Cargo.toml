@@ -15,7 +15,7 @@ rust-version = "1.74.1"
 
 [features]
 default = ["sidekiq", "db-sql", "open-api", "jwt-ietf", "cli", "otel"]
-http = ["dep:axum", "dep:axum-extra", "dep:tower", "dep:tower-http"]
+http = ["dep:axum-extra", "dep:tower", "dep:tower-http"]
 open-api = ["http", "dep:aide", "dep:schemars"]
 sidekiq = ["dep:rusty-sidekiq", "dep:bb8", "dep:num_cpus"]
 db-sql = ["dep:sea-orm", "dep:sea-orm-migration"]
@@ -43,7 +43,9 @@ opentelemetry-otlp = { version = "0.16.0", features = ["metrics", "trace", "logs
 tracing-opentelemetry = { version = "0.24.0", features = ["metrics"], optional = true }
 
 # Controllers
-axum = { workspace = true, optional = true }
+# `axum` is not optional because we use the `FromRef` trait pretty extensively, even in parts of
+# the code that wouldn't otherwise need `axum`.
+axum = { workspace = true, features = ["macros"] }
 axum-extra = { version = "0.9.0", features = ["typed-header"], optional = true }
 tower = { version = "0.4.13", optional = true }
 tower-http = { version = "0.5.0", features = ["trace", "timeout", "request-id", "util", "normalize-path", "sensitive-headers", "catch-panic", "compression-full", "decompression-full", "limit", "cors"], optional = true }

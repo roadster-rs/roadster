@@ -4,72 +4,81 @@ use crate::app::context::AppContext;
 use crate::app::App;
 use crate::error::RoadsterResult;
 use crate::service::registry::ServiceRegistry;
+use axum::extract::FromRef;
 use std::future::Future;
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, instrument};
 
 #[cfg(feature = "cli")]
-pub(crate) async fn handle_cli<A>(
+pub(crate) async fn handle_cli<A, S>(
     roadster_cli: &RoadsterCli,
     app_cli: &A::Cli,
-    service_registry: &ServiceRegistry<A>,
-    context: &AppContext<A::State>,
+    service_registry: &ServiceRegistry<A, S>,
+    state: &S,
 ) -> RoadsterResult<bool>
 where
-    A: App,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S>,
 {
     for (_name, service) in service_registry.services.iter() {
-        if service.handle_cli(roadster_cli, app_cli, context).await? {
+        if service.handle_cli(roadster_cli, app_cli, state).await? {
             return Ok(true);
         }
     }
     Ok(false)
 }
 
-pub(crate) async fn health_checks<A>(
-    service_registry: &ServiceRegistry<A>,
-    context: &AppContext<A::State>,
+pub(crate) async fn health_checks<A, S>(
+    service_registry: &ServiceRegistry<A, S>,
+    state: &S,
 ) -> RoadsterResult<()>
 where
-    A: App,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S>,
 {
     for (name, health_check) in service_registry.health_checks.iter() {
         info!(name=%name, "Running health check");
-        health_check.check(context).await?;
+        health_check.check(state).await?;
     }
 
     Ok(())
 }
 
-pub(crate) async fn before_run<A>(
-    service_registry: &ServiceRegistry<A>,
-    context: &AppContext<A::State>,
+pub(crate) async fn before_run<A, S>(
+    service_registry: &ServiceRegistry<A, S>,
+    state: &S,
 ) -> RoadsterResult<()>
 where
-    A: App,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S>,
 {
     for (name, service) in service_registry.services.iter() {
         info!(name=%name, "Running service::before_run");
-        service.before_run(context).await?;
+        service.before_run(state).await?;
     }
 
     Ok(())
 }
 
-pub(crate) async fn run<A>(
-    service_registry: ServiceRegistry<A>,
-    context: &AppContext<A::State>,
+pub(crate) async fn run<A, S>(
+    service_registry: ServiceRegistry<A, S>,
+    state: &S,
 ) -> RoadsterResult<()>
 where
-    A: App,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S>,
 {
     let cancel_token = CancellationToken::new();
     let mut join_set = JoinSet::new();
 
     // Spawn tasks for the app's services
     for (name, service) in service_registry.services {
-        let context = context.clone();
+        let context = state.clone();
         let cancel_token = cancel_token.clone();
         join_set.spawn(Box::pin(async move {
             info!(name=%name, "Running service");
@@ -79,16 +88,17 @@ where
 
     // Task to clean up resources when gracefully shutting down.
     {
-        let context = context.clone();
+        let context = state.clone();
         let cancel_token = cancel_token.clone();
         let app_graceful_shutdown = {
             let context = context.clone();
             Box::pin(async move { A::graceful_shutdown(&context).await })
         };
+        let context = AppContext::from_ref(&context);
         join_set.spawn(Box::pin(async move {
             cancel_on_error(
                 cancel_token.clone(),
-                &context,
+                context.clone(),
                 graceful_shutdown(
                     token_shutdown_signal(cancel_token.clone()),
                     app_graceful_shutdown,
@@ -100,7 +110,7 @@ where
     }
     // Task to listen for the signal to gracefully shutdown, and trigger other tasks to stop.
     {
-        let context = context.clone();
+        let context = state.clone();
         let app_graceful_shutdown_signal = {
             let context = context.clone();
             Box::pin(async move { A::graceful_shutdown_signal(&context).await })
@@ -187,9 +197,9 @@ async fn token_shutdown_signal(cancellation_token: CancellationToken) {
     cancellation_token.cancelled().await
 }
 
-async fn cancel_on_error<T, F, S>(
+async fn cancel_on_error<T, F>(
     cancellation_token: CancellationToken,
-    context: &AppContext<S>,
+    context: AppContext,
     f: F,
 ) -> RoadsterResult<T>
 where
@@ -203,11 +213,11 @@ where
 }
 
 #[instrument(skip_all)]
-async fn graceful_shutdown<F1, F2, S>(
+async fn graceful_shutdown<F1, F2>(
     shutdown_signal: F1,
     app_graceful_shutdown: F2,
     // This parameter is (currently) not used when no features are enabled.
-    #[allow(unused_variables)] context: AppContext<S>,
+    #[allow(unused_variables)] context: AppContext,
 ) -> RoadsterResult<()>
 where
     F1: Future<Output = ()> + Send + 'static,

@@ -5,6 +5,7 @@ use crate::error::RoadsterResult;
 use crate::service::worker::sidekiq::builder::{SidekiqWorkerServiceBuilder, PERIODIC_KEY};
 use crate::service::AppService;
 use async_trait::async_trait;
+use axum::extract::FromRef;
 use bb8::PooledConnection;
 use itertools::Itertools;
 use sidekiq::redis_rs::ToRedisArgs;
@@ -16,7 +17,7 @@ use tracing::{debug, error, info, instrument, warn};
 
 pub(crate) const NAME: &str = "sidekiq";
 
-pub(crate) fn enabled<S>(context: &AppContext<S>) -> bool {
+pub(crate) fn enabled(context: &AppContext) -> bool {
     let sidekiq_config = &context.config().service.sidekiq;
     if !sidekiq_config.common.enabled(context) {
         debug!("Sidekiq is not enabled in the config.");
@@ -43,24 +44,30 @@ pub struct SidekiqWorkerService {
 }
 
 #[async_trait]
-impl<A: App + 'static> AppService<A> for SidekiqWorkerService {
+impl<A, S> AppService<A, S> for SidekiqWorkerService
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S> + 'static,
+{
     fn name(&self) -> String {
         NAME.to_string()
     }
 
-    fn enabled(&self, context: &AppContext<A::State>) -> bool {
-        enabled(context)
+    fn enabled(&self, state: &S) -> bool {
+        enabled(&AppContext::from_ref(state))
     }
 
     #[instrument(skip_all)]
-    async fn before_run(&self, app_context: &AppContext<A::State>) -> RoadsterResult<()> {
-        let mut conn = app_context.redis_enqueue().get().await?;
-        remove_stale_periodic_jobs(&mut conn, app_context, &self.registered_periodic_workers).await
+    async fn before_run(&self, state: &S) -> RoadsterResult<()> {
+        let context = AppContext::from_ref(state);
+        let mut conn = context.redis_enqueue().get().await?;
+        remove_stale_periodic_jobs(&mut conn, &context, &self.registered_periodic_workers).await
     }
 
     async fn run(
         self: Box<Self>,
-        _app_context: &AppContext<A::State>,
+        _state: &S,
         cancel_token: CancellationToken,
     ) -> RoadsterResult<()> {
         let processor = self.processor;
@@ -92,13 +99,12 @@ impl<A: App + 'static> AppService<A> for SidekiqWorkerService {
 }
 
 impl SidekiqWorkerService {
-    pub async fn builder<A>(
-        context: &AppContext<A::State>,
-    ) -> RoadsterResult<SidekiqWorkerServiceBuilder<A>>
+    pub async fn builder<S>(state: &S) -> RoadsterResult<SidekiqWorkerServiceBuilder<S>>
     where
-        A: App + 'static,
+        S: Clone + Send + Sync + 'static,
+        AppContext: FromRef<S>,
     {
-        SidekiqWorkerServiceBuilder::with_default_processor(context, None).await
+        SidekiqWorkerServiceBuilder::with_default_processor(state, None).await
     }
 }
 
@@ -110,9 +116,9 @@ impl SidekiqWorkerService {
 /// config is set to [auto-clean-stale][StaleCleanUpBehavior::AutoCleanStale].
 ///
 /// This is run after all the app's periodic jobs have been registered.
-async fn remove_stale_periodic_jobs<S, C: RedisCommands>(
+async fn remove_stale_periodic_jobs<C: RedisCommands>(
     conn: &mut C,
-    context: &AppContext<S>,
+    context: &AppContext,
     registered_periodic_workers: &HashSet<String>,
 ) -> RoadsterResult<()> {
     let stale_jobs = conn
@@ -231,7 +237,7 @@ mod tests {
             None
         };
 
-        let context = AppContext::<()>::test(Some(config), None, pool).unwrap();
+        let context = AppContext::test(Some(config), None, pool).unwrap();
 
         assert_eq!(super::enabled(&context), expected_enabled);
     }
@@ -259,7 +265,7 @@ mod tests {
             config.service.sidekiq.custom.periodic.stale_cleanup = StaleCleanUpBehavior::Manual;
         }
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let mut redis = MockRedisCommands::default();
         redis

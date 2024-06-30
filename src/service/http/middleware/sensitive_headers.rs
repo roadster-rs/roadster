@@ -1,5 +1,6 @@
 use crate::app::context::AppContext;
 use crate::service::http::middleware::Middleware;
+use axum::extract::FromRef;
 use axum::http::{header, HeaderName};
 use axum::Router;
 use itertools::Itertools;
@@ -60,13 +61,17 @@ pub struct SensitiveResponseHeadersConfig {
 }
 
 pub struct SensitiveRequestHeadersMiddleware;
-impl<S: Send + Sync + 'static> Middleware<S> for SensitiveRequestHeadersMiddleware {
+impl<S> Middleware<S> for SensitiveRequestHeadersMiddleware
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
     fn name(&self) -> String {
         "sensitive-request-headers".to_string()
     }
 
-    fn enabled(&self, context: &AppContext<S>) -> bool {
-        context
+    fn enabled(&self, state: &S) -> bool {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -74,11 +79,11 @@ impl<S: Send + Sync + 'static> Middleware<S> for SensitiveRequestHeadersMiddlewa
             .middleware
             .sensitive_request_headers
             .common
-            .enabled(context)
+            .enabled(state)
     }
 
-    fn priority(&self, context: &AppContext<S>) -> i32 {
-        context
+    fn priority(&self, state: &S) -> i32 {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -88,8 +93,8 @@ impl<S: Send + Sync + 'static> Middleware<S> for SensitiveRequestHeadersMiddlewa
             .common
             .priority
     }
-    fn install(&self, router: Router, context: &AppContext<S>) -> RoadsterResult<Router> {
-        let headers = context
+    fn install(&self, router: Router, state: &S) -> RoadsterResult<Router> {
+        let headers = AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -107,13 +112,17 @@ impl<S: Send + Sync + 'static> Middleware<S> for SensitiveRequestHeadersMiddlewa
 }
 
 pub struct SensitiveResponseHeadersMiddleware;
-impl<S: Send + Sync + 'static> Middleware<S> for SensitiveResponseHeadersMiddleware {
+impl<S> Middleware<S> for SensitiveResponseHeadersMiddleware
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
     fn name(&self) -> String {
         "sensitive-response-headers".to_string()
     }
 
-    fn enabled(&self, context: &AppContext<S>) -> bool {
-        context
+    fn enabled(&self, state: &S) -> bool {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -121,11 +130,11 @@ impl<S: Send + Sync + 'static> Middleware<S> for SensitiveResponseHeadersMiddlew
             .middleware
             .sensitive_response_headers
             .common
-            .enabled(context)
+            .enabled(state)
     }
 
-    fn priority(&self, context: &AppContext<S>) -> i32 {
-        context
+    fn priority(&self, state: &S) -> i32 {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -136,8 +145,8 @@ impl<S: Send + Sync + 'static> Middleware<S> for SensitiveResponseHeadersMiddlew
             .priority
     }
 
-    fn install(&self, router: Router, context: &AppContext<S>) -> RoadsterResult<Router> {
-        let headers = context
+    fn install(&self, router: Router, state: &S) -> RoadsterResult<Router> {
+        let headers = AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -182,7 +191,7 @@ mod tests {
             .common
             .enable = enable;
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let middleware = SensitiveRequestHeadersMiddleware;
 
@@ -211,7 +220,7 @@ mod tests {
                 .priority = priority;
         }
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let middleware = SensitiveRequestHeadersMiddleware;
 
@@ -240,7 +249,7 @@ mod tests {
             .common
             .enable = enable;
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let middleware = SensitiveResponseHeadersMiddleware;
 
@@ -269,7 +278,7 @@ mod tests {
                 .priority = priority;
         }
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let middleware = SensitiveResponseHeadersMiddleware;
 

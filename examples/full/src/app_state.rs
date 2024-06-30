@@ -1,5 +1,7 @@
+use axum::extract::FromRef;
 use roadster::app::context::AppContext;
 
-pub type CustomAppContext = ();
-
-pub type AppState = AppContext<CustomAppContext>;
+#[derive(Clone, FromRef)]
+pub struct AppState {
+    pub app_context: AppContext,
+}

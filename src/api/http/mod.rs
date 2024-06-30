@@ -1,6 +1,7 @@
 use crate::app::context::AppContext;
 #[cfg(feature = "open-api")]
 use aide::axum::ApiRouter;
+use axum::extract::FromRef;
 use axum::Router;
 use itertools::Itertools;
 
@@ -20,23 +21,25 @@ pub fn build_path(parent: &str, child: &str) -> String {
     path
 }
 
-pub fn default_routes<S>(parent: &str, context: &AppContext<S>) -> Router<AppContext<S>>
+pub fn default_routes<S>(parent: &str, state: &S) -> Router<S>
 where
     S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
 {
     Router::new()
-        .merge(ping::routes(parent, context))
-        .merge(health::routes(parent, context))
+        .merge(ping::routes(parent, state))
+        .merge(health::routes(parent, state))
 }
 
 #[cfg(feature = "open-api")]
-pub fn default_api_routes<S>(parent: &str, context: &AppContext<S>) -> ApiRouter<AppContext<S>>
+pub fn default_api_routes<S>(parent: &str, state: &S) -> ApiRouter<S>
 where
     S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
 {
     ApiRouter::new()
-        .merge(ping::api_routes(parent, context))
-        .merge(health::api_routes(parent, context))
+        .merge(ping::api_routes(parent, state))
+        .merge(health::api_routes(parent, state))
         // The docs route is only available when using Aide
-        .merge(docs::routes(parent, context))
+        .merge(docs::routes(parent, state))
 }

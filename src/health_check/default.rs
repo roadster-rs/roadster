@@ -1,16 +1,18 @@
 use crate::app::context::AppContext;
-use crate::app::App;
 #[cfg(feature = "db-sql")]
 use crate::health_check::database::DatabaseHealthCheck;
 #[cfg(feature = "sidekiq")]
 use crate::health_check::sidekiq::SidekiqHealthCheck;
 use crate::health_check::HealthCheck;
+use axum::extract::FromRef;
 use std::collections::BTreeMap;
 
-pub fn default_health_checks<A: App + 'static>(
-    context: &AppContext<A::State>,
-) -> BTreeMap<String, Box<dyn HealthCheck<A>>> {
-    let health_check: Vec<Box<dyn HealthCheck<A>>> = vec![
+pub fn default_health_checks<S>(state: &S) -> BTreeMap<String, Box<dyn HealthCheck<S>>>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    let health_check: Vec<Box<dyn HealthCheck<S>>> = vec![
         #[cfg(feature = "db-sql")]
         Box::new(DatabaseHealthCheck),
         #[cfg(feature = "sidekiq")]
@@ -18,7 +20,7 @@ pub fn default_health_checks<A: App + 'static>(
     ];
     health_check
         .into_iter()
-        .filter(|health_check| health_check.enabled(context))
+        .filter(|health_check| health_check.enabled(state))
         .map(|health_check| (health_check.name(), health_check))
         .collect()
 }
@@ -26,7 +28,6 @@ pub fn default_health_checks<A: App + 'static>(
 #[cfg(all(test, feature = "sidekiq", feature = "db-sql",))]
 mod tests {
     use crate::app::context::AppContext;
-    use crate::app::MockApp;
     use crate::config::app_config::AppConfig;
     use crate::util::test_util::TestCase;
     use insta::assert_toml_snapshot;
@@ -48,10 +49,10 @@ mod tests {
         let mut config = AppConfig::test(None).unwrap();
         config.health_check.default_enable = default_enable;
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         // Act
-        let health_checks = super::default_health_checks::<MockApp>(&context);
+        let health_checks = super::default_health_checks(&context);
         let health_checks = health_checks.keys().collect_vec();
 
         // Assert

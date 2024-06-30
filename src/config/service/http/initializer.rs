@@ -2,6 +2,7 @@ use crate::app::context::AppContext;
 use crate::config::app_config::CustomConfig;
 use crate::service::http::initializer::normalize_path::NormalizePathConfig;
 use crate::util::serde_util::default_true;
+use axum::extract::FromRef;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use validator::Validate;
@@ -61,9 +62,13 @@ pub struct CommonConfig {
 }
 
 impl CommonConfig {
-    pub fn enabled<S>(&self, context: &AppContext<S>) -> bool {
+    pub fn enabled<S>(&self, state: &S) -> bool
+    where
+        S: Clone + Send + Sync + 'static,
+        AppContext: FromRef<S>,
+    {
         self.enable.unwrap_or(
-            context
+            AppContext::from_ref(state)
                 .config()
                 .service
                 .http

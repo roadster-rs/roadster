@@ -1,10 +1,10 @@
-use crate::app::App;
+use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::worker::sidekiq::app_worker::AppWorker;
 use crate::service::worker::sidekiq::roadster_worker::RoadsterWorker;
+use axum::extract::FromRef;
 use serde::Serialize;
 use sidekiq::{periodic, ServerMiddleware};
-use std::marker::PhantomData;
 
 pub mod app_worker;
 pub mod builder;
@@ -15,44 +15,38 @@ pub mod service;
 /// sidekiq::Processor because [periodic::Builder] takes a [sidekiq::Processor] in order
 /// to register a periodic job, so it won't be albe to take a MockProcessor created by `mockall`.
 #[derive(Clone)]
-struct Processor<A>
-where
-    A: App + 'static,
-{
+struct Processor {
     inner: sidekiq::Processor,
-    _app: PhantomData<A>,
 }
 
-impl<A> Processor<A>
-where
-    A: App + 'static,
-{
+impl Processor {
     #[cfg_attr(test, allow(dead_code))]
     fn new(inner: sidekiq::Processor) -> Self {
-        Self {
-            inner,
-            _app: PhantomData,
-        }
+        Self { inner }
     }
 
     #[cfg_attr(test, allow(dead_code))]
-    fn register<Args, W>(&mut self, worker: RoadsterWorker<A, Args, W>)
+    fn register<S, Args, W>(&mut self, worker: RoadsterWorker<S, Args, W>)
     where
+        S: Clone + Send + Sync + 'static,
+        AppContext: FromRef<S>,
         Args: Sync + Send + Serialize + for<'de> serde::Deserialize<'de> + 'static,
-        W: AppWorker<A, Args> + 'static,
+        W: AppWorker<S, Args> + 'static,
     {
         self.inner.register(worker);
     }
 
     #[cfg_attr(test, allow(dead_code))]
-    async fn register_periodic<Args, W>(
+    async fn register_periodic<S, Args, W>(
         &mut self,
         builder: periodic::Builder,
-        worker: RoadsterWorker<A, Args, W>,
+        worker: RoadsterWorker<S, Args, W>,
     ) -> RoadsterResult<()>
     where
+        S: Clone + Send + Sync + 'static,
+        AppContext: FromRef<S>,
         Args: Sync + Send + Serialize + for<'de> serde::Deserialize<'de> + 'static,
-        W: AppWorker<A, Args> + 'static,
+        W: AppWorker<S, Args> + 'static,
     {
         builder.register(&mut self.inner, worker).await?;
         Ok(())
@@ -74,22 +68,26 @@ where
 
 #[cfg(test)]
 mockall::mock! {
-    Processor<A: App + 'static> {
+    Processor {
         fn new(inner: sidekiq::Processor) -> Self;
 
-        fn register<Args, W>(&mut self, worker: RoadsterWorker<A, Args, W>)
+        fn register<S, Args, W>(&mut self, worker: RoadsterWorker<S, Args, W>)
         where
+            S: Clone + Send + Sync + 'static,
+            AppContext: FromRef<S>,
             Args: Sync + Send + Serialize + for<'de> serde::Deserialize<'de> + 'static,
-            W: AppWorker<A, Args> + 'static;
+            W: AppWorker<S, Args> + 'static;
 
-        async fn register_periodic<Args, W>(
+        async fn register_periodic<S, Args, W>(
             &mut self,
             builder: periodic::Builder,
-            worker: RoadsterWorker<A, Args, W>,
+            worker: RoadsterWorker<S, Args, W>,
         ) -> RoadsterResult<()>
         where
+            S: Clone + Send + Sync + 'static,
+            AppContext: FromRef<S>,
             Args: Sync + Send + Serialize + for<'de> serde::Deserialize<'de> + 'static,
-            W: AppWorker<A, Args> + 'static;
+            W: AppWorker<S, Args> + 'static;
 
         async fn middleware<M>(&mut self, middleware: M)
         where
@@ -98,7 +96,7 @@ mockall::mock! {
         fn into_sidekiq_processor(self) -> sidekiq::Processor;
     }
 
-    impl<A: App + 'static> Clone for Processor<A> {
+    impl Clone for Processor {
         fn clone(&self) -> Self;
     }
 }

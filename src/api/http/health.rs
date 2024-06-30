@@ -8,7 +8,7 @@ use aide::axum::routing::get_with;
 use aide::axum::ApiRouter;
 #[cfg(feature = "open-api")]
 use aide::transform::TransformOperation;
-#[cfg(any(feature = "sidekiq", feature = "db-sql"))]
+use axum::extract::FromRef;
 use axum::extract::State;
 use axum::routing::get;
 use axum::{Json, Router};
@@ -23,32 +23,36 @@ pub use crate::api::core::health::{ErrorData, HeathCheckResponse, ResourceHealth
 #[cfg(feature = "open-api")]
 const TAG: &str = "Health";
 
-pub fn routes<S>(parent: &str, context: &AppContext<S>) -> Router<AppContext<S>>
+pub fn routes<S>(parent: &str, state: &S) -> Router<S>
 where
     S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
 {
+    let context = AppContext::from_ref(state);
     let router = Router::new();
-    if !enabled(context) {
+    if !enabled(&context) {
         return router;
     }
-    let root = build_path(parent, route(context));
+    let root = build_path(parent, route(&context));
     router.route(&root, get(health_get::<S>))
 }
 
 #[cfg(feature = "open-api")]
-pub fn api_routes<S>(parent: &str, context: &AppContext<S>) -> ApiRouter<AppContext<S>>
+pub fn api_routes<S>(parent: &str, state: &S) -> ApiRouter<S>
 where
     S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
 {
+    let context = AppContext::from_ref(state);
     let router = ApiRouter::new();
-    if !enabled(context) {
+    if !enabled(&context) {
         return router;
     }
-    let root = build_path(parent, route(context));
+    let root = build_path(parent, route(&context));
     router.api_route(&root, get_with(health_get::<S>, health_get_docs))
 }
 
-fn enabled<S>(context: &AppContext<S>) -> bool {
+fn enabled(context: &AppContext) -> bool {
     context
         .config()
         .service
@@ -59,7 +63,7 @@ fn enabled<S>(context: &AppContext<S>) -> bool {
         .enabled(context)
 }
 
-fn route<S>(context: &AppContext<S>) -> &str {
+fn route(context: &AppContext) -> &str {
     &context
         .config()
         .service
@@ -71,17 +75,12 @@ fn route<S>(context: &AppContext<S>) -> &str {
 }
 
 #[instrument(skip_all)]
-async fn health_get<S>(
-    #[cfg(any(feature = "sidekiq", feature = "db-sql"))] State(state): State<AppContext<S>>,
-) -> RoadsterResult<Json<HeathCheckResponse>>
+async fn health_get<S>(State(state): State<S>) -> RoadsterResult<Json<HeathCheckResponse>>
 where
     S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
 {
-    let health = health_check::<S>(
-        #[cfg(any(feature = "sidekiq", feature = "db-sql"))]
-        &state,
-    )
-    .await?;
+    let health = health_check::<S>(&state).await?;
     Ok(Json(health))
 }
 
@@ -150,7 +149,7 @@ mod tests {
                 .route
                 .clone_from(route);
         }
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         assert_eq!(super::enabled(&context), enabled);
         assert_eq!(

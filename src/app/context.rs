@@ -2,6 +2,7 @@ use crate::app::metadata::AppMetadata;
 use crate::app::App;
 use crate::config::app_config::AppConfig;
 use crate::error::RoadsterResult;
+use axum::extract::FromRef;
 #[cfg(feature = "db-sql")]
 use sea_orm::DatabaseConnection;
 use std::sync::Arc;
@@ -12,22 +13,20 @@ type Inner = AppContextInner;
 type Inner = MockAppContextInner;
 
 #[derive(Clone)]
-pub struct AppContext<T = ()> {
+pub struct AppContext {
     inner: Arc<Inner>,
-    custom: Arc<T>,
 }
 
-impl<T> AppContext<T> {
+impl AppContext {
     // This method isn't used when running tests; only the mocked version is used.
     #[cfg_attr(test, allow(dead_code))]
     // The `A` type parameter isn't used in some feature configurations
     #[allow(clippy::extra_unused_type_parameters)]
-    pub(crate) async fn new<A>(
-        config: AppConfig,
-        metadata: AppMetadata,
-    ) -> RoadsterResult<AppContext<()>>
+    pub(crate) async fn new<A, S>(config: AppConfig, metadata: AppMetadata) -> RoadsterResult<Self>
     where
-        A: App,
+        S: Clone + Send + Sync + 'static,
+        AppContext: FromRef<S>,
+        A: App<S>,
     {
         #[cfg(test)]
         // The `config.clone()` here is technically not necessary. However, without it, RustRover
@@ -84,7 +83,6 @@ impl<T> AppContext<T> {
             };
             AppContext {
                 inner: Arc::new(inner),
-                custom: Arc::new(()),
             }
         };
 
@@ -97,7 +95,7 @@ impl<T> AppContext<T> {
         metadata: Option<AppMetadata>,
         #[cfg(not(feature = "sidekiq"))] _redis: Option<()>,
         #[cfg(feature = "sidekiq")] redis: Option<sidekiq::RedisPool>,
-    ) -> RoadsterResult<AppContext<()>> {
+    ) -> RoadsterResult<Self> {
         let mut inner = MockAppContextInner::default();
         inner
             .expect_config()
@@ -116,15 +114,7 @@ impl<T> AppContext<T> {
         }
         Ok(AppContext {
             inner: Arc::new(inner),
-            custom: Arc::new(()),
         })
-    }
-
-    pub fn with_custom<NewT: 'static>(self, custom: NewT) -> AppContext<NewT> {
-        AppContext {
-            inner: self.inner,
-            custom: Arc::new(custom),
-        }
     }
 
     pub fn config(&self) -> &AppConfig {
@@ -148,10 +138,6 @@ impl<T> AppContext<T> {
     #[cfg(feature = "sidekiq")]
     pub fn redis_fetch(&self) -> &Option<sidekiq::RedisPool> {
         self.inner.redis_fetch()
-    }
-
-    pub fn custom(&self) -> &T {
-        &self.custom
     }
 }
 

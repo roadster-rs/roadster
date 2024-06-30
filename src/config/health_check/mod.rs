@@ -1,6 +1,7 @@
 use crate::app::context::AppContext;
 use crate::config::app_config::CustomConfig;
 use crate::util::serde_util::default_true;
+use axum::extract::FromRef;
 use config::{FileFormat, FileSourceString};
 use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -62,9 +63,17 @@ pub struct CommonConfig {
 }
 
 impl CommonConfig {
-    pub fn enabled<S>(&self, context: &AppContext<S>) -> bool {
-        self.enable
-            .unwrap_or(context.config().health_check.default_enable)
+    pub fn enabled<S>(&self, state: &S) -> bool
+    where
+        S: Clone + Send + Sync + 'static,
+        AppContext: FromRef<S>,
+    {
+        self.enable.unwrap_or(
+            AppContext::from_ref(state)
+                .config()
+                .health_check
+                .default_enable,
+        )
     }
 }
 
@@ -101,7 +110,7 @@ mod tests {
         let mut config = AppConfig::test(None).unwrap();
         config.health_check.default_enable = default_enable;
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let common_config = CommonConfig { enable };
 

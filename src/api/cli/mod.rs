@@ -5,6 +5,7 @@ use crate::app::App;
 use crate::app::MockApp;
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
+use axum::extract::FromRef;
 use clap::{Args, Command, FromArgMatches};
 use std::ffi::OsString;
 
@@ -12,9 +13,11 @@ pub mod roadster;
 
 /// Implement to enable Roadster to run your custom CLI commands.
 #[async_trait]
-pub trait RunCommand<A>
+pub trait RunCommand<A, S>
 where
-    A: App + ?Sized + Sync,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S> + ?Sized + Sync,
 {
     /// Run the command.
     ///
@@ -25,17 +28,14 @@ where
     ///     continue execution after the command is complete.
     /// * `Err(...)` - If the implementation experienced an error while handling the command. The
     ///     app should end execution after the command is complete.
-    async fn run(
-        &self,
-        app: &A,
-        cli: &A::Cli,
-        context: &AppContext<A::State>,
-    ) -> RoadsterResult<bool>;
+    async fn run(&self, app: &A, cli: &A::Cli, state: &S) -> RoadsterResult<bool>;
 }
 
-pub(crate) fn parse_cli<A, I, T>(args: I) -> RoadsterResult<(RoadsterCli, A::Cli)>
+pub(crate) fn parse_cli<A, S, I, T>(args: I) -> RoadsterResult<(RoadsterCli, A::Cli)>
 where
-    A: App,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S>,
     I: IntoIterator<Item = T>,
     T: Into<OsString> + Clone,
 {
@@ -78,46 +78,76 @@ where
     Ok((roadster_cli, app_cli))
 }
 
-pub(crate) async fn handle_cli<A>(
+pub(crate) async fn handle_cli<A, S>(
     app: &A,
     roadster_cli: &RoadsterCli,
     app_cli: &A::Cli,
-    context: &AppContext<A::State>,
+    state: &S,
 ) -> RoadsterResult<bool>
 where
-    A: App,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S>,
 {
-    if roadster_cli.run(app, roadster_cli, context).await? {
+    if roadster_cli.run(app, roadster_cli, state).await? {
         return Ok(true);
     }
-    if app_cli.run(app, app_cli, context).await? {
+    if app_cli.run(app, app_cli, state).await? {
         return Ok(true);
     }
     Ok(false)
 }
 
 #[cfg(test)]
+pub struct TestCli<S>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    _state: std::marker::PhantomData<S>,
+}
+
+#[cfg(test)]
 mockall::mock! {
-    pub Cli {}
+    pub TestCli<S>
+    where
+        S: Clone + Send + Sync + 'static,
+        AppContext: FromRef<S>,
+    {}
 
     #[async_trait]
-    impl RunCommand<MockApp> for Cli {
-        async fn run(
-                &self,
-                app: &MockApp,
-                cli: &<MockApp as App>::Cli,
-                context: &AppContext<<MockApp as App>::State>,
-            ) -> RoadsterResult<bool>;
+    impl<S> RunCommand<MockApp<S>, S> for TestCli<S>
+    where
+        S: Clone + Send + Sync + 'static,
+        AppContext: FromRef<S>,
+    {
+        async fn run(&self, app: &MockApp<S>, cli: &<MockApp<S> as App<S>>::Cli, state: &S) -> RoadsterResult<bool>;
     }
 
-    impl clap::FromArgMatches for Cli {
+    impl<S> clap::FromArgMatches for TestCli<S>
+    where
+        S: Clone + Send + Sync + 'static,
+        AppContext: FromRef<S>,
+    {
         fn from_arg_matches(matches: &clap::ArgMatches) -> Result<Self, clap::Error>;
         fn update_from_arg_matches(&mut self, matches: &clap::ArgMatches) -> Result<(), clap::Error>;
     }
 
-    impl clap::Args for Cli {
+    impl<S> clap::Args for TestCli<S>
+    where
+        S: Clone + Send + Sync + 'static,
+        AppContext: FromRef<S>,
+    {
         fn augment_args(cmd: clap::Command) -> clap::Command;
         fn augment_args_for_update(cmd: clap::Command) -> clap::Command;
+    }
+
+    impl<S> Clone for TestCli<S>
+    where
+        S: Clone + Send + Sync + 'static,
+        AppContext: FromRef<S>,
+    {
+        fn clone(&self) -> Self;
     }
 }
 
@@ -150,12 +180,12 @@ mod tests {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn parse_cli(_case: TestCase, #[case] args: Option<&str>, #[case] arg_list: Option<Vec<&str>>) {
         // Arrange
-        let augment_args_context = MockCli::augment_args_context();
+        let augment_args_context = MockTestCli::<AppContext>::augment_args_context();
         augment_args_context.expect().returning(|c| c);
-        let from_arg_matches_context = MockCli::from_arg_matches_context();
+        let from_arg_matches_context = MockTestCli::<AppContext>::from_arg_matches_context();
         from_arg_matches_context
             .expect()
-            .returning(|_| Ok(MockCli::default()));
+            .returning(|_| Ok(MockTestCli::<AppContext>::default()));
 
         let args = if let Some(args) = args {
             args.split(' ').collect_vec()
@@ -169,7 +199,7 @@ mod tests {
             .collect_vec();
 
         // Act
-        let (roadster_cli, _a) = super::parse_cli::<MockApp, _, _>(args).unwrap();
+        let (roadster_cli, _a) = super::parse_cli::<MockApp<AppContext>, _, _, _>(args).unwrap();
 
         // Assert
         assert_toml_snapshot!(roadster_cli);
