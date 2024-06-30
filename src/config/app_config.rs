@@ -89,14 +89,6 @@ impl AppConfig {
                     .convert_case(Case::Kebab)
                     .separator(ENV_VAR_SEPARATOR),
             )
-            // This source is kept for backwards compatibility and may be removed in the next
-            // semver breaking release (0.4+)
-            .add_source(
-                config::Environment::default()
-                    .prefix(ENV_VAR_PREFIX)
-                    .convert_case(Case::Kebab)
-                    .separator("."),
-            )
             .set_override(ENVIRONMENT_ENV_VAR_NAME, environment_str)?
             .build()?;
         let config: AppConfig = config.try_deserialize()?;

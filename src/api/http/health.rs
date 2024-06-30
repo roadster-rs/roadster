@@ -1,4 +1,6 @@
-use crate::api::core::health::health_check;
+use crate::api::core::health::{health_check, HeathCheckResponse};
+#[cfg(all(feature = "open-api", any(feature = "db-sql", feature = "sidekiq")))]
+use crate::api::core::health::{ResourceHealth, Status};
 use crate::api::http::build_path;
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
@@ -13,12 +15,6 @@ use axum::extract::State;
 use axum::routing::get;
 use axum::{Json, Router};
 use tracing::instrument;
-
-#[deprecated(
-    since = "0.3.1",
-    note = "Please import from `roadster::api::core::health` instead."
-)]
-pub use crate::api::core::health::{ErrorData, HeathCheckResponse, ResourceHealth, Status};
 
 #[cfg(feature = "open-api")]
 const TAG: &str = "Health";
