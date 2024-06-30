@@ -1,4 +1,6 @@
-use crate::api::core::health::{health_check, HeathCheckResponse, ResourceHealth, Status};
+use crate::api::core::health::{health_check, HeathCheckResponse};
+#[cfg(any(feature = "db-sql", feature = "sidekiq"))]
+use crate::api::core::health::{ResourceHealth, Status};
 use crate::api::http::build_path;
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
