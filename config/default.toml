@@ -1,0 +1,17 @@
+[app]
+name = "Leptos Example"
+
+[tracing]
+level = "debug"
+
+[database]
+auto-migrate = true
+connect-timeout = 5000
+acquire-timeout = 5000
+idle-timeout = 60
+min-connections = 0
+max-connections = 10
+
+[service.http]
+host = "127.0.0.1"
+port = 3000

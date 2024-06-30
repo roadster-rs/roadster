@@ -1,0 +1,5 @@
+[auth.jwt]
+secret = "secret-dev"
+
+[database]
+uri = "postgres://roadster:roadster@localhost:5432/leptos_dev"

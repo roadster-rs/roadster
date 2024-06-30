@@ -1,15 +1,13 @@
-use std::env;
-use std::str::FromStr;
-
+use crate::config::app_config::{ENV_VAR_PREFIX, ENV_VAR_SEPARATOR};
+use crate::error::RoadsterResult;
 use anyhow::anyhow;
 #[cfg(feature = "cli")]
 use clap::ValueEnum;
 use const_format::concatcp;
 use serde_derive::{Deserialize, Serialize};
+use std::env;
+use std::str::FromStr;
 use strum_macros::{EnumString, IntoStaticStr};
-
-use crate::config::app_config::{ENV_VAR_PREFIX, ENV_VAR_SEPARATOR};
-use crate::error::RoadsterResult;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, EnumString, IntoStaticStr)]
 #[cfg_attr(feature = "cli", derive(ValueEnum))]
