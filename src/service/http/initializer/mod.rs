@@ -3,19 +3,20 @@ pub mod normalize_path;
 
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
+use axum::extract::FromRef;
 use axum::Router;
 
 /// Provides hooks into various stages of the app's startup to allow initializing and installing
-/// anything that needs to be done during a specific stage of startup. The type `S` is the
-/// custom [crate::app::App::State] defined for the app.
+/// anything that needs to be done during a specific stage of startup of the HTTP service.
 #[cfg_attr(test, mockall::automock)]
 pub trait Initializer<S>: Send
 where
-    S: Send + Sync + 'static,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
 {
     fn name(&self) -> String;
 
-    fn enabled(&self, context: &AppContext<S>) -> bool;
+    fn enabled(&self, state: &S) -> bool;
 
     /// Used to determine the order in which the initializer will run during app initialization.
     /// Smaller numbers will run before larger numbers. For example, an initializer with priority
@@ -26,25 +27,21 @@ where
     ///
     /// If the order in which your initializer runs doesn't particularly matter, it's generally
     /// safe to set its priority as `0`.
-    fn priority(&self, context: &AppContext<S>) -> i32;
+    fn priority(&self, state: &S) -> i32;
 
-    fn after_router(&self, router: Router, _context: &AppContext<S>) -> RoadsterResult<Router> {
+    fn after_router(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
         Ok(router)
     }
 
-    fn before_middleware(
-        &self,
-        router: Router,
-        _context: &AppContext<S>,
-    ) -> RoadsterResult<Router> {
+    fn before_middleware(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
         Ok(router)
     }
 
-    fn after_middleware(&self, router: Router, _context: &AppContext<S>) -> RoadsterResult<Router> {
+    fn after_middleware(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
         Ok(router)
     }
 
-    fn before_serve(&self, router: Router, _context: &AppContext<S>) -> RoadsterResult<Router> {
+    fn before_serve(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
         Ok(router)
     }
 }

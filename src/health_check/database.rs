@@ -1,27 +1,33 @@
 use crate::api::core::health::{db_health, Status};
 use crate::app::context::AppContext;
-use crate::app::App;
 use crate::error::RoadsterResult;
 use crate::health_check::HealthCheck;
 use anyhow::anyhow;
 use async_trait::async_trait;
+use axum::extract::FromRef;
 use tracing::instrument;
 
 pub struct DatabaseHealthCheck;
 
 #[async_trait]
-impl<A: App + 'static> HealthCheck<A> for DatabaseHealthCheck {
+impl<S> HealthCheck<S> for DatabaseHealthCheck
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
     fn name(&self) -> String {
         "db".to_string()
     }
 
-    fn enabled(&self, context: &AppContext<A::State>) -> bool {
-        enabled(context)
+    fn enabled(&self, state: &S) -> bool {
+        let context = AppContext::from_ref(state);
+        enabled(&context)
     }
 
     #[instrument(skip_all)]
-    async fn check(&self, app_context: &AppContext<A::State>) -> RoadsterResult<()> {
-        let health = db_health(app_context, None).await;
+    async fn check(&self, state: &S) -> RoadsterResult<()> {
+        let context = AppContext::from_ref(state);
+        let health = db_health(&context, None).await;
 
         if let Status::Err(err) = health.status {
             return Err(anyhow!("Database connection pool is not healthy: {:?}", err).into());
@@ -31,7 +37,7 @@ impl<A: App + 'static> HealthCheck<A> for DatabaseHealthCheck {
     }
 }
 
-fn enabled<S>(context: &AppContext<S>) -> bool {
+fn enabled(context: &AppContext) -> bool {
     context
         .config()
         .health_check
@@ -60,7 +66,7 @@ mod tests {
         config.health_check.default_enable = default_enable;
         config.health_check.database.common.enable = enable;
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         // Act/Assert
         assert_eq!(super::enabled(&context), expected_enabled);

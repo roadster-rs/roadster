@@ -1,12 +1,9 @@
+use crate::app::App;
+use crate::app_state::AppState;
 use async_trait::async_trait;
 use clap::{Parser, Subcommand};
-use roadster::app::context::AppContext;
-
 use roadster::api::cli::RunCommand;
 use roadster::error::RoadsterResult;
-
-use crate::app::App;
-use crate::app_state::CustomAppContext;
 
 /// Full Example: Commands specific to managing the `full` app are provided in the CLI
 /// as well. Subcommands not listed under the `roadster` subcommand are specific to `full`.
@@ -19,16 +16,11 @@ pub struct AppCli {
 }
 
 #[async_trait]
-impl RunCommand<App> for AppCli {
+impl RunCommand<App, AppState> for AppCli {
     #[allow(clippy::disallowed_types)]
-    async fn run(
-        &self,
-        app: &App,
-        cli: &AppCli,
-        context: &AppContext<CustomAppContext>,
-    ) -> RoadsterResult<bool> {
+    async fn run(&self, app: &App, cli: &AppCli, state: &AppState) -> RoadsterResult<bool> {
         if let Some(command) = self.command.as_ref() {
-            command.run(app, cli, context).await
+            command.run(app, cli, state).await
         } else {
             Ok(false)
         }
@@ -42,13 +34,8 @@ impl RunCommand<App> for AppCli {
 pub enum AppCommand {}
 
 #[async_trait]
-impl RunCommand<App> for AppCommand {
-    async fn run(
-        &self,
-        _app: &App,
-        _cli: &AppCli,
-        _context: &AppContext<CustomAppContext>,
-    ) -> RoadsterResult<bool> {
+impl RunCommand<App, AppState> for AppCommand {
+    async fn run(&self, _app: &App, _cli: &AppCli, _state: &AppState) -> RoadsterResult<bool> {
         Ok(false)
     }
 }

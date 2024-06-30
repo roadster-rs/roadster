@@ -1,5 +1,7 @@
 use anyhow::anyhow;
 use async_trait::async_trait;
+
+use axum::extract::FromRef;
 use clap::{Parser, Subcommand};
 use sea_orm_migration::MigratorTrait;
 use serde_derive::Serialize;
@@ -18,17 +20,14 @@ pub struct MigrateArgs {
 }
 
 #[async_trait]
-impl<A> RunRoadsterCommand<A> for MigrateArgs
+impl<A, S> RunRoadsterCommand<A, S> for MigrateArgs
 where
-    A: App,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S>,
 {
-    async fn run(
-        &self,
-        app: &A,
-        cli: &RoadsterCli,
-        context: &AppContext<A::State>,
-    ) -> RoadsterResult<bool> {
-        self.command.run(app, cli, context).await
+    async fn run(&self, app: &A, cli: &RoadsterCli, state: &S) -> RoadsterResult<bool> {
+        self.command.run(app, cli, state).await
     }
 }
 
@@ -51,17 +50,15 @@ pub enum MigrateCommand {
 }
 
 #[async_trait]
-impl<A> RunRoadsterCommand<A> for MigrateCommand
+impl<A, S> RunRoadsterCommand<A, S> for MigrateCommand
 where
-    A: App,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S>,
 {
-    async fn run(
-        &self,
-        _app: &A,
-        cli: &RoadsterCli,
-        context: &AppContext<A::State>,
-    ) -> RoadsterResult<bool> {
-        if is_destructive(self) && !cli.allow_dangerous(context) {
+    async fn run(&self, _app: &A, cli: &RoadsterCli, state: &S) -> RoadsterResult<bool> {
+        let context = AppContext::from_ref(state);
+        if is_destructive(self) && !cli.allow_dangerous(&context) {
             return Err(anyhow!("Running destructive command `{:?}` is not allowed in environment `{:?}`. To override, provide the `--allow-dangerous` CLI arg.", self, context.config().environment).into());
         } else if is_destructive(self) {
             warn!(

@@ -10,10 +10,10 @@ pub mod tracing;
 
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
+use axum::extract::FromRef;
 use axum::Router;
 
-/// Allows initializing and installing middleware on the app's [Router]. The type `S` is the
-/// custom [crate::app::App::State] defined for the app.
+/// Allows initializing and installing middleware on the app's [Router].
 ///
 /// This trait is provided in addition to [crate::service::http::initializer::Initializer] because installing
 /// middleware is a bit of a special case compared to a general initializer:
@@ -25,9 +25,13 @@ use axum::Router;
 ///        Therefore, we install the middleware in the reverse order that we want it to run (this
 ///        is done automatically by Roadster based on [Middleware::priority]).
 #[cfg_attr(test, mockall::automock)]
-pub trait Middleware<S: Send + Sync + 'static>: Send {
+pub trait Middleware<S>: Send
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
     fn name(&self) -> String;
-    fn enabled(&self, context: &AppContext<S>) -> bool;
+    fn enabled(&self, state: &S) -> bool;
     /// Used to determine the order in which the middleware will run when handling a request. Smaller
     /// numbers will run before larger numbers. For example, a middleware with priority `-10`
     /// will run before a middleware with priority `10`.
@@ -44,6 +48,6 @@ pub trait Middleware<S: Send + Sync + 'static>: Send {
     /// is done automatically by Roadster based on [Middleware::priority]). So, a middleware
     /// with priority `-10` will be _installed after_ a middleware with priority `10`, which will
     /// allow the middleware with priority `-10` to _run before_ a middleware with priority `10`.
-    fn priority(&self, context: &AppContext<S>) -> i32;
-    fn install(&self, router: Router, context: &AppContext<S>) -> RoadsterResult<Router>;
+    fn priority(&self, state: &S) -> i32;
+    fn install(&self, router: Router, state: &S) -> RoadsterResult<Router>;
 }

@@ -1,5 +1,6 @@
 use crate::app::context::AppContext;
 use crate::util::serde_util::default_true;
+use axum::extract::FromRef;
 use serde_derive::{Deserialize, Serialize};
 use validator::Validate;
 use validator::ValidationError;
@@ -62,9 +63,13 @@ pub struct DefaultRouteConfig {
 }
 
 impl DefaultRouteConfig {
-    pub fn enabled<S>(&self, context: &AppContext<S>) -> bool {
+    pub fn enabled<S>(&self, state: &S) -> bool
+    where
+        S: Clone + Send + Sync + 'static,
+        AppContext: FromRef<S>,
+    {
         self.enable.unwrap_or(
-            context
+            AppContext::from_ref(state)
                 .config()
                 .service
                 .http

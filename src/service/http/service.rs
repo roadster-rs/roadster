@@ -12,6 +12,7 @@ use crate::service::AppService;
 #[cfg(feature = "open-api")]
 use aide::openapi::OpenApi;
 use async_trait::async_trait;
+use axum::extract::FromRef;
 use axum::Router;
 #[cfg(feature = "open-api")]
 use itertools::Itertools;
@@ -28,7 +29,7 @@ use tracing::info;
 
 pub(crate) const NAME: &str = "http";
 
-pub(crate) fn enabled<S>(context: &AppContext<S>) -> bool {
+pub(crate) fn enabled(context: &AppContext) -> bool {
     context.config().service.http.common.enabled(context)
 }
 
@@ -39,13 +40,18 @@ pub struct HttpService {
 }
 
 #[async_trait]
-impl<A: App + 'static> AppService<A> for HttpService {
+impl<A, S> AppService<A, S> for HttpService
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S> + 'static,
+{
     fn name(&self) -> String {
         NAME.to_string()
     }
 
-    fn enabled(&self, context: &AppContext<A::State>) -> bool {
-        enabled(context)
+    fn enabled(&self, state: &S) -> bool {
+        enabled(&AppContext::from_ref(state))
     }
 
     #[cfg(feature = "cli")]
@@ -53,7 +59,7 @@ impl<A: App + 'static> AppService<A> for HttpService {
         &self,
         roadster_cli: &RoadsterCli,
         _app_cli: &A::Cli,
-        _app_context: &AppContext<A::State>,
+        _state: &S,
     ) -> RoadsterResult<bool> {
         if let Some(command) = roadster_cli.command.as_ref() {
             match command {
@@ -80,10 +86,16 @@ impl<A: App + 'static> AppService<A> for HttpService {
 
     async fn run(
         self: Box<Self>,
-        app_context: &AppContext<A::State>,
+        state: &S,
         cancel_token: CancellationToken,
     ) -> RoadsterResult<()> {
-        let server_addr = app_context.config().service.http.custom.address.url();
+        let server_addr = AppContext::from_ref(state)
+            .config()
+            .service
+            .http
+            .custom
+            .address
+            .url();
         info!("Http server will start at {server_addr}");
 
         let app_listener = tokio::net::TcpListener::bind(server_addr).await?;
@@ -97,11 +109,12 @@ impl<A: App + 'static> AppService<A> for HttpService {
 
 impl HttpService {
     /// Create a new [HttpServiceBuilder].
-    pub fn builder<A: App>(
-        path_root: Option<&str>,
-        context: &AppContext<A::State>,
-    ) -> HttpServiceBuilder<A> {
-        HttpServiceBuilder::new(path_root, context)
+    pub fn builder<S>(path_root: Option<&str>, state: &S) -> HttpServiceBuilder<S>
+    where
+        S: Clone + Send + Sync + 'static,
+        AppContext: FromRef<S>,
+    {
+        HttpServiceBuilder::new(path_root, state)
     }
 
     /// List the available HTTP API routes.

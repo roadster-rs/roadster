@@ -1,6 +1,7 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
+use axum::extract::FromRef;
 use axum::http::HeaderName;
 use axum::Router;
 use serde_derive::{Deserialize, Serialize};
@@ -42,13 +43,17 @@ pub struct PropagateRequestIdConfig {
 }
 
 pub struct SetRequestIdMiddleware;
-impl<S: Send + Sync + 'static> Middleware<S> for SetRequestIdMiddleware {
+impl<S> Middleware<S> for SetRequestIdMiddleware
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
     fn name(&self) -> String {
         "set-request-id".to_string()
     }
 
-    fn enabled(&self, context: &AppContext<S>) -> bool {
-        context
+    fn enabled(&self, state: &S) -> bool {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -56,11 +61,11 @@ impl<S: Send + Sync + 'static> Middleware<S> for SetRequestIdMiddleware {
             .middleware
             .set_request_id
             .common
-            .enabled(context)
+            .enabled(state)
     }
 
-    fn priority(&self, context: &AppContext<S>) -> i32 {
-        context
+    fn priority(&self, state: &S) -> i32 {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -71,7 +76,8 @@ impl<S: Send + Sync + 'static> Middleware<S> for SetRequestIdMiddleware {
             .priority
     }
 
-    fn install(&self, router: Router, context: &AppContext<S>) -> RoadsterResult<Router> {
+    fn install(&self, router: Router, state: &S) -> RoadsterResult<Router> {
+        let context = AppContext::from_ref(state);
         let header_name = &context
             .config()
             .service
@@ -93,13 +99,17 @@ impl<S: Send + Sync + 'static> Middleware<S> for SetRequestIdMiddleware {
 }
 
 pub struct PropagateRequestIdMiddleware;
-impl<S: Send + Sync + 'static> Middleware<S> for PropagateRequestIdMiddleware {
+impl<S> Middleware<S> for PropagateRequestIdMiddleware
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
     fn name(&self) -> String {
         "propagate-request-id".to_string()
     }
 
-    fn enabled(&self, context: &AppContext<S>) -> bool {
-        context
+    fn enabled(&self, state: &S) -> bool {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -107,11 +117,11 @@ impl<S: Send + Sync + 'static> Middleware<S> for PropagateRequestIdMiddleware {
             .middleware
             .propagate_request_id
             .common
-            .enabled(context)
+            .enabled(state)
     }
 
-    fn priority(&self, context: &AppContext<S>) -> i32 {
-        context
+    fn priority(&self, state: &S) -> i32 {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -122,7 +132,8 @@ impl<S: Send + Sync + 'static> Middleware<S> for PropagateRequestIdMiddleware {
             .priority
     }
 
-    fn install(&self, router: Router, context: &AppContext<S>) -> RoadsterResult<Router> {
+    fn install(&self, router: Router, state: &S) -> RoadsterResult<Router> {
+        let context = AppContext::from_ref(state);
         let header_name = &context
             .config()
             .service
@@ -169,7 +180,7 @@ mod tests {
             .common
             .enable = enable;
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let middleware = SetRequestIdMiddleware;
 
@@ -198,7 +209,7 @@ mod tests {
                 .priority = priority;
         }
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let middleware = SetRequestIdMiddleware;
 
@@ -227,7 +238,7 @@ mod tests {
             .common
             .enable = enable;
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let middleware = PropagateRequestIdMiddleware;
 
@@ -256,7 +267,7 @@ mod tests {
                 .priority = priority;
         }
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let middleware = PropagateRequestIdMiddleware;
 

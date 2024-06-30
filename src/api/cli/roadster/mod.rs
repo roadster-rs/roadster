@@ -11,6 +11,8 @@ use crate::app::App;
 use crate::config::environment::Environment;
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
+
+use axum::extract::FromRef;
 use clap::{Parser, Subcommand};
 use serde_derive::Serialize;
 
@@ -27,16 +29,13 @@ pub mod print_config;
 /// [AppContext] instead of the consuming app's versions of these objects. This (slightly) reduces
 /// the boilerplate required to implement a Roadster command.
 #[async_trait]
-pub(crate) trait RunRoadsterCommand<A>
+pub(crate) trait RunRoadsterCommand<A, S>
 where
-    A: App,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S>,
 {
-    async fn run(
-        &self,
-        app: &A,
-        cli: &RoadsterCli,
-        context: &AppContext<A::State>,
-    ) -> RoadsterResult<bool>;
+    async fn run(&self, app: &A, cli: &RoadsterCli, state: &S) -> RoadsterResult<bool>;
 }
 
 /// Roadster: The Roadster CLI provides various utilities for managing your application. If no subcommand
@@ -66,24 +65,21 @@ pub struct RoadsterCli {
 }
 
 impl RoadsterCli {
-    pub fn allow_dangerous<S>(&self, context: &AppContext<S>) -> bool {
+    pub fn allow_dangerous(&self, context: &AppContext) -> bool {
         context.config().environment != Environment::Production || self.allow_dangerous
     }
 }
 
 #[async_trait]
-impl<A> RunRoadsterCommand<A> for RoadsterCli
+impl<A, S> RunRoadsterCommand<A, S> for RoadsterCli
 where
-    A: App,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S>,
 {
-    async fn run(
-        &self,
-        app: &A,
-        cli: &RoadsterCli,
-        context: &AppContext<A::State>,
-    ) -> RoadsterResult<bool> {
+    async fn run(&self, app: &A, cli: &RoadsterCli, state: &S) -> RoadsterResult<bool> {
         if let Some(command) = self.command.as_ref() {
-            command.run(app, cli, context).await
+            command.run(app, cli, state).await
         } else {
             Ok(false)
         }
@@ -101,18 +97,15 @@ pub enum RoadsterCommand {
 }
 
 #[async_trait]
-impl<A> RunRoadsterCommand<A> for RoadsterCommand
+impl<A, S> RunRoadsterCommand<A, S> for RoadsterCommand
 where
-    A: App,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S>,
 {
-    async fn run(
-        &self,
-        app: &A,
-        cli: &RoadsterCli,
-        context: &AppContext<A::State>,
-    ) -> RoadsterResult<bool> {
+    async fn run(&self, app: &A, cli: &RoadsterCli, state: &S) -> RoadsterResult<bool> {
         match self {
-            RoadsterCommand::Roadster(args) => args.run(app, cli, context).await,
+            RoadsterCommand::Roadster(args) => args.run(app, cli, state).await,
         }
     }
 }
@@ -125,31 +118,25 @@ pub struct RoadsterArgs {
 }
 
 #[async_trait]
-impl<A> RunRoadsterCommand<A> for RoadsterArgs
+impl<A, S> RunRoadsterCommand<A, S> for RoadsterArgs
 where
-    A: App,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S>,
 {
-    async fn run(
-        &self,
-        app: &A,
-        cli: &RoadsterCli,
-        context: &AppContext<A::State>,
-    ) -> RoadsterResult<bool> {
-        self.command.run(app, cli, context).await
+    async fn run(&self, app: &A, cli: &RoadsterCli, state: &S) -> RoadsterResult<bool> {
+        self.command.run(app, cli, state).await
     }
 }
 
 #[async_trait]
-impl<A> RunRoadsterCommand<A> for RoadsterSubCommand
+impl<A, S> RunRoadsterCommand<A, S> for RoadsterSubCommand
 where
-    A: App,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S>,
 {
-    async fn run(
-        &self,
-        app: &A,
-        cli: &RoadsterCli,
-        context: &AppContext<A::State>,
-    ) -> RoadsterResult<bool> {
+    async fn run(&self, app: &A, cli: &RoadsterCli, state: &S) -> RoadsterResult<bool> {
         match self {
             #[cfg(feature = "open-api")]
             RoadsterSubCommand::ListRoutes(_) => {
@@ -164,9 +151,9 @@ where
                 Ok(false)
             }
             #[cfg(feature = "db-sql")]
-            RoadsterSubCommand::Migrate(args) => args.run(app, cli, context).await,
-            RoadsterSubCommand::PrintConfig(args) => args.run(app, cli, context).await,
-            RoadsterSubCommand::Health(args) => args.run(app, cli, context).await,
+            RoadsterSubCommand::Migrate(args) => args.run(app, cli, state).await,
+            RoadsterSubCommand::PrintConfig(args) => args.run(app, cli, state).await,
+            RoadsterSubCommand::Health(args) => args.run(app, cli, state).await,
         }
     }
 }

@@ -13,6 +13,7 @@ use crate::service::http::middleware::size_limit::SizeLimitConfig;
 use crate::service::http::middleware::timeout::TimeoutConfig;
 use crate::service::http::middleware::tracing::TracingConfig;
 use crate::util::serde_util::default_true;
+use axum::extract::FromRef;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use validator::Validate;
@@ -93,9 +94,13 @@ pub struct CommonConfig {
 }
 
 impl CommonConfig {
-    pub fn enabled<S>(&self, context: &AppContext<S>) -> bool {
+    pub fn enabled<S>(&self, state: &S) -> bool
+    where
+        S: Clone + Send + Sync + 'static,
+        AppContext: FromRef<S>,
+    {
         self.enable.unwrap_or(
-            context
+            AppContext::from_ref(state)
                 .config()
                 .service
                 .http
@@ -139,7 +144,7 @@ mod tests {
         let mut config = AppConfig::test(None).unwrap();
         config.service.http.custom.middleware.default_enable = default_enable;
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let common_config = CommonConfig {
             enable,

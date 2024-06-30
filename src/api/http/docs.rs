@@ -5,6 +5,7 @@ use aide::axum::{ApiRouter, IntoApiResponse};
 use aide::openapi::OpenApi;
 use aide::redoc::Redoc;
 use aide::scalar::Scalar;
+use axum::extract::FromRef;
 use axum::response::IntoResponse;
 use axum::{Extension, Json};
 use std::ops::Deref;
@@ -13,14 +14,16 @@ use std::sync::Arc;
 const TAG: &str = "Docs";
 
 /// This API is only available when using Aide.
-pub fn routes<S>(parent: &str, context: &AppContext<S>) -> ApiRouter<AppContext<S>>
+pub fn routes<S>(parent: &str, state: &S) -> ApiRouter<S>
 where
     S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
 {
-    let open_api_schema_path = build_path(parent, api_schema_route(context));
+    let context = AppContext::from_ref(state);
+    let open_api_schema_path = build_path(parent, api_schema_route(&context));
 
     let router = ApiRouter::new();
-    if !api_schema_enabled(context) {
+    if !api_schema_enabled(&context) {
         return router;
     }
 
@@ -29,9 +32,9 @@ where
         get_with(docs_get, |op| op.description("OpenAPI schema").tag(TAG)),
     );
 
-    let router = if scalar_enabled(context) {
+    let router = if scalar_enabled(&context) {
         router.api_route_with(
-            &build_path(parent, scalar_route(context)),
+            &build_path(parent, scalar_route(&context)),
             get_with(
                 Scalar::new(&open_api_schema_path)
                     .with_title(&context.config().app.name)
@@ -44,9 +47,9 @@ where
         router
     };
 
-    let router = if redoc_enabled(context) {
+    let router = if redoc_enabled(&context) {
         router.api_route_with(
-            &build_path(parent, redoc_route(context)),
+            &build_path(parent, redoc_route(&context)),
             get_with(
                 Redoc::new(&open_api_schema_path)
                     .with_title(&context.config().app.name)
@@ -66,7 +69,7 @@ async fn docs_get(Extension(api): Extension<Arc<OpenApi>>) -> impl IntoApiRespon
     Json(api.deref()).into_response()
 }
 
-fn scalar_enabled<S>(context: &AppContext<S>) -> bool {
+fn scalar_enabled(context: &AppContext) -> bool {
     context
         .config()
         .service
@@ -77,7 +80,7 @@ fn scalar_enabled<S>(context: &AppContext<S>) -> bool {
         .enabled(context)
 }
 
-fn scalar_route<S>(context: &AppContext<S>) -> &str {
+fn scalar_route(context: &AppContext) -> &str {
     &context
         .config()
         .service
@@ -88,7 +91,7 @@ fn scalar_route<S>(context: &AppContext<S>) -> &str {
         .route
 }
 
-fn redoc_enabled<S>(context: &AppContext<S>) -> bool {
+fn redoc_enabled(context: &AppContext) -> bool {
     context
         .config()
         .service
@@ -99,7 +102,7 @@ fn redoc_enabled<S>(context: &AppContext<S>) -> bool {
         .enabled(context)
 }
 
-fn redoc_route<S>(context: &AppContext<S>) -> &str {
+fn redoc_route(context: &AppContext) -> &str {
     &context
         .config()
         .service
@@ -110,7 +113,7 @@ fn redoc_route<S>(context: &AppContext<S>) -> &str {
         .route
 }
 
-fn api_schema_enabled<S>(context: &AppContext<S>) -> bool {
+fn api_schema_enabled(context: &AppContext) -> bool {
     context
         .config()
         .service
@@ -121,7 +124,7 @@ fn api_schema_enabled<S>(context: &AppContext<S>) -> bool {
         .enabled(context)
 }
 
-fn api_schema_route<S>(context: &AppContext<S>) -> &str {
+fn api_schema_route(context: &AppContext) -> &str {
     &context
         .config()
         .service
@@ -165,7 +168,7 @@ mod tests {
                 .route
                 .clone_from(route);
         }
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         assert_eq!(scalar_enabled(&context), enabled);
         assert_eq!(
@@ -199,7 +202,7 @@ mod tests {
                 .route
                 .clone_from(route);
         }
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         assert_eq!(redoc_enabled(&context), enabled);
         assert_eq!(
@@ -233,7 +236,7 @@ mod tests {
                 .route
                 .clone_from(route);
         }
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         assert_eq!(api_schema_enabled(&context), enabled);
         assert_eq!(

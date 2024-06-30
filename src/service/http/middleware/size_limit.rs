@@ -2,6 +2,7 @@ use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
 use anyhow::anyhow;
+use axum::extract::FromRef;
 use axum::Router;
 use byte_unit::rust_decimal::prelude::ToPrimitive;
 use byte_unit::Byte;
@@ -26,13 +27,17 @@ impl Default for SizeLimitConfig {
 }
 
 pub struct RequestBodyLimitMiddleware;
-impl<S: Send + Sync + 'static> Middleware<S> for RequestBodyLimitMiddleware {
+impl<S> Middleware<S> for RequestBodyLimitMiddleware
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
     fn name(&self) -> String {
         "request-body-size-limit".to_string()
     }
 
-    fn enabled(&self, context: &AppContext<S>) -> bool {
-        context
+    fn enabled(&self, state: &S) -> bool {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -40,11 +45,11 @@ impl<S: Send + Sync + 'static> Middleware<S> for RequestBodyLimitMiddleware {
             .middleware
             .size_limit
             .common
-            .enabled(context)
+            .enabled(state)
     }
 
-    fn priority(&self, context: &AppContext<S>) -> i32 {
-        context
+    fn priority(&self, state: &S) -> i32 {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -55,8 +60,8 @@ impl<S: Send + Sync + 'static> Middleware<S> for RequestBodyLimitMiddleware {
             .priority
     }
 
-    fn install(&self, router: Router, context: &AppContext<S>) -> RoadsterResult<Router> {
-        let limit = &context
+    fn install(&self, router: Router, state: &S) -> RoadsterResult<Router> {
+        let limit = &AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -107,7 +112,7 @@ mod tests {
             .common
             .enable = enable;
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let middleware = RequestBodyLimitMiddleware;
 
@@ -133,7 +138,7 @@ mod tests {
                 .priority = priority;
         }
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let middleware = RequestBodyLimitMiddleware;
 

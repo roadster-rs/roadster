@@ -1,6 +1,7 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
+use axum::extract::FromRef;
 use axum::http::{HeaderName, HeaderValue, Method};
 use axum::Router;
 use itertools::Itertools;
@@ -142,13 +143,17 @@ fn parse_methods(methods: &[String]) -> RoadsterResult<Vec<Method>> {
 }
 
 pub struct CorsMiddleware;
-impl<S: Send + Sync + 'static> Middleware<S> for CorsMiddleware {
+impl<S> Middleware<S> for CorsMiddleware
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
     fn name(&self) -> String {
         "cors".to_string()
     }
 
-    fn enabled(&self, context: &AppContext<S>) -> bool {
-        context
+    fn enabled(&self, state: &S) -> bool {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -156,11 +161,11 @@ impl<S: Send + Sync + 'static> Middleware<S> for CorsMiddleware {
             .middleware
             .cors
             .common
-            .enabled(context)
+            .enabled(state)
     }
 
-    fn priority(&self, context: &AppContext<S>) -> i32 {
-        context
+    fn priority(&self, state: &S) -> i32 {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -171,7 +176,8 @@ impl<S: Send + Sync + 'static> Middleware<S> for CorsMiddleware {
             .priority
     }
 
-    fn install(&self, router: Router, context: &AppContext<S>) -> RoadsterResult<Router> {
+    fn install(&self, router: Router, state: &S) -> RoadsterResult<Router> {
+        let context = AppContext::from_ref(state);
         let config = &context.config().service.http.custom.middleware.cors.custom;
         let layer = match config.preset {
             CorsPreset::Restrictive => CorsLayer::new(),
@@ -305,7 +311,7 @@ mod tests {
         config.service.http.custom.middleware.default_enable = default_enable;
         config.service.http.custom.middleware.cors.common.enable = enable;
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let middleware = CorsMiddleware;
 
@@ -324,7 +330,7 @@ mod tests {
             config.service.http.custom.middleware.cors.common.priority = priority;
         }
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         let middleware = CorsMiddleware;
 

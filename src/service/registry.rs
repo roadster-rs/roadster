@@ -5,25 +5,33 @@ use crate::health_check::default::default_health_checks;
 use crate::health_check::HealthCheck;
 use crate::service::{AppService, AppServiceBuilder};
 use anyhow::anyhow;
+use axum::extract::FromRef;
 use std::collections::BTreeMap;
 use tracing::info;
 
 /// Registry for [AppService]s that will be run in the app.
-pub struct ServiceRegistry<A>
+pub struct ServiceRegistry<A, S>
 where
-    A: App + ?Sized + 'static,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S> + ?Sized + 'static,
 {
-    pub(crate) context: AppContext<A::State>,
+    pub(crate) state: S,
     /// Health checks that need to succeed before any of the services can run.
-    pub(crate) health_checks: BTreeMap<String, Box<dyn HealthCheck<A>>>,
-    pub(crate) services: BTreeMap<String, Box<dyn AppService<A>>>,
+    pub(crate) health_checks: BTreeMap<String, Box<dyn HealthCheck<S>>>,
+    pub(crate) services: BTreeMap<String, Box<dyn AppService<A, S>>>,
 }
 
-impl<A: App> ServiceRegistry<A> {
-    pub(crate) fn new(context: &AppContext<A::State>) -> Self {
+impl<A, S> ServiceRegistry<A, S>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S>,
+{
+    pub(crate) fn new(state: &S) -> Self {
         Self {
-            context: context.clone(),
-            health_checks: default_health_checks(context),
+            state: state.clone(),
+            health_checks: default_health_checks(state),
             services: Default::default(),
         }
     }
@@ -32,11 +40,11 @@ impl<A: App> ServiceRegistry<A> {
     // Todo: Would it make more sense to add a separate method to the `App` trait?
     pub fn register_health_check<H>(&mut self, health_check: H) -> RoadsterResult<()>
     where
-        H: HealthCheck<A> + 'static,
+        H: HealthCheck<S> + 'static,
     {
         let name = health_check.name();
 
-        if !health_check.enabled(&self.context) {
+        if !health_check.enabled(&self.state) {
             info!(name=%name, "Health check is not enabled, skipping registration");
             return Ok(());
         }
@@ -55,38 +63,38 @@ impl<A: App> ServiceRegistry<A> {
 
     /// Register a new service. If the service is not enabled (e.g., [AppService::enabled] is `false`),
     /// the service will not be registered.
-    pub fn register_service<S>(&mut self, service: S) -> RoadsterResult<()>
+    pub fn register_service<Service>(&mut self, service: Service) -> RoadsterResult<()>
     where
-        S: AppService<A> + 'static,
+        Service: AppService<A, S> + 'static,
     {
         self.register_internal(service)
     }
 
     /// Build and register a new service. If the service is not enabled (e.g.,
     /// [AppService::enabled] is `false`), the service will not be built or registered.
-    pub async fn register_builder<S, B>(&mut self, builder: B) -> RoadsterResult<()>
+    pub async fn register_builder<Service, B>(&mut self, builder: B) -> RoadsterResult<()>
     where
-        S: AppService<A> + 'static,
-        B: AppServiceBuilder<A, S>,
+        Service: AppService<A, S> + 'static,
+        B: AppServiceBuilder<A, S, Service>,
     {
-        if !builder.enabled(&self.context) {
+        if !builder.enabled(&self.state) {
             info!(name=%builder.name(), "Service is not enabled, skipping building and registration");
             return Ok(());
         }
 
         info!(name=%builder.name(), "Building service");
-        let service = builder.build(&self.context).await?;
+        let service = builder.build(&self.state).await?;
 
         self.register_internal(service)
     }
 
-    fn register_internal<S>(&mut self, service: S) -> RoadsterResult<()>
+    fn register_internal<Service>(&mut self, service: Service) -> RoadsterResult<()>
     where
-        S: AppService<A> + 'static,
+        Service: AppService<A, S> + 'static,
     {
         let name = service.name();
 
-        if !service.enabled(&self.context) {
+        if !service.enabled(&self.state) {
             info!(name=%name, "Service is not enabled, skipping registration");
             return Ok(());
         }
@@ -117,14 +125,16 @@ mod tests {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn register_service(#[case] service_enabled: bool, #[case] expected_count: usize) {
         // Arrange
-        let context = AppContext::<()>::test(None, None, None).unwrap();
+        let context = AppContext::test(None, None, None).unwrap();
 
-        let mut service: MockAppService<MockApp> = MockAppService::default();
+        let mut service: MockAppService<MockApp<AppContext>, AppContext> =
+            MockAppService::default();
         service.expect_enabled().return_const(service_enabled);
         service.expect_name().return_const("test".to_string());
 
         // Act
-        let mut subject: ServiceRegistry<MockApp> = ServiceRegistry::new(&context);
+        let mut subject: ServiceRegistry<MockApp<AppContext>, AppContext> =
+            ServiceRegistry::new(&context);
         subject.register_service(service).unwrap();
 
         // Assert
@@ -145,23 +155,22 @@ mod tests {
         #[case] expected_count: usize,
     ) {
         // Arrange
-        let context = AppContext::<()>::test(None, None, None).unwrap();
+        let context = AppContext::test(None, None, None).unwrap();
 
         let mut builder = MockAppServiceBuilder::default();
         builder.expect_enabled().return_const(builder_enabled);
         builder.expect_name().return_const("test".to_string());
         builder.expect_build().returning(move |_| {
-            Box::pin(async move {
-                let mut service: MockAppService<MockApp> = MockAppService::default();
-                service.expect_enabled().return_const(service_enabled);
-                service.expect_name().return_const("test".to_string());
-
-                Ok(service)
-            })
+            let mut service: MockAppService<MockApp<AppContext>, AppContext> =
+                MockAppService::default();
+            service.expect_enabled().return_const(service_enabled);
+            service.expect_name().return_const("test".to_string());
+            Ok(service)
         });
 
         // Act
-        let mut subject: ServiceRegistry<MockApp> = ServiceRegistry::new(&context);
+        let mut subject: ServiceRegistry<MockApp<AppContext>, AppContext> =
+            ServiceRegistry::new(&context);
         subject.register_builder(builder).await.unwrap();
 
         // Assert

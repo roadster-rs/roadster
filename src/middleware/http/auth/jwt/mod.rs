@@ -13,7 +13,7 @@ use crate::util::serde_util::{deserialize_from_str, serialize_to_str};
 #[cfg(feature = "open-api")]
 use aide::OperationInput;
 use async_trait::async_trait;
-use axum::extract::FromRequestParts;
+use axum::extract::{FromRef, FromRequestParts};
 use axum::http::request::Parts;
 use axum::RequestPartsExt;
 use axum_extra::headers::authorization::Bearer;
@@ -49,23 +49,22 @@ where
 impl OperationInput for Jwt {}
 
 #[async_trait]
-impl<S, C> FromRequestParts<AppContext<S>> for Jwt<C>
+impl<S, C> FromRequestParts<S> for Jwt<C>
 where
-    S: Send + Sync,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
     C: for<'de> serde::Deserialize<'de>,
 {
     type Rejection = Error;
 
-    async fn from_request_parts(
-        parts: &mut Parts,
-        state: &AppContext<S>,
-    ) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let auth_header = parts.extract::<BearerAuthHeader>().await?;
+        let context = AppContext::from_ref(state);
         let token: TokenData<C> = decode_auth_token(
             auth_header.0.token(),
-            &state.config().auth.jwt.secret,
-            &state.config().auth.jwt.claims.audience,
-            &state.config().auth.jwt.claims.required_claims,
+            &context.config().auth.jwt.secret,
+            &context.config().auth.jwt.claims.audience,
+            &context.config().auth.jwt.claims.required_claims,
         )?;
         let token = Jwt {
             header: token.header,

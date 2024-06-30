@@ -1,6 +1,7 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::http::initializer::Initializer;
+use axum::extract::FromRef;
 use axum::Router;
 use serde_derive::{Deserialize, Serialize};
 use tower::Layer;
@@ -13,13 +14,17 @@ pub struct NormalizePathConfig {}
 
 pub struct NormalizePathInitializer;
 
-impl<S: Send + Sync + 'static> Initializer<S> for NormalizePathInitializer {
+impl<S> Initializer<S> for NormalizePathInitializer
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
     fn name(&self) -> String {
         "normalize-path".to_string()
     }
 
-    fn enabled(&self, context: &AppContext<S>) -> bool {
-        context
+    fn enabled(&self, state: &S) -> bool {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -27,11 +32,11 @@ impl<S: Send + Sync + 'static> Initializer<S> for NormalizePathInitializer {
             .initializer
             .normalize_path
             .common
-            .enabled(context)
+            .enabled(state)
     }
 
-    fn priority(&self, context: &AppContext<S>) -> i32 {
-        context
+    fn priority(&self, state: &S) -> i32 {
+        AppContext::from_ref(state)
             .config()
             .service
             .http
@@ -42,7 +47,7 @@ impl<S: Send + Sync + 'static> Initializer<S> for NormalizePathInitializer {
             .priority
     }
 
-    fn before_serve(&self, router: Router, _context: &AppContext<S>) -> RoadsterResult<Router> {
+    fn before_serve(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
         let router = NormalizePathLayer::trim_trailing_slash().layer(router);
         let router = Router::new().nest_service("/", router);
         Ok(router)

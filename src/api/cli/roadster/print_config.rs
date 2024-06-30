@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use axum::extract::FromRef;
 use clap::Parser;
 use serde_derive::{Deserialize, Serialize};
 use strum_macros::{EnumString, IntoStaticStr};
@@ -32,16 +33,14 @@ pub enum Format {
 }
 
 #[async_trait]
-impl<A> RunRoadsterCommand<A> for PrintConfigArgs
+impl<A, S> RunRoadsterCommand<A, S> for PrintConfigArgs
 where
-    A: App,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S>,
 {
-    async fn run(
-        &self,
-        _app: &A,
-        _cli: &RoadsterCli,
-        context: &AppContext<A::State>,
-    ) -> RoadsterResult<bool> {
+    async fn run(&self, _app: &A, _cli: &RoadsterCli, state: &S) -> RoadsterResult<bool> {
+        let context = AppContext::from_ref(state);
         match self.format {
             Format::Debug => {
                 info!("\n{:?}", context.config())

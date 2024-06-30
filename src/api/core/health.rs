@@ -1,8 +1,8 @@
-#[cfg(any(feature = "sidekiq", feature = "db-sql"))]
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 #[cfg(feature = "sidekiq")]
 use anyhow::anyhow;
+use axum::extract::FromRef;
 #[cfg(feature = "open-api")]
 use schemars::JsonSchema;
 #[cfg(feature = "db-sql")]
@@ -73,11 +73,14 @@ pub struct ErrorData {
 
 #[instrument(skip_all)]
 pub async fn health_check<S>(
-    #[cfg(any(feature = "sidekiq", feature = "db-sql"))] state: &AppContext<S>,
+    #[allow(unused_variables)] state: &S,
 ) -> RoadsterResult<HeathCheckResponse>
 where
     S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
 {
+    #[allow(unused_variables)]
+    let state = AppContext::from_ref(state);
     let timer = Instant::now();
 
     #[cfg(any(feature = "db-sql", feature = "sidekiq"))]
@@ -85,15 +88,15 @@ where
 
     #[cfg(all(feature = "db-sql", feature = "sidekiq"))]
     let (db, (redis_enqueue, redis_fetch)) = tokio::join!(
-        db_health(state, timeout_duration),
-        all_sidekiq_redis_health(state, timeout_duration)
+        db_health(&state, timeout_duration),
+        all_sidekiq_redis_health(&state, timeout_duration)
     );
 
     #[cfg(all(feature = "db-sql", not(feature = "sidekiq")))]
-    let db = db_health(state, timeout_duration).await;
+    let db = db_health(&state, timeout_duration).await;
 
     #[cfg(all(not(feature = "db-sql"), feature = "sidekiq"))]
-    let (redis_enqueue, redis_fetch) = all_sidekiq_redis_health(state, timeout_duration).await;
+    let (redis_enqueue, redis_fetch) = all_sidekiq_redis_health(&state, timeout_duration).await;
 
     Ok(HeathCheckResponse {
         latency: timer.elapsed().as_millis(),
@@ -107,15 +110,9 @@ where
 }
 
 #[cfg(feature = "db-sql")]
-pub(crate) async fn db_health<S>(
-    state: &AppContext<S>,
-    duration: Option<Duration>,
-) -> ResourceHealth
-where
-    S: Clone + Send + Sync + 'static,
-{
+pub(crate) async fn db_health(context: &AppContext, duration: Option<Duration>) -> ResourceHealth {
     let db_timer = Instant::now();
-    let db_status = match ping_db(state.db(), duration).await {
+    let db_status = match ping_db(context.db(), duration).await {
         Ok(_) => Status::Ok,
         Err(err) => Status::Err(ErrorData {
             msg: Some(err.to_string()),
@@ -142,16 +139,13 @@ async fn ping_db(db: &DatabaseConnection, duration: Option<Duration>) -> Roadste
 }
 
 #[cfg(feature = "sidekiq")]
-pub(crate) async fn all_sidekiq_redis_health<S>(
-    state: &AppContext<S>,
+pub(crate) async fn all_sidekiq_redis_health(
+    context: &AppContext,
     duration: Option<Duration>,
-) -> (ResourceHealth, Option<ResourceHealth>)
-where
-    S: Clone + Send + Sync + 'static,
-{
+) -> (ResourceHealth, Option<ResourceHealth>) {
     {
-        let redis_enqueue = redis_health(state.redis_enqueue(), duration);
-        if let Some(redis_fetch) = state.redis_fetch() {
+        let redis_enqueue = redis_health(context.redis_enqueue(), duration);
+        if let Some(redis_fetch) = context.redis_fetch() {
             let (redis_enqueue, redis_fetch) =
                 tokio::join!(redis_enqueue, redis_health(redis_fetch, duration));
             (redis_enqueue, Some(redis_fetch))

@@ -5,9 +5,10 @@ pub mod default;
 pub mod sidekiq;
 
 use crate::app::context::AppContext;
-use crate::app::App;
+
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
+use axum::extract::FromRef;
 
 /// Trait used to check the health of the app before its services start up.
 ///
@@ -21,17 +22,22 @@ use async_trait::async_trait;
 /// services, they can potentially be used in other parts of the app. For example, they could
 /// be used to implement a "health check" API endpoint.
 // Todo: Use the `HealthCheck` trait to implement the "health check" api - https://github.com/roadster-rs/roadster/issues/241
-#[async_trait]
+// Todo: does order of the async_trait/automock attributes matter?
 #[cfg_attr(test, mockall::automock)]
-pub trait HealthCheck<A: App + 'static>: Send + Sync {
+#[async_trait]
+pub trait HealthCheck<S>: Send + Sync
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
     /// The name of the health check.
     fn name(&self) -> String;
 
     /// Whether the health check is enabled. If the health check is not enabled, Roadster will not
     /// run it. However, if a consumer wants, they can certainly create a [HealthCheck] instance
     /// and directly call `HealthCheck#check` even if `HealthCheck#enabled` returns `false`.
-    fn enabled(&self, context: &AppContext<A::State>) -> bool;
+    fn enabled(&self, state: &S) -> bool;
 
     /// Run the health check.
-    async fn check(&self, app_context: &AppContext<A::State>) -> RoadsterResult<()>;
+    async fn check(&self, state: &S) -> RoadsterResult<()>;
 }

@@ -4,7 +4,7 @@ pub mod metadata;
 #[cfg(feature = "cli")]
 use crate::api::cli::parse_cli;
 #[cfg(all(test, feature = "cli"))]
-use crate::api::cli::MockCli;
+use crate::api::cli::MockTestCli;
 #[cfg(feature = "cli")]
 use crate::api::cli::RunCommand;
 use crate::app::metadata::AppMetadata;
@@ -15,6 +15,7 @@ use crate::error::RoadsterResult;
 use crate::service::registry::ServiceRegistry;
 use crate::tracing::init_tracing;
 use async_trait::async_trait;
+use axum::extract::FromRef;
 use context::AppContext;
 #[cfg(feature = "db-sql")]
 use sea_orm::ConnectOptions;
@@ -27,15 +28,17 @@ use std::env;
 use std::future;
 use tracing::{instrument, warn};
 
-pub async fn run<A>(
+pub async fn run<A, S>(
     // This parameter is (currently) not used when no features are enabled.
     #[allow(unused_variables)] app: A,
 ) -> RoadsterResult<()>
 where
-    A: App + Default + Send + Sync + 'static,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S> + Default + Send + Sync + 'static,
 {
     #[cfg(feature = "cli")]
-    let (roadster_cli, app_cli) = parse_cli::<A, _, _>(env::args_os())?;
+    let (roadster_cli, app_cli) = parse_cli::<A, S, _, _>(env::args_os())?;
 
     #[cfg(feature = "cli")]
     let environment = roadster_cli.environment.clone();
@@ -57,20 +60,19 @@ where
     // The `config.clone()` here is technically not necessary. However, without it, RustRover
     // is giving a "value used after move" error when creating an actual `AppContext` below.
     #[cfg(test)]
-    let context = AppContext::<()>::test(Some(config.clone()), None, None)?;
+    let context = AppContext::test(Some(config.clone()), None, None)?;
     #[cfg(not(test))]
-    let context = AppContext::<()>::new::<A>(config, metadata).await?;
+    let context = AppContext::new::<A, S>(config, metadata).await?;
 
-    let state = A::with_state(&context).await?;
-    let context = context.with_custom(state);
+    let state = A::provide_state(context.clone()).await?;
 
     #[cfg(feature = "cli")]
-    if crate::api::cli::handle_cli(&app, &roadster_cli, &app_cli, &context).await? {
+    if crate::api::cli::handle_cli(&app, &roadster_cli, &app_cli, &state).await? {
         return Ok(());
     }
 
-    let mut service_registry = ServiceRegistry::new(&context);
-    A::services(&mut service_registry, &context).await?;
+    let mut service_registry = ServiceRegistry::new(&state);
+    A::services(&mut service_registry, &state).await?;
 
     if service_registry.services.is_empty() {
         warn!("No enabled services were registered, exiting.");
@@ -78,7 +80,7 @@ where
     }
 
     #[cfg(feature = "cli")]
-    if crate::service::runner::handle_cli(&roadster_cli, &app_cli, &service_registry, &context)
+    if crate::service::runner::handle_cli(&roadster_cli, &app_cli, &service_registry, &state)
         .await?
     {
         return Ok(());
@@ -89,22 +91,24 @@ where
         A::M::up(context.db(), None).await?;
     }
 
-    crate::service::runner::health_checks(&service_registry, &context).await?;
+    crate::service::runner::health_checks(&service_registry, &state).await?;
 
-    crate::service::runner::before_run(&service_registry, &context).await?;
+    crate::service::runner::before_run(&service_registry, &state).await?;
 
-    crate::service::runner::run(service_registry, &context).await?;
+    crate::service::runner::run(service_registry, &state).await?;
 
     Ok(())
 }
 
-#[cfg_attr(test, mockall::automock(type State = (); type Cli = MockCli; type M = MockMigrator;))]
+#[cfg_attr(test, mockall::automock(type Cli = MockTestCli<S>; type M = MockMigrator;))]
 #[async_trait]
-pub trait App: Send + Sync {
-    // Todo: Are clone, etc necessary if we store it inside an Arc?
-    type State: Clone + Send + Sync + 'static;
+pub trait App<S>: Send + Sync
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
     #[cfg(feature = "cli")]
-    type Cli: clap::Args + RunCommand<Self>;
+    type Cli: clap::Args + RunCommand<Self, S> + Send + Sync;
     #[cfg(feature = "db-sql")]
     type M: MigratorTrait;
 
@@ -123,32 +127,29 @@ pub trait App: Send + Sync {
         Ok(ConnectOptions::from(&config.database))
     }
 
-    /// Convert the [AppContext] to the custom [Self::State] that will be used throughout the app.
-    /// The conversion can simply happen in a [`From<AppContext>`] implementation, but this
-    /// method is provided in case there's any additional work that needs to be done that the
-    /// consumer can't put in a [`From<AppContext>`] implementation. For example, any
-    /// configuration that needs to happen in an async method.
-    async fn with_state(context: &AppContext<()>) -> RoadsterResult<Self::State>;
+    /// Provide the app state that will be used throughout the app. The state can simply be the
+    /// provided [AppContext], or a custom type that implements [FromRef] to allow Roadster to
+    /// extract its [AppContext] when needed.
+    ///
+    /// See the following for more details regarding [FromRef]: <https://docs.rs/axum/0.7.5/axum/extract/trait.FromRef.html>
+    async fn provide_state(context: AppContext) -> RoadsterResult<S>;
 
     /// Provide the services to run in the app.
-    async fn services(
-        _registry: &mut ServiceRegistry<Self>,
-        _context: &AppContext<Self::State>,
-    ) -> RoadsterResult<()> {
+    async fn services(_registry: &mut ServiceRegistry<Self, S>, _state: &S) -> RoadsterResult<()> {
         Ok(())
     }
 
     /// Override to provide a custom shutdown signal. Roadster provides some default shutdown
     /// signals, but it may be desirable to provide a custom signal in order to, e.g., shutdown the
     /// server when a particular API is called.
-    async fn graceful_shutdown_signal(_context: &AppContext<Self::State>) {
+    async fn graceful_shutdown_signal(_state: &S) {
         let _output: () = future::pending().await;
     }
 
     /// Override to provide custom graceful shutdown logic to clean up any resources created by
     /// the app. Roadster will take care of cleaning up the resources it created.
     #[instrument(skip_all)]
-    async fn graceful_shutdown(_context: &AppContext<Self::State>) -> RoadsterResult<()> {
+    async fn graceful_shutdown(_state: &S) -> RoadsterResult<()> {
         Ok(())
     }
 }

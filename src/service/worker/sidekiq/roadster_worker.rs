@@ -1,8 +1,8 @@
 use crate::app::context::AppContext;
-use crate::app::App;
 use crate::service::worker::sidekiq::app_worker::AppWorker;
 use crate::service::worker::sidekiq::app_worker::AppWorkerConfig;
 use async_trait::async_trait;
+use axum::extract::FromRef;
 use serde::Serialize;
 use sidekiq::{RedisPool, Worker, WorkerOpts};
 use std::marker::PhantomData;
@@ -12,41 +12,44 @@ use tracing::{error, instrument};
 /// Worker used by Roadster to wrap the consuming app's workers to add additional behavior. For
 /// example, [RoadsterWorker] is by default configured to automatically abort the app's worker
 /// when it exceeds a certain timeout.
-pub struct RoadsterWorker<A, Args, W>
+pub struct RoadsterWorker<S, Args, W>
 where
-    A: App,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
     Args: Send + Sync + Serialize + 'static,
-    W: AppWorker<A, Args>,
+    W: AppWorker<S, Args>,
 {
     inner: W,
     inner_config: AppWorkerConfig,
+    _state: PhantomData<S>,
     _args: PhantomData<Args>,
-    _app: PhantomData<A>,
 }
 
-impl<A, Args, W> RoadsterWorker<A, Args, W>
+impl<S, Args, W> RoadsterWorker<S, Args, W>
 where
-    A: App,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
     Args: Send + Sync + Serialize,
-    W: AppWorker<A, Args>,
+    W: AppWorker<S, Args>,
 {
-    pub(crate) fn new(inner: W, context: &AppContext<A::State>) -> Self {
-        let config = inner.config(context);
+    pub(crate) fn new(inner: W, state: &S) -> Self {
+        let config = inner.config(state);
         Self {
             inner,
             inner_config: config,
+            _state: PhantomData,
             _args: PhantomData,
-            _app: PhantomData,
         }
     }
 }
 
 #[async_trait]
-impl<A, Args, W> Worker<Args> for RoadsterWorker<A, Args, W>
+impl<S, Args, W> Worker<Args> for RoadsterWorker<S, Args, W>
 where
-    A: App,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
     Args: Send + Sync + Serialize,
-    W: AppWorker<A, Args>,
+    W: AppWorker<S, Args>,
 {
     fn disable_argument_coercion(&self) -> bool {
         self.inner_config.disable_argument_coercion

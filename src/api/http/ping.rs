@@ -7,6 +7,7 @@ use aide::axum::routing::get_with;
 use aide::axum::ApiRouter;
 #[cfg(feature = "open-api")]
 use aide::transform::TransformOperation;
+use axum::extract::FromRef;
 use axum::routing::get;
 use axum::Json;
 use axum::Router;
@@ -18,32 +19,36 @@ use tracing::instrument;
 #[cfg(feature = "open-api")]
 const TAG: &str = "Ping";
 
-pub fn routes<S>(parent: &str, context: &AppContext<S>) -> Router<AppContext<S>>
+pub fn routes<S>(parent: &str, state: &S) -> Router<S>
 where
     S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
 {
+    let context = AppContext::from_ref(state);
     let router = Router::new();
-    if !enabled(context) {
+    if !enabled(&context) {
         return router;
     }
-    let root = build_path(parent, route(context));
+    let root = build_path(parent, route(&context));
     router.route(&root, get(ping_get))
 }
 
 #[cfg(feature = "open-api")]
-pub fn api_routes<S>(parent: &str, context: &AppContext<S>) -> ApiRouter<AppContext<S>>
+pub fn api_routes<S>(parent: &str, state: &S) -> ApiRouter<S>
 where
     S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
 {
+    let context = AppContext::from_ref(state);
     let router = ApiRouter::new();
-    if !enabled(context) {
+    if !enabled(&context) {
         return router;
     }
-    let root = build_path(parent, route(context));
+    let root = build_path(parent, route(&context));
     router.api_route(&root, get_with(ping_get, ping_get_docs))
 }
 
-fn enabled<S>(context: &AppContext<S>) -> bool {
+fn enabled(context: &AppContext) -> bool {
     context
         .config()
         .service
@@ -54,7 +59,7 @@ fn enabled<S>(context: &AppContext<S>) -> bool {
         .enabled(context)
 }
 
-fn route<S>(context: &AppContext<S>) -> &str {
+fn route(context: &AppContext) -> &str {
     &context
         .config()
         .service
@@ -116,7 +121,7 @@ mod tests {
                 .route
                 .clone_from(route);
         }
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         assert_eq!(super::enabled(&context), enabled);
         assert_eq!(

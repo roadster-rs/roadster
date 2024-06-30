@@ -1,27 +1,32 @@
 use crate::api::core::health::{all_sidekiq_redis_health, Status};
 use crate::app::context::AppContext;
-use crate::app::App;
 use crate::error::RoadsterResult;
 use crate::health_check::HealthCheck;
 use anyhow::anyhow;
 use async_trait::async_trait;
+use axum::extract::FromRef;
 use tracing::instrument;
 
 pub struct SidekiqHealthCheck;
 
 #[async_trait]
-impl<A: App + 'static> HealthCheck<A> for SidekiqHealthCheck {
+impl<S> HealthCheck<S> for SidekiqHealthCheck
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
     fn name(&self) -> String {
         "sidekiq".to_string()
     }
 
-    fn enabled(&self, context: &AppContext<A::State>) -> bool {
-        enabled(context)
+    fn enabled(&self, state: &S) -> bool {
+        enabled(&AppContext::from_ref(state))
     }
 
     #[instrument(skip_all)]
-    async fn check(&self, app_context: &AppContext<A::State>) -> RoadsterResult<()> {
-        let (redis_enqueue, redis_fetch) = all_sidekiq_redis_health(app_context, None).await;
+    async fn check(&self, state: &S) -> RoadsterResult<()> {
+        let (redis_enqueue, redis_fetch) =
+            all_sidekiq_redis_health(&AppContext::from_ref(state), None).await;
 
         if let Status::Err(err) = redis_enqueue.status {
             return Err(anyhow!(
@@ -44,7 +49,7 @@ impl<A: App + 'static> HealthCheck<A> for SidekiqHealthCheck {
     }
 }
 
-fn enabled<S>(context: &AppContext<S>) -> bool {
+fn enabled(context: &AppContext) -> bool {
     context
         .config()
         .health_check
@@ -73,7 +78,7 @@ mod tests {
         config.health_check.default_enable = default_enable;
         config.health_check.sidekiq.common.enable = enable;
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         // Act/Assert
         assert_eq!(super::enabled(&context), expected_enabled);

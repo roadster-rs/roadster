@@ -10,6 +10,7 @@ use crate::service::worker::sidekiq::Processor;
 use crate::service::AppServiceBuilder;
 use anyhow::anyhow;
 use async_trait::async_trait;
+use axum::extract::FromRef;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
 use serde::Serialize;
@@ -19,17 +20,22 @@ use tracing::{debug, info};
 
 pub(crate) const PERIODIC_KEY: &str = "periodic";
 
-pub struct SidekiqWorkerServiceBuilder<A>
+pub struct SidekiqWorkerServiceBuilder<S>
 where
-    A: App + 'static,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
 {
-    state: BuilderState<A>,
+    state: BuilderState<S>,
 }
 
-enum BuilderState<A: App + 'static> {
+enum BuilderState<S>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
     Enabled {
-        processor: Processor<A>,
-        context: AppContext<A::State>,
+        processor: Processor,
+        state: S,
         registered_workers: HashSet<String>,
         registered_periodic_workers: HashSet<String>,
     },
@@ -37,22 +43,24 @@ enum BuilderState<A: App + 'static> {
 }
 
 #[async_trait]
-impl<A> AppServiceBuilder<A, SidekiqWorkerService> for SidekiqWorkerServiceBuilder<A>
+impl<A, S> AppServiceBuilder<A, S, SidekiqWorkerService> for SidekiqWorkerServiceBuilder<S>
 where
-    A: App,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S> + 'static,
 {
     fn name(&self) -> String {
         NAME.to_string()
     }
 
-    fn enabled(&self, app_context: &AppContext<A::State>) -> bool {
+    fn enabled(&self, state: &S) -> bool {
         match self.state {
-            BuilderState::Enabled { .. } => enabled(app_context),
+            BuilderState::Enabled { .. } => enabled(&AppContext::from_ref(state)),
             BuilderState::Disabled => false,
         }
     }
 
-    async fn build(self, _context: &AppContext<A::State>) -> RoadsterResult<SidekiqWorkerService> {
+    async fn build(self, _state: &S) -> RoadsterResult<SidekiqWorkerService> {
         let service = match self.state {
             BuilderState::Enabled {
                 processor,
@@ -74,26 +82,25 @@ where
     }
 }
 
-impl<A> SidekiqWorkerServiceBuilder<A>
+impl<S> SidekiqWorkerServiceBuilder<S>
 where
-    A: App + 'static,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
 {
-    pub async fn with_processor(
-        context: &AppContext<A::State>,
-        processor: sidekiq::Processor,
-    ) -> RoadsterResult<Self> {
-        Self::new(context.clone(), Some(Processor::new(processor))).await
+    pub async fn with_processor(state: &S, processor: sidekiq::Processor) -> RoadsterResult<Self> {
+        Self::new(state.clone(), Some(Processor::new(processor))).await
     }
 
     pub async fn with_default_processor(
-        context: &AppContext<A::State>,
+        state: &S,
         worker_queues: Option<Vec<String>>,
     ) -> RoadsterResult<Self> {
-        let processor = if !enabled(context) {
+        let context = AppContext::from_ref(state);
+        let processor = if !enabled(&context) {
             debug!("Sidekiq service not enabled, not creating the Sidekiq processor");
             None
         } else if let Some(redis_fetch) = context.redis_fetch() {
-            Self::auto_clean_periodic(context).await?;
+            Self::auto_clean_periodic(&context).await?;
             let queues = context
                 .config()
                 .service
@@ -138,19 +145,17 @@ where
             None
         };
 
-        Self::new(context.clone(), processor).await
+        Self::new(state.clone(), processor).await
     }
 
-    async fn new(
-        context: AppContext<A::State>,
-        processor: Option<Processor<A>>,
-    ) -> RoadsterResult<Self> {
+    async fn new(state: S, processor: Option<Processor>) -> RoadsterResult<Self> {
+        let context = AppContext::from_ref(&state);
         let processor = if enabled(&context) { processor } else { None };
 
         let state = if let Some(processor) = processor {
             BuilderState::Enabled {
                 processor,
-                context,
+                state,
                 registered_workers: Default::default(),
                 registered_periodic_workers: Default::default(),
             }
@@ -161,7 +166,7 @@ where
         Ok(Self { state })
     }
 
-    async fn auto_clean_periodic(context: &AppContext<A::State>) -> RoadsterResult<()> {
+    async fn auto_clean_periodic(context: &AppContext) -> RoadsterResult<()> {
         if context
             .config()
             .service
@@ -190,13 +195,14 @@ where
     pub async fn clean_up_periodic_jobs(self) -> RoadsterResult<Self> {
         if let BuilderState::Enabled {
             registered_periodic_workers,
-            context,
+            state: context,
             ..
         } = &self.state
         {
             if !registered_periodic_workers.is_empty() {
                 return Err(anyhow!("Can only clean up previous periodic jobs if no periodic jobs have been registered yet.").into());
             }
+            let context = AppContext::from_ref(context);
             periodic::destroy_all(context.redis_enqueue().clone()).await?;
         }
 
@@ -210,12 +216,12 @@ where
     pub fn register_app_worker<Args, W>(mut self, worker: W) -> RoadsterResult<Self>
     where
         Args: Sync + Send + Serialize + for<'de> serde::Deserialize<'de> + 'static,
-        W: AppWorker<A, Args> + 'static,
+        W: AppWorker<S, Args> + 'static,
     {
         if let BuilderState::Enabled {
             processor,
             registered_workers,
-            context,
+            state: context,
             ..
         } = &mut self.state
         {
@@ -246,11 +252,11 @@ where
     ) -> RoadsterResult<Self>
     where
         Args: Sync + Send + Serialize + for<'de> serde::Deserialize<'de> + 'static,
-        W: AppWorker<A, Args> + 'static,
+        W: AppWorker<S, Args> + 'static,
     {
         if let BuilderState::Enabled {
             processor,
-            context,
+            state: context,
             registered_periodic_workers,
             ..
         } = &mut self.state
@@ -289,7 +295,6 @@ where
 mod tests {
     use super::*;
     use crate::app::context::AppContext;
-    use crate::app::MockApp;
     use crate::config::app_config::AppConfig;
     use crate::service::worker::sidekiq::MockProcessor;
     use bb8::Pool;
@@ -372,9 +377,9 @@ mod tests {
         }
 
         #[async_trait]
-        impl AppWorker<MockApp, ()> for TestAppWorker
+        impl AppWorker<AppContext, ()> for TestAppWorker
         {
-            fn build(context: &AppContext<()>) -> Self;
+            fn build(context: &AppContext) -> Self;
         }
     }
 
@@ -383,7 +388,7 @@ mod tests {
         enabled: bool,
         register_count: usize,
         periodic_count: usize,
-    ) -> SidekiqWorkerServiceBuilder<MockApp> {
+    ) -> SidekiqWorkerServiceBuilder<AppContext> {
         let mut config = AppConfig::test(None).unwrap();
         config.service.default_enable = enabled;
         config.service.sidekiq.custom.num_workers = 1;
@@ -391,26 +396,26 @@ mod tests {
 
         let redis_fetch = RedisConnectionManager::new("redis://invalid_host:1234").unwrap();
         let pool = Pool::builder().build_unchecked(redis_fetch);
-        let context = AppContext::<()>::test(Some(config), None, Some(pool)).unwrap();
+        let context = AppContext::test(Some(config), None, Some(pool)).unwrap();
 
-        let mut processor = MockProcessor::<MockApp>::default();
+        let mut processor = MockProcessor::default();
         processor
-            .expect_register::<(), MockTestAppWorker>()
+            .expect_register::<AppContext, (), MockTestAppWorker>()
             .times(register_count)
             .returning(|_| ());
         processor
-            .expect_register_periodic::<(), MockTestAppWorker>()
+            .expect_register_periodic::<AppContext, (), MockTestAppWorker>()
             .times(periodic_count)
             .returning(|_, _| Ok(()));
 
-        SidekiqWorkerServiceBuilder::<MockApp>::new(context, Some(processor))
+        SidekiqWorkerServiceBuilder::new(context, Some(processor))
             .await
             .unwrap()
     }
 
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn validate_registered_workers(
-        builder: &SidekiqWorkerServiceBuilder<MockApp>,
+        builder: &SidekiqWorkerServiceBuilder<AppContext>,
         enabled: bool,
         size: usize,
         class_names: Vec<String>,
@@ -433,7 +438,7 @@ mod tests {
 
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn validate_registered_periodic_workers(
-        builder: &SidekiqWorkerServiceBuilder<MockApp>,
+        builder: &SidekiqWorkerServiceBuilder<AppContext>,
         enabled: bool,
         size: usize,
         job_names: Vec<String>,

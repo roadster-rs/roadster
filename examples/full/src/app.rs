@@ -1,7 +1,7 @@
 #[cfg(feature = "grpc")]
 use crate::api::grpc::routes;
 use crate::api::http;
-use crate::app_state::CustomAppContext;
+use crate::app_state::AppState;
 use crate::cli::AppCli;
 use crate::service::example::example_service;
 use crate::worker::example::ExampleWorker;
@@ -26,8 +26,7 @@ const BASE: &str = "/api";
 pub struct App;
 
 #[async_trait]
-impl RoadsterApp for App {
-    type State = CustomAppContext;
+impl RoadsterApp<AppState> for App {
     type Cli = AppCli;
     type M = Migrator;
 
@@ -37,25 +36,25 @@ impl RoadsterApp for App {
             .build())
     }
 
-    async fn with_state(_context: &AppContext) -> RoadsterResult<Self::State> {
-        Ok(())
+    async fn provide_state(app_context: AppContext) -> RoadsterResult<AppState> {
+        Ok(AppState { app_context })
     }
 
     async fn services(
-        registry: &mut ServiceRegistry<Self>,
-        context: &AppContext<Self::State>,
+        registry: &mut ServiceRegistry<Self, AppState>,
+        state: &AppState,
     ) -> RoadsterResult<()> {
         registry
             .register_builder(
-                HttpService::builder(Some(BASE), context).api_router(http::routes(BASE)),
+                HttpService::builder(Some(BASE), state).api_router(http::routes(BASE)),
             )
             .await?;
 
         registry
             .register_builder(
-                SidekiqWorkerService::builder(context)
+                SidekiqWorkerService::builder(state)
                     .await?
-                    .register_app_worker(ExampleWorker::build(context))?,
+                    .register_app_worker(ExampleWorker::build(state))?,
             )
             .await?;
 
@@ -67,7 +66,7 @@ impl RoadsterApp for App {
         )?;
 
         #[cfg(feature = "grpc")]
-        registry.register_service(GrpcService::new(routes(context)?))?;
+        registry.register_service(GrpcService::new(routes(state)?))?;
 
         Ok(())
     }

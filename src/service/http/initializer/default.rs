@@ -1,15 +1,18 @@
 use crate::app::context::AppContext;
 use crate::service::http::initializer::normalize_path::NormalizePathInitializer;
 use crate::service::http::initializer::Initializer;
+use axum::extract::FromRef;
 use std::collections::BTreeMap;
 
-pub fn default_initializers<S: Send + Sync + 'static>(
-    context: &AppContext<S>,
-) -> BTreeMap<String, Box<dyn Initializer<S>>> {
+pub fn default_initializers<S>(state: &S) -> BTreeMap<String, Box<dyn Initializer<S>>>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
     let initializers: Vec<Box<dyn Initializer<S>>> = vec![Box::new(NormalizePathInitializer)];
     initializers
         .into_iter()
-        .filter(|initializer| initializer.enabled(context))
+        .filter(|initializer| initializer.enabled(state))
         .map(|initializer| (initializer.name(), initializer))
         .collect()
 }
@@ -29,7 +32,7 @@ mod tests {
         let mut config = AppConfig::test(None).unwrap();
         config.service.http.custom.initializer.default_enable = default_enable;
 
-        let context = AppContext::<()>::test(Some(config), None, None).unwrap();
+        let context = AppContext::test(Some(config), None, None).unwrap();
 
         // Act
         let middleware = super::default_initializers(&context);
