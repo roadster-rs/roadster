@@ -1,18 +1,18 @@
-use crate::api::core::health::db_health;
+use crate::api::core::health::redis_health;
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::health_check::{CheckResponse, HealthCheck};
 use async_trait::async_trait;
 use tracing::instrument;
 
-pub struct DatabaseHealthCheck {
+pub struct SidekiqEnqueueHealthCheck {
     pub(crate) context: AppContext,
 }
 
 #[async_trait]
-impl HealthCheck for DatabaseHealthCheck {
+impl HealthCheck for SidekiqEnqueueHealthCheck {
     fn name(&self) -> String {
-        "db".to_string()
+        "sidekiq-enqueue".to_string()
     }
 
     fn enabled(&self) -> bool {
@@ -21,7 +21,7 @@ impl HealthCheck for DatabaseHealthCheck {
 
     #[instrument(skip_all)]
     async fn check(&self) -> RoadsterResult<CheckResponse> {
-        Ok(db_health(&self.context, None).await)
+        Ok(redis_health(self.context.redis_enqueue(), None).await)
     }
 }
 
@@ -29,7 +29,7 @@ fn enabled(context: &AppContext) -> bool {
     context
         .config()
         .health_check
-        .database
+        .sidekiq
         .common
         .enabled(context)
 }
@@ -52,7 +52,7 @@ mod tests {
         // Arrange
         let mut config = AppConfig::test(None).unwrap();
         config.health_check.default_enable = default_enable;
-        config.health_check.database.common.enable = enable;
+        config.health_check.sidekiq.common.enable = enable;
 
         let context = AppContext::test(Some(config), None, None).unwrap();
 

@@ -1,8 +1,12 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
+use crate::health_check::{CheckResponse, ErrorData, HealthCheck, Status};
+#[cfg(feature = "open-api")]
+use aide::OperationIo;
 #[cfg(feature = "sidekiq")]
 use anyhow::anyhow;
 use axum::extract::FromRef;
+use futures::future::join_all;
 #[cfg(feature = "open-api")]
 use schemars::JsonSchema;
 #[cfg(feature = "db-sql")]
@@ -11,30 +15,83 @@ use serde_derive::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
 #[cfg(feature = "sidekiq")]
 use sidekiq::redis_rs::cmd;
-#[cfg(any(feature = "db-sql", feature = "sidekiq"))]
+use std::collections::BTreeMap;
+use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
-#[cfg(any(feature = "db-sql", feature = "sidekiq"))]
 use tokio::time::timeout;
-use tracing::instrument;
+use tracing::{info, instrument};
 
-#[serde_as]
-#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "open-api", derive(JsonSchema))]
+#[cfg_attr(feature = "open-api", derive(JsonSchema, OperationIo))]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub struct HeathCheckResponse {
     /// Total latency of checking the health of the app.
     pub latency: u128,
-    #[cfg(feature = "db-sql")]
-    pub db: ResourceHealth,
-    /// Health of the Redis connection used to enqueue Sidekiq jobs.
-    #[cfg(feature = "sidekiq")]
-    pub redis_enqueue: ResourceHealth,
-    /// Health of the Redis connection used to fetch Sidekiq jobs.
-    #[cfg(feature = "sidekiq")]
-    pub redis_fetch: Option<ResourceHealth>,
+    #[serde(flatten)]
+    pub resources: BTreeMap<String, CheckResponse>,
+}
+
+#[instrument(skip_all)]
+pub async fn health_check<S>(
+    state: &S,
+    duration: Option<Duration>,
+) -> RoadsterResult<HeathCheckResponse>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    if let Some(duration) = duration.as_ref() {
+        info!(
+            "Running checks for a maximum duration of {} ms",
+            duration.as_millis()
+        );
+    } else {
+        info!("Running checks");
+    }
+    let context = AppContext::from_ref(state);
+    let timer = Instant::now();
+
+    let check_futures = context.health_checks().checks()?.into_iter().map(|check| {
+        Box::pin(async move {
+            let name = check.name();
+            info!(name=%name, "Running check");
+            let check_timer = Instant::now();
+            let result = match run_check(check, duration).await {
+                Ok(response) => response,
+                Err(err) => CheckResponse::builder()
+                    .status(Status::Err(
+                        ErrorData::builder()
+                            .msg(format!(
+                                "An error occurred while running health check `{name}`: {err}"
+                            ))
+                            .build(),
+                    ))
+                    .latency(check_timer.elapsed())
+                    .build(),
+            };
+            (name, result)
+        })
+    });
+
+    let resources = join_all(check_futures).await.into_iter().collect();
+
+    Ok(HeathCheckResponse {
+        latency: timer.elapsed().as_millis(),
+        resources,
+    })
+}
+
+async fn run_check(
+    check: Arc<dyn HealthCheck>,
+    duration: Option<Duration>,
+) -> RoadsterResult<CheckResponse> {
+    if let Some(duration) = duration {
+        timeout(duration, check.check()).await?
+    } else {
+        check.check().await
+    }
 }
 
 #[serde_as]
@@ -43,88 +100,25 @@ pub struct HeathCheckResponse {
 #[cfg_attr(feature = "open-api", derive(JsonSchema))]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
-pub struct ResourceHealth {
-    pub status: Status,
+pub struct Latency {
     /// How long it takes to acquire a connection from the pool.
     pub acquire_conn_latency: Option<u128>,
     /// How long it takes to ping the resource after the connection is acquired.
     pub ping_latency: Option<u128>,
-    /// Total latency of checking the health of the resource.
-    pub latency: u128,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "open-api", derive(JsonSchema))]
-#[serde(rename_all = "camelCase")]
-#[non_exhaustive]
-pub enum Status {
-    Ok,
-    Err(ErrorData),
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "open-api", derive(JsonSchema))]
-#[serde(rename_all = "camelCase")]
-#[non_exhaustive]
-pub struct ErrorData {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub msg: Option<String>,
-}
-
-#[instrument(skip_all)]
-pub async fn health_check<S>(
-    #[allow(unused_variables)] state: &S,
-) -> RoadsterResult<HeathCheckResponse>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-{
-    #[allow(unused_variables)]
-    let state = AppContext::from_ref(state);
-    let timer = Instant::now();
-
-    #[cfg(any(feature = "db-sql", feature = "sidekiq"))]
-    let timeout_duration = Some(Duration::from_secs(1));
-
-    #[cfg(all(feature = "db-sql", feature = "sidekiq"))]
-    let (db, (redis_enqueue, redis_fetch)) = tokio::join!(
-        db_health(&state, timeout_duration),
-        all_sidekiq_redis_health(&state, timeout_duration)
-    );
-
-    #[cfg(all(feature = "db-sql", not(feature = "sidekiq")))]
-    let db = db_health(&state, timeout_duration).await;
-
-    #[cfg(all(not(feature = "db-sql"), feature = "sidekiq"))]
-    let (redis_enqueue, redis_fetch) = all_sidekiq_redis_health(&state, timeout_duration).await;
-
-    Ok(HeathCheckResponse {
-        latency: timer.elapsed().as_millis(),
-        #[cfg(feature = "db-sql")]
-        db,
-        #[cfg(feature = "sidekiq")]
-        redis_enqueue,
-        #[cfg(feature = "sidekiq")]
-        redis_fetch,
-    })
 }
 
 #[cfg(feature = "db-sql")]
-pub(crate) async fn db_health(context: &AppContext, duration: Option<Duration>) -> ResourceHealth {
+pub(crate) async fn db_health(context: &AppContext, duration: Option<Duration>) -> CheckResponse {
     let db_timer = Instant::now();
     let db_status = match ping_db(context.db(), duration).await {
         Ok(_) => Status::Ok,
-        Err(err) => Status::Err(ErrorData {
-            msg: Some(err.to_string()),
-        }),
+        Err(err) => Status::Err(ErrorData::builder().msg(err.to_string()).build()),
     };
     let db_timer = db_timer.elapsed();
-    ResourceHealth {
-        status: db_status,
-        acquire_conn_latency: None,
-        ping_latency: None,
-        latency: db_timer.as_millis(),
-    }
+    CheckResponse::builder()
+        .status(db_status)
+        .latency(db_timer)
+        .build()
 }
 
 #[cfg(feature = "db-sql")]
@@ -139,44 +133,30 @@ async fn ping_db(db: &DatabaseConnection, duration: Option<Duration>) -> Roadste
 }
 
 #[cfg(feature = "sidekiq")]
-pub(crate) async fn all_sidekiq_redis_health(
-    context: &AppContext,
-    duration: Option<Duration>,
-) -> (ResourceHealth, Option<ResourceHealth>) {
-    {
-        let redis_enqueue = redis_health(context.redis_enqueue(), duration);
-        if let Some(redis_fetch) = context.redis_fetch() {
-            let (redis_enqueue, redis_fetch) =
-                tokio::join!(redis_enqueue, redis_health(redis_fetch, duration));
-            (redis_enqueue, Some(redis_fetch))
-        } else {
-            (redis_enqueue.await, None)
-        }
-    }
-}
-
-#[cfg(feature = "sidekiq")]
 #[instrument(skip_all)]
-async fn redis_health(redis: &sidekiq::RedisPool, duration: Option<Duration>) -> ResourceHealth {
+pub(crate) async fn redis_health(
+    redis: &sidekiq::RedisPool,
+    duration: Option<Duration>,
+) -> CheckResponse {
     let redis_timer = Instant::now();
     let (redis_status, acquire_conn_latency, ping_latency) = match ping_redis(redis, duration).await
     {
         Ok((a, b)) => (Status::Ok, Some(a.as_millis()), Some(b.as_millis())),
         Err(err) => (
-            Status::Err(ErrorData {
-                msg: Some(err.to_string()),
-            }),
+            Status::Err(ErrorData::builder().msg(err.to_string()).build()),
             None,
             None,
         ),
     };
     let redis_timer = redis_timer.elapsed();
-    ResourceHealth {
-        status: redis_status,
-        acquire_conn_latency,
-        ping_latency,
-        latency: redis_timer.as_millis(),
-    }
+    CheckResponse::builder()
+        .status(redis_status)
+        .latency(redis_timer)
+        .custom(Latency {
+            acquire_conn_latency,
+            ping_latency,
+        })
+        .build()
 }
 
 #[cfg(feature = "sidekiq")]

@@ -4,5 +4,6 @@ expression: health_checks
 ---
 [
     'db',
-    'sidekiq',
+    'sidekiq-enqueue',
+    'sidekiq-fetch',
 ]

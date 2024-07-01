@@ -1,19 +1,23 @@
 use crate::api::core::health::{health_check, HeathCheckResponse};
-#[cfg(all(feature = "open-api", any(feature = "db-sql", feature = "sidekiq")))]
-use crate::api::core::health::{ResourceHealth, Status};
 use crate::api::http::build_path;
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
+#[cfg(feature = "open-api")]
+use crate::health_check::{CheckResponse, ErrorData, Status};
 #[cfg(feature = "open-api")]
 use aide::axum::routing::get_with;
 #[cfg(feature = "open-api")]
 use aide::axum::ApiRouter;
 #[cfg(feature = "open-api")]
 use aide::transform::TransformOperation;
-use axum::extract::FromRef;
 use axum::extract::State;
+use axum::extract::{FromRef, Query};
 use axum::routing::get;
 use axum::{Json, Router};
+#[cfg(feature = "open-api")]
+use schemars::JsonSchema;
+use serde_derive::{Deserialize, Serialize};
+use std::time::Duration;
 use tracing::instrument;
 
 #[cfg(feature = "open-api")]
@@ -70,14 +74,30 @@ fn route(context: &AppContext) -> &str {
         .route
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "open-api", derive(JsonSchema))]
+#[serde(rename_all = "camelCase")]
+#[non_exhaustive]
+pub struct HeathCheckRequest {
+    /// Maximum time to spend checking the health of the resources in milliseconds
+    ///
+    /// Note: If this is greater than the timeout configured in middleware, the request may
+    /// time out before the `max_duration` elapses.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_duration: Option<u64>,
+}
+
 #[instrument(skip_all)]
-async fn health_get<S>(State(state): State<S>) -> RoadsterResult<Json<HeathCheckResponse>>
+async fn health_get<S>(
+    State(state): State<S>,
+    Query(query): Query<HeathCheckRequest>,
+) -> RoadsterResult<Json<HeathCheckResponse>>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    let health = health_check::<S>(&state).await?;
-    Ok(Json(health))
+    let duration = Duration::from_millis(query.max_duration.unwrap_or(1000));
+    Ok(Json(health_check(&state, Some(duration)).await?))
 }
 
 #[cfg(feature = "open-api")]
@@ -87,27 +107,26 @@ fn health_get_docs(op: TransformOperation) -> TransformOperation {
         .response_with::<200, Json<HeathCheckResponse>, _>(|res| {
             res.example(HeathCheckResponse {
                 latency: 20,
-                #[cfg(feature = "db-sql")]
-                db: ResourceHealth {
-                    status: Status::Ok,
-                    acquire_conn_latency: None,
-                    ping_latency: None,
-                    latency: 10,
-                },
-                #[cfg(feature = "sidekiq")]
-                redis_enqueue: ResourceHealth {
-                    status: Status::Ok,
-                    acquire_conn_latency: Some(5),
-                    ping_latency: Some(10),
-                    latency: 15,
-                },
-                #[cfg(feature = "sidekiq")]
-                redis_fetch: Some(ResourceHealth {
-                    status: Status::Ok,
-                    acquire_conn_latency: Some(15),
-                    ping_latency: Some(20),
-                    latency: 35,
-                }),
+                resources: std::collections::BTreeMap::from([
+                    (
+                        "db".to_string(),
+                        CheckResponse::builder()
+                            .status(Status::Ok)
+                            .latency(Duration::from_secs(1))
+                            .build(),
+                    ),
+                    (
+                        "redis".to_string(),
+                        CheckResponse::builder()
+                            .status(Status::Err(
+                                ErrorData::builder()
+                                    .msg("An error occurred".to_string())
+                                    .build(),
+                            ))
+                            .latency(Duration::from_secs(2))
+                            .build(),
+                    ),
+                ]),
             })
         })
 }

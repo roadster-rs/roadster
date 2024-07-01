@@ -1,11 +1,15 @@
 #[cfg(feature = "cli")]
 use crate::api::cli::roadster::RoadsterCli;
+use crate::api::core::health::health_check;
 use crate::app::context::AppContext;
 use crate::app::App;
 use crate::error::RoadsterResult;
+use crate::health_check::Status;
 use crate::service::registry::ServiceRegistry;
+use anyhow::anyhow;
 use axum::extract::FromRef;
 use std::future::Future;
+use std::time::Duration;
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, instrument};
@@ -30,21 +34,26 @@ where
     Ok(false)
 }
 
-pub(crate) async fn health_checks<A, S>(
-    service_registry: &ServiceRegistry<A, S>,
-    state: &S,
-) -> RoadsterResult<()>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-    A: App<S>,
-{
-    for (name, health_check) in service_registry.health_checks.iter() {
-        info!(name=%name, "Running health check");
-        health_check.check(state).await?;
-    }
+pub(crate) async fn health_checks(context: &AppContext) -> RoadsterResult<()> {
+    let duration = Duration::from_secs(60);
+    info!(
+        "Running checks for a maximum duration of {} seconds",
+        duration.as_secs()
+    );
+    let response = health_check(context, Some(duration)).await?;
 
-    Ok(())
+    let error_response = response
+        .resources
+        .iter()
+        .find(|(_name, response)| !matches!(response.status, Status::Ok));
+
+    if let Some((name, response)) = error_response {
+        let msg = format!("Resource is not healthy: {response:?}");
+        error!(name=%name, msg);
+        Err(anyhow!("{msg}"))?
+    } else {
+        Ok(())
+    }
 }
 
 pub(crate) async fn before_run<A, S>(
