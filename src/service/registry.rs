@@ -1,8 +1,6 @@
 use crate::app::context::AppContext;
 use crate::app::App;
 use crate::error::RoadsterResult;
-use crate::health_check::default::default_health_checks;
-use crate::health_check::HealthCheck;
 use crate::service::{AppService, AppServiceBuilder};
 use anyhow::anyhow;
 use axum::extract::FromRef;
@@ -17,8 +15,6 @@ where
     A: App<S> + ?Sized + 'static,
 {
     pub(crate) state: S,
-    /// Health checks that need to succeed before any of the services can run.
-    pub(crate) health_checks: BTreeMap<String, Box<dyn HealthCheck<S>>>,
     pub(crate) services: BTreeMap<String, Box<dyn AppService<A, S>>>,
 }
 
@@ -31,34 +27,8 @@ where
     pub(crate) fn new(state: &S) -> Self {
         Self {
             state: state.clone(),
-            health_checks: default_health_checks(state),
             services: Default::default(),
         }
-    }
-
-    /// Register a health check that needs to succeed before any service can run.
-    // Todo: Would it make more sense to add a separate method to the `App` trait?
-    pub fn register_health_check<H>(&mut self, health_check: H) -> RoadsterResult<()>
-    where
-        H: HealthCheck<S> + 'static,
-    {
-        let name = health_check.name();
-
-        if !health_check.enabled(&self.state) {
-            info!(name=%name, "Health check is not enabled, skipping registration");
-            return Ok(());
-        }
-
-        info!(name=%name, "Registering health check");
-
-        if self
-            .health_checks
-            .insert(name.clone(), Box::new(health_check))
-            .is_some()
-        {
-            return Err(anyhow!("Health check `{}` was already registered", name).into());
-        }
-        Ok(())
     }
 
     /// Register a new service. If the service is not enabled (e.g., [AppService::enabled] is `false`),

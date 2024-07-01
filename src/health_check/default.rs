@@ -2,27 +2,29 @@ use crate::app::context::AppContext;
 #[cfg(feature = "db-sql")]
 use crate::health_check::database::DatabaseHealthCheck;
 #[cfg(feature = "sidekiq")]
-use crate::health_check::sidekiq::SidekiqHealthCheck;
+use crate::health_check::sidekiq_enqueue::SidekiqEnqueueHealthCheck;
+#[cfg(feature = "sidekiq")]
+use crate::health_check::sidekiq_fetch::SidekiqFetchHealthCheck;
 use crate::health_check::HealthCheck;
-use axum::extract::FromRef;
-use std::collections::BTreeMap;
+use std::sync::Arc;
 
-pub fn default_health_checks<S>(state: &S) -> BTreeMap<String, Box<dyn HealthCheck<S>>>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-{
-    let health_check: Vec<Box<dyn HealthCheck<S>>> = vec![
+pub fn default_health_checks(
+    #[allow(unused_variables)] context: &AppContext,
+) -> Vec<Arc<dyn HealthCheck>> {
+    vec![
         #[cfg(feature = "db-sql")]
-        Box::new(DatabaseHealthCheck),
+        Arc::new(DatabaseHealthCheck {
+            context: context.clone(),
+        }),
         #[cfg(feature = "sidekiq")]
-        Box::new(SidekiqHealthCheck),
-    ];
-    health_check
-        .into_iter()
-        .filter(|health_check| health_check.enabled(state))
-        .map(|health_check| (health_check.name(), health_check))
-        .collect()
+        Arc::new(SidekiqEnqueueHealthCheck {
+            context: context.clone(),
+        }),
+        #[cfg(feature = "sidekiq")]
+        Arc::new(SidekiqFetchHealthCheck {
+            context: context.clone(),
+        }),
+    ]
 }
 
 #[cfg(all(test, feature = "sidekiq", feature = "db-sql",))]
@@ -53,7 +55,7 @@ mod tests {
 
         // Act
         let health_checks = super::default_health_checks(&context);
-        let health_checks = health_checks.keys().collect_vec();
+        let health_checks = health_checks.iter().map(|check| check.name()).collect_vec();
 
         // Assert
         assert_toml_snapshot!(health_checks);

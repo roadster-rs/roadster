@@ -2,6 +2,7 @@ use crate::app::metadata::AppMetadata;
 use crate::app::App;
 use crate::config::app_config::AppConfig;
 use crate::error::RoadsterResult;
+use crate::health_check::registry::HealthCheckRegistry;
 use axum::extract::FromRef;
 #[cfg(feature = "db-sql")]
 use sea_orm::DatabaseConnection;
@@ -74,6 +75,7 @@ impl AppContext {
             let inner = AppContextInner {
                 config,
                 metadata,
+                health_checks: HealthCheckRegistry::new(),
                 #[cfg(feature = "db-sql")]
                 db,
                 #[cfg(feature = "sidekiq")]
@@ -125,6 +127,10 @@ impl AppContext {
         self.inner.metadata()
     }
 
+    pub fn health_checks(&self) -> &HealthCheckRegistry {
+        self.inner.health_checks()
+    }
+
     #[cfg(feature = "db-sql")]
     pub fn db(&self) -> &DatabaseConnection {
         self.inner.db()
@@ -144,6 +150,7 @@ impl AppContext {
 struct AppContextInner {
     config: AppConfig,
     metadata: AppMetadata,
+    health_checks: HealthCheckRegistry,
     #[cfg(feature = "db-sql")]
     db: DatabaseConnection,
     #[cfg(feature = "sidekiq")]
@@ -164,6 +171,10 @@ impl AppContextInner {
 
     fn metadata(&self) -> &AppMetadata {
         &self.metadata
+    }
+
+    fn health_checks(&self) -> &HealthCheckRegistry {
+        &self.health_checks
     }
 
     #[cfg(feature = "db-sql")]
