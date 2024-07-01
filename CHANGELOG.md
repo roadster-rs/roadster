@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.4.0...roadster-v0.5.0) - 2024-07-01
+
+### Added
+- [**breaking**] Remove interior mutability of `HealthCheckRegistry` ([#258](https://github.com/roadster-rs/roadster/pull/258))
+
 ## [0.4.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.3.5...roadster-v0.4.0) - 2024-07-01
 
 ### Added
