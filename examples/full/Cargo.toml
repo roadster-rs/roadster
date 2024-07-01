@@ -11,7 +11,7 @@ default = ["grpc"]
 grpc = ["roadster/grpc", "dep:tonic", "dep:tonic-reflection", "dep:prost"]
 
 [dependencies]
-roadster = { version = "0.4", path = "../.." }
+roadster = { version = "0.5", path = "../.." }
 tokio = { workspace = true }
 tokio-util = { workspace = true }
 anyhow = { workspace = true }
