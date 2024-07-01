@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.3.5...roadster-v0.4.0) - 2024-07-01
+
+### Added
+- [**breaking**] Implement health check API using `HealthCheck` trait ([#255](https://github.com/roadster-rs/roadster/pull/255))
+- [**breaking**] Switch to Axum's `FromRef` for custom state ([#250](https://github.com/roadster-rs/roadster/pull/250))
+
+### Other
+- [**breaking**] Remove deprecated items in preparation of 0.4 release ([#253](https://github.com/roadster-rs/roadster/pull/253))
+- Add example for integrating with Leptos ([#252](https://github.com/roadster-rs/roadster/pull/252))
+- Use small number of sidekiq workers for `full` example in dev/test ([#251](https://github.com/roadster-rs/roadster/pull/251))
+
 ## [0.3.5](https://github.com/roadster-rs/roadster/compare/roadster-v0.3.4...roadster-v0.3.5) - 2024-06-24
 
 ### Fixed
