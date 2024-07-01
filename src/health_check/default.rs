@@ -6,12 +6,13 @@ use crate::health_check::sidekiq_enqueue::SidekiqEnqueueHealthCheck;
 #[cfg(feature = "sidekiq")]
 use crate::health_check::sidekiq_fetch::SidekiqFetchHealthCheck;
 use crate::health_check::HealthCheck;
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 pub fn default_health_checks(
     #[allow(unused_variables)] context: &AppContext,
-) -> Vec<Arc<dyn HealthCheck>> {
-    vec![
+) -> BTreeMap<String, Arc<dyn HealthCheck>> {
+    let health_checks: Vec<Arc<dyn HealthCheck>> = vec![
         #[cfg(feature = "db-sql")]
         Arc::new(DatabaseHealthCheck {
             context: context.clone(),
@@ -24,7 +25,12 @@ pub fn default_health_checks(
         Arc::new(SidekiqFetchHealthCheck {
             context: context.clone(),
         }),
-    ]
+    ];
+    health_checks
+        .into_iter()
+        .filter(|check| check.enabled())
+        .map(|check| (check.name(), check))
+        .collect()
 }
 
 #[cfg(all(test, feature = "sidekiq", feature = "db-sql",))]
@@ -32,9 +38,11 @@ mod tests {
     use crate::app::context::AppContext;
     use crate::config::app_config::AppConfig;
     use crate::util::test_util::TestCase;
+    use bb8::Pool;
     use insta::assert_toml_snapshot;
     use itertools::Itertools;
     use rstest::{fixture, rstest};
+    use sidekiq::RedisConnectionManager;
 
     #[fixture]
     #[cfg_attr(coverage_nightly, coverage(off))]
@@ -45,17 +53,21 @@ mod tests {
     #[rstest]
     #[case(false)]
     #[case(true)]
+    #[tokio::test]
     #[cfg_attr(coverage_nightly, coverage(off))]
-    fn default_middleware(_case: TestCase, #[case] default_enable: bool) {
+    async fn default_middleware(_case: TestCase, #[case] default_enable: bool) {
         // Arrange
         let mut config = AppConfig::test(None).unwrap();
         config.health_check.default_enable = default_enable;
 
-        let context = AppContext::test(Some(config), None, None).unwrap();
+        let redis_fetch = RedisConnectionManager::new("redis://invalid_host:1234").unwrap();
+        let pool = Pool::builder().build_unchecked(redis_fetch);
+
+        let context = AppContext::test(Some(config), None, Some(pool)).unwrap();
 
         // Act
         let health_checks = super::default_health_checks(&context);
-        let health_checks = health_checks.iter().map(|check| check.name()).collect_vec();
+        let health_checks = health_checks.keys().collect_vec();
 
         // Assert
         assert_toml_snapshot!(health_checks);

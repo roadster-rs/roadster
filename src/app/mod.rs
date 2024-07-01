@@ -12,7 +12,6 @@ use crate::config::app_config::AppConfig;
 #[cfg(not(feature = "cli"))]
 use crate::config::environment::Environment;
 use crate::error::RoadsterResult;
-use crate::health_check::default::default_health_checks;
 use crate::health_check::registry::HealthCheckRegistry;
 use crate::service::registry::ServiceRegistry;
 use crate::tracing::init_tracing;
@@ -68,10 +67,9 @@ where
 
     let state = A::provide_state(context.clone()).await?;
 
-    default_health_checks(&context)
-        .into_iter()
-        .try_for_each(|check| context.health_checks().register_arc(check))?;
-    A::health_checks(context.health_checks(), &state).await?;
+    let mut health_checks = HealthCheckRegistry::new(&context);
+    A::health_checks(&mut health_checks, &state).await?;
+    context.set_health_checks(health_checks)?;
 
     #[cfg(feature = "cli")]
     if crate::api::cli::handle_cli(&app, &roadster_cli, &app_cli, &state).await? {
@@ -142,13 +140,7 @@ where
     async fn provide_state(context: AppContext) -> RoadsterResult<S>;
 
     /// Provide the [crate::health_check::HealthCheck]s to use throughout the app.
-    ///
-    /// Note that a non-mutable reference to the [HealthCheckRegistry] is provided. This is because
-    /// [HealthCheckRegistry] implements the
-    /// [interior mutability](https://doc.rust-lang.org/reference/interior-mutability.html) pattern.
-    /// As such, ___it is not recommended to register additional health checks outside of
-    /// this method___ -- doing so may result in a panic.
-    async fn health_checks(_registry: &HealthCheckRegistry, _state: &S) -> RoadsterResult<()> {
+    async fn health_checks(_registry: &mut HealthCheckRegistry, _state: &S) -> RoadsterResult<()> {
         Ok(())
     }
 
