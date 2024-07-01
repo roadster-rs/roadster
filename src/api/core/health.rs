@@ -53,7 +53,7 @@ where
     let context = AppContext::from_ref(state);
     let timer = Instant::now();
 
-    let check_futures = context.health_checks().checks()?.into_iter().map(|check| {
+    let check_futures = context.health_checks().into_iter().map(|check| {
         Box::pin(async move {
             let name = check.name();
             info!(name=%name, "Running check");

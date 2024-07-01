@@ -3,10 +3,12 @@ use crate::app::App;
 use crate::config::app_config::AppConfig;
 use crate::error::RoadsterResult;
 use crate::health_check::registry::HealthCheckRegistry;
+use crate::health_check::HealthCheck;
+use anyhow::anyhow;
 use axum::extract::FromRef;
 #[cfg(feature = "db-sql")]
 use sea_orm::DatabaseConnection;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 #[cfg(not(test))]
 type Inner = AppContextInner;
@@ -75,7 +77,7 @@ impl AppContext {
             let inner = AppContextInner {
                 config,
                 metadata,
-                health_checks: HealthCheckRegistry::new(),
+                health_checks: OnceLock::new(),
                 #[cfg(feature = "db-sql")]
                 db,
                 #[cfg(feature = "sidekiq")]
@@ -127,8 +129,15 @@ impl AppContext {
         self.inner.metadata()
     }
 
-    pub fn health_checks(&self) -> &HealthCheckRegistry {
+    pub fn health_checks(&self) -> Vec<Arc<dyn HealthCheck>> {
         self.inner.health_checks()
+    }
+
+    pub(crate) fn set_health_checks(
+        &self,
+        health_checks: HealthCheckRegistry,
+    ) -> RoadsterResult<()> {
+        self.inner.set_health_checks(health_checks)
     }
 
     #[cfg(feature = "db-sql")]
@@ -150,7 +159,7 @@ impl AppContext {
 struct AppContextInner {
     config: AppConfig,
     metadata: AppMetadata,
-    health_checks: HealthCheckRegistry,
+    health_checks: OnceLock<HealthCheckRegistry>,
     #[cfg(feature = "db-sql")]
     db: DatabaseConnection,
     #[cfg(feature = "sidekiq")]
@@ -173,8 +182,19 @@ impl AppContextInner {
         &self.metadata
     }
 
-    fn health_checks(&self) -> &HealthCheckRegistry {
-        &self.health_checks
+    fn health_checks(&self) -> Vec<Arc<dyn HealthCheck>> {
+        self.health_checks
+            .get()
+            .map(|health_checks| health_checks.checks())
+            .unwrap_or_default()
+    }
+
+    fn set_health_checks(&self, health_checks: HealthCheckRegistry) -> RoadsterResult<()> {
+        self.health_checks
+            .set(health_checks)
+            .map_err(|_| anyhow!("Unable to set health check registry"))?;
+
+        Ok(())
     }
 
     #[cfg(feature = "db-sql")]
