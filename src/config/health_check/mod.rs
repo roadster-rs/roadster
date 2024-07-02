@@ -4,7 +4,9 @@ use crate::util::serde_util::default_true;
 use axum::extract::FromRef;
 use config::{FileFormat, FileSourceString};
 use serde_derive::{Deserialize, Serialize};
+use serde_with::serde_as;
 use std::collections::BTreeMap;
+use std::time::Duration;
 use validator::Validate;
 
 pub fn default_config() -> config::File<FileSourceString, FileFormat> {
@@ -17,6 +19,7 @@ pub fn default_config() -> config::File<FileSourceString, FileFormat> {
 pub struct HealthCheck {
     #[serde(default = "default_true")]
     pub default_enable: bool,
+    pub max_duration: MaxDuration,
     #[cfg(feature = "db-sql")]
     pub database: HealthCheckConfig<()>,
     #[cfg(feature = "sidekiq")]
@@ -50,7 +53,7 @@ pub struct HealthCheck {
     pub custom: BTreeMap<String, HealthCheckConfig<CustomConfig>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct CommonConfig {
@@ -77,7 +80,7 @@ impl CommonConfig {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct HealthCheckConfig<T> {
@@ -85,6 +88,27 @@ pub struct HealthCheckConfig<T> {
     pub common: CommonConfig,
     #[serde(flatten)]
     pub custom: T,
+}
+
+/// The maximum duration to wait for health checks to succeed before timing out and assuming
+/// the checks failed.
+#[serde_as]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct MaxDuration {
+    /// The maximum time (in milliseconds) to wait  when running checks on app startup.
+    #[serde_as(as = "serde_with::DurationMilliSeconds")]
+    pub startup: Duration,
+    /// The maximum time (in milliseconds) to wait when running checks via a web API (HTTP, gRPC, etc).
+    /// In the default `_health` HTTP endpoint, this can be overridden via the `maxDuration`
+    /// query parameter.
+    #[serde_as(as = "serde_with::DurationMilliSeconds")]
+    pub api: Duration,
+    /// The maximum time (in milliseconds) to wait when running checks via the CLI. This can be
+    /// overridden via the `-d/--max-duration` CLI arg.
+    #[serde_as(as = "serde_with::DurationMilliSeconds")]
+    pub cli: Duration,
 }
 
 #[cfg(test)]

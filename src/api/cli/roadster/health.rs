@@ -31,7 +31,13 @@ where
         _cli: &RoadsterCli,
         #[allow(unused_variables)] state: &S,
     ) -> RoadsterResult<bool> {
-        let duration = Duration::from_millis(self.max_duration.unwrap_or(10000));
+        let duration = self
+            .max_duration
+            .map(Duration::from_millis)
+            .unwrap_or_else(|| {
+                let context = AppContext::from_ref(state);
+                context.config().health_check.max_duration.startup
+            });
         let health = health_check(state, Some(duration)).await?;
         let health = serde_json::to_string_pretty(&health)?;
         info!("\n{health}");
