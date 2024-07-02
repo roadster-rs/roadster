@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.0...roadster-v0.5.1) - 2024-07-02
+
+### Added
+- Place health check results under `resources` in response ([#261](https://github.com/roadster-rs/roadster/pull/261))
+
+### Other
+- Fix typos in README ([#260](https://github.com/roadster-rs/roadster/pull/260))
+
 ## [0.5.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.4.0...roadster-v0.5.0) - 2024-07-01
 
 ### Added
