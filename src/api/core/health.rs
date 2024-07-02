@@ -29,7 +29,6 @@ use tracing::{info, instrument};
 pub struct HeathCheckResponse {
     /// Total latency of checking the health of the app.
     pub latency: u128,
-    #[serde(flatten)]
     pub resources: BTreeMap<String, CheckResponse>,
 }
 

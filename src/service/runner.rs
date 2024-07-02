@@ -8,13 +8,15 @@ use crate::health_check::Status;
 use crate::service::registry::ServiceRegistry;
 use anyhow::anyhow;
 use axum::extract::FromRef;
+use itertools::Itertools;
 use std::future::Future;
 use std::time::Duration;
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
-use tracing::{error, info, instrument};
+use tracing::{debug, error, info, instrument};
 
 #[cfg(feature = "cli")]
+#[instrument(skip_all)]
 pub(crate) async fn handle_cli<A, S>(
     roadster_cli: &RoadsterCli,
     app_cli: &A::Cli,
@@ -34,6 +36,7 @@ where
     Ok(false)
 }
 
+#[instrument(skip_all)]
 pub(crate) async fn health_checks(context: &AppContext) -> RoadsterResult<()> {
     let duration = Duration::from_secs(60);
     info!(
@@ -42,20 +45,26 @@ pub(crate) async fn health_checks(context: &AppContext) -> RoadsterResult<()> {
     );
     let response = health_check(context, Some(duration)).await?;
 
-    let error_response = response
+    let error_responses = response
         .resources
         .iter()
-        .find(|(_name, response)| !matches!(response.status, Status::Ok));
+        .filter(|(_name, response)| !matches!(response.status, Status::Ok))
+        .collect_vec();
 
-    if let Some((name, response)) = error_response {
-        let msg = format!("Resource is not healthy: {response:?}");
-        error!(name=%name, msg);
-        Err(anyhow!("{msg}"))?
-    } else {
+    error_responses.iter().for_each(|(name, response)| {
+        error!(name=%name, "Resource is not healthy");
+        debug!(name=%name, "Error details: {response:?}");
+    });
+
+    if error_responses.is_empty() {
         Ok(())
+    } else {
+        let names = error_responses.iter().map(|(name, _)| name).collect_vec();
+        Err(anyhow!("Health checks failed: {names:?}"))?
     }
 }
 
+#[instrument(skip_all)]
 pub(crate) async fn before_run<A, S>(
     service_registry: &ServiceRegistry<A, S>,
     state: &S,
