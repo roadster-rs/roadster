@@ -54,12 +54,13 @@ wasm-bindgen = "=0.2.92"
 http = "1"
 
 # Defines a size-optimized profile for the WASM bundle in release mode
-[profile.wasm-release]
-inherits = "release"
-opt-level = 'z'
-lto = true
-codegen-units = 1
-panic = "abort"
+# Commented out here because profiles are ignored for packages that aren't the workspace root
+#[profile.wasm-release]
+#inherits = "release"
+#opt-level = 'z'
+#lto = true
+#codegen-units = 1
+#panic = "abort"
 
 # Todo: PR on Leptos to allow providing these settings differently, either
 #   1. In a builder so we can use our own config file approach
@@ -125,7 +126,7 @@ lib-default-features = false
 # The profile to use for the lib target when compiling for release
 #
 # Optional. Defaults to "release".
-lib-profile-release = "wasm-release"
+#lib-profile-release = "wasm-release"
 
 [build-dependencies]
 vergen = { version = "8.0.0", features = ["git", "gitcl"] }
