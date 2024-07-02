@@ -96,7 +96,13 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    let duration = Duration::from_millis(query.max_duration.unwrap_or(1000));
+    let duration = query
+        .max_duration
+        .map(Duration::from_millis)
+        .unwrap_or_else(|| {
+            let context = AppContext::from_ref(&state);
+            context.config().health_check.max_duration.startup
+        });
     Ok(Json(health_check(&state, Some(duration)).await?))
 }
 

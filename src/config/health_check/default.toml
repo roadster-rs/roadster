@@ -1,3 +1,8 @@
+[health-check.max-duration]
+startup = 60000
+api = 1000
+cli = 10000
+
 [health-check.database]
 
 [health-check.sidekiq]
