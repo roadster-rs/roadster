@@ -95,7 +95,7 @@ framework ([React](https://react.dev/) / [Next](https://nextjs.org/) / [Vue](htt
 / etc) or
 using a Rust front-end
 framework ([Leptos](https://github.com/leptos-rs/leptos) / [Yew](https://github.com/yewstack/yew) / [Perseus](https://github.com/framesurge/perseus/) / [Sycamore](https://github.com/sycamore-rs/sycamore)
-/ etc). That said, we do have some examples of how to Roadster along with some these frameworks.
+/ etc). That said, we do have some examples of how to use Roadster with some these frameworks.
 
 ## Examples
 
