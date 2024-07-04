@@ -17,6 +17,7 @@ use axum::{Json, Router};
 #[cfg(feature = "open-api")]
 use schemars::JsonSchema;
 use serde_derive::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::time::Duration;
 use tracing::instrument;
 
@@ -119,6 +120,7 @@ fn health_get_docs(op: TransformOperation) -> TransformOperation {
                         CheckResponse::builder()
                             .status(Status::Ok)
                             .latency(Duration::from_secs(1))
+                            .custom(BTreeMap::from([("foo", 1234), ("bar", 5000)]))
                             .build(),
                     ),
                     (
@@ -134,6 +136,11 @@ fn health_get_docs(op: TransformOperation) -> TransformOperation {
                     ),
                 ]),
             })
+            .description(
+                "Health status of the app's resources. Each resource entry will
+                contain at least the `status` and `latency` fields, but can also contain arbitrary
+                data in the `custom` field.",
+            )
         })
 }
 

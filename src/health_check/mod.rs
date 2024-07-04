@@ -29,7 +29,6 @@ pub struct CheckResponse {
     pub latency: u128,
     /// Custom health data, for example, separate latency measurements for acquiring a connection
     /// from a resource pool vs making a request with the connection.
-    #[serde(flatten)]
     #[builder(default, setter(transform = |custom: impl serde::Serialize| serialize_custom(custom) ))]
     pub custom: Option<Value>,
 }
