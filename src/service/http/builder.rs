@@ -59,7 +59,8 @@ where
         let router = Router::<S>::new();
 
         #[cfg(feature = "open-api")]
-        let app_name = AppContext::from_ref(state).config().app.name.clone();
+        let context = AppContext::from_ref(state);
+
         Self {
             state: state.clone(),
             router,
@@ -67,7 +68,15 @@ where
             api_router: default_api_routes(path_root.unwrap_or_default(), state),
             #[cfg(feature = "open-api")]
             api_docs: Box::new(move |api| {
-                api.title(&app_name).description(&format!("# {}", app_name))
+                let api = api
+                    .title(&context.config().app.name)
+                    .description(&format!("# {}", context.config().app.name));
+                let api = if let Some(version) = context.metadata().version.as_ref() {
+                    api.version(version)
+                } else {
+                    api
+                };
+                api
             }),
             middleware: default_middleware(state),
             initializers: default_initializers(state),

@@ -1,17 +1,15 @@
 use crate::api::http::build_path;
 use crate::app::context::AppContext;
-use aide::axum::routing::get_with;
 use aide::axum::{ApiRouter, IntoApiResponse};
 use aide::openapi::OpenApi;
 use aide::redoc::Redoc;
 use aide::scalar::Scalar;
 use axum::extract::FromRef;
 use axum::response::IntoResponse;
+use axum::routing::get;
 use axum::{Extension, Json};
 use std::ops::Deref;
 use std::sync::Arc;
-
-const TAG: &str = "Docs";
 
 /// This API is only available when using Aide.
 pub fn routes<S>(parent: &str, state: &S) -> ApiRouter<S>
@@ -27,36 +25,25 @@ where
         return router;
     }
 
-    let router = router.api_route(
-        &open_api_schema_path,
-        get_with(docs_get, |op| op.description("OpenAPI schema").tag(TAG)),
-    );
+    let router = router.route(&open_api_schema_path, get(docs_get));
 
     let router = if scalar_enabled(&context) {
-        router.api_route_with(
+        router.route(
             &build_path(parent, scalar_route(&context)),
-            get_with(
-                Scalar::new(&open_api_schema_path)
-                    .with_title(&context.config().app.name)
-                    .axum_handler(),
-                |op| op.description("Documentation page.").tag(TAG),
-            ),
-            |p| p.security_requirement("ApiKey"),
+            get(Scalar::new(&open_api_schema_path)
+                .with_title(&context.config().app.name)
+                .axum_handler()),
         )
     } else {
         router
     };
 
     let router = if redoc_enabled(&context) {
-        router.api_route_with(
+        router.route(
             &build_path(parent, redoc_route(&context)),
-            get_with(
-                Redoc::new(&open_api_schema_path)
-                    .with_title(&context.config().app.name)
-                    .axum_handler(),
-                |op| op.description("Redoc documentation page.").tag(TAG),
-            ),
-            |p| p.security_requirement("ApiKey"),
+            get(Redoc::new(&open_api_schema_path)
+                .with_title(&context.config().app.name)
+                .axum_handler()),
         )
     } else {
         router
