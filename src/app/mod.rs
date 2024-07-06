@@ -3,6 +3,7 @@ pub mod metadata;
 
 #[cfg(feature = "cli")]
 use crate::api::cli::parse_cli;
+#[cfg(feature = "cli")]
 use crate::api::cli::roadster::RoadsterCli;
 #[cfg(all(test, feature = "cli"))]
 use crate::api::cli::MockTestCli;
@@ -121,9 +122,12 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    let app = &prepared_app.app;
-    let roadster_cli = &prepared_app.roadster_cli;
-    let app_cli = &prepared_app.app_cli;
+    #[cfg(feature = "cli")]
+    let (app, roadster_cli, app_cli) = (
+        &prepared_app.app,
+        &prepared_app.roadster_cli,
+        &prepared_app.app_cli,
+    );
     let state = &prepared_app.state;
     let context = AppContext::from_ref(state);
     let service_registry = &prepared_app.service_registry;
