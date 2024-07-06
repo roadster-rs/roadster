@@ -3,6 +3,7 @@ pub mod metadata;
 
 #[cfg(feature = "cli")]
 use crate::api::cli::parse_cli;
+use crate::api::cli::roadster::RoadsterCli;
 #[cfg(all(test, feature = "cli"))]
 use crate::api::cli::MockTestCli;
 #[cfg(feature = "cli")]
@@ -29,10 +30,38 @@ use std::env;
 use std::future;
 use tracing::{instrument, warn};
 
-pub async fn run<A, S>(
-    // This parameter is (currently) not used when no features are enabled.
-    #[allow(unused_variables)] app: A,
-) -> RoadsterResult<()>
+pub async fn run<A, S>(app: A) -> RoadsterResult<()>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S> + Default + Send + Sync + 'static,
+{
+    let prepared = prepare(app).await?;
+    run_prepared(prepared).await
+}
+
+#[non_exhaustive]
+pub struct PreparedApp<A, S>
+where
+    A: App<S> + 'static,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    pub app: A,
+    #[cfg(feature = "cli")]
+    pub roadster_cli: RoadsterCli,
+    #[cfg(feature = "cli")]
+    pub app_cli: A::Cli,
+    pub state: S,
+    pub service_registry: ServiceRegistry<A, S>,
+}
+
+/// Prepare the app. Does everything to prepare the app short of starting the app. Specifically,
+/// the following are skipped:
+/// 1. Handling CLI commands
+/// 2. Health checks
+/// 3. Starting any services
+pub async fn prepare<A, S>(app: A) -> RoadsterResult<PreparedApp<A, S>>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
@@ -67,17 +96,42 @@ where
 
     let state = A::provide_state(context.clone()).await?;
 
-    let mut health_checks = HealthCheckRegistry::new(&context);
-    A::health_checks(&mut health_checks, &state).await?;
-    context.set_health_checks(health_checks)?;
-
-    #[cfg(feature = "cli")]
-    if crate::api::cli::handle_cli(&app, &roadster_cli, &app_cli, &state).await? {
-        return Ok(());
-    }
+    let mut health_check_registry = HealthCheckRegistry::new(&context);
+    A::health_checks(&mut health_check_registry, &state).await?;
+    context.set_health_checks(health_check_registry)?;
 
     let mut service_registry = ServiceRegistry::new(&state);
     A::services(&mut service_registry, &state).await?;
+
+    Ok(PreparedApp {
+        app,
+        #[cfg(feature = "cli")]
+        roadster_cli,
+        #[cfg(feature = "cli")]
+        app_cli,
+        state,
+        service_registry,
+    })
+}
+
+/// Run a [PreparedApp] that was previously crated by [prepare]
+pub async fn run_prepared<A, S>(prepared_app: PreparedApp<A, S>) -> RoadsterResult<()>
+where
+    A: App<S> + 'static,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    let app = &prepared_app.app;
+    let roadster_cli = &prepared_app.roadster_cli;
+    let app_cli = &prepared_app.app_cli;
+    let state = &prepared_app.state;
+    let context = AppContext::from_ref(state);
+    let service_registry = &prepared_app.service_registry;
+
+    #[cfg(feature = "cli")]
+    if crate::api::cli::handle_cli(app, roadster_cli, app_cli, state).await? {
+        return Ok(());
+    }
 
     if service_registry.services.is_empty() {
         warn!("No enabled services were registered, exiting.");
@@ -85,9 +139,7 @@ where
     }
 
     #[cfg(feature = "cli")]
-    if crate::service::runner::handle_cli(&roadster_cli, &app_cli, &service_registry, &state)
-        .await?
-    {
+    if crate::service::runner::handle_cli(roadster_cli, app_cli, service_registry, state).await? {
         return Ok(());
     }
 
@@ -98,9 +150,9 @@ where
 
     crate::service::runner::health_checks(&context).await?;
 
-    crate::service::runner::before_run(&service_registry, &state).await?;
+    crate::service::runner::before_run(service_registry, state).await?;
 
-    crate::service::runner::run(service_registry, &state).await?;
+    crate::service::runner::run(prepared_app.service_registry, state).await?;
 
     Ok(())
 }
