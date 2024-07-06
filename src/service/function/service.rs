@@ -68,10 +68,11 @@ impl RoadsterApp<AppContext> for App {
 #     type Cli = AppCli;
 #     type M = Migrator;
 #
-#     async fn provide_state(_context: AppContext) -> RoadsterResult<AppContext> {
+#     async fn provide_state(&mut self, _context: AppContext) -> RoadsterResult<AppContext> {
 #         todo!()
 #     }
     async fn services(
+        &mut self,
         registry: &mut ServiceRegistry<Self, AppContext>,
         context: &AppContext,
     ) -> RoadsterResult<()> {

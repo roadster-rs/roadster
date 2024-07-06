@@ -25,7 +25,11 @@ impl AppContext {
     #[cfg_attr(test, allow(dead_code))]
     // The `A` type parameter isn't used in some feature configurations
     #[allow(clippy::extra_unused_type_parameters)]
-    pub(crate) async fn new<A, S>(config: AppConfig, metadata: AppMetadata) -> RoadsterResult<Self>
+    pub(crate) async fn new<A, S>(
+        #[allow(unused_variables)] app: &mut A,
+        config: AppConfig,
+        metadata: AppMetadata,
+    ) -> RoadsterResult<Self>
     where
         S: Clone + Send + Sync + 'static,
         AppContext: FromRef<S>,
@@ -39,7 +43,7 @@ impl AppContext {
         #[cfg(not(test))]
         let context = {
             #[cfg(feature = "db-sql")]
-            let db = sea_orm::Database::connect(A::db_connection_options(&config)?).await?;
+            let db = sea_orm::Database::connect(app.db_connection_options(&config)?).await?;
 
             #[cfg(feature = "sidekiq")]
             let (redis_enqueue, redis_fetch) = {

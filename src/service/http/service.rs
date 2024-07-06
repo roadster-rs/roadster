@@ -129,6 +129,9 @@ impl HttpService {
     }
 
     /// Generate an OpenAPI schema for the HTTP API.
+    ///
+    /// If an output path is provided, the schema json is written to the path. Otherwise,
+    /// it is printed to stdout.
     #[cfg(feature = "open-api")]
     pub fn open_api_schema(
         &self,
@@ -148,6 +151,12 @@ impl HttpService {
             info!("{schema_json}");
         };
         Ok(())
+    }
+
+    /// Get the [OpenApi] object for this service.
+    #[cfg(feature = "open-api")]
+    pub fn open_api(&self) -> Arc<OpenApi> {
+        self.api.clone()
     }
 }
 

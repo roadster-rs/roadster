@@ -35,7 +35,7 @@ pub async fn run<A, S>(app: A) -> RoadsterResult<()>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + Default + Send + Sync + 'static,
+    A: App<S> + Send + Sync + 'static,
 {
     let prepared = prepare(app).await?;
     run_prepared(prepared).await
@@ -62,11 +62,11 @@ where
 /// 1. Handling CLI commands
 /// 2. Health checks
 /// 3. Starting any services
-pub async fn prepare<A, S>(app: A) -> RoadsterResult<PreparedApp<A, S>>
+pub async fn prepare<A, S>(mut app: A) -> RoadsterResult<PreparedApp<A, S>>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + Default + Send + Sync + 'static,
+    A: App<S> + Send + Sync + 'static,
 {
     #[cfg(feature = "cli")]
     let (roadster_cli, app_cli) = parse_cli::<A, S, _, _>(env::args_os())?;
@@ -78,7 +78,7 @@ where
 
     let config = AppConfig::new(environment)?;
 
-    A::init_tracing(&config)?;
+    app.init_tracing(&config)?;
 
     #[cfg(not(feature = "cli"))]
     config.validate(true)?;
@@ -86,23 +86,24 @@ where
     config.validate(!roadster_cli.skip_validate_config)?;
 
     #[cfg(not(test))]
-    let metadata = A::metadata(&config)?;
+    let metadata = app.metadata(&config)?;
 
     // The `config.clone()` here is technically not necessary. However, without it, RustRover
     // is giving a "value used after move" error when creating an actual `AppContext` below.
     #[cfg(test)]
     let context = AppContext::test(Some(config.clone()), None, None)?;
     #[cfg(not(test))]
-    let context = AppContext::new::<A, S>(config, metadata).await?;
+    let context = AppContext::new::<A, S>(&mut app, config, metadata).await?;
 
-    let state = A::provide_state(context.clone()).await?;
+    let state = app.provide_state(context.clone()).await?;
 
     let mut health_check_registry = HealthCheckRegistry::new(&context);
-    A::health_checks(&mut health_check_registry, &state).await?;
+    app.health_checks(&mut health_check_registry, &state)
+        .await?;
     context.set_health_checks(health_check_registry)?;
 
     let mut service_registry = ServiceRegistry::new(&state);
-    A::services(&mut service_registry, &state).await?;
+    app.services(&mut service_registry, &state).await?;
 
     Ok(PreparedApp {
         app,
@@ -173,18 +174,18 @@ where
     #[cfg(feature = "db-sql")]
     type M: MigratorTrait;
 
-    fn init_tracing(config: &AppConfig) -> RoadsterResult<()> {
-        init_tracing(config, &Self::metadata(config)?)?;
+    fn init_tracing(&mut self, config: &AppConfig) -> RoadsterResult<()> {
+        init_tracing(config, &self.metadata(config)?)?;
 
         Ok(())
     }
 
-    fn metadata(_config: &AppConfig) -> RoadsterResult<AppMetadata> {
+    fn metadata(&mut self, _config: &AppConfig) -> RoadsterResult<AppMetadata> {
         Ok(Default::default())
     }
 
     #[cfg(feature = "db-sql")]
-    fn db_connection_options(config: &AppConfig) -> RoadsterResult<ConnectOptions> {
+    fn db_connection_options(&mut self, config: &AppConfig) -> RoadsterResult<ConnectOptions> {
         Ok(ConnectOptions::from(&config.database))
     }
 
@@ -193,15 +194,23 @@ where
     /// extract its [AppContext] when needed.
     ///
     /// See the following for more details regarding [FromRef]: <https://docs.rs/axum/0.7.5/axum/extract/trait.FromRef.html>
-    async fn provide_state(context: AppContext) -> RoadsterResult<S>;
+    async fn provide_state(&mut self, context: AppContext) -> RoadsterResult<S>;
 
     /// Provide the [crate::health_check::HealthCheck]s to use throughout the app.
-    async fn health_checks(_registry: &mut HealthCheckRegistry, _state: &S) -> RoadsterResult<()> {
+    async fn health_checks(
+        &mut self,
+        _registry: &mut HealthCheckRegistry,
+        _state: &S,
+    ) -> RoadsterResult<()> {
         Ok(())
     }
 
     /// Provide the [crate::service::AppService]s to run in the app.
-    async fn services(_registry: &mut ServiceRegistry<Self, S>, _state: &S) -> RoadsterResult<()> {
+    async fn services(
+        &mut self,
+        _registry: &mut ServiceRegistry<Self, S>,
+        _state: &S,
+    ) -> RoadsterResult<()> {
         Ok(())
     }
 
