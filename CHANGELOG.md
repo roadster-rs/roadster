@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.3...roadster-v0.5.4) - 2024-07-07
+
+### Added
+- Add method to prepare the app separately from running it ([#270](https://github.com/roadster-rs/roadster/pull/270))
+
+### Fixed
+- Correctly add the `ApiRouter` to the HTTP service's `ApiRouter` ([#273](https://github.com/roadster-rs/roadster/pull/273))
+
+### Other
+- Fixes for default openapi docs ([#271](https://github.com/roadster-rs/roadster/pull/271))
+
 ## [0.5.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.2...roadster-v0.5.3) - 2024-07-04
 
 ### Other
