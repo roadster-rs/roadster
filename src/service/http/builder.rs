@@ -104,7 +104,7 @@ where
 
     #[cfg(feature = "open-api")]
     pub fn api_router(mut self, router: ApiRouter<S>) -> Self {
-        self.router = self.router.merge(router);
+        self.api_router = self.api_router.merge(router);
         self
     }
 
