@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.5](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.4...roadster-v0.5.5) - 2024-07-08
+
+### Added
+- Allow configuring the tracing log output format ([#275](https://github.com/roadster-rs/roadster/pull/275))
+
 ## [0.5.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.3...roadster-v0.5.4) - 2024-07-07
 
 ### Added
