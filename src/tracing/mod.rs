@@ -21,6 +21,7 @@ use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::EnvFilter;
 
 use crate::config::app_config::AppConfig;
+use crate::config::tracing::Format;
 use crate::error::RoadsterResult;
 
 // Todo: make this configurable
@@ -30,7 +31,42 @@ pub fn init_tracing(
     metadata: &AppMetadata,
 ) -> RoadsterResult<()> {
     // Stdout Layer
-    let stdout_layer = tracing_subscriber::fmt::layer();
+    // Each format results in a different type, so we can't use a `match` on the format enum.
+    // Instead, we need to create an optional layer of each type, and add all of them to the
+    // registry -- if a layer is `None`, it won't actually be added.
+    let compact_log_layer = if matches!(config.tracing.format, Format::Compact) {
+        Some(tracing_subscriber::fmt::layer().compact())
+    } else {
+        None
+    };
+    let pretty_log_layer = if matches!(config.tracing.format, Format::Pretty) {
+        Some(tracing_subscriber::fmt::layer().pretty())
+    } else {
+        None
+    };
+    let json_log_layer = if matches!(config.tracing.format, Format::Json) {
+        Some(tracing_subscriber::fmt::layer().json())
+    } else {
+        None
+    };
+    match config.tracing.format {
+        Format::None => {
+            assert!(
+                pretty_log_layer.is_none()
+                    && compact_log_layer.is_none()
+                    && json_log_layer.is_none()
+            )
+        }
+        Format::Pretty => {
+            assert!(pretty_log_layer.is_some())
+        }
+        Format::Compact => {
+            assert!(compact_log_layer.is_some())
+        }
+        Format::Json => {
+            assert!(json_log_layer.is_some())
+        }
+    }
 
     #[cfg(feature = "otel")]
     if config.tracing.trace_propagation {
@@ -104,7 +140,9 @@ pub fn init_tracing(
 
     let registry = tracing_subscriber::Registry::default()
         .with(env_filter)
-        .with(stdout_layer);
+        .with(compact_log_layer)
+        .with(pretty_log_layer)
+        .with(json_log_layer);
 
     #[cfg(feature = "otel")]
     let registry = { registry.with(oltp_traces_layer).with(otlp_metrics_layer) };
