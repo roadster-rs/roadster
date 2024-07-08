@@ -1,2 +1,3 @@
 [tracing]
+format = "compact"
 trace-propagation = true

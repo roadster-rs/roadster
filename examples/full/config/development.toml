@@ -1,3 +1,6 @@
+[tracing]
+format = "pretty"
+
 [auth.jwt]
 secret = "secret-dev"
 

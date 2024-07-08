@@ -2,6 +2,7 @@
 use crate::util::serde_util::default_true;
 use config::{FileFormat, FileSourceString};
 use serde_derive::{Deserialize, Serialize};
+use strum_macros::{EnumString, IntoStaticStr};
 #[cfg(feature = "otel")]
 use url::Url;
 use validator::Validate;
@@ -16,6 +17,9 @@ pub fn default_config() -> config::File<FileSourceString, FileFormat> {
 pub struct Tracing {
     pub level: String,
 
+    /// The format to use when printing traces to logs.
+    pub format: Format,
+
     /// The name of the service to use for the OpenTelemetry `service.name` field. If not provided,
     /// will use the [`App::name`][crate::config::app_config::App] config value, translated to `snake_case`.
     #[cfg(feature = "otel")]
@@ -29,6 +33,17 @@ pub struct Tracing {
     /// URI of the OTLP exporter where traces/metrics/logs will be sent.
     #[cfg(feature = "otel")]
     pub otlp_endpoint: Option<Url>,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, EnumString, IntoStaticStr)]
+#[serde(rename_all = "kebab-case")]
+#[strum(serialize_all = "kebab-case")]
+#[non_exhaustive]
+pub enum Format {
+    None,
+    Pretty,
+    Compact,
+    Json,
 }
 
 // To simplify testing, these are only run when all of the config fields are available
@@ -49,28 +64,32 @@ mod deserialize_tests {
     #[case(
         r#"
         level = "debug"
+        format = "compact"
         "#
     )]
     #[case(
         r#"
         level = "info"
+        format = "json"
         service-name = "foo"
         "#
     )]
     #[case(
         r#"
         level = "error"
+        format = "pretty"
         trace-propagation = false
         "#
     )]
     #[case(
         r#"
         level = "debug"
+        format = "none"
         otlp-endpoint = "https://example.com:1234"
         "#
     )]
     #[cfg_attr(coverage_nightly, coverage(off))]
-    fn sidekiq(_case: TestCase, #[case] config: &str) {
+    fn tracing(_case: TestCase, #[case] config: &str) {
         let tracing: Tracing = toml::from_str(config).unwrap();
 
         assert_toml_snapshot!(tracing);

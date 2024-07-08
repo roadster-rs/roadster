@@ -1,6 +1,7 @@
 ---
-source: src/config/tracing.rs
+source: src/config/tracing/mod.rs
 expression: tracing
 ---
 level = 'debug'
+format = 'compact'
 trace-propagation = true

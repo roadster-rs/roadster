@@ -1,7 +1,8 @@
 ---
-source: src/config/tracing.rs
+source: src/config/tracing/mod.rs
 expression: tracing
 ---
 level = 'debug'
+format = 'none'
 trace-propagation = true
 otlp-endpoint = 'https://example.com:1234/'
