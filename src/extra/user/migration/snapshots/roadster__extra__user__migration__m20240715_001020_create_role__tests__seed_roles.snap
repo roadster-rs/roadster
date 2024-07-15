@@ -1,0 +1,8 @@
+---
+source: src/extra/user/migration/m20240715_001020_create_role.rs
+expression: queries
+---
+[
+    "INSERT INTO \"role\" (\"id\", \"name\") VALUES ('[uuid]', CAST('user' AS role_name))",
+    "INSERT INTO \"role\" (\"id\", \"name\") VALUES ('[uuid]', CAST('super_admin' AS role_name))",
+]

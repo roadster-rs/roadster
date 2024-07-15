@@ -10,6 +10,8 @@ path = "src/lib.rs"
 
 [dependencies]
 tokio = { workspace = true }
+# Todo: put migrations/schemas in different crate?
+roadster = { path = "../../.." }
 
 [dependencies.sea-orm-migration]
 version = "1.0.0-rc.5"

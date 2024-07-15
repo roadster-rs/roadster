@@ -9,6 +9,8 @@ pub mod api;
 pub mod app;
 pub mod config;
 pub mod error;
+// Todo: Move to separate crate?
+pub mod extra;
 pub mod health_check;
 pub mod middleware;
 pub mod service;

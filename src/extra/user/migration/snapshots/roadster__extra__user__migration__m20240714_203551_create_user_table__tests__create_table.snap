@@ -1,0 +1,5 @@
+---
+source: src/extra/user/migration/m20240714_203551_create_user_table.rs
+expression: query.to_string(PostgresQueryBuilder)
+---
+CREATE TABLE IF NOT EXISTS "user" ( "created_at" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP, "id" uuid PRIMARY KEY, "name" varchar NOT NULL CHECK (CHAR_LENGTH("name") > 0), "username" varchar NOT NULL UNIQUE CHECK (CHAR_LENGTH("username") > 0), "email" varchar NOT NULL UNIQUE CHECK (CHAR_LENGTH("email") > 0), "password" varchar NOT NULL, "email_confirmation_sent_at" timestamp with time zone NULL, "email_confirmation_token" varchar NULL, "email_confirmed_at" timestamp with time zone NULL, "last_sign_in_at" timestamp with time zone NULL, "recovery_sent_at" timestamp with time zone NULL, "recovery_token" varchar NULL, "email_change_sent_at" timestamp with time zone NULL, "email_change_token_new" varchar NULL, "email_change_token_current" varchar NULL, "deleted_at" timestamp with time zone NULL )

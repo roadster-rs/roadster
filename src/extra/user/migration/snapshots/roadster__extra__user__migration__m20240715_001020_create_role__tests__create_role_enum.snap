@@ -1,0 +1,5 @@
+---
+source: src/extra/user/migration/m20240715_001020_create_role.rs
+expression: query.to_string(PostgresQueryBuilder)
+---
+CREATE TYPE "role_name" AS ENUM ('user', 'super_admin')
