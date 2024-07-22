@@ -3,6 +3,7 @@ use std::str::FromStr;
 use crate::app::metadata::AppMetadata;
 #[cfg(feature = "otel")]
 use convert_case::{Case, Casing};
+#[cfg(feature = "otel")]
 use opentelemetry::trace::TracerProvider;
 #[cfg(feature = "otel")]
 use opentelemetry_otlp::WithExportConfig;
