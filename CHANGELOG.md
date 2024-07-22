@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.6](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.5...roadster-v0.5.6) - 2024-07-22
+
+### Added
+- Add `TestCase` utility for configuring `insta` settings ([#277](https://github.com/roadster-rs/roadster/pull/277))
+
 ## [0.5.5](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.4...roadster-v0.5.5) - 2024-07-08
 
 ### Added
