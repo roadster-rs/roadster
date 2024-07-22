@@ -4,6 +4,8 @@ use crate::app::metadata::AppMetadata;
 #[cfg(feature = "otel")]
 use convert_case::{Case, Casing};
 #[cfg(feature = "otel")]
+use opentelemetry::trace::TracerProvider;
+#[cfg(feature = "otel")]
 use opentelemetry_otlp::WithExportConfig;
 #[cfg(feature = "otel")]
 use opentelemetry_sdk::metrics::reader::{DefaultAggregationSelector, DefaultTemporalitySelector};
@@ -74,15 +76,19 @@ pub fn init_tracing(
     }
 
     #[cfg(feature = "otel")]
-    let otel_resource = {
-        let service_name = config
-            .tracing
-            .service_name
-            .clone()
-            .or(metadata.name.clone())
-            .unwrap_or(config.app.name.to_case(Case::Snake));
+    let service_name = config
+        .tracing
+        .service_name
+        .clone()
+        .or(metadata.name.clone())
+        .unwrap_or(config.app.name.to_case(Case::Snake));
 
-        let mut resource_metadata = vec![opentelemetry::KeyValue::new(SERVICE_NAME, service_name)];
+    #[cfg(feature = "otel")]
+    let otel_resource = {
+        let mut resource_metadata = vec![opentelemetry::KeyValue::new(
+            SERVICE_NAME,
+            service_name.clone(),
+        )];
 
         if let Some(version) = metadata.version.clone() {
             resource_metadata.push(opentelemetry::KeyValue::new(SERVICE_VERSION, version))
@@ -102,9 +108,10 @@ pub fn init_tracing(
                     .with_endpoint(otlp_endpoint.to_string()),
             )
             .with_trace_config(
-                opentelemetry_sdk::trace::config().with_resource(otel_resource.clone()),
+                opentelemetry_sdk::trace::Config::default().with_resource(otel_resource.clone()),
             )
-            .install_batch(Tokio)?;
+            .install_batch(Tokio)?
+            .tracer(service_name);
         // Create a tracing layer with the configured tracer
         Some(tracing_opentelemetry::layer().with_tracer(otlp_tracer))
     } else {

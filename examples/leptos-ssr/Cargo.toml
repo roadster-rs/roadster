@@ -51,7 +51,6 @@ leptos_config = { version = "0.6.3" }
 tower = "0.4.13"
 tower-http = { version = "0.5", features = ["fs"], optional = true }
 wasm-bindgen = "=0.2.92"
-http = "1"
 
 # Defines a size-optimized profile for the WASM bundle in release mode
 # Commented out here because profiles are ignored for packages that aren't the workspace root
