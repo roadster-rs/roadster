@@ -7,7 +7,7 @@ use serde_with::serde_as;
 use std::collections::BTreeMap;
 use url::Url;
 
-use crate::util::serde_util::{deserialize_from_str, serialize_to_str, UriOrString};
+use crate::util::serde::{deserialize_from_str, serialize_to_str, UriOrString};
 
 /// JWT Claims. Provides fields for the default/recommended registered claim names. Additional
 /// claim names are collected in the `custom` map.
@@ -71,7 +71,7 @@ pub enum Acr {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::serde_util::Wrapper;
+    use crate::util::serde::Wrapper;
     use serde_json::from_str;
     use std::str::FromStr;
     use url::Url;

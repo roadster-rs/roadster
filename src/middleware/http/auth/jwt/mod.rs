@@ -9,7 +9,7 @@ use crate::error::{Error, RoadsterResult};
 use crate::middleware::http::auth::jwt::ietf::Claims;
 #[cfg(all(feature = "jwt-openid", not(feature = "jwt-ietf")))]
 use crate::middleware::http::auth::jwt::openid::Claims;
-use crate::util::serde_util::{deserialize_from_str, serialize_to_str};
+use crate::util::serde::{deserialize_from_str, serialize_to_str};
 #[cfg(feature = "open-api")]
 use aide::OperationInput;
 use async_trait::async_trait;
@@ -130,7 +130,7 @@ pub enum Subject {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::serde_util::Wrapper;
+    use crate::util::serde::Wrapper;
     use serde_json::from_str;
     use std::str::FromStr;
     use url::Url;

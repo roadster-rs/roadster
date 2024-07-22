@@ -286,8 +286,8 @@ where
 mod tests {
     use super::*;
     use crate::config::app_config::AppConfig;
-    use crate::util::serde_util::Wrapper;
-    use crate::util::test_util::TestCase;
+    use crate::testing::snapshot::TestCase;
+    use crate::util::serde::Wrapper;
     use insta::assert_toml_snapshot;
     use rstest::{fixture, rstest};
 

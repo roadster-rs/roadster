@@ -133,7 +133,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::serde_util::Wrapper;
+    use crate::util::serde::Wrapper;
     use serde_json::from_str;
 
     #[test]
@@ -179,7 +179,7 @@ mod tests {
 #[cfg(test)]
 mod deserialize_tests {
     use super::*;
-    use crate::util::test_util::TestCase;
+    use crate::testing::snapshot::TestCase;
     use insta::assert_toml_snapshot;
     use rstest::{fixture, rstest};
 

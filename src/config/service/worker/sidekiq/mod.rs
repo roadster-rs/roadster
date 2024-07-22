@@ -106,7 +106,7 @@ pub struct ConnectionPool {
 #[cfg(test)]
 mod deserialize_tests {
     use super::*;
-    use crate::util::test_util::TestCase;
+    use crate::testing::snapshot::TestCase;
     use insta::assert_toml_snapshot;
     use rstest::{fixture, rstest};
 

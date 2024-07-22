@@ -1,5 +1,5 @@
 use crate::middleware::http::auth::jwt::Subject;
-use crate::util::serde_util::UriOrString;
+use crate::util::serde::UriOrString;
 use chrono::serde::ts_seconds;
 use chrono::{DateTime, Utc};
 use serde_derive::{Deserialize, Serialize};
@@ -55,7 +55,7 @@ mod tests {
     use super::*;
     use crate::error::RoadsterResult;
     use crate::middleware::http::auth::jwt::decode_auth_token;
-    use crate::util::serde_util::{UriOrString, Wrapper};
+    use crate::util::serde::{UriOrString, Wrapper};
     use chrono::{TimeDelta, Utc};
     use jsonwebtoken::{encode, EncodingKey, Header, TokenData};
     use serde_json::from_str;

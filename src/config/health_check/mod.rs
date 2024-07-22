@@ -1,6 +1,6 @@
 use crate::app::context::AppContext;
 use crate::config::app_config::CustomConfig;
-use crate::util::serde_util::default_true;
+use crate::util::serde::default_true;
 use axum::extract::FromRef;
 use config::{FileFormat, FileSourceString};
 use serde_derive::{Deserialize, Serialize};

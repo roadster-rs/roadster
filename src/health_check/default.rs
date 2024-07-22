@@ -37,7 +37,7 @@ pub fn default_health_checks(
 mod tests {
     use crate::app::context::AppContext;
     use crate::config::app_config::AppConfig;
-    use crate::util::test_util::TestCase;
+    use crate::testing::snapshot::TestCase;
     use bb8::Pool;
     use insta::assert_toml_snapshot;
     use itertools::Itertools;

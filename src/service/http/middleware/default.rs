@@ -43,7 +43,7 @@ where
 mod tests {
     use crate::app::context::AppContext;
     use crate::config::app_config::AppConfig;
-    use crate::util::test_util::TestCase;
+    use crate::testing::snapshot::TestCase;
     use insta::assert_toml_snapshot;
     use itertools::Itertools;
     use rstest::{fixture, rstest};
