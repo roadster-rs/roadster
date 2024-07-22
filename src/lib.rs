@@ -23,5 +23,7 @@ pub mod error;
 pub mod health_check;
 pub mod middleware;
 pub mod service;
+#[cfg(any(test, feature = "testing"))]
+pub mod testing;
 pub mod tracing;
 pub mod util;

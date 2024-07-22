@@ -1,4 +1,4 @@
-use crate::util::serde_util::UriOrString;
+use crate::util::serde::UriOrString;
 use serde_derive::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -35,7 +35,7 @@ pub struct JwtClaims {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::test_util::TestCase;
+    use crate::testing::snapshot::TestCase;
     use insta::assert_toml_snapshot;
     use rstest::{fixture, rstest};
 

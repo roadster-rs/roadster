@@ -1,0 +1,5 @@
+---
+source: src/testing/snapshot.rs
+expression: "format!(\"Foo '{uuid}' bar\")"
+---
+Foo '[uuid]' bar

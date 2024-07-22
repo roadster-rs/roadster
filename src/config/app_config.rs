@@ -6,7 +6,7 @@ use crate::config::health_check::HealthCheck;
 use crate::config::service::Service;
 use crate::config::tracing::Tracing;
 use crate::error::RoadsterResult;
-use crate::util::serde_util::default_true;
+use crate::util::serde::default_true;
 use config::builder::DefaultState;
 use config::{Case, Config, ConfigBuilder, FileFormat};
 use dotenvy::dotenv;

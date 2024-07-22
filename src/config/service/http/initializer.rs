@@ -1,7 +1,7 @@
 use crate::app::context::AppContext;
 use crate::config::app_config::CustomConfig;
 use crate::service::http::initializer::normalize_path::NormalizePathConfig;
-use crate::util::serde_util::default_true;
+use crate::util::serde::default_true;
 use axum::extract::FromRef;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeMap;

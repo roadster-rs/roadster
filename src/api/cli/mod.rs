@@ -155,7 +155,7 @@ mockall::mock! {
 mod tests {
     use super::*;
     use crate::app::MockApp;
-    use crate::util::test_util::TestCase;
+    use crate::testing::snapshot::TestCase;
     use insta::assert_toml_snapshot;
     use itertools::Itertools;
     use rstest::{fixture, rstest};

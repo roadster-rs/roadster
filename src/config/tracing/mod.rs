@@ -1,5 +1,5 @@
 #[cfg(feature = "otel")]
-use crate::util::serde_util::default_true;
+use crate::util::serde::default_true;
 use config::{FileFormat, FileSourceString};
 use serde_derive::{Deserialize, Serialize};
 use strum_macros::{EnumString, IntoStaticStr};
@@ -50,7 +50,7 @@ pub enum Format {
 #[cfg(all(test, feature = "otel"))]
 mod deserialize_tests {
     use super::*;
-    use crate::util::test_util::TestCase;
+    use crate::testing::snapshot::TestCase;
     use insta::assert_toml_snapshot;
     use rstest::{fixture, rstest};
 

@@ -1,5 +1,5 @@
 use crate::app::context::AppContext;
-use crate::util::serde_util::default_true;
+use crate::util::serde::default_true;
 use axum::extract::FromRef;
 use serde_derive::{Deserialize, Serialize};
 use validator::Validate;
