@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.8](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.7...roadster-v0.5.8) - 2024-07-22
+
+### Other
+- Remove the `update` justfile command ([#282](https://github.com/roadster-rs/roadster/pull/282))
+- Use the main project README.md as the library's top-level docs ([#281](https://github.com/roadster-rs/roadster/pull/281))
+
 ## [0.5.7](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.6...roadster-v0.5.7) - 2024-07-22
 
 ### Other
