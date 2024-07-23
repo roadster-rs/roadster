@@ -1,0 +1,5 @@
+---
+source: src/migration/user/create_table.rs
+expression: query.to_string(PostgresQueryBuilder)
+---
+DROP TABLE "user"

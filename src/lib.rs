@@ -11,6 +11,8 @@ pub mod config;
 pub mod error;
 pub mod health_check;
 pub mod middleware;
+#[cfg(feature = "db-sql")]
+pub mod migration;
 pub mod service;
 #[cfg(any(test, feature = "testing"))]
 pub mod testing;
