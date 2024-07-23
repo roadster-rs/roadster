@@ -166,6 +166,7 @@ async fn graceful_shutdown_signal<F>(cancellation_token: CancellationToken, app_
 where
     F: Future<Output = ()> + Send + 'static,
 {
+    #[allow(clippy::expect_used)]
     let ctrl_c = async {
         tokio::signal::ctrl_c()
             .await
@@ -173,6 +174,7 @@ where
     };
 
     #[cfg(unix)]
+    #[allow(clippy::expect_used)]
     let sigterm = async {
         tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
             .expect("Failed to install SIGTERM handler")

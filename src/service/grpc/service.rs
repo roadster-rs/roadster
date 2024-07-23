@@ -52,7 +52,7 @@ where
 
         self.router
             .into_inner()
-            .unwrap()
+            .map_err(|e| anyhow!("Unable to start GrpcService, mutex was poisoned: {e}"))?
             .serve_with_shutdown(
                 server_addr
                     .parse()

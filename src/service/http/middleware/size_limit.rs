@@ -21,7 +21,8 @@ pub struct SizeLimitConfig {
 impl Default for SizeLimitConfig {
     fn default() -> Self {
         Self {
-            limit: Byte::from_u64_with_unit(5, MB).unwrap(),
+            #[allow(clippy::expect_used)]
+            limit: Byte::from_u64_with_unit(5, MB).expect("Unable to build Byte unit."),
         }
     }
 }

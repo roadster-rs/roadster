@@ -7,3 +7,6 @@ disallowed-macros = [
     { path = "log::warn", reason = "Use tracing::warn instead" },
     { path = "log::error", reason = "Use tracing::error instead" },
 ]
+
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
