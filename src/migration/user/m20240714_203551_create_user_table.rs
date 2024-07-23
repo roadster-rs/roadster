@@ -1,5 +1,5 @@
-use crate::extra::migration::check::str_not_empty;
-use crate::extra::migration::schema::{pk_uuid, table};
+use crate::migration::check::str_not_empty;
+use crate::migration::schema::{pk_uuid, table};
 use sea_orm_migration::prelude::*;
 use sea_orm_migration::schema::{string, string_null, string_uniq, timestamp_with_time_zone_null};
 

@@ -3,7 +3,8 @@ use sea_orm_migration::prelude::*;
 use sea_orm_migration::schema::{big_integer, timestamp_with_time_zone};
 
 #[derive(DeriveIden)]
-enum GeneralIds {
+#[non_exhaustive]
+pub enum GeneralIds {
     CreatedAt,
     UpdatedAt,
 }
@@ -54,7 +55,7 @@ where
 }
 
 /// Create a primary key column using [Uuid][sea_orm::sea_query::ColumnType::Uuid] as the column
-/// type. A new v4 UUID will be generated as the default if no value is provided by the application.
+/// type. A new v7 UUID will be generated as the default if no value is provided by the application.
 ///
 /// Note: This requires that your database supports generating v7 UUIDs using a method named
 /// `uuid_generate_v7()`.
