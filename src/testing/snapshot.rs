@@ -3,6 +3,7 @@
 use crate::util::regex::UUID_REGEX;
 use insta::internals::SettingsBindDropGuard;
 use insta::Settings;
+use itertools::Itertools;
 use std::thread::current;
 use typed_builder::TypedBuilder;
 
@@ -201,12 +202,22 @@ pub fn snapshot_redact_uuid(settings: &mut Settings) -> &mut Settings {
 /// See: <https://github.com/la10736/rstest/issues/177>
 fn description_from_current_thread() -> String {
     let thread_name = current().name().unwrap_or("").to_string();
-    let description = thread_name
+    description_from_thread_name(&thread_name)
+}
+
+fn description_from_thread_name(name: &str) -> String {
+    let description = name
         .split("::")
-        .map(|item| item.split('_').skip(2).collect::<Vec<&str>>().join("_"))
+        .map(|item| {
+            if item.starts_with("case_") {
+                item.split('_').skip(2).join("_")
+            } else {
+                item.to_string()
+            }
+        })
         .last()
         .filter(|s| !s.is_empty())
-        .unwrap_or(thread_name.split("::").last().unwrap().to_string());
+        .unwrap_or(name.split("::").last().unwrap().to_string());
     description
 }
 
@@ -214,8 +225,14 @@ fn description_from_current_thread() -> String {
 mod tests {
     use super::*;
     use insta::assert_snapshot;
-    use rstest::rstest;
+    use rstest::{fixture, rstest};
     use uuid::Uuid;
+
+    #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn case() -> TestCase {
+        Default::default()
+    }
 
     #[rstest]
     #[case(0, false)]
@@ -260,11 +277,25 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn uuid() {
         let _case = TestCase::new();
 
         let uuid = Uuid::new_v4();
 
         assert_snapshot!(format!("Foo '{uuid}' bar"));
+    }
+
+    #[rstest]
+    #[case("")]
+    #[case("foo")]
+    #[case("foo::bar")]
+    #[case("foo::bar::x_y_z_1_2_3")]
+    #[case("foo::bar::case_1_x_y_z_1_2_3")]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn description_from_thread_name(_case: TestCase, #[case] name: &str) {
+        let description = super::description_from_thread_name(name);
+
+        assert_snapshot!(description);
     }
 }

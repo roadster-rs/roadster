@@ -26,3 +26,53 @@ where
 {
     Expr::expr(Func::char_length(Expr::col(name))).gte(len)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::testing::snapshot::TestCase;
+    use insta::assert_snapshot;
+    use rstest::{fixture, rstest};
+    use sea_orm_migration::schema::string;
+
+    #[derive(DeriveIden)]
+    pub(crate) enum Foo {
+        Table,
+        Bar,
+    }
+
+    #[fixture]
+    fn case() -> TestCase {
+        Default::default()
+    }
+
+    #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn table_stmt() -> TableCreateStatement {
+        Table::create().table(Foo::Table).to_owned()
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn str_not_empty(_case: TestCase, mut table_stmt: TableCreateStatement) {
+        table_stmt.col(string(Foo::Bar).check(super::str_not_empty(Foo::Bar)));
+
+        assert_snapshot!(table_stmt.to_string(PostgresQueryBuilder));
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn str_len_gt(_case: TestCase, mut table_stmt: TableCreateStatement) {
+        table_stmt.col(string(Foo::Bar).check(super::str_len_gt(Foo::Bar, 1)));
+
+        assert_snapshot!(table_stmt.to_string(PostgresQueryBuilder));
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn str_len_gte(_case: TestCase, mut table_stmt: TableCreateStatement) {
+        table_stmt.col(string(Foo::Bar).check(super::str_len_gte(Foo::Bar, 1)));
+
+        assert_snapshot!(table_stmt.to_string(PostgresQueryBuilder));
+    }
+}
