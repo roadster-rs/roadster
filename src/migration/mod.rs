@@ -5,4 +5,5 @@
 
 pub mod check;
 pub mod schema;
+pub mod timestamp;
 pub mod user;

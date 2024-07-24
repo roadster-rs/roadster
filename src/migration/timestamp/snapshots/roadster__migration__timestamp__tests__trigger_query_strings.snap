@@ -1,0 +1,13 @@
+---
+source: src/migration/timestamp/mod.rs
+expression: trigger_query_strings
+---
+TriggerQueryNames {
+    fn_query_strings: FnQueryStrings {
+        column: "updated_at",
+        fn_name: "update_timestamp_updated_at",
+        fn_call: "update_timestamp_updated_at()",
+    },
+    table: "public.foo",
+    trigger_name: "foo_update_timestamp_updated_at",
+}
