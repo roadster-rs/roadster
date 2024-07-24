@@ -41,6 +41,9 @@ and [Poem](https://github.com/poem-web/poem).
 - Structured logs/traces using tokio's [tracing](https://docs.rs/tracing/latest/tracing/) crate. Export traces/metrics
   using OpenTelemetry (requires the `otel` feature).
 - Health checks to ensure the app's external dependencies are healthy
+- Pre-built migrations for common DB tables, e.g. `user` (requires the `db-sql` feature)
+- Support for auto-updating timestamp columns, e.g. `updated_at`, when updating DB rows (Postgres only currently) (
+  requires the `db-sql` feature)
 
 # Getting started
 

@@ -1,4 +1,4 @@
-//! Migrations to create a basic `user` table that contains the following fields:
+//! Migration to create a basic `user` table that contains the following fields:
 //!
 //! - Id (BIGINT)
 //! - Name

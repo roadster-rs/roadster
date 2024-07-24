@@ -1,0 +1,10 @@
+---
+source: src/migration/user/tests.rs
+expression: user_migrations
+---
+[
+    "m20240714_203551_create_user_table_uuid_pk",
+    "m20240723_070533_add_user_account_management_fields",
+    "m20240723_201404_add_update_timestamp_function",
+    "m20240724_005115_user_update_timestamp",
+]

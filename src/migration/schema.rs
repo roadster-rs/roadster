@@ -10,20 +10,30 @@ use sea_orm_migration::{prelude::*, schema::*};
 /// Timestamp related fields.
 #[derive(DeriveIden)]
 #[non_exhaustive]
-pub enum Timetamps {
+pub enum Timestamps {
     /// When the row was created. When used with the [timestamps] method, will default to
     /// the current timestamp (with timezone).
     CreatedAt,
     /// When the row was updated. When used with the [timestamps] method, will be initially set to
-    /// the current timestamp (with timezone). Updates to the row will need to provide this field
-    /// as well in order for it to be updated.
-    // Todo: does seaorm automatically update this?
+    /// the current timestamp (with timezone).
+    ///
+    /// To automatically update the value for a row whenever the row is updated, include the
+    /// [crate::migration::timestamp::m20240723_201404_add_update_timestamp_function::Migration]
+    /// in your [MigratorTrait] implementation, along with a [MigrationTrait] for your table
+    /// that add a trigger to update the column. Helper methods are provided for this in
+    /// the [crate::migration::timestamp] module. Specifically, see:
+    /// - [crate::migration::timestamp::exec_create_update_timestamp_trigger]
+    /// - [crate::migration::timestamp::exec_drop_update_timestamp_trigger]
+    ///
+    /// Note that the auto-updates mentioned above are currently only supported on Postgres. If
+    /// an app is using a different DB, it will need to manually update the timestamp when updating
+    /// a row.
     UpdatedAt,
 }
 
 /// Create a table if it does not exist yet and add some default columns
 /// (e.g., create/update timestamps).
-pub fn table<T: IntoIden + 'static>(name: T) -> TableCreateStatement {
+pub fn table<T: IntoTableRef>(name: T) -> TableCreateStatement {
     timestamps(Table::create().table(name).if_not_exists().to_owned())
 }
 
@@ -31,8 +41,8 @@ pub fn table<T: IntoIden + 'static>(name: T) -> TableCreateStatement {
 /// The default for each column is the current timestamp.
 pub fn timestamps(mut table: TableCreateStatement) -> TableCreateStatement {
     table
-        .col(timestamp_with_time_zone(Timetamps::CreatedAt).default(Expr::current_timestamp()))
-        .col(timestamp_with_time_zone(Timetamps::UpdatedAt).default(Expr::current_timestamp()))
+        .col(timestamp_with_time_zone(Timestamps::CreatedAt).default(Expr::current_timestamp()))
+        .col(timestamp_with_time_zone(Timestamps::UpdatedAt).default(Expr::current_timestamp()))
         .to_owned()
 }
 
