@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.9](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.8...roadster-v0.5.9) - 2024-07-24
+
+### Added
+- Auto-update timestamp columns ([#287](https://github.com/roadster-rs/roadster/pull/287))
+- Add SeaORM migrations and utils to create `user` table ([#284](https://github.com/roadster-rs/roadster/pull/284))
+
+### Other
+- Disallow `unwrap` and `expect` except in tests ([#286](https://github.com/roadster-rs/roadster/pull/286))
+
 ## [0.5.8](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.7...roadster-v0.5.8) - 2024-07-22
 
 ### Other
