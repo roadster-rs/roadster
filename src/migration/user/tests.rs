@@ -3,6 +3,7 @@ use insta::assert_debug_snapshot;
 use itertools::Itertools;
 
 #[test]
+#[cfg_attr(coverage_nightly, coverage(off))]
 fn user_migrator_migrations() {
     let user_migrations = UserMigrator::migrations()
         .into_iter()
@@ -12,6 +13,7 @@ fn user_migrator_migrations() {
 }
 
 #[test]
+#[cfg_attr(coverage_nightly, coverage(off))]
 fn user_migrator_migrations_no_int_pk() {
     let user_migrations = UserMigrator::migrations()
         .into_iter()

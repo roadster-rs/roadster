@@ -100,3 +100,87 @@ where
 {
     pk_uuid(name).default(default).to_owned()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::testing::snapshot::TestCase;
+    use insta::assert_snapshot;
+    use rstest::{fixture, rstest};
+
+    #[derive(DeriveIden)]
+    pub(crate) enum Foo {
+        Table,
+        Bar,
+    }
+
+    #[fixture]
+    fn case() -> TestCase {
+        Default::default()
+    }
+
+    #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn table_stmt() -> TableCreateStatement {
+        Table::create().table(Foo::Table).to_owned()
+    }
+
+    #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn table() {
+        let statement = super::table(Foo::Table);
+
+        assert_snapshot!(statement.to_string(PostgresQueryBuilder));
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn timestamps(_case: TestCase, table_stmt: TableCreateStatement) {
+        let table_stmt = super::timestamps(table_stmt);
+
+        assert_snapshot!(table_stmt.to_string(PostgresQueryBuilder));
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn pk_bigint_auto(_case: TestCase, mut table_stmt: TableCreateStatement) {
+        table_stmt.col(super::pk_bigint_auto(Foo::Bar));
+
+        assert_snapshot!(table_stmt.to_string(PostgresQueryBuilder));
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn pk_uuid(_case: TestCase, mut table_stmt: TableCreateStatement) {
+        table_stmt.col(super::pk_uuid(Foo::Bar));
+
+        assert_snapshot!(table_stmt.to_string(PostgresQueryBuilder));
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn pk_uuidv4(_case: TestCase, mut table_stmt: TableCreateStatement) {
+        table_stmt.col(super::pk_uuidv4(Foo::Bar));
+
+        assert_snapshot!(table_stmt.to_string(PostgresQueryBuilder));
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn pk_uuidv7(_case: TestCase, mut table_stmt: TableCreateStatement) {
+        table_stmt.col(super::pk_uuidv7(Foo::Bar));
+
+        assert_snapshot!(table_stmt.to_string(PostgresQueryBuilder));
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn pk_uuid_default(_case: TestCase, mut table_stmt: TableCreateStatement) {
+        table_stmt.col(super::pk_uuid_default(
+            Foo::Bar,
+            Expr::cust("custom_uuid_fn()"),
+        ));
+
+        assert_snapshot!(table_stmt.to_string(PostgresQueryBuilder));
+    }
+}

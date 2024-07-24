@@ -1,0 +1,5 @@
+---
+source: src/migration/schema.rs
+expression: table_stmt.to_string(PostgresQueryBuilder)
+---
+CREATE TABLE "foo" ( "bar" uuid PRIMARY KEY DEFAULT custom_uuid_fn() )
