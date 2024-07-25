@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.10](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.9...roadster-v0.5.10) - 2024-07-25
+
+### Added
+- Use IDENTITY column for int primary keys instead of BIGSERIAL ([#293](https://github.com/roadster-rs/roadster/pull/293))
+
+### Fixed
+- Add "if exists" to user's drop_table migration statement ([#292](https://github.com/roadster-rs/roadster/pull/292))
+
+### Other
+- Add tests for schema and check helper methods ([#289](https://github.com/roadster-rs/roadster/pull/289))
+
 ## [0.5.9](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.8...roadster-v0.5.9) - 2024-07-24
 
 ### Added
