@@ -22,7 +22,7 @@ pub(crate) fn create_table(pk_col: ColumnDef) -> TableCreateStatement {
 }
 
 pub(crate) fn drop_table() -> TableDropStatement {
-    Table::drop().table(User::Table).to_owned()
+    Table::drop().if_exists().table(User::Table).to_owned()
 }
 
 #[cfg(test)]
