@@ -6,6 +6,7 @@
 //! timezone, while SeaORM/Loco do not.
 
 use sea_orm_migration::{prelude::*, schema::*};
+use typed_builder::TypedBuilder;
 
 /// Timestamp related fields.
 #[derive(DeriveIden)]
@@ -46,13 +47,78 @@ pub fn timestamps(mut table: TableCreateStatement) -> TableCreateStatement {
         .to_owned()
 }
 
+/// Create a `BIGINT` primary key column with no default -- the application would need to provide
+/// the value. Not exposed publicly; this should only be used internally as a utility method.
+fn pk_bigint<T>(name: T) -> ColumnDef
+where
+    T: IntoIden,
+{
+    big_integer(name).primary_key().to_owned()
+}
+
 /// Create an auto-incrementing primary key column using [BigInteger][sea_orm::sea_query::ColumnType::BigInteger]
 /// as the column type.
+#[deprecated(
+    since = "0.5.10",
+    note = "This creates a `BIGSERIAL` column, which is not recommended. Use `pk_bigint_identity` instead to create an IDENTITY column, as recommended [here](https://wiki.postgresql.org/wiki/Don%27t_Do_This#Don.27t_use_serial)."
+)]
 pub fn pk_bigint_auto<T>(name: T) -> ColumnDef
 where
     T: IntoIden,
 {
-    big_integer(name).primary_key().auto_increment().to_owned()
+    pk_bigint(name).auto_increment().to_owned()
+}
+
+/// Create an auto-incrementing primary key column using [BigInteger][sea_orm::sea_query::ColumnType::BigInteger]
+/// as the column type. This creates an `IDENTITY` column instead of a `BIGSERIAL` as recommended
+/// [here](https://wiki.postgresql.org/wiki/Don%27t_Do_This#Don.27t_use_serial).
+///
+/// See also: <https://www.postgresql.org/docs/17/ddl-identity-columns.html>
+pub fn pk_bigint_identity<T>(name: T) -> ColumnDef
+where
+    T: IntoIden,
+{
+    pk_bigint(name)
+        .extra("GENERATED ALWAYS AS IDENTITY")
+        .to_owned()
+}
+
+/// Configuration options for creating an `IDENTITY` column.
+#[derive(TypedBuilder)]
+pub struct IdentityOptions {
+    /// If `true`, will add `ALWAYS` to the column definition, which will prevent the application
+    /// from providing a value for the column. If the application needs to be able to set the
+    /// value of the column, set to `false`.
+    ///
+    /// See: <https://www.postgresql.org/docs/17/ddl-identity-columns.html>
+    #[builder(default = true)]
+    always: bool,
+
+    /// The value for the `START WITH` option of the `IDENTITY` sequence.
+    ///
+    /// See: <https://www.postgresql.org/docs/current/sql-createsequence.html>
+    #[builder(default = 1)]
+    start: i64,
+
+    /// The value for the `INCREMENT BY` option of the `IDENTITY` sequence.
+    ///
+    /// See: <https://www.postgresql.org/docs/current/sql-createsequence.html>
+    #[builder(default = 1)]
+    increment: i64,
+}
+
+/// Same as [pk_bigint_identity], except allows configuring the IDENTITY column with the
+/// given [IdentityOptions].
+pub fn pk_bigint_identity_options<T>(name: T, options: IdentityOptions) -> ColumnDef
+where
+    T: IntoIden,
+{
+    let always = if options.always { " ALWAYS" } else { "" };
+    let generated = format!(
+        "GENERATED{} AS IDENTITY (START WITH {} INCREMENT BY {})",
+        always, options.start, options.increment
+    );
+    pk_bigint(name).extra(generated).to_owned()
 }
 
 /// Create a primary key column using [Uuid][sea_orm::sea_query::ColumnType::Uuid] as the column
@@ -143,8 +209,48 @@ mod tests {
 
     #[rstest]
     #[cfg_attr(coverage_nightly, coverage(off))]
+    fn pk_bigint(_case: TestCase, mut table_stmt: TableCreateStatement) {
+        table_stmt.col(super::pk_bigint(Foo::Bar));
+
+        assert_snapshot!(table_stmt.to_string(PostgresQueryBuilder));
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn pk_bigint_auto(_case: TestCase, mut table_stmt: TableCreateStatement) {
+        #[allow(deprecated)]
         table_stmt.col(super::pk_bigint_auto(Foo::Bar));
+
+        assert_snapshot!(table_stmt.to_string(PostgresQueryBuilder));
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn pk_bigint_identity(_case: TestCase, mut table_stmt: TableCreateStatement) {
+        table_stmt.col(super::pk_bigint_identity(Foo::Bar));
+
+        assert_snapshot!(table_stmt.to_string(PostgresQueryBuilder));
+    }
+
+    #[rstest]
+    #[case(true, 1, 1)]
+    #[case(false, 1, 1)]
+    #[case(true, -100, 1)]
+    #[case(true, 0, 1)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn pk_bigint_identity_options(
+        _case: TestCase,
+        mut table_stmt: TableCreateStatement,
+        #[case] always: bool,
+        #[case] start: i64,
+        #[case] increment: i64,
+    ) {
+        let options = IdentityOptions::builder()
+            .always(always)
+            .start(start)
+            .increment(increment)
+            .build();
+        table_stmt.col(super::pk_bigint_identity_options(Foo::Bar, options));
 
         assert_snapshot!(table_stmt.to_string(PostgresQueryBuilder));
     }

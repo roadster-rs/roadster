@@ -1,5 +1,5 @@
 use crate::migration::check::str_not_empty;
-use crate::migration::schema::{pk_bigint_auto, pk_uuid, table};
+use crate::migration::schema::{pk_bigint_identity, pk_uuid, table};
 use crate::migration::user::User;
 use sea_orm_migration::{prelude::*, schema::*};
 
@@ -8,7 +8,7 @@ pub(crate) fn create_table_uuid_pk() -> TableCreateStatement {
 }
 
 pub(crate) fn create_table_int_pk() -> TableCreateStatement {
-    create_table(pk_bigint_auto(User::Id))
+    create_table(pk_bigint_identity(User::Id))
 }
 
 pub(crate) fn create_table(pk_col: ColumnDef) -> TableCreateStatement {
