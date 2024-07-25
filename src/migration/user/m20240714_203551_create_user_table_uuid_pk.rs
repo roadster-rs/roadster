@@ -8,7 +8,7 @@
 //!
 //! To add more fields, use the other migrations in the `user` mod.
 
-use crate::migration::user::create_table::{create_table_uuid_pk, drop_table};
+use crate::migration::user::create_and_drop_table::{create_table_uuid_pk, drop_table};
 use sea_orm_migration::prelude::*;
 
 #[derive(Default, DeriveMigrationName)]

@@ -1,7 +1,7 @@
 use crate::migration::timestamp::m20240723_201404_add_update_timestamp_function;
 use sea_orm_migration::prelude::*;
 
-mod create_table;
+mod create_and_drop_table;
 pub mod m20240714_203550_create_user_table_int_pk;
 pub mod m20240714_203551_create_user_table_uuid_pk;
 pub mod m20240723_070533_add_user_account_management_fields;
