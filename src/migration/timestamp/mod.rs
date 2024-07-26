@@ -387,8 +387,8 @@ mod tests {
 
     #[rstest]
     #[case(DbBackend::Postgres)]
-    #[case(DbBackend::Postgres)]
     #[case(DbBackend::MySql)]
+    #[case(DbBackend::Sqlite)]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn add_update_timestamp_trigger(_case: TestCase, #[case] backend: DbBackend) {
         let statement = super::create_update_timestamp_trigger_for_db_backend(
@@ -403,6 +403,7 @@ mod tests {
     #[rstest]
     #[case(DbBackend::Postgres)]
     #[case(DbBackend::MySql)]
+    #[case(DbBackend::Sqlite)]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn drop_update_timestamp_trigger(_case: TestCase, #[case] backend: DbBackend) {
         let statement = super::drop_update_timestamp_trigger_for_db_backend(
@@ -417,6 +418,7 @@ mod tests {
     #[rstest]
     #[case(DbBackend::Postgres)]
     #[case(DbBackend::MySql)]
+    #[case(DbBackend::Sqlite)]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn add_update_timestamp_function(_case: TestCase, #[case] backend: DbBackend) {
         let statement =
@@ -428,6 +430,7 @@ mod tests {
     #[rstest]
     #[case(DbBackend::Postgres)]
     #[case(DbBackend::MySql)]
+    #[case(DbBackend::Sqlite)]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn drop_update_timestamp_function(_case: TestCase, #[case] backend: DbBackend) {
         let statement =
@@ -437,12 +440,14 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn fn_query_strings() {
         let fn_query_strings = FnQueryStrings::new(Foo::UpdatedAt);
         assert_debug_snapshot!(fn_query_strings);
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn trigger_query_strings() {
         let trigger_query_strings = TriggerQueryNames::new(Foo::Table, Foo::UpdatedAt);
         assert_debug_snapshot!(trigger_query_strings);
