@@ -127,31 +127,74 @@ pub fn pk_uuid<T>(name: T) -> ColumnDef
 where
     T: IntoIden,
 {
-    ColumnDef::new(name).uuid().primary_key().to_owned()
+    uuid(name).primary_key().to_owned()
 }
+
+/// Create a column using [Uuid][sea_orm::sea_query::ColumnType::Uuid] as the column
+/// type. A new v4 UUID will be generated as the default if no value is provided by the application.
+///
+/// Note: This requires that your database supports generating v4 UUIDs using a method named
+/// `uuid_generate_v4()`.
+pub fn uuid_v4<T>(name: T) -> ColumnDef
+where
+    T: IntoIden,
+{
+    uuid_default(name, Expr::cust("uuid_generate_v4()"))
+}
+
+#[deprecated(since = "0.5.11", note = "Renamed as `pk_uuid_v4`.")]
+pub use pk_uuid_v4 as pk_uuidv4;
 
 /// Create a primary key column using [Uuid][sea_orm::sea_query::ColumnType::Uuid] as the column
 /// type. A new v4 UUID will be generated as the default if no value is provided by the application.
 ///
 /// Note: This requires that your database supports generating v4 UUIDs using a method named
 /// `uuid_generate_v4()`.
-pub fn pk_uuidv4<T>(name: T) -> ColumnDef
+pub fn pk_uuid_v4<T>(name: T) -> ColumnDef
 where
     T: IntoIden,
 {
-    pk_uuid_default(name, Expr::cust("uuid_generate_v4()"))
+    uuid_v4(name).primary_key().to_owned()
 }
+
+/// Create a column using [Uuid][sea_orm::sea_query::ColumnType::Uuid] as the column
+/// type. A new v7 UUID will be generated as the default if no value is provided by the application.
+///
+/// Note: This requires that your database supports generating v7 UUIDs using a method named
+/// `uuid_generate_v7()`.
+pub fn uuid_v7<T>(name: T) -> ColumnDef
+where
+    T: IntoIden,
+{
+    uuid_default(name, Expr::cust("uuid_generate_v7()"))
+}
+
+#[deprecated(since = "0.5.11", note = "Renamed as `pk_uuid_v7`.")]
+pub use pk_uuid_v7 as pk_uuidv7;
 
 /// Create a primary key column using [Uuid][sea_orm::sea_query::ColumnType::Uuid] as the column
 /// type. A new v7 UUID will be generated as the default if no value is provided by the application.
 ///
 /// Note: This requires that your database supports generating v7 UUIDs using a method named
 /// `uuid_generate_v7()`.
-pub fn pk_uuidv7<T>(name: T) -> ColumnDef
+pub fn pk_uuid_v7<T>(name: T) -> ColumnDef
 where
     T: IntoIden,
 {
-    pk_uuid_default(name, Expr::cust("uuid_generate_v7()"))
+    uuid_v7(name).primary_key().to_owned()
+}
+
+/// Create a column using [Uuid][sea_orm::sea_query::ColumnType::Uuid] as the column
+/// type.
+///
+/// Provide a `default` expression in order to define how a default value is generated if no value
+/// is not provided by the application.
+pub fn uuid_default<T, D>(name: T, default: D) -> ColumnDef
+where
+    T: IntoIden,
+    D: Into<SimpleExpr>,
+{
+    uuid(name).default(default).to_owned()
 }
 
 /// Create a primary key column using [Uuid][sea_orm::sea_query::ColumnType::Uuid] as the column
@@ -164,7 +207,7 @@ where
     T: IntoIden,
     D: Into<SimpleExpr>,
 {
-    pk_uuid(name).default(default).to_owned()
+    uuid_default(name, default).primary_key().to_owned()
 }
 
 #[cfg(test)]
@@ -265,16 +308,43 @@ mod tests {
 
     #[rstest]
     #[cfg_attr(coverage_nightly, coverage(off))]
-    fn pk_uuidv4(_case: TestCase, mut table_stmt: TableCreateStatement) {
-        table_stmt.col(super::pk_uuidv4(Foo::Bar));
+    fn uuid_v4(_case: TestCase, mut table_stmt: TableCreateStatement) {
+        table_stmt.col(super::uuid_v4(Foo::Bar));
 
         assert_snapshot!(table_stmt.to_string(PostgresQueryBuilder));
     }
 
     #[rstest]
     #[cfg_attr(coverage_nightly, coverage(off))]
-    fn pk_uuidv7(_case: TestCase, mut table_stmt: TableCreateStatement) {
-        table_stmt.col(super::pk_uuidv7(Foo::Bar));
+    fn pk_uuid_v4(_case: TestCase, mut table_stmt: TableCreateStatement) {
+        table_stmt.col(super::pk_uuid_v4(Foo::Bar));
+
+        assert_snapshot!(table_stmt.to_string(PostgresQueryBuilder));
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn uuid_v7(_case: TestCase, mut table_stmt: TableCreateStatement) {
+        table_stmt.col(super::uuid_v7(Foo::Bar));
+
+        assert_snapshot!(table_stmt.to_string(PostgresQueryBuilder));
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn pk_uuid_v7(_case: TestCase, mut table_stmt: TableCreateStatement) {
+        table_stmt.col(super::pk_uuid_v7(Foo::Bar));
+
+        assert_snapshot!(table_stmt.to_string(PostgresQueryBuilder));
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn uuid_default(_case: TestCase, mut table_stmt: TableCreateStatement) {
+        table_stmt.col(super::uuid_default(
+            Foo::Bar,
+            Expr::cust("custom_uuid_fn()"),
+        ));
 
         assert_snapshot!(table_stmt.to_string(PostgresQueryBuilder));
     }
