@@ -6,6 +6,9 @@ pub mod m20240714_203550_create_user_table_int_pk;
 pub mod m20240714_203551_create_user_table_uuid_pk;
 pub mod m20240723_070533_add_user_account_management_fields;
 pub mod m20240724_005115_user_update_timestamp;
+pub mod m20240729_000812_password_updated_at;
+mod m20240729_002549_password_updated_at_function;
+mod m20240729_002615_password_updated_at_trigger;
 #[cfg(test)]
 mod tests;
 
@@ -18,6 +21,15 @@ pub(crate) enum User {
     Username,
     Email,
     Password,
+    /// When the user's password was updated. Defaults to the[crate::migration::timestamp::Timestamps::UpdatedAt]
+    /// time. Useful in the event users' passwords may have been compromised and the application
+    /// needs to enforce that users update their passwords.
+    ///
+    /// Updated automatically when the [User::Password] is updated, assuming the following
+    /// migrations are applied:
+    /// 1. [m20240729_002549_password_updated_at_function::Migration]
+    /// 2. [m20240729_002615_password_updated_at_trigger::Migration]
+    PasswordUpdatedAt,
     EmailConfirmationSentAt,
     EmailConfirmationToken,
     EmailConfirmedAt,
@@ -53,6 +65,9 @@ impl MigratorTrait for UserMigrator {
             Box::new(m20240723_070533_add_user_account_management_fields::Migration),
             Box::new(m20240723_201404_add_update_timestamp_function::Migration),
             Box::new(m20240724_005115_user_update_timestamp::Migration),
+            Box::new(m20240729_000812_password_updated_at::Migration),
+            Box::new(m20240729_002549_password_updated_at_function::Migration),
+            Box::new(m20240729_002615_password_updated_at_trigger::Migration),
         ]
     }
 }
