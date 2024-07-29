@@ -30,11 +30,63 @@ pub mod m20240723_201404_add_update_timestamp_function;
 /// #    }
 /// }
 /// ```
-pub async fn exec_create_update_timestamp_function<T: IntoIden>(
+pub async fn exec_create_update_timestamp_function<C: IntoIden>(
     manager: &SchemaManager<'_>,
-    column: T,
+    timestamp_column: C,
 ) -> Result<(), DbErr> {
-    let statement = create_update_timestamp_function(manager, column);
+    let statement = create_update_timestamp_function(manager, timestamp_column);
+    if let Some(statement) = statement {
+        manager.get_connection().execute(statement).await?;
+    }
+
+    Ok(())
+}
+
+/// Wrapper around [create_update_timestamp_function_dep_column] to execute the returned
+/// [Statement], if present.
+///
+/// # Examples
+/// ```rust
+/// use roadster::migration::schema::Timestamps;
+/// use roadster::migration::timestamp::{exec_create_update_timestamp_function_dep_column};
+/// use sea_orm_migration::prelude::*;
+///
+/// #[derive(DeriveMigrationName)]
+/// pub struct Migration;
+///
+/// #[derive(DeriveIden)]
+/// pub(crate) enum User {
+///     Table,
+///     Name,
+///     NameUpdatedAt
+/// }
+///
+/// const TIMESTAMP_COLUMN: User = User::NameUpdatedAt;
+/// const DEPENDENT_COLUMN: User = User::Name;
+///
+/// #[async_trait::async_trait]
+/// impl MigrationTrait for Migration {
+///     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+///         exec_create_update_timestamp_function_dep_column(
+///             manager,
+///             TIMESTAMP_COLUMN,
+///             DEPENDENT_COLUMN,
+///         )
+///         .await
+///     }
+/// #
+/// #    async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+/// #        todo!()
+/// #    }
+/// }
+/// ```
+pub async fn exec_create_update_timestamp_function_dep_column<C: IntoIden, D: IntoIden>(
+    manager: &SchemaManager<'_>,
+    timestamp_column: C,
+    dep_column: D,
+) -> Result<(), DbErr> {
+    let statement =
+        create_update_timestamp_function_dep_column(manager, timestamp_column, dep_column);
     if let Some(statement) = statement {
         manager.get_connection().execute(statement).await?;
     }
@@ -46,22 +98,46 @@ pub async fn exec_create_update_timestamp_function<T: IntoIden>(
 /// a [Statement] containing the SQL instructions to create the function.
 ///
 /// Note: Currently only supports Postgres. If another DB is used, will return [None].
-pub fn create_update_timestamp_function<T: IntoIden>(
+pub fn create_update_timestamp_function<C: IntoIden>(
     manager: &SchemaManager<'_>,
-    column: T,
+    timestamp_column: C,
 ) -> Option<Statement> {
     let backend = manager.get_database_backend();
-    create_update_timestamp_function_for_db_backend(backend, column)
+    create_update_timestamp_function_for_db_backend(backend, timestamp_column)
 }
 
-fn create_update_timestamp_function_for_db_backend<T: IntoIden>(
+/// Create a SQL function to update a timestamp column with the current timestamp, but only
+/// if the provided dependent column is modified. Returns a [Statement] containing the SQL
+/// instructions to create the function.
+///
+/// Note: Currently only supports Postgres. If another DB is used, will return [None].
+pub fn create_update_timestamp_function_dep_column<C: IntoIden, D: IntoIden>(
+    manager: &SchemaManager<'_>,
+    timestamp_column: C,
+    dep_column: D,
+) -> Option<Statement> {
+    let backend = manager.get_database_backend();
+    create_update_timestamp_function_dep_column_for_db_backend(
+        backend,
+        timestamp_column,
+        dep_column,
+    )
+}
+
+/// Create a SQL function to update a timestamp column with the current timestamp. Returns
+/// a [Statement] containing the SQL instructions to create the function.
+///
+/// Note: Currently only supports Postgres. If another DB is used, will return [None].
+fn create_update_timestamp_function_for_db_backend<C: IntoIden>(
     backend: DbBackend,
-    column: T,
+    timestamp_column: C,
 ) -> Option<Statement> {
     if let DbBackend::Postgres = backend {
         let FnQueryStrings {
-            column, fn_call, ..
-        } = FnQueryStrings::new(column);
+            timestamp_column,
+            fn_call,
+            ..
+        } = FnQueryStrings::new::<_, C>(timestamp_column, None);
 
         let statement = Statement::from_string(
             backend,
@@ -69,7 +145,48 @@ fn create_update_timestamp_function_for_db_backend<T: IntoIden>(
                 r#"
 CREATE OR REPLACE FUNCTION {fn_call} RETURNS TRIGGER AS $$
 BEGIN
-    NEW.{column} = NOW();
+    NEW.{timestamp_column} = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+"#
+            ),
+        );
+        Some(statement)
+    } else {
+        None
+    }
+}
+
+/// Create a SQL function to update a timestamp column with the current timestamp, but only
+/// if the provided dependent column is modified. Returns a [Statement] containing the SQL
+/// instructions to create the function.
+///
+/// Note: Currently only supports Postgres. If another DB is used, will return [None].
+fn create_update_timestamp_function_dep_column_for_db_backend<C: IntoIden, D: IntoIden>(
+    backend: DbBackend,
+    timestamp_column: C,
+    dep_column: D,
+) -> Option<Statement> {
+    if let DbBackend::Postgres = backend {
+        let FnQueryStrings {
+            timestamp_column,
+            dep_column,
+            fn_call,
+            ..
+        } = FnQueryStrings::new(timestamp_column, Some(dep_column));
+        #[allow(clippy::expect_used)]
+        let dep_column = dep_column.expect("Dependent column should be present");
+
+        let statement = Statement::from_string(
+            backend,
+            format!(
+                r#"
+CREATE OR REPLACE FUNCTION {fn_call} RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.{dep_column} IS DISTINCT FROM NEW.{dep_column} THEN
+        NEW.{timestamp_column} = NOW();
+    END IF;
     RETURN NEW;
 END;
 $$ language 'plpgsql';
@@ -107,11 +224,11 @@ $$ language 'plpgsql';
 ///     }
 /// }
 /// ```
-pub async fn exec_drop_update_timestamp_function<T: IntoIden>(
+pub async fn exec_drop_update_timestamp_function<C: IntoIden>(
     manager: &SchemaManager<'_>,
-    column: T,
+    timestamp_column: C,
 ) -> Result<(), DbErr> {
-    let statement = drop_update_timestamp_function(manager, column);
+    let statement = drop_update_timestamp_function(manager, timestamp_column);
     if let Some(statement) = statement {
         manager.get_connection().execute(statement).await?;
     }
@@ -119,24 +236,25 @@ pub async fn exec_drop_update_timestamp_function<T: IntoIden>(
     Ok(())
 }
 
-/// Drop a SQL function that was previously created by [create_update_timestamp_function].
-/// Returns a [Statement] containing the SQL instructions to create the function.
+/// Drop a SQL function that was previously created by [`create_update_timestamp_function`]
+/// or [`create_update_timestamp_function`]. Returns a [`Statement`] containing the SQL
+/// instructions to drop the function.
 ///
-/// Note: Currently only supports Postgres. If another DB is used, will return [None].
-pub fn drop_update_timestamp_function<T: IntoIden>(
+/// Note: Currently only supports Postgres. If another DB is used, will return [`None`].
+pub fn drop_update_timestamp_function<C: IntoIden>(
     manager: &SchemaManager<'_>,
-    column: T,
+    timestamp_column: C,
 ) -> Option<Statement> {
     let backend = manager.get_database_backend();
-    drop_update_timestamp_function_for_db_backend(backend, column)
+    drop_update_timestamp_function_for_db_backend(backend, timestamp_column)
 }
 
-fn drop_update_timestamp_function_for_db_backend<T: IntoIden>(
+fn drop_update_timestamp_function_for_db_backend<C: IntoIden>(
     backend: DbBackend,
-    column: T,
+    timestamp_column: C,
 ) -> Option<Statement> {
     if let DbBackend::Postgres = backend {
-        let FnQueryStrings { fn_name, .. } = FnQueryStrings::new(column);
+        let FnQueryStrings { fn_name, .. } = FnQueryStrings::new::<_, C>(timestamp_column, None);
 
         let statement =
             Statement::from_string(backend, format!(r#"DROP FUNCTION IF EXISTS {fn_name};"#));
@@ -181,9 +299,9 @@ fn drop_update_timestamp_function_for_db_backend<T: IntoIden>(
 pub async fn exec_create_update_timestamp_trigger<T: IntoTableRef + IntoIden, C: IntoIden>(
     manager: &SchemaManager<'_>,
     table: T,
-    column: C,
+    timestamp_column: C,
 ) -> Result<(), DbErr> {
-    let statement = create_update_timestamp_trigger(manager, table, column);
+    let statement = create_update_timestamp_trigger(manager, table, timestamp_column);
     if let Some(statement) = statement {
         manager.get_connection().execute(statement).await?;
     }
@@ -199,23 +317,24 @@ pub async fn exec_create_update_timestamp_trigger<T: IntoTableRef + IntoIden, C:
 pub fn create_update_timestamp_trigger<T: IntoTableRef + IntoIden, C: IntoIden>(
     manager: &SchemaManager<'_>,
     table: T,
-    column: C,
+    timestamp_column: C,
 ) -> Option<Statement> {
     let backend = manager.get_database_backend();
-    create_update_timestamp_trigger_for_db_backend(backend, table, column)
+    create_update_timestamp_trigger_for_db_backend(backend, table, timestamp_column)
 }
 
 fn create_update_timestamp_trigger_for_db_backend<T: IntoTableRef + IntoIden, C: IntoIden>(
     backend: DbBackend,
     table: T,
-    column: C,
+    timestamp_column: C,
 ) -> Option<Statement> {
     if let DbBackend::Postgres = backend {
         let TriggerQueryNames {
             fn_query_strings: FnQueryStrings { fn_call, .. },
             table,
             trigger_name,
-        } = TriggerQueryNames::new(table, column);
+            ..
+        } = TriggerQueryNames::new::<_, _, T>(table, timestamp_column, None);
 
         let statement = Statement::from_string(
             backend,
@@ -270,9 +389,9 @@ EXECUTE PROCEDURE {fn_call};
 pub async fn exec_drop_update_timestamp_trigger<T: IntoTableRef + IntoIden, C: IntoIden>(
     manager: &SchemaManager<'_>,
     table: T,
-    column: C,
+    timestamp_column: C,
 ) -> Result<(), DbErr> {
-    let statement = drop_update_timestamp_trigger(manager, table, column);
+    let statement = drop_update_timestamp_trigger(manager, table, timestamp_column);
     if let Some(statement) = statement {
         manager.get_connection().execute(statement).await?;
     }
@@ -287,23 +406,23 @@ pub async fn exec_drop_update_timestamp_trigger<T: IntoTableRef + IntoIden, C: I
 pub fn drop_update_timestamp_trigger<T: IntoTableRef + IntoIden, C: IntoIden>(
     manager: &SchemaManager<'_>,
     table: T,
-    column: C,
+    timestamp_column: C,
 ) -> Option<Statement> {
     let backend = manager.get_database_backend();
-    drop_update_timestamp_trigger_for_db_backend(backend, table, column)
+    drop_update_timestamp_trigger_for_db_backend(backend, table, timestamp_column)
 }
 
 fn drop_update_timestamp_trigger_for_db_backend<T: IntoTableRef + IntoIden, C: IntoIden>(
     backend: DbBackend,
     table: T,
-    column: C,
+    timestamp_column: C,
 ) -> Option<Statement> {
     if let DbBackend::Postgres = backend {
         let TriggerQueryNames {
             table,
             trigger_name,
             ..
-        } = TriggerQueryNames::new(table, column);
+        } = TriggerQueryNames::new::<_, _, T>(table, timestamp_column, None);
 
         let statement = Statement::from_string(
             backend,
@@ -317,7 +436,8 @@ fn drop_update_timestamp_trigger_for_db_backend<T: IntoTableRef + IntoIden, C: I
 
 #[derive(Debug)]
 struct FnQueryStrings {
-    column: String,
+    timestamp_column: String,
+    dep_column: Option<String>,
     fn_name: String,
     fn_call: String,
 }
@@ -330,13 +450,15 @@ struct TriggerQueryNames {
 }
 
 impl FnQueryStrings {
-    fn new<C: IntoIden>(column: C) -> Self {
-        let column = column.into_iden().to_string();
-        let fn_name = update_timestamp_fn_name(&column);
+    fn new<C: IntoIden, D: IntoIden>(timestamp_column: C, dep_column: Option<D>) -> Self {
+        let timestamp_column = timestamp_column.into_iden().to_string();
+        let dep_column = dep_column.map(|c| c.into_iden().to_string());
+        let fn_name = update_timestamp_fn_name(&timestamp_column);
         let fn_call = format!("{fn_name}()");
 
         Self {
-            column,
+            timestamp_column,
+            dep_column,
             fn_name,
             fn_call,
         }
@@ -344,8 +466,12 @@ impl FnQueryStrings {
 }
 
 impl TriggerQueryNames {
-    fn new<T: IntoTableRef + IntoIden, C: IntoIden>(table: T, column: C) -> Self {
-        let fn_query_strings = FnQueryStrings::new(column);
+    fn new<T: IntoTableRef + IntoIden, C: IntoIden, D: IntoIden>(
+        table: T,
+        timestamp_column: C,
+        dep_column: Option<D>,
+    ) -> Self {
+        let fn_query_strings = FnQueryStrings::new(timestamp_column, dep_column);
         let table = table.into_iden().to_string();
         let trigger_name = trigger_name(&table, &fn_query_strings.fn_name);
 
@@ -378,6 +504,8 @@ mod tests {
     enum Foo {
         Table,
         UpdatedAt,
+        Password,
+        PasswordUpdatedAt,
     }
 
     #[fixture]
@@ -432,6 +560,21 @@ mod tests {
     #[case(DbBackend::MySql)]
     #[case(DbBackend::Sqlite)]
     #[cfg_attr(coverage_nightly, coverage(off))]
+    fn add_update_timestamp_function_dep_column(_case: TestCase, #[case] backend: DbBackend) {
+        let statement = super::create_update_timestamp_function_dep_column_for_db_backend(
+            backend,
+            Foo::PasswordUpdatedAt,
+            Foo::Password,
+        );
+
+        assert_debug_snapshot!(statement);
+    }
+
+    #[rstest]
+    #[case(DbBackend::Postgres)]
+    #[case(DbBackend::MySql)]
+    #[case(DbBackend::Sqlite)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn drop_update_timestamp_function(_case: TestCase, #[case] backend: DbBackend) {
         let statement =
             super::drop_update_timestamp_function_for_db_backend(backend, Foo::UpdatedAt);
@@ -442,14 +585,15 @@ mod tests {
     #[test]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn fn_query_strings() {
-        let fn_query_strings = FnQueryStrings::new(Foo::UpdatedAt);
+        let fn_query_strings = FnQueryStrings::new::<_, Foo>(Foo::UpdatedAt, None);
         assert_debug_snapshot!(fn_query_strings);
     }
 
     #[test]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn trigger_query_strings() {
-        let trigger_query_strings = TriggerQueryNames::new(Foo::Table, Foo::UpdatedAt);
+        let trigger_query_strings =
+            TriggerQueryNames::new::<_, _, Foo>(Foo::Table, Foo::UpdatedAt, None);
         assert_debug_snapshot!(trigger_query_strings);
     }
 }

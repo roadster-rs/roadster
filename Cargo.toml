@@ -151,3 +151,6 @@ serde = { version = "1.0.185", features = ["derive"] }
 [package.metadata.docs.rs]
 # Have docs.rs pass `--all-features` to ensure all features have their documentation built.
 all-features = true
+
+[lints.rust]
+unexpected_cfgs = { level = "allow", check-cfg = ['cfg(coverage_nightly)'] }
