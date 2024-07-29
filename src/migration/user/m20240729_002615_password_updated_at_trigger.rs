@@ -1,3 +1,10 @@
+//! Migration to create a SQL trigger to automatically update the [User::PasswordUpdatedAt] column
+//! of a row in the `user` table whenever the row's [User::Password] column is updated.
+//!
+//! Expects to be run after [crate::migration::user::m20240729_002549_password_updated_at_function::Migration].
+//!
+//! Note: Currently only supports Postgres. If another DB is used, will do nothing.
+
 use crate::migration::timestamp::{
     exec_create_update_timestamp_trigger, exec_drop_update_timestamp_trigger,
 };

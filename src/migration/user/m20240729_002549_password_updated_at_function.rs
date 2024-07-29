@@ -1,3 +1,8 @@
+//! Migration to create a SQL function to update the [User::PasswordUpdatedAt] column for a row
+//! with the current timestamp, but only if the [User::Password] column was updated.
+//!
+//! Note: Currently only supports Postgres. If another DB is used, will do nothing.
+
 use crate::migration::timestamp::{
     exec_create_update_timestamp_function_dep_column, exec_drop_update_timestamp_function,
 };

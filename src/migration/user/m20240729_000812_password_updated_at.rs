@@ -1,3 +1,5 @@
+//! Migration to add a [User::PasswordUpdatedAt] column to the `user` table.
+
 use crate::migration::user::User;
 use sea_orm_migration::prelude::*;
 use sea_orm_migration::schema::timestamp_with_time_zone;
