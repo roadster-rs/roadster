@@ -1,4 +1,3 @@
-use crate::migration::schema::Timestamps;
 use crate::migration::timestamp::m20240723_201404_add_update_timestamp_function;
 use sea_orm_migration::prelude::*;
 
@@ -22,9 +21,9 @@ pub(crate) enum User {
     Username,
     Email,
     Password,
-    /// When the user's password was updated. Defaults to the [Timestamps::UpdatedAt] time. Useful
-    /// in the event users' passwords may have been compromised and the application needs to enforce
-    /// that users update their passwords.
+    /// When the user's password was updated. Defaults to the[crate::migration::timestamp::Timestamps::UpdatedAt]
+    /// time. Useful in the event users' passwords may have been compromised and the application
+    /// needs to enforce that users update their passwords.
     ///
     /// Updated automatically when the [User::Password] is updated, assuming the following
     /// migrations are applied:
