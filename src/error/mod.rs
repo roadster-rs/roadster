@@ -88,6 +88,7 @@ pub enum Error {
 #[cfg(feature = "http")]
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
+        ::tracing::debug!("{}", self);
         match self {
             Error::Api(err) => err.into_response(),
             _ => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
