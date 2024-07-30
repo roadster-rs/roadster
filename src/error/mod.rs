@@ -28,7 +28,6 @@ use crate::error::tracing::TracingError;
 use ::axum::http::StatusCode;
 #[cfg(feature = "http")]
 use ::axum::response::{IntoResponse, Response};
-use ::tracing::debug;
 #[cfg(feature = "open-api")]
 use aide::OperationOutput;
 use thiserror::Error;
@@ -89,7 +88,7 @@ pub enum Error {
 #[cfg(feature = "http")]
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
-        debug!("{}", self);
+        ::tracing::debug!("{}", self);
         match self {
             Error::Api(err) => err.into_response(),
             _ => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
