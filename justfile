@@ -35,6 +35,11 @@ coverage: coverage-clean
 coverage-open: coverage
     open target/llvm-cov-target/debug/coverage/index.html
 
+alias fmt := format
+# Format the project
+format:
+    cargo fmt
+
 # Run a suite of checks. These checks are fairly comprehensive and will catch most issues. However, they are still less than what is run in CI.
 check:
     .cargo-husky/hooks/pre-push
