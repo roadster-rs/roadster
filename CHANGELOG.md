@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.13](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.12...roadster-v0.5.13) - 2024-07-31
+
+### Added
+- Add middleware to log the request/response payloads ([#304](https://github.com/roadster-rs/roadster/pull/304))
+- Log errors at debug level in `IntoResponse` impl ([#303](https://github.com/roadster-rs/roadster/pull/303))
+
 ## [0.5.12](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.11...roadster-v0.5.12) - 2024-07-29
 
 ### Added
