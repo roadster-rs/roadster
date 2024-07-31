@@ -1,3 +1,5 @@
+pub mod req_res_logging;
+
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;

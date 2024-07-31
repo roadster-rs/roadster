@@ -52,6 +52,7 @@ tower = { version = "0.4.13", optional = true }
 tower-http = { version = "0.5.0", features = ["trace", "timeout", "request-id", "util", "normalize-path", "sensitive-headers", "catch-panic", "compression-full", "decompression-full", "limit", "cors"], optional = true }
 aide = { workspace = true, features = ["axum", "redoc", "scalar", "macros"], optional = true }
 schemars = { workspace = true, optional = true }
+http-body-util = "0.1.0"
 
 # DB
 sea-orm = { version = "1.0.0-rc.5", features = ["debug-print", "runtime-tokio-rustls", "sqlx-postgres", "macros"], optional = true }

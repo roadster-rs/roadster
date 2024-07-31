@@ -41,6 +41,10 @@ limit = "5 MB"
 [service.http.middleware.cors]
 priority = -9950
 
+[service.http.middleware.request-response-logging]
+enable = false
+priority = 0
+
 # Initializers
 [service.http.initializer]
 default-enable = true
