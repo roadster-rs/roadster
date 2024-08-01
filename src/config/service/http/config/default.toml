@@ -42,7 +42,6 @@ limit = "5 MB"
 priority = -9950
 
 [service.http.middleware.request-response-logging]
-enable = false
 priority = 0
 
 # Initializers

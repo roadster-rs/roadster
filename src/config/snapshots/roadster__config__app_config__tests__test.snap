@@ -82,7 +82,6 @@ preset = 'restrictive'
 max-age = 3600000
 
 [service.http.middleware.request-response-logging]
-enable = false
 priority = 0
 
 [service.http.initializer]

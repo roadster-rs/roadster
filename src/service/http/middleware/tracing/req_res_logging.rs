@@ -64,7 +64,7 @@ where
 async fn log_req_res_bodies(request: Request, next: Next) -> Result<impl IntoResponse, Response> {
     // Log the request body
     let (parts, body) = request.into_parts();
-    let bytes = log_body(body, "request").await?;
+    let bytes = log_body(body, true).await?;
     let request = Request::from_parts(parts, Body::from(bytes));
 
     // Handle the request
@@ -72,14 +72,16 @@ async fn log_req_res_bodies(request: Request, next: Next) -> Result<impl IntoRes
 
     // Log the response body
     let (parts, body) = response.into_parts();
-    let bytes = log_body(body, "response").await?;
+    let bytes = log_body(body, false).await?;
     let response = Response::from_parts(parts, Body::from(bytes));
 
     // Return the response
     Ok(response)
 }
 
-async fn log_body(body: Body, msg: &str) -> Result<Bytes, Response> {
+const MAX: usize = 1000;
+
+async fn log_body(body: Body, req: bool) -> Result<Bytes, Response> {
     // This only works if the body is not a long-running stream
     let bytes = body
         .collect()
@@ -87,7 +89,18 @@ async fn log_body(body: Body, msg: &str) -> Result<Bytes, Response> {
         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response())?
         .to_bytes();
 
-    debug!(body = ?bytes, msg);
+    let body = if bytes.len() > MAX {
+        let slice = bytes.slice(0..MAX);
+        format!("{slice:?}...[truncated]")
+    } else {
+        format!("{bytes:?}")
+    };
+
+    if req {
+        debug!(body, "request");
+    } else {
+        debug!(body, "response");
+    }
 
     Ok(bytes)
 }
