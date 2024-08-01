@@ -14,13 +14,20 @@ use serde_derive::{Deserialize, Serialize};
 use tracing::debug;
 use validator::Validate;
 
+pub use RequestResponseLoggingConfig as ReqResLoggingConfig;
+pub use RequestResponseLoggingMiddleware as RequestLoggingMiddleware;
+
 #[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
 #[non_exhaustive]
-pub struct ReqResLoggingConfig {}
+pub struct RequestResponseLoggingConfig {
+    /// The maximum length to log. Payloads longer than this length will be truncated. To log the
+    /// entire payload without any truncating, set to a negative number.
+    pub max_len: i32,
+}
 
-pub struct RequestLoggingMiddleware;
-impl<S> Middleware<S> for RequestLoggingMiddleware
+pub struct RequestResponseLoggingMiddleware;
+impl<S> Middleware<S> for RequestResponseLoggingMiddleware
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
@@ -53,18 +60,34 @@ where
             .priority
     }
 
-    fn install(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
-        let router = router.layer(middleware::from_fn(log_req_res_bodies));
+    fn install(&self, router: Router, state: &S) -> RoadsterResult<Router> {
+        let max_len = AppContext::from_ref(state)
+            .config()
+            .service
+            .http
+            .custom
+            .middleware
+            .request_response_logging
+            .custom
+            .max_len;
+
+        let router = router.layer(middleware::from_fn(move |request, next| {
+            log_req_res_bodies(request, next, max_len)
+        }));
 
         Ok(router)
     }
 }
 
 // https://github.com/tokio-rs/axum/blob/main/examples/consume-body-in-extractor-or-middleware/src/main.rs
-async fn log_req_res_bodies(request: Request, next: Next) -> Result<impl IntoResponse, Response> {
+async fn log_req_res_bodies(
+    request: Request,
+    next: Next,
+    max_len: i32,
+) -> Result<impl IntoResponse, Response> {
     // Log the request body
     let (parts, body) = request.into_parts();
-    let bytes = log_body(body, true).await?;
+    let bytes = log_body(body, max_len, true).await?;
     let request = Request::from_parts(parts, Body::from(bytes));
 
     // Handle the request
@@ -72,16 +95,16 @@ async fn log_req_res_bodies(request: Request, next: Next) -> Result<impl IntoRes
 
     // Log the response body
     let (parts, body) = response.into_parts();
-    let bytes = log_body(body, false).await?;
+    let bytes = log_body(body, max_len, false).await?;
     let response = Response::from_parts(parts, Body::from(bytes));
 
     // Return the response
     Ok(response)
 }
 
-const MAX: usize = 1000;
+const TRUNCATED_STR: &str = "[truncated according to the `service.http.middleware.request-response-logging.max-len` config]";
 
-async fn log_body(body: Body, req: bool) -> Result<Bytes, Response> {
+async fn log_body(body: Body, max_len: i32, req: bool) -> Result<Bytes, Response> {
     // This only works if the body is not a long-running stream
     let bytes = body
         .collect()
@@ -89,11 +112,14 @@ async fn log_body(body: Body, req: bool) -> Result<Bytes, Response> {
         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response())?
         .to_bytes();
 
-    let body = if bytes.len() > MAX {
-        let slice = bytes.slice(0..MAX);
-        format!("{slice:?}...[truncated]")
-    } else {
+    let body = if max_len == 0 {
+        TRUNCATED_STR.to_string()
+    } else if max_len < 0 || bytes.len() <= max_len as usize {
         format!("{bytes:?}")
+    } else {
+        assert!(max_len > 0);
+        let slice = bytes.slice(0..(max_len as usize));
+        format!("{slice:?}{TRUNCATED_STR}")
     };
 
     if req {
@@ -134,7 +160,7 @@ mod tests {
 
         let context = AppContext::test(Some(config), None, None).unwrap();
 
-        let middleware = RequestLoggingMiddleware;
+        let middleware = RequestResponseLoggingMiddleware;
 
         // Act/Assert
         assert_eq!(middleware.enabled(&context), expected_enabled);
@@ -160,7 +186,7 @@ mod tests {
 
         let context = AppContext::test(Some(config), None, None).unwrap();
 
-        let middleware = RequestLoggingMiddleware;
+        let middleware = RequestResponseLoggingMiddleware;
 
         // Act/Assert
         assert_eq!(middleware.priority(&context), expected_priority);
