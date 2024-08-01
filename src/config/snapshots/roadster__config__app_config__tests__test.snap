@@ -83,6 +83,7 @@ max-age = 3600000
 
 [service.http.middleware.request-response-logging]
 priority = 0
+max-len = 1000
 
 [service.http.initializer]
 default-enable = true

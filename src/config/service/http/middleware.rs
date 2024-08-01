@@ -11,7 +11,7 @@ use crate::service::http::middleware::sensitive_headers::{
 };
 use crate::service::http::middleware::size_limit::SizeLimitConfig;
 use crate::service::http::middleware::timeout::TimeoutConfig;
-use crate::service::http::middleware::tracing::req_res_logging::ReqResLoggingConfig;
+use crate::service::http::middleware::tracing::req_res_logging::RequestResponseLoggingConfig;
 use crate::service::http::middleware::tracing::TracingConfig;
 use crate::util::serde::default_true;
 use axum::extract::FromRef;
@@ -51,7 +51,7 @@ pub struct Middleware {
 
     pub cors: MiddlewareConfig<CorsConfig>,
 
-    pub request_response_logging: MiddlewareConfig<ReqResLoggingConfig>,
+    pub request_response_logging: MiddlewareConfig<RequestResponseLoggingConfig>,
 
     /// Allows providing configs for custom middleware. Any configs that aren't pre-defined above
     /// will be collected here.

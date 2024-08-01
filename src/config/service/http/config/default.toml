@@ -43,6 +43,7 @@ priority = -9950
 
 [service.http.middleware.request-response-logging]
 priority = 0
+max-len = 1000
 
 # Initializers
 [service.http.initializer]

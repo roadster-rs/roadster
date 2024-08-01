@@ -10,7 +10,7 @@ use crate::service::http::middleware::sensitive_headers::{
 };
 use crate::service::http::middleware::size_limit::RequestBodyLimitMiddleware;
 use crate::service::http::middleware::timeout::TimeoutMiddleware;
-use crate::service::http::middleware::tracing::req_res_logging::RequestLoggingMiddleware;
+use crate::service::http::middleware::tracing::req_res_logging::RequestResponseLoggingMiddleware;
 use crate::service::http::middleware::tracing::TracingMiddleware;
 use crate::service::http::middleware::Middleware;
 use axum::extract::FromRef;
@@ -32,7 +32,7 @@ where
         Box::new(TimeoutMiddleware),
         Box::new(RequestBodyLimitMiddleware),
         Box::new(CorsMiddleware),
-        Box::new(RequestLoggingMiddleware),
+        Box::new(RequestResponseLoggingMiddleware),
     ];
     middleware
         .into_iter()
