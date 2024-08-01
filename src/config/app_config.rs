@@ -147,8 +147,7 @@ impl AppConfig {
 
     #[allow(clippy::let_and_return)]
     fn default_config(
-        #[allow(unused_variables)]
-        environment: Environment,
+        #[allow(unused_variables)] environment: Environment,
     ) -> ConfigBuilder<DefaultState> {
         let config = Config::builder()
             .add_source(config::File::from_str(
