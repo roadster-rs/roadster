@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.15](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.14...roadster-v0.5.15) - 2024-08-01
+
+### Added
+- Allow configuring the max len for the `ReqResLoggingMiddleware` ([#309](https://github.com/roadster-rs/roadster/pull/309))
+
 ## [0.5.14](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.13...roadster-v0.5.14) - 2024-08-01
 
 ### Added
