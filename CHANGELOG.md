@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.14](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.13...roadster-v0.5.14) - 2024-08-01
+
+### Added
+- Enable ReqResLogging middleware by default, but disable in prod ([#307](https://github.com/roadster-rs/roadster/pull/307))
+
 ## [0.5.13](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.12...roadster-v0.5.13) - 2024-07-31
 
 ### Added
