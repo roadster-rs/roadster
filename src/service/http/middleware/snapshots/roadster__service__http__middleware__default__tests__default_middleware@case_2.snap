@@ -8,6 +8,7 @@ expression: middleware
     'propagate-request-id',
     'request-body-size-limit',
     'request-decompression',
+    'request-response-logging',
     'sensitive-request-headers',
     'sensitive-response-headers',
     'set-request-id',

@@ -1,0 +1,2 @@
+[service.http.middleware.request-response-logging]
+enable = false

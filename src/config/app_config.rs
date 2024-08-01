@@ -74,9 +74,9 @@ impl AppConfig {
         } else {
             Environment::new()?
         };
-        let environment_str: &str = environment.into();
+        let environment_str: &str = environment.clone().into();
 
-        let config = Self::default_config()
+        let config = Self::default_config(environment)
             // Todo: allow other file formats?
             // Todo: allow splitting config into multiple files?
             .add_source(config::File::with_name("config/default.toml"))
@@ -99,7 +99,7 @@ impl AppConfig {
     #[cfg(test)]
     #[cfg_attr(coverage_nightly, coverage(off))]
     pub(crate) fn test(config_str: Option<&str>) -> RoadsterResult<Self> {
-        let config = Self::default_config()
+        let config = Self::default_config(Environment::Test)
             .add_source(config::File::from_str(
                 config_str.unwrap_or(
                     r#"
@@ -146,7 +146,9 @@ impl AppConfig {
     }
 
     #[allow(clippy::let_and_return)]
-    fn default_config() -> ConfigBuilder<DefaultState> {
+    fn default_config(
+        #[allow(unused_variables)] environment: Environment,
+    ) -> ConfigBuilder<DefaultState> {
         let config = Config::builder()
             .add_source(config::File::from_str(
                 include_str!("default.toml"),
@@ -155,7 +157,13 @@ impl AppConfig {
             .add_source(crate::config::tracing::default_config());
 
         #[cfg(feature = "http")]
-        let config = config.add_source(crate::config::service::http::default_config());
+        let config = {
+            let config = config.add_source(crate::config::service::http::default_config());
+            let config = crate::config::service::http::default_config_per_env(environment)
+                .into_iter()
+                .fold(config, |config, source| config.add_source(source));
+            config
+        };
 
         #[cfg(feature = "grpc")]
         let config = config.add_source(crate::config::service::grpc::default_config());
