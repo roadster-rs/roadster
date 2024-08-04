@@ -4,6 +4,7 @@ pub mod ietf;
 pub mod openid;
 
 use crate::app::context::AppContext;
+use crate::error::api::http::HttpError;
 use crate::error::{Error, RoadsterResult};
 #[cfg(feature = "jwt-ietf")]
 use crate::middleware::http::auth::jwt::ietf::Claims;
@@ -12,8 +13,10 @@ use crate::middleware::http::auth::jwt::openid::Claims;
 use crate::util::serde::{deserialize_from_str, serialize_to_str};
 use async_trait::async_trait;
 use axum::extract::{FromRef, FromRequestParts};
+use axum::http::header::AUTHORIZATION;
 use axum::http::request::Parts;
 use axum::RequestPartsExt;
+use axum_extra::extract::CookieJar;
 use axum_extra::headers::authorization::Bearer;
 use axum_extra::headers::Authorization;
 use axum_extra::TypedHeader;
@@ -52,10 +55,38 @@ where
     type Rejection = Error;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        let auth_header = parts.extract::<BearerAuthHeader>().await?;
         let context = AppContext::from_ref(state);
+
+        let token = parts
+            .extract::<BearerAuthHeader>()
+            .await
+            .ok()
+            .map(|auth_header| auth_header.0.token().to_string());
+        let token = if token.is_some() {
+            token
+        } else {
+            let cookie_name = context
+                .config()
+                .auth
+                .jwt
+                .cookie_name
+                .clone()
+                .unwrap_or_else(|| AUTHORIZATION.to_string());
+            let cookies = parts.extract::<CookieJar>().await.ok();
+            cookies
+                .as_ref()
+                .and_then(|cookies| cookies.get(&cookie_name))
+                .map(|cookie| cookie.value().to_string())
+        };
+
+        let token = if let Some(token) = token {
+            token
+        } else {
+            return Err(HttpError::unauthorized().into());
+        };
+
         let token: TokenData<C> = decode_auth_token(
-            auth_header.0.token(),
+            &token,
             &context.config().auth.jwt.secret,
             &context.config().auth.jwt.claims.audience,
             &context.config().auth.jwt.claims.required_claims,
