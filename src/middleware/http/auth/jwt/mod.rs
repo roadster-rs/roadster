@@ -11,8 +11,6 @@ use crate::middleware::http::auth::jwt::ietf::Claims;
 #[cfg(all(feature = "jwt-openid", not(feature = "jwt-ietf")))]
 use crate::middleware::http::auth::jwt::openid::Claims;
 use crate::util::serde::{deserialize_from_str, serialize_to_str};
-#[cfg(feature = "open-api")]
-use aide::OperationInput;
 use async_trait::async_trait;
 use axum::extract::{FromRef, FromRequestParts};
 use axum::http::header::AUTHORIZATION;
@@ -38,18 +36,14 @@ type BearerAuthHeader = TypedHeader<Authorization<Bearer>>;
 /// to the claims from `jwt-ietf`. If neither feature is enabled (but `jwt` is enabled), then
 /// the default will simply be a [serde_json::Value]. In all cases, the type can be overridden
 /// by the consumer.
+#[cfg_attr(feature = "open-api", derive(aide::OperationIo))]
+// #[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 #[non_exhaustive]
-pub struct Jwt<C = Claims>
-where
-    C: for<'de> serde::Deserialize<'de>,
-{
+pub struct Jwt<C = Claims> {
     pub header: Header,
     pub claims: C,
 }
-
-// Required in order to use `Jwt` in an Aide route.
-#[cfg(feature = "open-api")]
-impl OperationInput for Jwt {}
 
 #[async_trait]
 impl<S, C> FromRequestParts<S> for Jwt<C>
