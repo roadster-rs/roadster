@@ -4,6 +4,9 @@ use crate::error::Error;
 #[non_exhaustive]
 pub enum AxumError {
     #[error(transparent)]
+    Error(#[from] axum::http::Error),
+
+    #[error(transparent)]
     InvalidHeaderName(#[from] axum::http::header::InvalidHeaderName),
 
     #[error(transparent)]
@@ -18,6 +21,12 @@ pub enum AxumError {
 
     #[error(transparent)]
     Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+}
+
+impl From<axum::http::Error> for Error {
+    fn from(value: axum::http::Error) -> Self {
+        Self::Axum(AxumError::from(value))
+    }
 }
 
 impl From<axum::http::header::InvalidHeaderName> for Error {

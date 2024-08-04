@@ -14,7 +14,13 @@ pub struct Auth {
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct Jwt {
+    /// Name of the cookie used to pass the JWT access token. If not set, will use
+    /// [`axum::http::header::AUTHORIZATION`] as the cookie name.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cookie_name: Option<String>,
+
     pub secret: String,
+
     #[serde(default)]
     #[validate(nested)]
     pub claims: JwtClaims,

@@ -47,7 +47,7 @@ tracing-opentelemetry = { version = "0.25.0", features = ["metrics"], optional =
 # `axum` is not optional because we use the `FromRef` trait pretty extensively, even in parts of
 # the code that wouldn't otherwise need `axum`.
 axum = { workspace = true, features = ["macros"] }
-axum-extra = { version = "0.9.0", features = ["typed-header"], optional = true }
+axum-extra = { version = "0.9.0", features = ["typed-header", "cookie"], optional = true }
 tower = { version = "0.4.13", optional = true }
 tower-http = { version = "0.5.0", features = ["trace", "timeout", "request-id", "util", "normalize-path", "sensitive-headers", "catch-panic", "compression-full", "decompression-full", "limit", "cors"], optional = true }
 aide = { workspace = true, features = ["axum", "redoc", "scalar", "macros"], optional = true }
