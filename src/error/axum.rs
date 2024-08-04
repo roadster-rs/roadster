@@ -15,6 +15,9 @@ pub enum AxumError {
     #[error(transparent)]
     InvalidMethod(#[from] axum::http::method::InvalidMethod),
 
+    #[error(transparent)]
+    ToStrError(#[from] axum::http::header::ToStrError),
+
     #[cfg(feature = "jwt")]
     #[error(transparent)]
     TypedHeaderRejection(#[from] axum_extra::typed_header::TypedHeaderRejection),
@@ -43,6 +46,12 @@ impl From<axum::http::header::InvalidHeaderValue> for Error {
 
 impl From<axum::http::method::InvalidMethod> for Error {
     fn from(value: axum::http::method::InvalidMethod) -> Self {
+        Self::Axum(AxumError::from(value))
+    }
+}
+
+impl From<axum::http::header::ToStrError> for Error {
+    fn from(value: axum::http::header::ToStrError) -> Self {
         Self::Axum(AxumError::from(value))
     }
 }
