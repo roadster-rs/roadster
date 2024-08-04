@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.16](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.15...roadster-v0.5.16) - 2024-08-04
+
+### Added
+- Extract JWT from cookie ([#314](https://github.com/roadster-rs/roadster/pull/314))
+- Derive `OperationIo` for `Jwt` struct ([#311](https://github.com/roadster-rs/roadster/pull/311))
+- Change user.last_sign_in_at column to non-null with default ([#312](https://github.com/roadster-rs/roadster/pull/312))
+
+### Other
+- Add pre-commit hook to check formatting ([#313](https://github.com/roadster-rs/roadster/pull/313))
+
 ## [0.5.15](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.14...roadster-v0.5.15) - 2024-08-01
 
 ### Added
