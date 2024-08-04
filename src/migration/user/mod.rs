@@ -7,8 +7,8 @@ pub mod m20240714_203551_create_user_table_uuid_pk;
 pub mod m20240723_070533_add_user_account_management_fields;
 pub mod m20240724_005115_user_update_timestamp;
 pub mod m20240729_000812_password_updated_at;
-mod m20240729_002549_password_updated_at_function;
-mod m20240729_002615_password_updated_at_trigger;
+pub mod m20240729_002549_password_updated_at_function;
+pub mod m20240729_002615_password_updated_at_trigger;
 #[cfg(test)]
 mod tests;
 

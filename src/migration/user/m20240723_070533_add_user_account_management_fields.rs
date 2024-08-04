@@ -35,7 +35,9 @@ fn alter_table_add_columns() -> TableAlterStatement {
         .add_column_if_not_exists(timestamp_with_time_zone_null(User::EmailConfirmationSentAt))
         .add_column_if_not_exists(string_null(User::EmailConfirmationToken))
         .add_column_if_not_exists(timestamp_with_time_zone_null(User::EmailConfirmedAt))
-        .add_column_if_not_exists(timestamp_with_time_zone_null(User::LastSignInAt))
+        .add_column_if_not_exists(
+            timestamp_with_time_zone(User::LastSignInAt).default(Expr::current_timestamp()),
+        )
         .add_column_if_not_exists(timestamp_with_time_zone_null(User::RecoverySentAt))
         .add_column_if_not_exists(string_null(User::RecoveryToken))
         .add_column_if_not_exists(timestamp_with_time_zone_null(User::EmailChangeSentAt))
