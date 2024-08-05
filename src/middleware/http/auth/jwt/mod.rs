@@ -18,7 +18,7 @@ use axum::http::request::Parts;
 use axum::RequestPartsExt;
 use axum_extra::extract::CookieJar;
 use axum_extra::headers::authorization::Bearer;
-use axum_extra::headers::Authorization;
+use axum_extra::headers::{Authorization, HeaderValue};
 use axum_extra::TypedHeader;
 use itertools::Itertools;
 use jsonwebtoken::{decode, DecodingKey, Header, TokenData, Validation};
@@ -65,18 +65,8 @@ where
         let token = if token.is_some() {
             token
         } else {
-            let cookie_name = context
-                .config()
-                .auth
-                .jwt
-                .cookie_name
-                .clone()
-                .unwrap_or_else(|| AUTHORIZATION.to_string());
             let cookies = parts.extract::<CookieJar>().await.ok();
-            cookies
-                .as_ref()
-                .and_then(|cookies| cookies.get(&cookie_name))
-                .map(|cookie| cookie.value().to_string())
+            bearer_token_from_cookies(&context, cookies)
         };
 
         let token = if let Some(token) = token {
@@ -97,6 +87,28 @@ where
         };
         Ok(token)
     }
+}
+
+fn bearer_token_from_cookies(context: &AppContext, cookies: Option<CookieJar>) -> Option<String> {
+    let cookie_name = context
+        .config()
+        .auth
+        .jwt
+        .cookie_name
+        .clone()
+        .unwrap_or_else(|| AUTHORIZATION.to_string());
+    cookies
+        .as_ref()
+        .and_then(|cookies| cookies.get(&cookie_name))
+        .map(|cookie| cookie.value())
+        .and_then(|token| HeaderValue::from_str(token).ok())
+        .and_then(|header_value| {
+            <Authorization<Bearer> as axum_extra::headers::Header>::decode(
+                &mut [&header_value].into_iter(),
+            )
+            .ok()
+        })
+        .map(|auth_header| auth_header.token().to_string())
 }
 
 fn decode_auth_token<T1, T2, C>(
@@ -155,10 +167,35 @@ pub enum Subject {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::testing::snapshot::TestCase;
     use crate::util::serde::Wrapper;
+    use axum_extra::extract::cookie::Cookie;
+    use insta::assert_debug_snapshot;
+    use rstest::{fixture, rstest};
     use serde_json::from_str;
     use std::str::FromStr;
     use url::Url;
+
+    #[fixture]
+    fn case() -> TestCase {
+        Default::default()
+    }
+
+    #[rstest]
+    #[case::valid_token("Bearer foo")]
+    #[case::invalid_token("foo")]
+    fn bearer_token_from_cookies(_case: TestCase, #[case] cookie_value: &str) {
+        let context = AppContext::test(None, None, None).unwrap();
+
+        let cookies = CookieJar::new().add(Cookie::new(
+            AUTHORIZATION.to_string(),
+            cookie_value.to_string(),
+        ));
+
+        let token = super::bearer_token_from_cookies(&context, Some(cookies));
+
+        assert_debug_snapshot!(token);
+    }
 
     #[test]
     #[cfg_attr(coverage_nightly, coverage(off))]
@@ -173,7 +210,7 @@ mod tests {
     #[test]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn deserialize_subject_as_uuid() {
-        let uuid = uuid::Uuid::new_v4();
+        let uuid = Uuid::new_v4();
         let value: Wrapper<Subject> = from_str(&format!(r#"{{"inner": "{uuid}"}}"#)).unwrap();
         assert_eq!(value.inner, Subject::Uuid(uuid));
     }
