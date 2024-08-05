@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.17](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.16...roadster-v0.5.17) - 2024-08-05
+
+### Fixed
+- Extract jwt as a bearer token from cookies ([#316](https://github.com/roadster-rs/roadster/pull/316))
+
 ## [0.5.16](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.15...roadster-v0.5.16) - 2024-08-04
 
 ### Added
