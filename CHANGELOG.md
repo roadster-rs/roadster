@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.19](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.18...roadster-v0.5.19) - 2024-08-09
+
+### Other
+- *(deps)* Bump EmbarkStudios/cargo-deny-action from 1 to 2 ([#319](https://github.com/roadster-rs/roadster/pull/319))
+
 ## [0.5.18](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.17...roadster-v0.5.18) - 2024-08-05
 
 ### Other
