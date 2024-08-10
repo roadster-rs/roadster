@@ -1,6 +1,6 @@
 [package]
 name = "roadster"
-version = "0.5.17"
+version = "0.5.18"
 edition = "2021"
 publish = true
 description = "A \"Batteries Included\" web framework for rust designed to get you moving fast."
@@ -139,7 +139,7 @@ rusty-sidekiq = { version = "0.10.5", default-features = false }
 
 # Testing
 insta = { version = "1.39.0", features = ["toml", "filters"] }
-rstest = { version = "0.21.0" }
+rstest = { version = "0.22.0" }
 
 # Others
 # Todo: minimize tokio features included in `roadster`
