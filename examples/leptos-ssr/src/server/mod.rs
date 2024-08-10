@@ -67,12 +67,7 @@ impl RoadsterApp<AppState> for Server {
             .register_builder(
                 HttpService::builder(Some(BASE), &state.clone()).router(
                     Router::<AppState>::new()
-                        .leptos_routes_with_context(
-                            &state.clone(),
-                            routes,
-                            move || provide_context(state.clone()),
-                            App,
-                        )
+                        .leptos_routes(&state, routes, App)
                         .fallback(file_and_error_handler),
                 ),
             )
