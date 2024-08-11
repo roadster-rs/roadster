@@ -156,6 +156,44 @@ pub enum Subject {
     String(String),
 }
 
+impl From<Uuid> for Subject {
+    fn from(value: Uuid) -> Self {
+        Subject::Uuid(value)
+    }
+}
+
+impl From<u32> for Subject {
+    fn from(value: u32) -> Self {
+        Subject::Int(value as u64)
+    }
+}
+
+impl From<u64> for Subject {
+    fn from(value: u64) -> Self {
+        Subject::Int(value)
+    }
+}
+
+impl From<Url> for Subject {
+    fn from(value: Url) -> Self {
+        Subject::Uri(value)
+    }
+}
+
+impl From<String> for Subject {
+    fn from(value: String) -> Self {
+        if let Ok(value) = value.parse::<Url>() {
+            value.into()
+        } else if let Ok(value) = value.parse::<Uuid>() {
+            value.into()
+        } else if let Ok(value) = value.parse::<u64>() {
+            value.into()
+        } else {
+            Subject::String(value)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
