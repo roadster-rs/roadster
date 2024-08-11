@@ -12,7 +12,7 @@ use typed_builder::TypedBuilder;
 /// claim names are collected in the `custom` map.
 /// See: <https://www.rfc-editor.org/rfc/rfc7519.html#section-4>
 #[serde_as]
-#[derive(Debug, Deserialize, Serialize, TypedBuilder)]
+#[derive(Debug, Clone, Deserialize, Serialize, TypedBuilder)]
 #[non_exhaustive]
 pub struct Claims {
     /// See: <https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.1>
