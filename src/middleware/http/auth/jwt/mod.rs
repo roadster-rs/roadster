@@ -357,10 +357,10 @@ mod tests {
     #[case("foo".to_string())]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn subject_from_string(_case: TestCase, #[case] value: String) {
-        let subject: Subject = value.as_str().into();
-        assert_debug_snapshot!(subject);
-
+        let subject_from_str: Subject = value.as_str().into();
         let subject: Subject = value.into();
+
+        assert_eq!(subject, subject_from_str);
         assert_debug_snapshot!(subject);
     }
 }
