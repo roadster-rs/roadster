@@ -7,6 +7,8 @@ use itertools::Itertools;
 use std::thread::current;
 use typed_builder::TypedBuilder;
 
+const BEARER_TOKEN_REGEX: &str = r"Bearer [\w\.-]+";
+
 /// Configure which settings to apply on the snapshot [Settings].
 ///
 /// When built, a [TestCase] is returned.
@@ -79,6 +81,12 @@ pub struct TestCaseConfig {
     /// that you don't want leaked in your source code.
     #[builder(default = true)]
     pub redact_uuid: bool,
+
+    /// Whether to redact auth tokens from snapshots. This is useful for tests involving
+    /// dynamically created auth tokens that will be different on every test run, or involve real
+    /// auth tokens that you don't want leaked in your source code.
+    #[builder(default = true)]
+    pub redact_auth_tokens: bool,
 
     /// Whether to automatically bind the [Settings] to the current scope. If `true`, the settings
     /// will be automatically applied for the test in which the [TestCase] was built. If `false`,
@@ -165,6 +173,9 @@ impl From<TestCaseConfig> for TestCase {
         if value.redact_uuid {
             snapshot_redact_uuid(&mut settings);
         }
+        if value.redact_auth_tokens {
+            snapshot_redact_bearer_tokens(&mut settings);
+        }
 
         let _settings_guard = if value.bind_scope {
             Some(settings.bind_to_scope())
@@ -193,6 +204,13 @@ pub fn snapshot_set_suffix<'a>(settings: &'a mut Settings, suffix: &str) -> &'a 
 /// sub-strings matching [UUID_REGEX] with `[uuid]`.
 pub fn snapshot_redact_uuid(settings: &mut Settings) -> &mut Settings {
     settings.add_filter(UUID_REGEX, "[uuid]");
+    settings
+}
+
+/// Redact instances of UUIDs in snapshots. Applies a filter on the [Settings] to replace
+/// sub-strings matching [UUID_REGEX] with `[uuid]`.
+pub fn snapshot_redact_bearer_tokens(settings: &mut Settings) -> &mut Settings {
+    settings.add_filter(BEARER_TOKEN_REGEX, "Sensitive");
     settings
 }
 
@@ -284,6 +302,17 @@ mod tests {
         let uuid = Uuid::new_v4();
 
         assert_snapshot!(format!("Foo '{uuid}' bar"));
+    }
+
+    #[rstest]
+    #[case("Bearer 1234")]
+    #[case("Bearer access-token")]
+    #[case("Bearer some.jwt.token")]
+    #[case("Bearer foo-bar.baz-1234")]
+    #[case("Bearer token;")]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn bearer_token(_case: TestCase, #[case] token: &str) {
+        assert_snapshot!(format!("Foo {token} bar"));
     }
 
     #[rstest]

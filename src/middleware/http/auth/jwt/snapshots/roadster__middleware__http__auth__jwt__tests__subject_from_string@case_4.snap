@@ -1,0 +1,7 @@
+---
+source: src/middleware/http/auth/jwt/mod.rs
+expression: subject
+---
+String(
+    "foo",
+)
