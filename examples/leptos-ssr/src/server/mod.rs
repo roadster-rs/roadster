@@ -4,7 +4,7 @@ use crate::server::fileserv::file_and_error_handler;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use axum::Router;
-use leptos::{get_configuration, provide_context};
+use leptos::get_configuration;
 use leptos_axum::{generate_route_list, LeptosRoutes};
 use migration::Migrator;
 use roadster::app::context::AppContext;
@@ -67,12 +67,7 @@ impl RoadsterApp<AppState> for Server {
             .register_builder(
                 HttpService::builder(Some(BASE), &state.clone()).router(
                     Router::<AppState>::new()
-                        .leptos_routes_with_context(
-                            &state.clone(),
-                            routes,
-                            move || provide_context(state.clone()),
-                            App,
-                        )
+                        .leptos_routes(&state, routes, App)
                         .fallback(file_and_error_handler),
                 ),
             )
