@@ -13,7 +13,6 @@ use crate::middleware::http::auth::jwt::openid::Claims;
 use crate::util::serde::{deserialize_from_str, serialize_to_str};
 use async_trait::async_trait;
 use axum::extract::{FromRef, FromRequestParts};
-use axum::http::header::AUTHORIZATION;
 use axum::http::request::Parts;
 use axum::RequestPartsExt;
 use axum_extra::extract::CookieJar;
@@ -89,16 +88,10 @@ where
 }
 
 fn bearer_token_from_cookies(context: &AppContext, cookies: Option<CookieJar>) -> Option<String> {
-    let cookie_name = context
-        .config()
-        .auth
-        .jwt
-        .cookie_name
-        .clone()
-        .unwrap_or_else(|| AUTHORIZATION.to_string());
+    let cookie_name = &context.config().auth.jwt.cookie_name;
     cookies
         .as_ref()
-        .and_then(|cookies| cookies.get(&cookie_name))
+        .and_then(|cookies| cookies.get(cookie_name))
         .map(|cookie| cookie.value())
         .and_then(|token| HeaderValue::from_str(token).ok())
         .and_then(|header_value| {
@@ -168,6 +161,7 @@ mod tests {
     use super::*;
     use crate::testing::snapshot::TestCase;
     use crate::util::serde::Wrapper;
+    use axum::http::header::AUTHORIZATION;
     use axum_extra::extract::cookie::Cookie;
     use insta::assert_debug_snapshot;
     use rstest::{fixture, rstest};
