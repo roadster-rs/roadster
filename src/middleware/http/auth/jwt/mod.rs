@@ -162,6 +162,18 @@ impl From<Uuid> for Subject {
     }
 }
 
+impl From<u8> for Subject {
+    fn from(value: u8) -> Self {
+        Subject::Int(value as u64)
+    }
+}
+
+impl From<u16> for Subject {
+    fn from(value: u16) -> Self {
+        Subject::Int(value as u64)
+    }
+}
+
 impl From<u32> for Subject {
     fn from(value: u32) -> Self {
         Subject::Int(value as u64)
@@ -190,6 +202,20 @@ impl From<String> for Subject {
             value.into()
         } else {
             Subject::String(value)
+        }
+    }
+}
+
+impl From<&str> for Subject {
+    fn from(value: &str) -> Self {
+        if let Ok(value) = value.parse::<Url>() {
+            value.into()
+        } else if let Ok(value) = value.parse::<Uuid>() {
+            value.into()
+        } else if let Ok(value) = value.parse::<u64>() {
+            value.into()
+        } else {
+            Subject::String(value.to_string())
         }
     }
 }
@@ -240,6 +266,13 @@ mod tests {
 
     #[test]
     #[cfg_attr(coverage_nightly, coverage(off))]
+    fn subject_from_uri() {
+        let subject: Subject = Url::from_str("https://example.com").unwrap().into();
+        assert_debug_snapshot!(subject);
+    }
+
+    #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn deserialize_subject_as_uuid() {
         let uuid = Uuid::new_v4();
         let value: Wrapper<Subject> = from_str(&format!(r#"{{"inner": "{uuid}"}}"#)).unwrap();
@@ -248,10 +281,55 @@ mod tests {
 
     #[test]
     #[cfg_attr(coverage_nightly, coverage(off))]
+    fn subject_from_uuid() {
+        let _case = case();
+
+        let subject: Subject = Uuid::new_v4().into();
+        assert_debug_snapshot!(subject);
+    }
+
+    #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn deserialize_subject_as_int() {
         let num = 100;
         let value: Wrapper<Subject> = from_str(&format!(r#"{{"inner": "{num}"}}"#)).unwrap();
         assert_eq!(value.inner, Subject::Int(num));
+    }
+
+    #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn subject_from_u8() {
+        let _case = case();
+
+        let subject: Subject = 12u8.into();
+        assert_debug_snapshot!(subject);
+    }
+
+    #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn subject_from_u16() {
+        let _case = case();
+
+        let subject: Subject = 1234u16.into();
+        assert_debug_snapshot!(subject);
+    }
+
+    #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn subject_from_u32() {
+        let _case = case();
+
+        let subject: Subject = 1234u32.into();
+        assert_debug_snapshot!(subject);
+    }
+
+    #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn subject_from_u64() {
+        let _case = case();
+
+        let subject: Subject = 1234u64.into();
+        assert_debug_snapshot!(subject);
     }
 
     #[test]
@@ -270,5 +348,19 @@ mod tests {
     fn deserialize_subject_as_string() {
         let value: Wrapper<Subject> = from_str(r#"{"inner": "invalid-uri"}"#).unwrap();
         assert_eq!(value.inner, Subject::String("invalid-uri".to_string()));
+    }
+
+    #[rstest]
+    #[case("http://example.com".to_string())]
+    #[case(Uuid::new_v4().to_string())]
+    #[case("1234".to_string())]
+    #[case("foo".to_string())]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn subject_from_string(_case: TestCase, #[case] value: String) {
+        let subject: Subject = value.as_str().into();
+        assert_debug_snapshot!(subject);
+
+        let subject: Subject = value.into();
+        assert_debug_snapshot!(subject);
     }
 }
