@@ -1,4 +1,5 @@
 use crate::util::serde::UriOrString;
+use axum::http::header::AUTHORIZATION;
 use serde_derive::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -15,15 +16,21 @@ pub struct Auth {
 #[non_exhaustive]
 pub struct Jwt {
     /// Name of the cookie used to pass the JWT access token. If not set, will use
-    /// [`axum::http::header::AUTHORIZATION`] as the cookie name.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub cookie_name: Option<String>,
+    /// [`AUTHORIZATION`] as the cookie name.
+    #[serde(default = "Jwt::default_cookie_name")]
+    pub cookie_name: String,
 
     pub secret: String,
 
     #[serde(default)]
     #[validate(nested)]
     pub claims: JwtClaims,
+}
+
+impl Jwt {
+    fn default_cookie_name() -> String {
+        AUTHORIZATION.as_str().to_string()
+    }
 }
 
 #[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]

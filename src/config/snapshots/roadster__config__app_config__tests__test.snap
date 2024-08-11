@@ -133,6 +133,7 @@ timeout = true
 max-duration = 60
 disable-argument-coercion = false
 [auth.jwt]
+cookie-name = 'authorization'
 secret = 'secret-test'
 
 [auth.jwt.claims]
