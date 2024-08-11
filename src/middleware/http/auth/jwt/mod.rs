@@ -37,7 +37,6 @@ type BearerAuthHeader = TypedHeader<Authorization<Bearer>>;
 /// the default will simply be a [serde_json::Value]. In all cases, the type can be overridden
 /// by the consumer.
 #[cfg_attr(feature = "open-api", derive(aide::OperationIo))]
-// #[derive(Deserialize)]
 #[derive(Deserialize, Serialize)]
 #[non_exhaustive]
 pub struct Jwt<C = Claims> {
@@ -149,7 +148,7 @@ where
 /// See: <https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.2>
 /// See: <https://openid.net/specs/openid-connect-core-1_0.html#IDToken>
 // Intentionally not annotated with `#[non_exhaustive]`
-#[derive(Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(untagged)]
 pub enum Subject {
     Uri(Url),

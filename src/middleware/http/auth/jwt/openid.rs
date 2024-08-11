@@ -14,7 +14,7 @@ use crate::util::serde::{deserialize_from_str, serialize_to_str, UriOrString};
 /// claim names are collected in the `custom` map.
 /// See: <https://openid.net/specs/openid-connect-core-1_0.html#IDToken>
 #[serde_as]
-#[derive(Debug, Deserialize, Serialize, TypedBuilder)]
+#[derive(Debug, Clone, Deserialize, Serialize, TypedBuilder)]
 #[non_exhaustive]
 pub struct Claims {
     #[serde(rename = "iss")]
@@ -62,7 +62,7 @@ pub struct Claims {
 }
 
 // Intentionally not annotated with `#[non_exhaustive]`
-#[derive(Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(untagged)]
 pub enum Acr {
     Uri(Url),
