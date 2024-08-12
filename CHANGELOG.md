@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.19](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.18...roadster-v0.5.19) - 2024-08-12
+
+### Added
+- Redact bearer tokens in insta snapshots ([#325](https://github.com/roadster-rs/roadster/pull/325))
+
+### Fixed
+- Do not simply use bearer token from cookie for auth ([#326](https://github.com/roadster-rs/roadster/pull/326))
+- Set default value for Jwt cookie name ([#324](https://github.com/roadster-rs/roadster/pull/324))
+- Derive `Clone` in JWT claim types ([#323](https://github.com/roadster-rs/roadster/pull/323))
+- Use `leptos_routes` in leptos example instead of `leptos_routes_with_context` ([#322](https://github.com/roadster-rs/roadster/pull/322))
+
+### Other
+- *(deps)* Bump EmbarkStudios/cargo-deny-action from 1 to 2 ([#319](https://github.com/roadster-rs/roadster/pull/319))
+
 ## [0.5.18](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.17...roadster-v0.5.18) - 2024-08-05
 
 ### Other
