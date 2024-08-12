@@ -14,8 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Do not simply use bearer token from cookie for auth ([#326](https://github.com/roadster-rs/roadster/pull/326))
-- Set default value for Jwt cookie name ([#324](https://github.com/roadster-rs/roadster/pull/324))
 - Derive `Clone` in JWT claim types ([#323](https://github.com/roadster-rs/roadster/pull/323))
+- Implement `From` for various `Subject` enum variants ([#323](https://github.com/roadster-rs/roadster/pull/323))
 - Use `leptos_routes` in leptos example instead of `leptos_routes_with_context` ([#322](https://github.com/roadster-rs/roadster/pull/322))
 
 ### Other
