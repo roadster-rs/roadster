@@ -3,7 +3,6 @@ source: src/config/auth/mod.rs
 expression: auth
 ---
 [jwt]
-cookie-name = 'authorization'
 secret = 'foo'
 
 [jwt.claims]

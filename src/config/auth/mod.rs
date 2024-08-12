@@ -1,5 +1,4 @@
 use crate::util::serde::UriOrString;
-use axum::http::header::AUTHORIZATION;
 use serde_derive::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -15,26 +14,22 @@ pub struct Auth {
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct Jwt {
-    /// Name of the cookie used to pass the JWT access token. If not set, will use
-    /// [`AUTHORIZATION`] as the cookie name.
-    #[serde(default = "Jwt::default_cookie_name")]
-    #[deprecated(
-        since = "0.5.19",
-        note = "Using jwt from cookie is/may be a CSRF vulnerability. This functionality is removed for now and this config field is not used."
-    )]
-    pub cookie_name: String,
+    /// Name of the cookie used to pass the JWT access token. If provided, the default
+    /// [`Jwt`][crate::middleware::http::auth::jwt::Jwt] will extract the access token from the
+    /// provided cookie name if it wasn't present in the [`axum::http::header::AUTHORIZATION`]
+    /// request header. If not provided, the extractor will only consider the request header.
+    ///
+    /// Warning: Providing this field opens up an application to CSRF vulnerabilities unless the
+    /// application has the proper protections in place. See the following for more information:
+    /// - <https://owasp.org/www-community/attacks/csrf>
+    /// - <https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html>
+    pub cookie_name: Option<String>,
 
     pub secret: String,
 
     #[serde(default)]
     #[validate(nested)]
     pub claims: JwtClaims,
-}
-
-impl Jwt {
-    fn default_cookie_name() -> String {
-        AUTHORIZATION.as_str().to_string()
-    }
 }
 
 #[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
@@ -92,6 +87,13 @@ mod tests {
         [jwt.claims]
         audience = ["bar"]
         required-claims = ["baz"]
+        "#
+    )]
+    #[case(
+        r#"
+        [jwt]
+        secret = "foo"
+        cookie-name = "authorization"
         "#
     )]
     #[cfg_attr(coverage_nightly, coverage(off))]
