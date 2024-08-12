@@ -1,7 +1,0 @@
----
-source: src/middleware/http/auth/jwt/mod.rs
-expression: token
----
-Some(
-    "foo",
-)

@@ -18,6 +18,10 @@ pub struct Jwt {
     /// Name of the cookie used to pass the JWT access token. If not set, will use
     /// [`AUTHORIZATION`] as the cookie name.
     #[serde(default = "Jwt::default_cookie_name")]
+    #[deprecated(
+        since = "0.5.19",
+        note = "Using jwt from cookie is/may be a CSRF vulnerability. This functionality is removed for now and this config field is not used."
+    )]
     pub cookie_name: String,
 
     pub secret: String,
