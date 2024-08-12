@@ -15,9 +15,8 @@ use async_trait::async_trait;
 use axum::extract::{FromRef, FromRequestParts};
 use axum::http::request::Parts;
 use axum::RequestPartsExt;
-use axum_extra::extract::CookieJar;
 use axum_extra::headers::authorization::Bearer;
-use axum_extra::headers::{Authorization, HeaderValue};
+use axum_extra::headers::Authorization;
 use axum_extra::TypedHeader;
 use itertools::Itertools;
 use jsonwebtoken::{decode, DecodingKey, Header, TokenData, Validation};
@@ -60,12 +59,6 @@ where
             .await
             .ok()
             .map(|auth_header| auth_header.0.token().to_string());
-        let token = if token.is_some() {
-            token
-        } else {
-            let cookies = parts.extract::<CookieJar>().await.ok();
-            bearer_token_from_cookies(&context, cookies)
-        };
 
         let token = if let Some(token) = token {
             token
@@ -85,22 +78,6 @@ where
         };
         Ok(token)
     }
-}
-
-fn bearer_token_from_cookies(context: &AppContext, cookies: Option<CookieJar>) -> Option<String> {
-    let cookie_name = &context.config().auth.jwt.cookie_name;
-    cookies
-        .as_ref()
-        .and_then(|cookies| cookies.get(cookie_name))
-        .map(|cookie| cookie.value())
-        .and_then(|token| HeaderValue::from_str(token).ok())
-        .and_then(|header_value| {
-            <Authorization<Bearer> as axum_extra::headers::Header>::decode(
-                &mut [&header_value].into_iter(),
-            )
-            .ok()
-        })
-        .map(|auth_header| auth_header.token().to_string())
 }
 
 fn decode_auth_token<T1, T2, C>(
@@ -225,8 +202,6 @@ mod tests {
     use super::*;
     use crate::testing::snapshot::TestCase;
     use crate::util::serde::Wrapper;
-    use axum::http::header::AUTHORIZATION;
-    use axum_extra::extract::cookie::Cookie;
     use insta::assert_debug_snapshot;
     use rstest::{fixture, rstest};
     use serde_json::from_str;
@@ -236,22 +211,6 @@ mod tests {
     #[fixture]
     fn case() -> TestCase {
         Default::default()
-    }
-
-    #[rstest]
-    #[case::valid_token("Bearer foo")]
-    #[case::invalid_token("foo")]
-    fn bearer_token_from_cookies(_case: TestCase, #[case] cookie_value: &str) {
-        let context = AppContext::test(None, None, None).unwrap();
-
-        let cookies = CookieJar::new().add(Cookie::new(
-            AUTHORIZATION.to_string(),
-            cookie_value.to_string(),
-        ));
-
-        let token = super::bearer_token_from_cookies(&context, Some(cookies));
-
-        assert_debug_snapshot!(token);
     }
 
     #[test]
