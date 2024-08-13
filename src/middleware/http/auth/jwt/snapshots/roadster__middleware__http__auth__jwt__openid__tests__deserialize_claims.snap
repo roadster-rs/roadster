@@ -1,0 +1,33 @@
+---
+source: src/middleware/http/auth/jwt/openid.rs
+expression: claims
+---
+Claims {
+    issuer: Url {
+        scheme: "http",
+        cannot_be_a_base: false,
+        username: "",
+        password: None,
+        host: Some(
+            Domain(
+                "example.com",
+            ),
+        ),
+        port: None,
+        path: "/",
+        query: None,
+        fragment: None,
+    },
+    subject: Int(
+        1234,
+    ),
+    audience: [],
+    expires_at: 1970-01-01T00:33:20Z,
+    issued_at: 1970-01-01T00:16:40Z,
+    auth_time: None,
+    nonce: None,
+    auth_cxt_class_reference: None,
+    auth_methods_references: [],
+    authorized_party: None,
+    custom: {},
+}
