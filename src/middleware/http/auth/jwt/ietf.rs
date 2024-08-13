@@ -14,7 +14,7 @@ use typed_builder::TypedBuilder;
 #[serde_as]
 #[derive(Debug, Clone, Deserialize, Serialize, TypedBuilder)]
 #[non_exhaustive]
-pub struct Claims {
+pub struct Claims<C = BTreeMap<String, Value>> {
     /// See: <https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.1>
     #[serde(rename = "iss")]
     #[builder(default, setter(strip_option))]
@@ -54,8 +54,7 @@ pub struct Claims {
     pub jwt_id: Option<String>,
 
     #[serde(flatten)]
-    #[builder(default)]
-    pub custom: BTreeMap<String, Value>,
+    pub custom: C,
 }
 
 #[cfg(test)]
@@ -65,8 +64,8 @@ mod tests {
     use crate::middleware::http::auth::jwt::decode_auth_token;
     use crate::util::serde::{UriOrString, Wrapper};
     use chrono::{TimeDelta, Utc};
+    use insta::assert_debug_snapshot;
     use jsonwebtoken::{encode, EncodingKey, Header, TokenData};
-    use serde_json::from_str;
     use std::ops::{Add, Sub};
     use std::str::FromStr;
     use url::Url;
@@ -144,7 +143,7 @@ mod tests {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn deserialize_audience_as_vec() {
         let value: Wrapper<Vec<UriOrString>> =
-            from_str(r#"{"inner": ["https://example.com", "aud2"]}"#).unwrap();
+            serde_json::from_str(r#"{"inner": ["https://example.com", "aud2"]}"#).unwrap();
         assert_eq!(
             value.inner,
             vec![
@@ -152,5 +151,14 @@ mod tests {
                 UriOrString::String("aud2".to_string())
             ]
         );
+    }
+
+    #[test]
+    fn deserialize_claims() {
+        let claims = r#"
+        exp = 1000
+        "#;
+        let claims: Claims = toml::from_str(claims).unwrap();
+        assert_debug_snapshot!(claims);
     }
 }

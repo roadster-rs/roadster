@@ -16,7 +16,7 @@ use crate::util::serde::{deserialize_from_str, serialize_to_str, UriOrString};
 #[serde_as]
 #[derive(Debug, Clone, Deserialize, Serialize, TypedBuilder)]
 #[non_exhaustive]
-pub struct Claims {
+pub struct Claims<C = BTreeMap<String, Value>> {
     #[serde(rename = "iss")]
     pub issuer: Url,
 
@@ -57,8 +57,7 @@ pub struct Claims {
     pub authorized_party: Option<UriOrString>,
 
     #[serde(flatten)]
-    #[builder(default)]
-    pub custom: BTreeMap<String, Value>,
+    pub custom: C,
 }
 
 // Intentionally not annotated with `#[non_exhaustive]`
@@ -80,6 +79,7 @@ pub enum Acr {
 mod tests {
     use super::*;
     use crate::util::serde::Wrapper;
+    use insta::assert_debug_snapshot;
     use serde_json::from_str;
     use std::str::FromStr;
     use url::Url;
@@ -118,5 +118,17 @@ mod tests {
     fn deserialize_acr_as_string() {
         let value: Wrapper<Acr> = from_str(r#"{"inner": "invalid-uri"}"#).unwrap();
         assert_eq!(value.inner, Acr::String("invalid-uri".to_string()));
+    }
+
+    #[test]
+    fn deserialize_claims() {
+        let claims = r#"
+        iss = "http://example.com"
+        sub = "1234"
+        iat = 1000
+        exp = 2000
+        "#;
+        let claims: Claims = toml::from_str(claims).unwrap();
+        assert_debug_snapshot!(claims);
     }
 }
