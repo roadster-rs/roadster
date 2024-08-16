@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.20](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.19...roadster-v0.5.20) - 2024-08-16
+
+### Added
+- Remove cookie extraction for `Jwt`, but allow it in `JwtCsrf` ([#332](https://github.com/roadster-rs/roadster/pull/332))
+- Allow custom sub-claims in provided `Claims` types ([#331](https://github.com/roadster-rs/roadster/pull/331))
+- Allow jwt from cookie, but only if it's explicitly requested ([#329](https://github.com/roadster-rs/roadster/pull/329))
+
 ## [0.5.19](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.18...roadster-v0.5.19) - 2024-08-12
 
 ### Added
