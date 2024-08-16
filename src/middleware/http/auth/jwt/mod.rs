@@ -25,6 +25,7 @@ use jsonwebtoken::{decode, DecodingKey, Header, TokenData, Validation};
 use serde_derive::{Deserialize, Serialize};
 #[cfg(not(any(feature = "jwt-ietf", feature = "jwt-openid")))]
 use serde_json::Value as Claims;
+use typed_builder::TypedBuilder;
 use url::Url;
 use uuid::Uuid;
 
@@ -54,45 +55,119 @@ where
     type Rejection = Error;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        let context = AppContext::from_ref(state);
+        let token = extract_from_request_parts_maybe_cookie(parts, state, false).await?;
+        Ok(token.token)
+    }
+}
 
-        let token = parts
-            .extract::<BearerAuthHeader>()
-            .await
-            .ok()
-            .map(|auth_header| auth_header.0.token().to_string());
-        let token = if token.is_some() {
-            token
-        } else if let Some(cookie_name) = context.config().auth.jwt.cookie_name.as_ref() {
-            parts
-                .extract::<CookieJar>()
-                .await
-                .ok()
-                .and_then(|cookies| bearer_token_from_cookies(cookie_name, cookies))
-        } else {
-            None
-        };
+/// Similar to [`Jwt`], but allows extracting the JWT from the request cookies (if the
+/// `auth.jwt.cookie-name` config is set) in addition to the request header. This is useful for
+/// use in web-apps because the JWT can be set as a cookie and be automatically sent along with
+/// every request instead of needing to add the header to every request (which would preclude the
+/// web-app from supporting clients without javascript enabled). However, *THIS MAY MAKE THE
+/// CONSUMING APPLICATION VULNERABLE TO CSRF ATTACKS*. If this struct is used, the consuming
+/// application should implement a CSRF protection mechanism. See the following for more
+/// information and recommendations:
+///
+/// - <https://owasp.org/www-community/attacks/csrf>
+/// - <https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html>
+///
+/// If the functionality to extract from a cookie is not required, it's recommended to use
+/// the normal [`Jwt`] directly.
+#[cfg_attr(feature = "open-api", derive(aide::OperationIo))]
+#[derive(Deserialize, Serialize, TypedBuilder)]
+#[non_exhaustive]
+pub struct JwtCsrf<C = Claims> {
+    pub token: Jwt<C>,
+    pub csrf_status: CsrfStatus,
+}
 
-        let token = if let Some(token) = token {
-            token
-        } else {
-            return Err(HttpError::unauthorized()
-                .error("Authorization token not found.")
-                .into());
-        };
+#[async_trait]
+impl<S, C> FromRequestParts<S> for JwtCsrf<C>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    C: for<'de> serde::Deserialize<'de>,
+{
+    type Rejection = Error;
 
-        let token: TokenData<C> = decode_auth_token(
-            &token,
-            &context.config().auth.jwt.secret,
-            &context.config().auth.jwt.claims.audience,
-            &context.config().auth.jwt.claims.required_claims,
-        )?;
-        let token = Jwt {
-            header: token.header,
-            claims: token.claims,
-        };
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        let token = extract_from_request_parts_maybe_cookie(parts, state, true).await?;
         Ok(token)
     }
+}
+
+/// Included in [`JwtCsrf`] to indicate whether it's safe to use the JWT or if the consuming
+/// application should apply a CSRF protection mechanism before performing any destructive actions
+/// for the subject represented by the JWT.
+#[cfg_attr(feature = "open-api", derive(aide::OperationIo))]
+#[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum CsrfStatus {
+    /// Indicates that the consuming application should apply a CSRF protection mechanism before
+    /// performing any destructive actions for the subject represented by the [`JwtCsrf`].
+    Vulnerable,
+    /// Indicates that the consuming application can safely use the [`JwtCsrf`] without applying
+    /// a CSRF protection mechanism first.
+    Safe,
+}
+
+async fn extract_from_request_parts_maybe_cookie<S, C>(
+    parts: &mut Parts,
+    state: &S,
+    allow_extract_from_cookie: bool,
+) -> RoadsterResult<JwtCsrf<C>>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    C: for<'de> serde::Deserialize<'de>,
+{
+    let context = AppContext::from_ref(state);
+
+    let token = parts
+        .extract::<BearerAuthHeader>()
+        .await
+        .ok()
+        .map(|auth_header| auth_header.0.token().to_string());
+
+    let (token, csrf_status) = if token.is_some() {
+        (token, Some(CsrfStatus::Safe))
+    } else if !allow_extract_from_cookie {
+        (None, None)
+    } else if let Some(cookie_name) = context.config().auth.jwt.cookie_name.as_ref() {
+        let token = parts
+            .extract::<CookieJar>()
+            .await
+            .ok()
+            .and_then(|cookies| bearer_token_from_cookies(cookie_name, cookies));
+        (token, Some(CsrfStatus::Vulnerable))
+    } else {
+        (None, None)
+    };
+
+    let (token, csrf_status) = if let Some((token, csrf_status)) = token.zip(csrf_status) {
+        (token, csrf_status)
+    } else {
+        return Err(HttpError::unauthorized()
+            .error("Authorization token not found.")
+            .into());
+    };
+
+    let token: TokenData<C> = decode_auth_token(
+        &token,
+        &context.config().auth.jwt.secret,
+        &context.config().auth.jwt.claims.audience,
+        &context.config().auth.jwt.claims.required_claims,
+    )?;
+    let token = Jwt {
+        header: token.header,
+        claims: token.claims,
+    };
+
+    Ok(JwtCsrf::builder()
+        .token(token)
+        .csrf_status(csrf_status)
+        .build())
 }
 
 fn bearer_token_from_cookies(cookie_name: &str, cookies: CookieJar) -> Option<String> {
