@@ -55,8 +55,8 @@ schemars = { workspace = true, optional = true }
 http-body-util = "0.1.0"
 
 # DB
-sea-orm = { version = "1.0.0-rc.5", features = ["debug-print", "runtime-tokio-rustls", "sqlx-postgres", "macros"], optional = true }
-sea-orm-migration = { version = "1.0.0-rc.5", features = ["runtime-tokio-rustls", "sqlx-postgres"], optional = true }
+sea-orm = { workspace = true, features = ["debug-print", "runtime-tokio-rustls", "sqlx-postgres", "macros"], optional = true }
+sea-orm-migration = { workspace = true, features = ["runtime-tokio-rustls", "sqlx-postgres"], optional = true }
 
 # Workers
 rusty-sidekiq = { workspace = true, optional = true }
@@ -126,6 +126,10 @@ async-trait = "0.1.74"
 aide = { version = "0.13.4", features = ["axum"] }
 axum = "0.7.4"
 schemars = "0.8.16"
+
+# DB
+sea-orm = { version = "1.0.0" }
+sea-orm-migration = { version = "1.0.0" }
 
 # CLI
 clap = { version = "4.3.0", features = ["derive"] }

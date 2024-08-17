@@ -13,7 +13,7 @@ tokio = { workspace = true }
 roadster = { path = "../../..", default-features = false, features = ["db-sql"] }
 
 [dependencies.sea-orm-migration]
-version = "1.0.0-rc.5"
+workspace = true
 features = [
     # Enable at least one `ASYNC_RUNTIME` and `DATABASE_DRIVER` feature if you want to run migration via CLI.
     # View the list of supported features at https://www.sea-ql.org/SeaORM/docs/install-and-config/database-and-async-runtime.
