@@ -70,6 +70,8 @@ feature-depth = 1
 # A list of advisory IDs to ignore. Note that ignored advisories will still
 # output a note when they are encountered.
 ignore = [
+    # Todo: https://github.com/roadster-rs/roadster/issues/335 - Remove this
+    { id = "RUSTSEC-2024-0363", reason = "Transitive dependency; need sea-orm to update it's sqlx dependency. Also, our size-limit middleware mitigates the issue by limiting input to 5 MB by default." }
     #"RUSTSEC-0000-0000",
     #{ id = "RUSTSEC-0000-0000", reason = "you can specify a reason the advisory is ignored" },
     #"a-crate-that-is-yanked@0.1.1", # you can also ignore yanked crate versions if you wish
