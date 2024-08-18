@@ -24,7 +24,7 @@ ssr = [
 ]
 
 [dependencies]
-roadster = { version = "0.5", path = "../..", optional = true, default-features = false, features = ["http", "db-sql", "cli"] }
+roadster = { version = "0.6", path = "../..", optional = true, default-features = false, features = ["http", "db-sql", "cli"] }
 tokio = { workspace = true, optional = true }
 tokio-util = { workspace = true, optional = true }
 anyhow = { workspace = true }
