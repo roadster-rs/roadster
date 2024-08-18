@@ -14,7 +14,6 @@ use crate::util::serde::{deserialize_from_str, serialize_to_str};
 use async_trait::async_trait;
 use axum::extract::{FromRef, FromRequestParts};
 use axum::http::request::Parts;
-use axum::http::HeaderValue;
 use axum::RequestPartsExt;
 use axum_extra::extract::CookieJar;
 use axum_extra::headers::authorization::Bearer;
@@ -139,7 +138,7 @@ where
             .extract::<CookieJar>()
             .await
             .ok()
-            .and_then(|cookies| bearer_token_from_cookies(cookie_name, cookies));
+            .and_then(|cookies| token_from_cookies(cookie_name, cookies));
         (token, Some(CsrfStatus::Vulnerable))
     } else {
         (None, None)
@@ -170,18 +169,10 @@ where
         .build())
 }
 
-fn bearer_token_from_cookies(cookie_name: &str, cookies: CookieJar) -> Option<String> {
+fn token_from_cookies(cookie_name: &str, cookies: CookieJar) -> Option<String> {
     cookies
         .get(cookie_name)
-        .map(|cookie| cookie.value())
-        .and_then(|token| HeaderValue::from_str(token).ok())
-        .and_then(|header_value| {
-            <Authorization<Bearer> as axum_extra::headers::Header>::decode(
-                &mut [&header_value].into_iter(),
-            )
-            .ok()
-        })
-        .map(|auth_header| auth_header.token().to_string())
+        .map(|cookie| cookie.value().to_string())
 }
 
 fn decode_auth_token<T1, T2, C>(
@@ -320,15 +311,14 @@ mod tests {
     }
 
     #[rstest]
-    #[case::valid_token("Bearer foo")]
-    #[case::invalid_token("foo")]
-    fn bearer_token_from_cookies(_case: TestCase, #[case] cookie_value: &str) {
+    #[case::valid_token("foo")]
+    fn token_from_cookies(_case: TestCase, #[case] cookie_value: &str) {
         let cookies = CookieJar::new().add(Cookie::new(
             AUTHORIZATION.as_str(),
             cookie_value.to_string(),
         ));
 
-        let token = super::bearer_token_from_cookies(AUTHORIZATION.as_str(), cookies);
+        let token = super::token_from_cookies(AUTHORIZATION.as_str(), cookies);
 
         assert_debug_snapshot!(token);
     }
