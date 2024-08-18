@@ -28,13 +28,13 @@ impl RoadsterApp<AppState> for Server {
     type Cli = crate::cli::AppCli;
     type M = Migrator;
 
-    fn metadata(_config: &AppConfig) -> RoadsterResult<AppMetadata> {
+    fn metadata(&self, _config: &AppConfig) -> RoadsterResult<AppMetadata> {
         Ok(AppMetadata::builder()
             .version(env!("VERGEN_GIT_SHA").to_string())
             .build())
     }
 
-    async fn provide_state(app_context: AppContext) -> RoadsterResult<AppState> {
+    async fn provide_state(&self, app_context: AppContext) -> RoadsterResult<AppState> {
         let leptos_config = get_configuration(None).await.map_err(|e| anyhow!(e))?;
         let leptos_options = leptos_config.leptos_options.clone();
         let state = AppState {
@@ -46,6 +46,7 @@ impl RoadsterApp<AppState> for Server {
     }
 
     async fn services(
+        &self,
         registry: &mut ServiceRegistry<Self, AppState>,
         state: &AppState,
     ) -> RoadsterResult<()> {

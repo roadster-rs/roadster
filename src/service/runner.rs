@@ -10,6 +10,7 @@ use anyhow::anyhow;
 use axum::extract::FromRef;
 use itertools::Itertools;
 use std::future::Future;
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
@@ -83,6 +84,7 @@ where
 }
 
 pub(crate) async fn run<A, S>(
+    app: A,
     service_registry: ServiceRegistry<A, S>,
     state: &S,
 ) -> RoadsterResult<()>
@@ -91,6 +93,7 @@ where
     AppContext: FromRef<S>,
     A: App<S>,
 {
+    let app = Arc::new(app);
     let cancel_token = CancellationToken::new();
     let mut join_set = JoinSet::new();
 
@@ -106,13 +109,13 @@ where
 
     // Task to clean up resources when gracefully shutting down.
     {
-        let context = state.clone();
         let cancel_token = cancel_token.clone();
         let app_graceful_shutdown = {
-            let context = context.clone();
-            Box::pin(async move { A::graceful_shutdown(&context).await })
+            let state = state.clone();
+            let app = app.clone();
+            Box::pin(async move { app.graceful_shutdown(&state).await })
         };
-        let context = AppContext::from_ref(&context);
+        let context = AppContext::from_ref(state);
         join_set.spawn(Box::pin(async move {
             cancel_on_error(
                 cancel_token.clone(),
@@ -128,10 +131,10 @@ where
     }
     // Task to listen for the signal to gracefully shutdown, and trigger other tasks to stop.
     {
-        let context = state.clone();
         let app_graceful_shutdown_signal = {
-            let context = context.clone();
-            Box::pin(async move { A::graceful_shutdown_signal(&context).await })
+            let context = state.clone();
+            let app = app.clone();
+            Box::pin(async move { app.graceful_shutdown_signal(&context).await })
         };
         let graceful_shutdown_signal =
             graceful_shutdown_signal(cancel_token.clone(), app_graceful_shutdown_signal);
