@@ -30,17 +30,18 @@ impl RoadsterApp<AppState> for App {
     type Cli = AppCli;
     type M = Migrator;
 
-    fn metadata(_config: &AppConfig) -> RoadsterResult<AppMetadata> {
+    fn metadata(&self, _config: &AppConfig) -> RoadsterResult<AppMetadata> {
         Ok(AppMetadata::builder()
             .version(env!("VERGEN_GIT_SHA").to_string())
             .build())
     }
 
-    async fn provide_state(app_context: AppContext) -> RoadsterResult<AppState> {
+    async fn provide_state(&self, app_context: AppContext) -> RoadsterResult<AppState> {
         Ok(AppState { app_context })
     }
 
     async fn services(
+        &self,
         registry: &mut ServiceRegistry<Self, AppState>,
         state: &AppState,
     ) -> RoadsterResult<()> {

@@ -29,6 +29,7 @@ use sea_orm_migration::MigratorTrait;
 #[cfg(feature = "cli")]
 use std::env;
 use std::future;
+use std::sync::Arc;
 use tracing::{instrument, warn};
 
 pub async fn run<A, S>(app: A) -> RoadsterResult<()>
@@ -78,7 +79,7 @@ where
 
     let config = AppConfig::new(environment)?;
 
-    A::init_tracing(&config)?;
+    app.init_tracing(&config)?;
 
     #[cfg(not(feature = "cli"))]
     config.validate(true)?;
@@ -86,23 +87,24 @@ where
     config.validate(!roadster_cli.skip_validate_config)?;
 
     #[cfg(not(test))]
-    let metadata = A::metadata(&config)?;
+    let metadata = app.metadata(&config)?;
 
     // The `config.clone()` here is technically not necessary. However, without it, RustRover
     // is giving a "value used after move" error when creating an actual `AppContext` below.
     #[cfg(test)]
     let context = AppContext::test(Some(config.clone()), None, None)?;
     #[cfg(not(test))]
-    let context = AppContext::new::<A, S>(config, metadata).await?;
+    let context = AppContext::new::<A, S>(&app, config, metadata).await?;
 
-    let state = A::provide_state(context.clone()).await?;
+    let state = app.provide_state(context.clone()).await?;
 
     let mut health_check_registry = HealthCheckRegistry::new(&context);
-    A::health_checks(&mut health_check_registry, &state).await?;
+    app.health_checks(&mut health_check_registry, &state)
+        .await?;
     context.set_health_checks(health_check_registry)?;
 
     let mut service_registry = ServiceRegistry::new(&state);
-    A::services(&mut service_registry, &state).await?;
+    app.services(&mut service_registry, &state).await?;
 
     Ok(PreparedApp {
         app,
@@ -122,20 +124,22 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    #[cfg(feature = "cli")]
-    let (app, roadster_cli, app_cli) = (
-        &prepared_app.app,
-        &prepared_app.roadster_cli,
-        &prepared_app.app_cli,
-    );
     let state = &prepared_app.state;
-    let context = AppContext::from_ref(state);
-    let service_registry = &prepared_app.service_registry;
 
     #[cfg(feature = "cli")]
-    if crate::api::cli::handle_cli(app, roadster_cli, app_cli, state).await? {
-        return Ok(());
+    {
+        let PreparedApp {
+            app,
+            roadster_cli,
+            app_cli,
+            ..
+        } = &prepared_app;
+        if crate::api::cli::handle_cli(app, roadster_cli, app_cli, state).await? {
+            return Ok(());
+        }
     }
+    let context = AppContext::from_ref(state);
+    let service_registry = &prepared_app.service_registry;
 
     if service_registry.services.is_empty() {
         warn!("No enabled services were registered, exiting.");
@@ -143,8 +147,17 @@ where
     }
 
     #[cfg(feature = "cli")]
-    if crate::service::runner::handle_cli(roadster_cli, app_cli, service_registry, state).await? {
-        return Ok(());
+    {
+        let PreparedApp {
+            roadster_cli,
+            app_cli,
+            ..
+        } = &prepared_app;
+        if crate::service::runner::handle_cli(roadster_cli, app_cli, service_registry, state)
+            .await?
+        {
+            return Ok(());
+        }
     }
 
     #[cfg(feature = "db-sql")]
@@ -156,7 +169,7 @@ where
 
     crate::service::runner::before_run(service_registry, state).await?;
 
-    crate::service::runner::run(prepared_app.service_registry, state).await?;
+    crate::service::runner::run(prepared_app.app, prepared_app.service_registry, state).await?;
 
     Ok(())
 }
@@ -173,18 +186,18 @@ where
     #[cfg(feature = "db-sql")]
     type M: MigratorTrait;
 
-    fn init_tracing(config: &AppConfig) -> RoadsterResult<()> {
-        init_tracing(config, &Self::metadata(config)?)?;
+    fn init_tracing(&self, config: &AppConfig) -> RoadsterResult<()> {
+        init_tracing(config, &self.metadata(config)?)?;
 
         Ok(())
     }
 
-    fn metadata(_config: &AppConfig) -> RoadsterResult<AppMetadata> {
+    fn metadata(&self, _config: &AppConfig) -> RoadsterResult<AppMetadata> {
         Ok(Default::default())
     }
 
     #[cfg(feature = "db-sql")]
-    fn db_connection_options(config: &AppConfig) -> RoadsterResult<ConnectOptions> {
+    fn db_connection_options(&self, config: &AppConfig) -> RoadsterResult<ConnectOptions> {
         Ok(ConnectOptions::from(&config.database))
     }
 
@@ -193,29 +206,37 @@ where
     /// extract its [AppContext] when needed.
     ///
     /// See the following for more details regarding [FromRef]: <https://docs.rs/axum/0.7.5/axum/extract/trait.FromRef.html>
-    async fn provide_state(context: AppContext) -> RoadsterResult<S>;
+    async fn provide_state(&self, context: AppContext) -> RoadsterResult<S>;
 
     /// Provide the [crate::health_check::HealthCheck]s to use throughout the app.
-    async fn health_checks(_registry: &mut HealthCheckRegistry, _state: &S) -> RoadsterResult<()> {
+    async fn health_checks(
+        &self,
+        _registry: &mut HealthCheckRegistry,
+        _state: &S,
+    ) -> RoadsterResult<()> {
         Ok(())
     }
 
     /// Provide the [crate::service::AppService]s to run in the app.
-    async fn services(_registry: &mut ServiceRegistry<Self, S>, _state: &S) -> RoadsterResult<()> {
+    async fn services(
+        &self,
+        _registry: &mut ServiceRegistry<Self, S>,
+        _state: &S,
+    ) -> RoadsterResult<()> {
         Ok(())
     }
 
     /// Override to provide a custom shutdown signal. Roadster provides some default shutdown
     /// signals, but it may be desirable to provide a custom signal in order to, e.g., shutdown the
     /// server when a particular API is called.
-    async fn graceful_shutdown_signal(_state: &S) {
+    async fn graceful_shutdown_signal(self: Arc<Self>, _state: &S) {
         let _output: () = future::pending().await;
     }
 
     /// Override to provide custom graceful shutdown logic to clean up any resources created by
     /// the app. Roadster will take care of cleaning up the resources it created.
     #[instrument(skip_all)]
-    async fn graceful_shutdown(_state: &S) -> RoadsterResult<()> {
+    async fn graceful_shutdown(self: Arc<Self>, _state: &S) -> RoadsterResult<()> {
         Ok(())
     }
 }
