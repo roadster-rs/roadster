@@ -13,6 +13,8 @@ use dotenvy::dotenv;
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
+use std::fs;
+use std::path::Path;
 use tracing::warn;
 use validator::Validate;
 
@@ -76,13 +78,12 @@ impl AppConfig {
         };
         let environment_str: &str = environment.clone().into();
 
-        let config = Self::default_config(environment)
-            // Todo: allow other file formats?
-            // Todo: allow splitting config into multiple files?
-            .add_source(config::File::with_name("config/default.toml"))
-            .add_source(config::File::with_name(&format!(
-                "config/{environment_str}.toml"
-            )))
+        let config = Self::default_config(environment);
+        let config = config_env_file("default", config);
+        let config = config_env_dir("default", config)?;
+        let config = config_env_file(environment_str, config);
+        let config = config_env_dir(environment_str, config)?;
+        let config = config
             .add_source(
                 config::Environment::default()
                     .prefix(ENV_VAR_PREFIX)
@@ -185,6 +186,58 @@ impl AppConfig {
         }
         Ok(())
     }
+}
+
+/// Adds a config file in the relative path `config/{environment}.toml` to the
+/// [`ConfigBuilder`]. If no such file exists, does nothing.
+fn config_env_file(
+    environment: &str,
+    config: ConfigBuilder<DefaultState>,
+) -> ConfigBuilder<DefaultState> {
+    // Todo: allow other file formats?
+    let filename = format!("config/{environment}.toml");
+
+    let path = Path::new(&filename);
+    if !path.is_file() {
+        return config;
+    }
+
+    config.add_source(config::File::from(path))
+}
+
+/// Recursively adds all the config files in the given relative path `config/{environment}/` to the
+/// [`ConfigBuilder`]. If no such directory exists, does nothing.
+fn config_env_dir(
+    environment: &str,
+    config: ConfigBuilder<DefaultState>,
+) -> RoadsterResult<ConfigBuilder<DefaultState>> {
+    let dirname = format!("config/{environment}");
+
+    let path = Path::new(&dirname);
+    if !path.is_dir() {
+        return Ok(config);
+    }
+
+    config_env_dir_recursive(path, config)
+}
+
+/// Helper method for [`config_env_dir`] to recursively add config files in the given path
+/// to the [`ConfigBuilder`].
+// Todo: allow other file formats?
+fn config_env_dir_recursive(
+    path: &Path,
+    config: ConfigBuilder<DefaultState>,
+) -> RoadsterResult<ConfigBuilder<DefaultState>> {
+    fs::read_dir(path)?.try_fold(config, |config, dir_entry| {
+        let path = dir_entry?.path();
+        if path.is_dir() {
+            config_env_dir_recursive(&path, config)
+        } else if path.is_file() && path.extension().unwrap_or_default() == "toml" {
+            Ok(config.add_source(config::File::from(path)))
+        } else {
+            Ok(config)
+        }
+    })
 }
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]

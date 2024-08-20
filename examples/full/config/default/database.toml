@@ -1,0 +1,7 @@
+[database]
+auto-migrate = true
+connect-timeout = 5000
+acquire-timeout = 5000
+idle-timeout = 60
+min-connections = 0
+max-connections = 10
