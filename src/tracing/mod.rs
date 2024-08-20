@@ -26,7 +26,6 @@ use crate::config::app_config::AppConfig;
 use crate::config::tracing::Format;
 use crate::error::RoadsterResult;
 
-// Todo: make this configurable
 pub fn init_tracing(
     config: &AppConfig,
     #[allow(unused_variables)] // This parameter isn't used in some feature combinations
@@ -60,13 +59,25 @@ pub fn init_tracing(
             )
         }
         Format::Pretty => {
-            assert!(pretty_log_layer.is_some())
+            assert!(
+                pretty_log_layer.is_some()
+                    && compact_log_layer.is_none()
+                    && json_log_layer.is_none()
+            )
         }
         Format::Compact => {
-            assert!(compact_log_layer.is_some())
+            assert!(
+                compact_log_layer.is_some()
+                    && pretty_log_layer.is_none()
+                    && json_log_layer.is_none()
+            )
         }
         Format::Json => {
-            assert!(json_log_layer.is_some())
+            assert!(
+                json_log_layer.is_some()
+                    && pretty_log_layer.is_none()
+                    && compact_log_layer.is_none()
+            )
         }
     }
 
