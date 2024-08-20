@@ -31,7 +31,6 @@ where
     fn name(&self) -> String;
 
     /// Whether the service is enabled. If the service is not enabled, it will not be run.
-    // Todo: use AppContext directly?
     fn enabled(&self, state: &S) -> bool;
 
     /// Called when the app is starting up allow the service to handle CLI commands.
