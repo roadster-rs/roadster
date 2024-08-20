@@ -1,0 +1,2 @@
+[service.sidekiq]
+queues = ["default"]

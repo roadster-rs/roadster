@@ -4,14 +4,6 @@ name = "Minimal Example"
 [tracing]
 level = "debug"
 
-[database]
-auto-migrate = true
-connect-timeout = 5000
-acquire-timeout = 5000
-idle-timeout = 60
-min-connections = 0
-max-connections = 10
-
 [service.http]
 # Listen on any ipv4 or ipv6 addr, useful to allow connections from LAN for local dev
 # host = "[::]"
@@ -22,6 +14,3 @@ port = 3000
 [service.grpc]
 host = "127.0.0.1"
 port = 3001
-
-[service.sidekiq]
-queues = ["default"]
