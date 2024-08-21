@@ -8,6 +8,10 @@
 use sea_orm_migration::{prelude::*, schema::*};
 use typed_builder::TypedBuilder;
 
+#[deprecated(
+    since = "0.6.0",
+    note = "Moved to migration::timestamps, import from there instead."
+)]
 pub use crate::migration::timestamp::Timestamps;
 
 /// Create a table if it does not exist yet and add some default columns
