@@ -14,7 +14,8 @@ mod tests;
 
 /// Contains the identifiers/fields created by all the `user` migrations.
 #[derive(DeriveIden)]
-pub(crate) enum User {
+#[non_exhaustive]
+pub enum User {
     Table,
     Id,
     Name,
