@@ -8,29 +8,7 @@
 use sea_orm_migration::{prelude::*, schema::*};
 use typed_builder::TypedBuilder;
 
-/// Timestamp related fields.
-#[derive(DeriveIden)]
-#[non_exhaustive]
-pub enum Timestamps {
-    /// When the row was created. When used with the [timestamps] method, will default to
-    /// the current timestamp (with timezone).
-    CreatedAt,
-    /// When the row was updated. When used with the [timestamps] method, will be initially set to
-    /// the current timestamp (with timezone).
-    ///
-    /// To automatically update the value for a row whenever the row is updated, include the
-    /// [crate::migration::timestamp::m20240723_201404_add_update_timestamp_function::Migration]
-    /// in your [MigratorTrait] implementation, along with a [MigrationTrait] for your table
-    /// that add a trigger to update the column. Helper methods are provided for this in
-    /// the [crate::migration::timestamp] module. Specifically, see:
-    /// - [crate::migration::timestamp::exec_create_update_timestamp_trigger]
-    /// - [crate::migration::timestamp::exec_drop_update_timestamp_trigger]
-    ///
-    /// Note that the auto-updates mentioned above are currently only supported on Postgres. If
-    /// an app is using a different DB, it will need to manually update the timestamp when updating
-    /// a row.
-    UpdatedAt,
-}
+pub use crate::migration::timestamp::Timestamps;
 
 /// Create a table if it does not exist yet and add some default columns
 /// (e.g., create/update timestamps).
