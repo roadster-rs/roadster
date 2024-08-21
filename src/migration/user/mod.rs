@@ -14,14 +14,15 @@ mod tests;
 
 /// Contains the identifiers/fields created by all the `user` migrations.
 #[derive(DeriveIden)]
-pub(crate) enum User {
+#[non_exhaustive]
+pub enum User {
     Table,
     Id,
     Name,
     Username,
     Email,
     Password,
-    /// When the user's password was updated. Defaults to the[crate::migration::timestamp::Timestamps::UpdatedAt]
+    /// When the user's password was updated. Defaults to the [`UpdatedAt`][crate::migration::timestamp::Timestamps]
     /// time. Useful in the event users' passwords may have been compromised and the application
     /// needs to enforce that users update their passwords.
     ///

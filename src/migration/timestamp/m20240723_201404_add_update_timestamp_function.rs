@@ -3,7 +3,7 @@
 //!
 //! Note: Currently only supports Postgres. If another DB is used, will do nothing.
 
-use crate::migration::schema::Timestamps;
+use crate::migration::timestamp::Timestamps;
 use crate::migration::timestamp::{
     exec_create_update_timestamp_function, exec_drop_update_timestamp_function,
 };
