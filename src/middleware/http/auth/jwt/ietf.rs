@@ -61,7 +61,7 @@ pub struct Claims<C = BTreeMap<String, Value>> {
 mod tests {
     use super::*;
     use crate::error::RoadsterResult;
-    use crate::middleware::http::auth::jwt::decode_auth_token;
+    use crate::middleware::http::auth::jwt::decode_auth_token_internal;
     use crate::util::serde::{UriOrString, Wrapper};
     use chrono::{TimeDelta, Utc};
     use insta::assert_debug_snapshot;
@@ -80,7 +80,7 @@ mod tests {
         let jwt = build_token(false, None);
 
         let decoded: TokenData<Claims> =
-            decode_auth_token(&jwt.1, TEST_JWT_SECRET, AUDIENCE, REQUIRED_CLAIMS).unwrap();
+            decode_auth_token_internal(&jwt.1, TEST_JWT_SECRET, AUDIENCE, REQUIRED_CLAIMS).unwrap();
 
         assert_eq!(decoded.claims.subject, jwt.0.subject);
     }
@@ -91,7 +91,7 @@ mod tests {
         let (_, jwt) = build_token(true, None);
 
         let decoded: RoadsterResult<TokenData<Claims>> =
-            decode_auth_token(&jwt, TEST_JWT_SECRET, AUDIENCE, REQUIRED_CLAIMS);
+            decode_auth_token_internal(&jwt, TEST_JWT_SECRET, AUDIENCE, REQUIRED_CLAIMS);
 
         assert!(decoded.is_err());
     }
@@ -102,7 +102,7 @@ mod tests {
         let (_, jwt) = build_token(false, Some("different-audience".to_string()));
 
         let decoded: RoadsterResult<TokenData<Claims>> =
-            decode_auth_token(&jwt, TEST_JWT_SECRET, AUDIENCE, REQUIRED_CLAIMS);
+            decode_auth_token_internal(&jwt, TEST_JWT_SECRET, AUDIENCE, REQUIRED_CLAIMS);
 
         assert!(decoded.is_err());
     }
