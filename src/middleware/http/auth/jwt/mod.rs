@@ -152,16 +152,7 @@ where
             .into());
     };
 
-    let token: TokenData<C> = decode_auth_token(
-        &token,
-        &context.config().auth.jwt.secret,
-        &context.config().auth.jwt.claims.audience,
-        &context.config().auth.jwt.claims.required_claims,
-    )?;
-    let token = Jwt {
-        header: token.header,
-        claims: token.claims,
-    };
+    let token = decode_auth_token(state, &token)?;
 
     Ok(JwtCsrf::builder()
         .token(token)
@@ -175,7 +166,27 @@ fn token_from_cookies(cookie_name: &str, cookies: CookieJar) -> Option<String> {
         .map(|cookie| cookie.value().to_string())
 }
 
-fn decode_auth_token<T1, T2, C>(
+pub fn decode_auth_token<S, C>(state: &S, token: &str) -> RoadsterResult<Jwt<C>>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    C: for<'de> serde::Deserialize<'de>,
+{
+    let context = AppContext::from_ref(state);
+    let token: TokenData<C> = decode_auth_token_internal(
+        token,
+        &context.config().auth.jwt.secret,
+        &context.config().auth.jwt.claims.audience,
+        &context.config().auth.jwt.claims.required_claims,
+    )?;
+
+    Ok(Jwt {
+        header: token.header,
+        claims: token.claims,
+    })
+}
+
+fn decode_auth_token_internal<T1, T2, C>(
     token: &str,
     jwt_secret: &str,
     audience: &[T1],
