@@ -34,6 +34,8 @@ default-enable = true
 priority = -10000
 header-names = [
     'authorization',
+    'refresh-token',
+    'x-refresh-token',
     'proxy-authorization',
     'cookie',
     'set-cookie',
@@ -43,6 +45,8 @@ header-names = [
 priority = 10000
 header-names = [
     'authorization',
+    'refresh-token',
+    'x-refresh-token',
     'proxy-authorization',
     'cookie',
     'set-cookie',
