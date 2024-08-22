@@ -4,11 +4,11 @@ default-enable = true
 
 [service.http.middleware.sensitive-request-headers]
 priority = -10000
-header-names = ["authorization", "proxy-authorization", "cookie", "set-cookie"]
+header-names = ["authorization", "refresh-token", "x-refresh-token", "proxy-authorization", "cookie", "set-cookie"]
 
 [service.http.middleware.sensitive-response-headers]
 priority = 10000
-header-names = ["authorization", "proxy-authorization", "cookie", "set-cookie"]
+header-names = ["authorization", "refresh-token", "x-refresh-token", "proxy-authorization", "cookie", "set-cookie"]
 
 [service.http.middleware.set-request-id]
 priority = -9990
