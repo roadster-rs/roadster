@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.19...roadster-v0.6.0) - 2024-08-23
+
+### Added
+- Add a public method to decode a JWT from a string ([#348](https://github.com/roadster-rs/roadster/pull/348))
+- Mark refresh token headers as sensitive ([#347](https://github.com/roadster-rs/roadster/pull/347))
+- Make the `User` sea-orm migration enum public ([#346](https://github.com/roadster-rs/roadster/pull/346))
+- Allow splitting config files into many files in env directories ([#344](https://github.com/roadster-rs/roadster/pull/344))
+- [**breaking**] App methods take `self` ([#337](https://github.com/roadster-rs/roadster/pull/337))
+- Remove cookie extraction for `Jwt`, but allow it in `JwtCsrf` ([#332](https://github.com/roadster-rs/roadster/pull/332))
+- Allow custom sub-claims in provided `Claims` types ([#331](https://github.com/roadster-rs/roadster/pull/331))
+- Allow jwt from cookie, but only if it's explicitly requested ([#329](https://github.com/roadster-rs/roadster/pull/329))
+
+### Fixed
+- [**breaking**] Don't expect a "Bearer" token in the auth token cookie ([#340](https://github.com/roadster-rs/roadster/pull/340))
+
+### Other
+- Remove a `todo` comment ([#345](https://github.com/roadster-rs/roadster/pull/345))
+- Remove a todo comment from the tracing mod ([#343](https://github.com/roadster-rs/roadster/pull/343))
+- Update leptos example to use site-addr and env from roadster config ([#341](https://github.com/roadster-rs/roadster/pull/341))
+- sea-orm workspace dep and upgrade to `1.0.0` ([#336](https://github.com/roadster-rs/roadster/pull/336))
+- [**breaking**] Update tower to `0.5.0` ([#334](https://github.com/roadster-rs/roadster/pull/334))
+
 ## [0.5.19](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.18...roadster-v0.5.19) - 2024-08-12
 
 ### Added
