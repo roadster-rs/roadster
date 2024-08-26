@@ -23,8 +23,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [**breaking**] Don't expect a "Bearer" token in the auth token cookie ([#340](https://github.com/roadster-rs/roadster/pull/340))
 
 ### Other
-- Remove a `todo` comment ([#345](https://github.com/roadster-rs/roadster/pull/345))
-- Remove a todo comment from the tracing mod ([#343](https://github.com/roadster-rs/roadster/pull/343))
 - Update leptos example to use site-addr and env from roadster config ([#341](https://github.com/roadster-rs/roadster/pull/341))
 - sea-orm workspace dep and upgrade to `1.0.0` ([#336](https://github.com/roadster-rs/roadster/pull/336))
 - [**breaking**] Update tower to `0.5.0` ([#334](https://github.com/roadster-rs/roadster/pull/334))
