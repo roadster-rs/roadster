@@ -128,7 +128,7 @@ axum = "0.7.4"
 schemars = "0.8.16"
 
 # DB
-sea-orm = { version = "1.0.0" }
+sea-orm = { version = "1.0.1" }
 sea-orm-migration = { version = "1.0.0" }
 
 # CLI
