@@ -15,6 +15,7 @@ ssr = [
     "dep:axum",
     "dep:tokio",
     "dep:tokio-util",
+    "dep:tower",
     "dep:tower-http",
     "dep:leptos_axum",
     "leptos/ssr",
