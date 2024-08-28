@@ -150,7 +150,7 @@ rstest = { version = "0.22.0" }
 tokio = { version = "1.34.0", features = ["full"] }
 # For CancellationToken
 tokio-util = { version = "0.7.10" }
-anyhow = "1.0.69"
+anyhow = "1.0.86"
 serde = { version = "1.0.185", features = ["derive"] }
 
 [package.metadata.docs.rs]
