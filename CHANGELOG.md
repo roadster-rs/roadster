@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.0...roadster-v0.6.1) - 2024-08-28
+
+### Added
+- Allow running CLI commands without requiring DB/Redis connections ([#353](https://github.com/roadster-rs/roadster/pull/353))
+
+### Other
+- Update `typed-builder` and several examples' dependencies ([#352](https://github.com/roadster-rs/roadster/pull/352))
+
 ## [0.6.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.19...roadster-v0.6.0) - 2024-08-25
 
 ### Added
