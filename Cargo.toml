@@ -99,7 +99,7 @@ chrono = { version = "0.4.34", features = ["serde"] }
 byte-unit = { version = "5.0.0", features = ["serde"] }
 convert_case = "0.6.0"
 const_format = "0.2.30"
-typed-builder = "0.19.0"
+typed-builder = "0.20.0"
 num-traits = "0.2.14"
 validator = { version = "0.18.0", features = ["derive"] }
 thiserror = "1.0.38"
