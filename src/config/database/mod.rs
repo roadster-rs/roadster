@@ -1,3 +1,4 @@
+use crate::util::serde::default_true;
 use sea_orm::ConnectOptions;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::serde_as;
@@ -18,6 +19,10 @@ pub struct Database {
     #[serde(default = "Database::default_connect_timeout")]
     #[serde_as(as = "serde_with::DurationMilliSeconds")]
     pub connect_timeout: Duration,
+    /// Whether to attempt to connect to the DB immediately upon creating the [`ConnectOptions`].
+    /// If `true` will wait to connect to the DB until the first DB query is attempted.
+    #[serde(default = "default_true")]
+    pub connect_lazy: bool,
     #[serde(default = "Database::default_acquire_timeout")]
     #[serde_as(as = "serde_with::DurationMilliSeconds")]
     pub acquire_timeout: Duration,
@@ -51,6 +56,7 @@ impl From<&Database> for ConnectOptions {
         let mut options = ConnectOptions::new(database.uri.to_string());
         options
             .connect_timeout(database.connect_timeout)
+            .connect_lazy(database.connect_lazy)
             .acquire_timeout(database.acquire_timeout)
             .min_connections(database.min_connections)
             .max_connections(database.max_connections)
@@ -111,6 +117,7 @@ mod deserialize_tests {
             uri: Url::parse("postgres://example:example@example:1234/example_app").unwrap(),
             auto_migrate: true,
             connect_timeout: Duration::from_secs(1),
+            connect_lazy: true,
             acquire_timeout: Duration::from_secs(2),
             idle_timeout: Some(Duration::from_secs(3)),
             max_lifetime: Some(Duration::from_secs(4)),

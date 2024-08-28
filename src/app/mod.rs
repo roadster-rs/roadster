@@ -38,12 +38,28 @@ where
     AppContext: FromRef<S>,
     A: App<S> + Default + Send + Sync + 'static,
 {
-    let prepared = prepare(app).await?;
-    run_prepared(prepared).await
+    let cli_and_state = build_cli_and_state(app).await?;
+
+    #[cfg(feature = "cli")]
+    {
+        let CliAndState {
+            app,
+            #[cfg(feature = "cli")]
+            roadster_cli,
+            #[cfg(feature = "cli")]
+            app_cli,
+            state,
+        } = &cli_and_state;
+
+        if crate::api::cli::handle_cli(app, roadster_cli, app_cli, state).await? {
+            return Ok(());
+        }
+    }
+
+    run_prepared_without_app_cli(prepare_from_cli_and_state(cli_and_state).await?).await
 }
 
-#[non_exhaustive]
-pub struct PreparedApp<A, S>
+struct CliAndState<A, S>
 where
     A: App<S> + 'static,
     S: Clone + Send + Sync + 'static,
@@ -55,15 +71,9 @@ where
     #[cfg(feature = "cli")]
     pub app_cli: A::Cli,
     pub state: S,
-    pub service_registry: ServiceRegistry<A, S>,
 }
 
-/// Prepare the app. Does everything to prepare the app short of starting the app. Specifically,
-/// the following are skipped:
-/// 1. Handling CLI commands
-/// 2. Health checks
-/// 3. Starting any services
-pub async fn prepare<A, S>(app: A) -> RoadsterResult<PreparedApp<A, S>>
+async fn build_cli_and_state<A, S>(app: A) -> RoadsterResult<CliAndState<A, S>>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
@@ -98,6 +108,64 @@ where
 
     let state = app.provide_state(context.clone()).await?;
 
+    Ok(CliAndState {
+        app,
+        #[cfg(feature = "cli")]
+        roadster_cli,
+        #[cfg(feature = "cli")]
+        app_cli,
+        state,
+    })
+}
+
+#[non_exhaustive]
+pub struct PreparedApp<A, S>
+where
+    A: App<S> + 'static,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    pub app: A,
+    #[cfg(feature = "cli")]
+    pub roadster_cli: RoadsterCli,
+    #[cfg(feature = "cli")]
+    pub app_cli: A::Cli,
+    pub state: S,
+    pub service_registry: ServiceRegistry<A, S>,
+}
+
+/// Prepare the app. Does everything to prepare the app short of starting the app. Specifically,
+/// the following are skipped:
+/// 1. Handling CLI commands
+/// 2. Health checks
+/// 3. Starting any services
+pub async fn prepare<A, S>(app: A) -> RoadsterResult<PreparedApp<A, S>>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S> + Default + Send + Sync + 'static,
+{
+    prepare_from_cli_and_state(build_cli_and_state(app).await?).await
+}
+
+async fn prepare_from_cli_and_state<A, S>(
+    cli_and_state: CliAndState<A, S>,
+) -> RoadsterResult<PreparedApp<A, S>>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S> + Default + Send + Sync + 'static,
+{
+    let CliAndState {
+        app,
+        #[cfg(feature = "cli")]
+        roadster_cli,
+        #[cfg(feature = "cli")]
+        app_cli,
+        state,
+    } = cli_and_state;
+    let context = AppContext::from_ref(&state);
+
     let mut health_check_registry = HealthCheckRegistry::new(&context);
     app.health_checks(&mut health_check_registry, &state)
         .await?;
@@ -124,20 +192,32 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    let state = &prepared_app.state;
-
     #[cfg(feature = "cli")]
     {
         let PreparedApp {
             app,
             roadster_cli,
             app_cli,
+            state,
             ..
         } = &prepared_app;
         if crate::api::cli::handle_cli(app, roadster_cli, app_cli, state).await? {
             return Ok(());
         }
     }
+
+    run_prepared_without_app_cli(prepared_app).await
+}
+
+/// Run a [PreparedApp] that was previously crated by [prepare]
+async fn run_prepared_without_app_cli<A, S>(prepared_app: PreparedApp<A, S>) -> RoadsterResult<()>
+where
+    A: App<S> + 'static,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    let state = &prepared_app.state;
+
     let context = AppContext::from_ref(state);
     let service_registry = &prepared_app.service_registry;
 

@@ -29,5 +29,5 @@ ConnectOptions {
     sqlcipher_key: None,
     schema_search_path: None,
     test_before_acquire: true,
-    connect_lazy: false,
+    connect_lazy: true,
 }

@@ -152,6 +152,7 @@ trace-propagation = true
 uri = 'postgres://example:example@invalid_host:5432/example_test'
 auto-migrate = true
 connect-timeout = 1000
+connect-lazy = true
 acquire-timeout = 1000
 min-connections = 0
 max-connections = 10
