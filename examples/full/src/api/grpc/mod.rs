@@ -9,7 +9,7 @@ use tonic::transport::Server;
 pub fn routes(_state: &AppState) -> anyhow::Result<Router> {
     let reflection_service = tonic_reflection::server::Builder::configure()
         .register_encoded_file_descriptor_set(hello_world::FILE_DESCRIPTOR_SET)
-        .build()?;
+        .build_v1()?;
 
     let router = Server::builder()
         .add_service(reflection_service)

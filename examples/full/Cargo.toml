@@ -39,7 +39,8 @@ serde = { workspace = true, features = ["derive"] }
 
 [build-dependencies]
 tonic-build = "0.12"
-vergen = { version = "8.0.0", features = ["git", "gitcl"] }
+vergen = { version = "9.0.0" }
+vergen-gitcl = { version = "1.0.0" }
 
 [[bin]]
 name = "full"
