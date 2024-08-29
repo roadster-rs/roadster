@@ -26,6 +26,7 @@ pub fn default_health_checks(
             context: context.clone(),
         }),
     ];
+
     health_checks
         .into_iter()
         .filter(|check| check.enabled())

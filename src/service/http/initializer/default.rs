@@ -10,6 +10,7 @@ where
     AppContext: FromRef<S>,
 {
     let initializers: Vec<Box<dyn Initializer<S>>> = vec![Box::new(NormalizePathInitializer)];
+
     initializers
         .into_iter()
         .filter(|initializer| initializer.enabled(state))

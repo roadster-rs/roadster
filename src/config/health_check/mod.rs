@@ -19,11 +19,17 @@ pub fn default_config() -> config::File<FileSourceString, FileFormat> {
 pub struct HealthCheck {
     #[serde(default = "default_true")]
     pub default_enable: bool,
+
     pub max_duration: MaxDuration,
+
     #[cfg(feature = "db-sql")]
+    #[validate(nested)]
     pub database: HealthCheckConfig<()>,
+
     #[cfg(feature = "sidekiq")]
+    #[validate(nested)]
     pub sidekiq: HealthCheckConfig<()>,
+
     /// Allows providing configs for custom health checks. Any configs that aren't pre-defined above
     /// will be collected here.
     ///

@@ -1,6 +1,9 @@
 [app]
 shutdown-on-error = true
 
+[lifecycle-handler]
+default-enable = true
+
 [service]
 default-enable = true
 

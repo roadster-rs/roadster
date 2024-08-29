@@ -61,10 +61,10 @@ pub struct ErrorData {
 
 /// Trait used to check the health of the app before its services start up.
 ///
-/// This is a separate trait, vs adding a "health check" method to `AppService`, to allow defining
-/// health checks that apply to multiple services. For example, most services would require
-/// the DB and Redis connections to be valid, so we would want to perform a check for these
-/// resources a single time before starting any service instead of once for every service that
+/// This is a separate trait, vs adding a "health check" method to [`crate::service::AppService`],
+/// to allow defining health checks that apply to multiple services. For example, most services
+/// would require the DB and Redis connections to be valid, so we would want to perform a check for
+/// these resources a single time before starting any service instead of once for every service that
 /// needs the resources.
 ///
 /// Another benefit of using a separate trait is, because the health checks are decoupled from
@@ -73,14 +73,14 @@ pub struct ErrorData {
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
 pub trait HealthCheck: Send + Sync {
-    /// The name of the health check.
+    /// The name of the [`HealthCheck`].
     fn name(&self) -> String;
 
     /// Whether the health check is enabled. If the health check is not enabled, Roadster will not
-    /// run it. However, if a consumer wants, they can certainly create a [HealthCheck] instance
-    /// and directly call `HealthCheck#check` even if `HealthCheck#enabled` returns `false`.
+    /// run it. However, if a consumer wants, they can certainly create a [`HealthCheck`] instance
+    /// and directly call [`HealthCheck::check`] even if [`HealthCheck::enabled`] returns `false`.
     fn enabled(&self) -> bool;
 
-    /// Run the health check.
+    /// Run the [`HealthCheck`].
     async fn check(&self) -> RoadsterResult<CheckResponse>;
 }

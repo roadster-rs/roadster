@@ -160,8 +160,6 @@ where
         }
     }
 
-    info!("Shutdown complete");
-
     Ok(())
 }
 

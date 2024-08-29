@@ -34,6 +34,7 @@ where
         Box::new(CorsMiddleware),
         Box::new(RequestResponseLoggingMiddleware),
     ];
+
     middleware
         .into_iter()
         .filter(|middleware| middleware.enabled(state))
