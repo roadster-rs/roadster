@@ -12,6 +12,7 @@ pub mod app;
 pub mod config;
 pub mod error;
 pub mod health_check;
+pub mod lifecycle;
 pub mod middleware;
 #[cfg(feature = "db-sql")]
 pub mod migration;

@@ -15,6 +15,7 @@ use crate::config::app_config::AppConfig;
 use crate::config::environment::Environment;
 use crate::error::RoadsterResult;
 use crate::health_check::registry::HealthCheckRegistry;
+use crate::lifecycle::registry::LifecycleHandlerRegistry;
 use crate::service::registry::ServiceRegistry;
 use crate::tracing::init_tracing;
 use async_trait::async_trait;
@@ -30,7 +31,7 @@ use sea_orm_migration::MigratorTrait;
 use std::env;
 use std::future;
 use std::sync::Arc;
-use tracing::{instrument, warn};
+use tracing::{error, info, instrument, warn};
 
 pub async fn run<A, S>(app: A) -> RoadsterResult<()>
 where
@@ -59,6 +60,7 @@ where
     run_prepared_without_app_cli(prepare_from_cli_and_state(cli_and_state).await?).await
 }
 
+#[non_exhaustive]
 struct CliAndState<A, S>
 where
     A: App<S> + 'static,
@@ -132,6 +134,7 @@ where
     pub app_cli: A::Cli,
     pub state: S,
     pub service_registry: ServiceRegistry<A, S>,
+    pub lifecycle_handler_registry: LifecycleHandlerRegistry<A, S>,
 }
 
 /// Prepare the app. Does everything to prepare the app short of starting the app. Specifically,
@@ -166,6 +169,10 @@ where
     } = cli_and_state;
     let context = AppContext::from_ref(&state);
 
+    let mut lifecycle_handler_registry = LifecycleHandlerRegistry::new(&state);
+    app.lifecycle_handlers(&mut lifecycle_handler_registry, &state)
+        .await?;
+
     let mut health_check_registry = HealthCheckRegistry::new(&context);
     app.health_checks(&mut health_check_registry, &state)
         .await?;
@@ -182,6 +189,7 @@ where
         app_cli,
         state,
         service_registry,
+        lifecycle_handler_registry,
     })
 }
 
@@ -226,8 +234,16 @@ where
         return Ok(());
     }
 
+    let lifecycle_handlers = prepared_app.lifecycle_handler_registry.handlers(state);
+
     #[cfg(feature = "cli")]
     {
+        info!("Running AppLifecycleHandler::before_service_cli");
+        for handler in lifecycle_handlers.iter() {
+            info!(name=%handler.name(), "Running AppLifecycleHandler::before_service_cli");
+            handler.before_service_cli(state).await?;
+        }
+
         let PreparedApp {
             roadster_cli,
             app_cli,
@@ -240,16 +256,37 @@ where
         }
     }
 
-    #[cfg(feature = "db-sql")]
-    if context.config().database.auto_migrate {
-        A::M::up(context.db(), None).await?;
+    info!("Running AppLifecycleHandler::before_health_checks");
+    for handler in lifecycle_handlers.iter() {
+        info!(name=%handler.name(), "Running AppLifecycleHandler::before_health_checks");
+        handler.before_health_checks(state).await?;
     }
-
     crate::service::runner::health_checks(&context).await?;
 
+    info!("Running AppLifecycleHandler::before_services");
+    for handler in lifecycle_handlers.iter() {
+        info!(name=%handler.name(), "Running AppLifecycleHandler::before_services");
+        handler.before_services(state).await?
+    }
     crate::service::runner::before_run(service_registry, state).await?;
+    let result =
+        crate::service::runner::run(prepared_app.app, prepared_app.service_registry, state).await;
+    if let Err(err) = result {
+        error!("An error occurred in the app: {err}");
+    }
 
-    crate::service::runner::run(prepared_app.app, prepared_app.service_registry, state).await?;
+    info!("Shutting down");
+
+    info!("Running AppLifecycleHandler::before_shutdown");
+    for handler in lifecycle_handlers.iter() {
+        info!(name=%handler.name(), "Running AppLifecycleHandler::before_shutdown");
+        let result = handler.on_shutdown(state).await;
+        if let Err(err) = result {
+            error!(name=%handler.name(), "An error occurred when running AppLifecycleHandler::before_shutdown: {err}");
+        }
+    }
+
+    info!("Shutdown complete");
 
     Ok(())
 }
@@ -288,6 +325,14 @@ where
     /// See the following for more details regarding [FromRef]: <https://docs.rs/axum/0.7.5/axum/extract/trait.FromRef.html>
     async fn provide_state(&self, context: AppContext) -> RoadsterResult<S>;
 
+    async fn lifecycle_handlers(
+        &self,
+        _registry: &mut LifecycleHandlerRegistry<Self, S>,
+        _state: &S,
+    ) -> RoadsterResult<()> {
+        Ok(())
+    }
+
     /// Provide the [crate::health_check::HealthCheck]s to use throughout the app.
     async fn health_checks(
         &self,
@@ -315,6 +360,10 @@ where
 
     /// Override to provide custom graceful shutdown logic to clean up any resources created by
     /// the app. Roadster will take care of cleaning up the resources it created.
+    ///
+    /// Alternatively, provide a [`crate::lifecycle::AppLifecycleHandler::on_shutdown`]
+    /// implementation and provide the handler to the [`LifecycleHandlerRegistry`] in
+    /// [`Self::lifecycle_handlers`].
     #[instrument(skip_all)]
     async fn graceful_shutdown(self: Arc<Self>, _state: &S) -> RoadsterResult<()> {
         Ok(())

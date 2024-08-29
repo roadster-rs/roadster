@@ -8,6 +8,12 @@ environment = 'test'
 name = 'Test'
 shutdown-on-error = true
 
+[lifecycle-handler]
+default-enable = true
+
+[lifecycle-handler.db-migration]
+priority = 0
+
 [health-check]
 default-enable = true
 
