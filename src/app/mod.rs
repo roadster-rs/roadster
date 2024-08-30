@@ -89,7 +89,12 @@ where
     #[cfg(not(feature = "cli"))]
     let environment: Option<Environment> = None;
 
-    let config = AppConfig::new(environment)?;
+    #[cfg(feature = "cli")]
+    let config_dir = roadster_cli.config_dir.as_ref().cloned();
+    #[cfg(not(feature = "cli"))]
+    let config_dir: Option<std::path::PathBuf> = None;
+
+    let config = AppConfig::new_with_config_dir(environment, config_dir)?;
 
     app.init_tracing(&config)?;
 
