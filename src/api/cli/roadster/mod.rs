@@ -11,6 +11,7 @@ use crate::app::App;
 use crate::config::environment::Environment;
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
+use std::path::PathBuf;
 
 use axum::extract::FromRef;
 use clap::{Parser, Subcommand};
@@ -59,6 +60,11 @@ pub struct RoadsterCli {
     /// when running in `production`.
     #[clap(long, action)]
     pub allow_dangerous: bool,
+
+    /// The location of the config directory (where the app's config files are located). If
+    /// not provided, will default to `./config/`.
+    #[clap(long, value_name = "CONFIG_DIRECTORY", value_hint = clap::ValueHint::DirPath)]
+    pub config_dir: Option<PathBuf>,
 
     #[command(subcommand)]
     pub command: Option<RoadsterCommand>,

@@ -15,7 +15,7 @@ use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tracing::warn;
 use validator::Validate;
 
@@ -67,10 +67,21 @@ pub const ENV_VAR_PREFIX: &str = "ROADSTER";
 pub const ENV_VAR_SEPARATOR: &str = "__";
 
 impl AppConfig {
+    #[deprecated(
+        since = "0.6.2",
+        note = "This wasn't intended to be made public and may be removed in a future version."
+    )]
+    pub fn new(environment: Option<Environment>) -> RoadsterResult<Self> {
+        Self::new_with_config_dir(environment, Some(PathBuf::from("config/")))
+    }
+
     // This runs before tracing is initialized, so we need to use `println` in order to
     // log from this method.
     #[allow(clippy::disallowed_macros)]
-    pub fn new(environment: Option<Environment>) -> RoadsterResult<Self> {
+    pub(crate) fn new_with_config_dir(
+        environment: Option<Environment>,
+        config_dir: Option<PathBuf>,
+    ) -> RoadsterResult<Self> {
         dotenv().ok();
 
         let environment = if let Some(environment) = environment {
@@ -81,11 +92,17 @@ impl AppConfig {
         };
         let environment_str: &str = environment.clone().into();
 
+        let config_root_dir = config_dir
+            .unwrap_or_else(|| PathBuf::from("config/"))
+            .canonicalize()?;
+
+        println!("Loading configuration from directory {config_root_dir:?}");
+
         let config = Self::default_config(environment);
-        let config = config_env_file("default", config);
-        let config = config_env_dir("default", config)?;
-        let config = config_env_file(environment_str, config);
-        let config = config_env_dir(environment_str, config)?;
+        let config = config_env_file("default", &config_root_dir, config);
+        let config = config_env_dir("default", &config_root_dir, config)?;
+        let config = config_env_file(environment_str, &config_root_dir, config);
+        let config = config_env_dir(environment_str, &config_root_dir, config)?;
         let config = config
             .add_source(
                 config::Environment::default()
@@ -197,12 +214,11 @@ impl AppConfig {
 /// [`ConfigBuilder`]. If no such file exists, does nothing.
 fn config_env_file(
     environment: &str,
+    config_dir: &Path,
     config: ConfigBuilder<DefaultState>,
 ) -> ConfigBuilder<DefaultState> {
     // Todo: allow other file formats?
-    let filename = format!("config/{environment}.toml");
-
-    let path = Path::new(&filename);
+    let path = config_dir.join(format!("{environment}.toml"));
     if !path.is_file() {
         return config;
     }
@@ -214,16 +230,15 @@ fn config_env_file(
 /// [`ConfigBuilder`]. If no such directory exists, does nothing.
 fn config_env_dir(
     environment: &str,
+    config_dir: &Path,
     config: ConfigBuilder<DefaultState>,
 ) -> RoadsterResult<ConfigBuilder<DefaultState>> {
-    let dirname = format!("config/{environment}");
-
-    let path = Path::new(&dirname);
+    let path = config_dir.join(environment);
     if !path.is_dir() {
         return Ok(config);
     }
 
-    config_env_dir_recursive(path, config)
+    config_env_dir_recursive(&path, config)
 }
 
 /// Helper method for [`config_env_dir`] to recursively add config files in the given path
