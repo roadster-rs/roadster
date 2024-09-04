@@ -77,7 +77,9 @@ impl RoadsterApp<AppState> for Server {
 }
 
 async fn leptos_config(context: &AppContext) -> anyhow::Result<ConfFile> {
-    let mut config = get_configuration(Some("./Cargo.toml"))
+    // `cargo leptos` runs from the workspace root, so we need to specify this example's
+    // `Cargo.toml` even when we run `cargo leptos` form the example's root.
+    let mut config = get_configuration(Some("./examples/leptos-ssr/Cargo.toml"))
         .await
         .map_err(|e| anyhow!(e))?;
     config.leptos_options.site_addr = context.config().service.http.custom.address.socket_addr()?;
