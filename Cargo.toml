@@ -23,7 +23,7 @@ jwt = ["dep:jsonwebtoken"]
 jwt-ietf = ["jwt"]
 jwt-openid = ["jwt"]
 cli = ["dep:clap"]
-otel = ["dep:opentelemetry", "dep:opentelemetry_sdk", "dep:opentelemetry-otlp", "dep:tracing-opentelemetry"]
+otel = ["dep:opentelemetry", "dep:opentelemetry_sdk", "dep:opentelemetry-otlp", "dep:tracing-opentelemetry", "dep:prost"]
 grpc = ["dep:tonic"]
 testing = ["dep:insta", "dep:rstest"]
 
@@ -41,6 +41,10 @@ opentelemetry-semantic-conventions = "0.16.0"
 opentelemetry = { version = "0.24.0", features = ["trace", "metrics", "logs"], optional = true }
 opentelemetry_sdk = { version = "0.24.1", features = ["tokio", "rt-tokio", "metrics", "logs", "trace"], optional = true }
 opentelemetry-otlp = { version = "0.17.0", features = ["metrics", "trace", "logs"], optional = true }
+# Roadster technically doesn't need a direct dependency on `prost`, but we add one here to allow our
+# `cargo minimal-versions check` check to pass -- `opentelemetry-proto` requires version `0.13.2` or higher
+# in order to compile -- it fails to compile with `0.13.1` even though its dependencies don't specify `0.13.2`.
+prost = { workspace = true, optional = true }
 tracing-opentelemetry = { version = "0.25.0", features = ["metrics"], optional = true }
 
 # Controllers
@@ -136,6 +140,7 @@ clap = { version = "4.3.0", features = ["derive"] }
 
 # gRPC
 tonic = { version = "0.12.0" }
+prost = { version = "0.13.2" }
 
 # Sidekiq
 # Todo: the default `rss-stats` feature has a dependency that currently can't be satisfied (memchr: ~2.3)
