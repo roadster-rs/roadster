@@ -29,6 +29,9 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 use tracing::info;
 
+#[cfg(feature = "open-api")]
+type ApiDocs = Box<dyn Fn(TransformOpenApi) -> TransformOpenApi + Send>;
+
 pub struct HttpServiceBuilder<S>
 where
     S: Clone + Send + Sync + 'static,
@@ -39,7 +42,7 @@ where
     #[cfg(feature = "open-api")]
     api_router: ApiRouter<S>,
     #[cfg(feature = "open-api")]
-    api_docs: Box<dyn Fn(TransformOpenApi) -> TransformOpenApi + Send>,
+    api_docs: ApiDocs,
     middleware: BTreeMap<String, Box<dyn Middleware<S>>>,
     initializers: BTreeMap<String, Box<dyn Initializer<S>>>,
 }
@@ -109,10 +112,7 @@ where
     }
 
     #[cfg(feature = "open-api")]
-    pub fn api_docs(
-        mut self,
-        api_docs: Box<dyn Fn(TransformOpenApi) -> TransformOpenApi + Send>,
-    ) -> Self {
+    pub fn api_docs(mut self, api_docs: ApiDocs) -> Self {
         self.api_docs = api_docs;
         self
     }

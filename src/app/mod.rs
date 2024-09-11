@@ -1,5 +1,18 @@
 pub mod context;
 pub mod metadata;
+mod roadster_app;
+
+/// A default implementation of [`App`] that is customizable via a builder-style API.
+///
+/// The `Cli` and `M` type parameters are only required when the `cli` and `db-sql` features are
+/// enabled, respectively.
+pub use roadster_app::RoadsterApp;
+
+/// Builder-style API to build/customize a [`RoadsterApp`].
+///
+/// The `Cli` and `M` type parameters are only required when the `cli` and `db-sql` features are
+/// enabled, respectively.
+pub use roadster_app::RoadsterAppBuilder;
 
 #[cfg(feature = "cli")]
 use crate::api::cli::parse_cli;
@@ -37,7 +50,7 @@ pub async fn run<A, S>(app: A) -> RoadsterResult<()>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + Default + Send + Sync + 'static,
+    A: App<S> + Send + Sync + 'static,
 {
     let cli_and_state = build_cli_and_state(app).await?;
 
@@ -79,7 +92,7 @@ async fn build_cli_and_state<A, S>(app: A) -> RoadsterResult<CliAndState<A, S>>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + Default + Send + Sync + 'static,
+    A: App<S> + Send + Sync + 'static,
 {
     #[cfg(feature = "cli")]
     let (roadster_cli, app_cli) = parse_cli::<A, S, _, _>(env::args_os())?;
@@ -125,6 +138,10 @@ where
     })
 }
 
+/// Contains all the objects needed to run the [`App`]. Useful if a consumer needs access to some
+/// of the prepared state before running the app.
+///
+/// Created by [`prepare`]. Pass to [`run_prepared`] to run the [`App`].
 #[non_exhaustive]
 pub struct PreparedApp<A, S>
 where
@@ -151,7 +168,7 @@ pub async fn prepare<A, S>(app: A) -> RoadsterResult<PreparedApp<A, S>>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + Default + Send + Sync + 'static,
+    A: App<S> + Send + Sync + 'static,
 {
     prepare_from_cli_and_state(build_cli_and_state(app).await?).await
 }
@@ -162,7 +179,7 @@ async fn prepare_from_cli_and_state<A, S>(
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + Default + Send + Sync + 'static,
+    A: App<S> + Send + Sync + 'static,
 {
     let CliAndState {
         app,
@@ -369,6 +386,10 @@ where
     /// Alternatively, provide a [`crate::lifecycle::AppLifecycleHandler::on_shutdown`]
     /// implementation and provide the handler to the [`LifecycleHandlerRegistry`] in
     /// [`Self::lifecycle_handlers`].
+    ///
+    /// This method is intentionally not provided in the builder-style API of [`RoadsterApp`]; it's
+    /// expected that consumers would provide their shutdown logic in a
+    /// [`crate::lifecycle::AppLifecycleHandler::on_shutdown`] implementation instead.
     #[instrument(skip_all)]
     async fn graceful_shutdown(self: Arc<Self>, _state: &S) -> RoadsterResult<()> {
         Ok(())

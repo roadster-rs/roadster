@@ -1,0 +1,51 @@
+[package]
+name = "app-builder"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = ["cli", "db-sql"]
+cli = ["roadster/cli", "clap"]
+db-sql = ["roadster/db-sql", "app-builder-entity", "app-builder-migration", "sea-orm"]
+
+[dependencies]
+roadster = { version = "0.6", path = "../..", default-features = false, features = ["open-api", "sidekiq"] }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+async-trait = { workspace = true }
+cfg-if = { workspace = true }
+
+# Http API
+aide = { workspace = true }
+axum = { workspace = true }
+schemars = { workspace = true }
+
+# DB
+app-builder-entity = { path = "entity", optional = true }
+app-builder-migration = { path = "migration", optional = true }
+sea-orm = { workspace = true, optional = true }
+
+# Cli
+clap = { version = "4.3.0", features = ["derive"], optional = true }
+
+# The default `rss-stats` feature has a dependency that currently can't be satisfied (memchr: ~2.3)
+rusty-sidekiq = { version = "0.10.5", default-features = false }
+serde = { workspace = true, features = ["derive"] }
+
+[build-dependencies]
+tonic-build = "0.12"
+vergen = { version = "9.0.0" }
+vergen-gitcl = { version = "1.0.0" }
+
+[[bin]]
+name = "app_builder"
+path = "./src/main.rs"
+
+[lib]
+name = "app_builder"
+path = "./src/lib.rs"

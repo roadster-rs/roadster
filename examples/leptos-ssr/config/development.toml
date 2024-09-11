@@ -5,4 +5,4 @@ format = "pretty"
 secret = "secret-dev"
 
 [database]
-uri = "postgres://roadster:roadster@localhost:5432/leptos_dev"
+uri = "postgres://roadster:roadster@localhost:5432/example_dev"

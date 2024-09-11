@@ -50,11 +50,11 @@ and [Poem](https://github.com/poem-web/poem).
 ## Start local DB
 
 ```shell
-# Replace `full_dev` with your app name, e.g., `myapp_dev` (unless you're using our `full` example, as demonstrated below)
+# Replace `example_dev` with your app name, e.g., `myapp_dev` (unless you're using our `full` example, as demonstrated below)
 # Dev
-docker run -d -p 5432:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=full_dev -e POSTGRES_PASSWORD=roadster postgres:15.3-alpine
+docker run -d -p 5432:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=example_dev -e POSTGRES_PASSWORD=roadster postgres:15.3-alpine
 # Test
-docker run -d -p 5433:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=full_test -e POSTGRES_PASSWORD=roadster postgres:15.3-alpine
+docker run -d -p 5433:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=example_test -e POSTGRES_PASSWORD=roadster postgres:15.3-alpine
 ```
 
 ## Start local Redis instance (for [Sidekiq.rs](https://crates.io/crates/rusty-sidekiq))
