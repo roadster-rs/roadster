@@ -1,8 +1,19 @@
 [app]
-name = "Full Example"
+name = "App Builder Example"
 
 [tracing]
 level = "debug"
+
+[database]
+auto-migrate = true
+connect-timeout = 5000
+acquire-timeout = 5000
+idle-timeout = 60
+min-connections = 0
+max-connections = 10
+
+[service.sidekiq]
+queues = ["default"]
 
 [service.http]
 # Listen on any ipv4 or ipv6 addr, useful to allow connections from LAN for local dev

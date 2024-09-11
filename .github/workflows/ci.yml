@@ -12,6 +12,19 @@ env:
 jobs:
   # `cargo hack --each-feature` runs the given command for each feature, including "no features", "all features",
   # and the `default` feature.
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@cargo-hack
+      - uses: taiki-e/install-action@nextest
+      # protoc is needed to build examples that have grpc enabled
+      - uses: taiki-e/install-action@protoc
+      - name: Test
+        run: cargo hack build --each-feature --workspace --clean-per-run --log-group github-actions
+
   test:
     name: Tests
     runs-on: ubuntu-latest
@@ -23,7 +36,7 @@ jobs:
       # protoc is needed to build examples that have grpc enabled
       - uses: taiki-e/install-action@protoc
       - name: Test
-        run: cargo hack nextest run --no-fail-fast --each-feature --workspace
+        run: cargo hack nextest run --no-fail-fast --each-feature --clean-per-run --log-group github-actions
 
   doc_test:
     name: Doc tests
@@ -35,7 +48,7 @@ jobs:
       # protoc is needed to build examples that have grpc enabled
       - uses: taiki-e/install-action@protoc
       - name: Doc test
-        run: cargo hack test --doc --no-fail-fast --each-feature --workspace
+        run: cargo hack test --doc --no-fail-fast --each-feature --log-group github-actions
 
   check:
     name: Check
@@ -47,7 +60,7 @@ jobs:
       # protoc is needed to build examples that have grpc enabled
       - uses: taiki-e/install-action@protoc
       - name: Check
-        run: cargo hack check --each-feature --no-dev-deps --workspace
+        run: cargo hack check --each-feature --no-dev-deps --log-group github-actions
 
   clippy:
     name: Clippy
@@ -59,7 +72,7 @@ jobs:
       # protoc is needed to build examples that have grpc enabled
       - uses: taiki-e/install-action@protoc
       - name: Clippy
-        run: cargo hack clippy --workspace --all-targets --each-feature -- -D warnings
+        run: cargo hack clippy --all-targets --each-feature --log-group github-actions -- -D warnings
 
   deny:
     name: Deny
@@ -80,7 +93,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-hack
-      - run: cargo hack check --rust-version --workspace --all-targets --ignore-private
+      - run: cargo hack check --rust-version --all-targets --ignore-private --log-group github-actions
 
   # https://doc.rust-lang.org/cargo/guide/continuous-integration.html#verifying-rust-version
   minimal_direct_deps:

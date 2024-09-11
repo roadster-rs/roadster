@@ -256,7 +256,7 @@ where
 
     // Futures are lazy -- the custom `app_graceful_shutdown` future won't run until we call `await` on it.
     // https://rust-lang.github.io/async-book/03_async_await/01_chapter.html
-    info!("Running app's custom shutdown logic.");
+    info!("Running App::graceful_shutdown.");
     let app_graceful_shutdown_result = app_graceful_shutdown.await;
 
     #[cfg(feature = "db-sql")]

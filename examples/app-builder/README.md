@@ -1,6 +1,6 @@
-# Full Example
+# App Builder Example
 
-An example of using all (most) of Roadster's features. Used as a reference implementation and testing playground.
+An example of using the App builder API instead of directly implementing the `App` trait.
 
 # Running locally
 
