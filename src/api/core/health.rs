@@ -55,10 +55,13 @@ where
     let check_futures = context.health_checks().into_iter().map(|check| {
         Box::pin(async move {
             let name = check.name();
-            info!(name=%name, "Running check");
+            info!(%name, "Running check");
             let check_timer = Instant::now();
             let result = match run_check(check, duration).await {
-                Ok(response) => response,
+                Ok(response) => {
+                    info!(%name, "Resource is healthy");
+                    response
+                }
                 Err(err) => CheckResponse::builder()
                     .status(Status::Err(
                         ErrorData::builder()
@@ -76,10 +79,11 @@ where
 
     let resources = join_all(check_futures).await.into_iter().collect();
 
-    Ok(HeathCheckResponse {
-        latency: timer.elapsed().as_millis(),
-        resources,
-    })
+    let latency = timer.elapsed().as_millis();
+
+    info!(latency_ms=%latency, "Checks successful");
+
+    Ok(HeathCheckResponse { latency, resources })
 }
 
 async fn run_check(

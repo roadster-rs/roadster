@@ -53,8 +53,8 @@ pub(crate) async fn health_checks(context: &AppContext) -> RoadsterResult<()> {
         .collect_vec();
 
     error_responses.iter().for_each(|(name, response)| {
-        error!(name=%name, "Resource is not healthy");
-        debug!(name=%name, "Error details: {response:?}");
+        error!(%name, "Resource is not healthy");
+        debug!(%name, "Error details: {response:?}");
     });
 
     if error_responses.is_empty() {
@@ -76,7 +76,7 @@ where
     A: App<S>,
 {
     for (name, service) in service_registry.services.iter() {
-        info!(name=%name, "Running service::before_run");
+        info!(%name, "Running service::before_run");
         service.before_run(state).await?;
     }
 
@@ -102,7 +102,7 @@ where
         let context = state.clone();
         let cancel_token = cancel_token.clone();
         join_set.spawn(Box::pin(async move {
-            info!(name=%name, "Running service");
+            info!(%name, "Running service");
             service.run(&context, cancel_token).await
         }));
     }
