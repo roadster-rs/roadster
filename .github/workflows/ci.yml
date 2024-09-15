@@ -22,7 +22,7 @@ jobs:
       - uses: taiki-e/install-action@nextest
       # protoc is needed to build examples that have grpc enabled
       - uses: taiki-e/install-action@protoc
-      - name: Test
+      - name: Build
         run: cargo hack build --each-feature --workspace --clean-per-run --log-group github-actions
 
   test:
