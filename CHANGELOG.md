@@ -16,9 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Other
 
-- Fix CI build step name ([#372](https://github.com/roadster-rs/roadster/pull/372))
 - Add logs for successful health checks ([#371](https://github.com/roadster-rs/roadster/pull/371))
-- Restructure configs for leptos-ssr example ([#364](https://github.com/roadster-rs/roadster/pull/364))
 
 ## [0.6.2](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.1...roadster-v0.6.2) - 2024-08-30
 
