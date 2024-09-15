@@ -4,11 +4,17 @@ mod roadster_app;
 
 /// A default implementation of [`App`] that is customizable via a builder-style API.
 ///
+/// See <https://github.com/roadster-rs/roadster/tree/main/examples/app-builder/src/main.rs> for
+/// an example of how to use the [`RoadsterApp`].
+///
 /// The `Cli` and `M` type parameters are only required when the `cli` and `db-sql` features are
 /// enabled, respectively.
 pub use roadster_app::RoadsterApp;
 
 /// Builder-style API to build/customize a [`RoadsterApp`].
+///
+/// See <https://github.com/roadster-rs/roadster/tree/main/examples/app-builder/src/main.rs> for
+/// an example of how to use the [`RoadsterAppBuilder`].
 ///
 /// The `Cli` and `M` type parameters are only required when the `cli` and `db-sql` features are
 /// enabled, respectively.

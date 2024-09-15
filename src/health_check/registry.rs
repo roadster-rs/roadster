@@ -28,6 +28,10 @@ impl HealthCheckRegistry {
     where
         H: HealthCheck + 'static,
     {
+        self.register_arc(Arc::new(health_check))
+    }
+
+    pub fn register_arc(&mut self, health_check: Arc<dyn HealthCheck>) -> RoadsterResult<()> {
         let name = health_check.name();
 
         if !health_check.enabled() {
@@ -39,7 +43,7 @@ impl HealthCheckRegistry {
 
         if self
             .health_checks
-            .insert(name.clone(), Arc::new(health_check))
+            .insert(name.clone(), health_check)
             .is_some()
         {
             return Err(anyhow!("Health check `{}` was already registered", name).into());

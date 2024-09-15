@@ -7,8 +7,11 @@ use crate::app::App;
 use crate::config::app_config::AppConfig;
 use crate::error::RoadsterResult;
 use crate::health_check::registry::HealthCheckRegistry;
+use crate::health_check::HealthCheck;
 use crate::lifecycle::registry::LifecycleHandlerRegistry;
+use crate::lifecycle::AppLifecycleHandler;
 use crate::service::registry::ServiceRegistry;
+use crate::service::AppService;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use axum::extract::FromRef;
@@ -20,17 +23,19 @@ use sea_orm_migration::MigratorTrait;
 use std::future;
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 type StateBuilder<S> = dyn Send + Sync + Fn(AppContext) -> RoadsterResult<S>;
 type TracingInitializer = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<()>;
 type MetadataProvider = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<AppMetadata>;
 #[cfg(feature = "db-sql")]
 type DbConnOptionsProvider = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<ConnectOptions>;
+type LifecycleHandlers<A, S> = Vec<Box<dyn AppLifecycleHandler<A, S>>>;
 type LifecycleHandlerProviders<A, S> =
     Vec<Box<dyn Send + Sync + Fn(&mut LifecycleHandlerRegistry<A, S>, &S) -> RoadsterResult<()>>>;
 type HealthCheckProviders<S> =
     Vec<Box<dyn Send + Sync + Fn(&mut HealthCheckRegistry, &S) -> RoadsterResult<()>>>;
+type Services<A, S> = Vec<Box<dyn AppService<A, S>>>;
 type ServiceProviders<A, S> = Vec<
     Box<
         dyn Send
@@ -53,9 +58,13 @@ where
 {
     state_provider: Option<Box<StateBuilder<S>>>,
     tracing_initializer: Option<Box<TracingInitializer>>,
+    metadata: Option<AppMetadata>,
     metadata_provider: Option<Box<MetadataProvider>>,
     #[cfg(feature = "db-sql")]
+    db_conn_options: Option<ConnectOptions>,
+    #[cfg(feature = "db-sql")]
     db_conn_options_provider: Option<Box<DbConnOptionsProvider>>,
+    health_checks: Vec<Arc<dyn HealthCheck>>,
     health_check_providers: HealthCheckProviders<S>,
     graceful_shutdown_signal_provider: GracefulShutdownSignalProvider<S>,
 }
@@ -69,9 +78,13 @@ where
         Self {
             state_provider: None,
             tracing_initializer: None,
+            metadata: None,
             metadata_provider: None,
             #[cfg(feature = "db-sql")]
+            db_conn_options: None,
+            #[cfg(feature = "db-sql")]
             db_conn_options_provider: None,
+            health_checks: Default::default(),
             health_check_providers: Default::default(),
             graceful_shutdown_signal_provider: None,
         }
@@ -84,11 +97,20 @@ where
         self.tracing_initializer = Some(Box::new(tracing_initializer));
     }
 
+    fn set_metadata(&mut self, metadata: AppMetadata) {
+        self.metadata = Some(metadata);
+    }
+
     fn metadata_provider(
         &mut self,
         metadata_provider: impl 'static + Send + Sync + Fn(&AppConfig) -> RoadsterResult<AppMetadata>,
     ) {
         self.metadata_provider = Some(Box::new(metadata_provider));
+    }
+
+    #[cfg(feature = "db-sql")]
+    fn db_conn_options(&mut self, db_conn_options: ConnectOptions) {
+        self.db_conn_options = Some(db_conn_options);
     }
 
     #[cfg(feature = "db-sql")]
@@ -107,6 +129,10 @@ where
         builder: impl 'static + Send + Sync + Fn(AppContext) -> RoadsterResult<S>,
     ) {
         self.state_provider = Some(Box::new(builder));
+    }
+
+    fn add_health_check(&mut self, health_check: impl 'static + HealthCheck) {
+        self.health_checks.push(Arc::new(health_check));
     }
 
     fn add_health_check_provider(
@@ -134,12 +160,14 @@ where
         if let Some(tracing_initializer) = self.tracing_initializer.as_ref() {
             tracing_initializer(config)
         } else {
-            crate::tracing::init_tracing(config, &self.metadata(config)?)
+            crate::tracing::init_tracing(config, &self.get_metadata(config)?)
         }
     }
 
-    fn metadata(&self, config: &AppConfig) -> RoadsterResult<AppMetadata> {
-        if let Some(metadata_provider) = self.metadata_provider.as_ref() {
+    fn get_metadata(&self, config: &AppConfig) -> RoadsterResult<AppMetadata> {
+        if let Some(metadata) = self.metadata.as_ref() {
+            Ok(metadata.clone())
+        } else if let Some(metadata_provider) = self.metadata_provider.as_ref() {
             metadata_provider(config)
         } else {
             Ok(Default::default())
@@ -148,7 +176,9 @@ where
 
     #[cfg(feature = "db-sql")]
     fn db_connection_options(&self, config: &AppConfig) -> RoadsterResult<ConnectOptions> {
-        if let Some(db_conn_options_provider) = self.db_conn_options_provider.as_ref() {
+        if let Some(db_conn_options) = self.db_conn_options.as_ref() {
+            Ok(db_conn_options.clone())
+        } else if let Some(db_conn_options_provider) = self.db_conn_options_provider.as_ref() {
             db_conn_options_provider(config)
         } else {
             Ok(ConnectOptions::from(&config.database))
@@ -168,6 +198,9 @@ where
         registry: &mut HealthCheckRegistry,
         state: &S,
     ) -> RoadsterResult<()> {
+        for health_check in self.health_checks.iter() {
+            registry.register_arc(health_check.clone())?;
+        }
         for provider in self.health_check_providers.iter() {
             provider(registry, state)?;
         }
@@ -187,7 +220,7 @@ where
 // are different depending on whether the `cli` and `db-sql` features are enabled. I haven't
 // been able to find a better way to do this. We may need to refactor the `App` trait itself (and
 // a bunch of other stuff) in order to improve this.
-// todo: This conditional compilation block is gnarly. Is there a better way?
+// todo: This conditional compilation block is gnarly. Is there a better way? Maybe a macro of some sort?
 cfg_if! {
 if #[cfg(all(feature = "cli", feature="db-sql"))] {
 
@@ -212,6 +245,12 @@ where
     M: MigratorTrait + Send + Sync + 'static,
 {
     inner: Inner<S, Cli, M>,
+    // Interior mutability pattern -- this allows us to keep the handler reference as a
+    // Box, which helps with single ownership and ensuring we only register a handler once.
+    lifecycle_handlers: Mutex<LifecycleHandlers<RoadsterApp<S, Cli, M>, S>>,
+    // Interior mutability pattern -- this allows us to keep the service reference as a
+    // Box, which helps with single ownership and ensuring we only register a service once.
+    services: Mutex<Services<RoadsterApp<S, Cli, M>, S>>,
 }
 
 pub struct RoadsterAppBuilder<S, Cli, M>
@@ -222,6 +261,8 @@ where
     M: MigratorTrait + Send + Sync + 'static,
 {
     inner: Inner<S, Cli, M>,
+    lifecycle_handlers: LifecycleHandlers<RoadsterApp<S, Cli, M>, S>,
+    services: Services<RoadsterApp<S, Cli, M>, S>,
 }
 
 impl<S, Cli, M> RoadsterApp<S, Cli, M>
@@ -239,6 +280,8 @@ where
                 lifecycle_handler_providers: Default::default(),
                 service_providers: Default::default(),
             },
+            lifecycle_handlers: Default::default(),
+            services: Default::default(),
         }
     }
 
@@ -266,12 +309,32 @@ where
         self
     }
 
+    /// Provide the [`AppMetadata`] for the [`RoadsterApp`].
+    pub fn metadata(
+        mut self,
+        metadata: AppMetadata,
+    ) -> Self {
+        self.inner.common.set_metadata(metadata);
+        self
+    }
+
     /// Provide the logic to build the [`AppMetadata`] for the [`RoadsterApp`].
     pub fn metadata_provider(
         mut self,
         metadata_provider: impl 'static + Send + Sync + Fn(&AppConfig) -> RoadsterResult<AppMetadata>,
     ) -> Self {
         self.inner.common.metadata_provider(metadata_provider);
+        self
+    }
+
+    /// Provide the [`ConnectOptions`] for the [`RoadsterApp`].
+    pub fn db_conn_options(
+        mut self,
+        db_conn_options: ConnectOptions,
+    ) -> Self {
+        self.inner
+            .common
+            .db_conn_options(db_conn_options);
         self
     }
 
@@ -298,12 +361,22 @@ where
         self
     }
 
-    /// Provide the logic to register [`crate::lifecycle::AppLifecycleHandler`]s for the
-    /// [`RoadsterApp`].
+    /// Add a [`AppLifecycleHandler`] for the [`RoadsterApp`].
+    ///
+    /// This method can be called multiple times to register multiple handlers.
+    pub fn add_lifecycle_handler(
+        mut self,
+        lifecycle_handler: impl 'static + AppLifecycleHandler<RoadsterApp<S, Cli, M>, S>,
+    ) -> Self {
+        self.lifecycle_handlers.push(Box::new(lifecycle_handler));
+        self
+    }
+
+    /// Provide the logic to register [`AppLifecycleHandler`]s for the [`RoadsterApp`].
     ///
     /// This method can be called multiple times to register multiple handlers in separate
     /// callbacks.
-    pub fn lifecycle_handler_provider(
+    pub fn add_lifecycle_handler_provider(
         mut self,
         lifecycle_handler_provider: impl 'static
             + Send
@@ -316,12 +389,24 @@ where
         self
     }
 
-    /// Provide the logic to register [`crate::health_check::HealthCheck`]s for the
-    /// [`RoadsterApp`].
+    /// Add a [`HealthCheck`] for the [`RoadsterApp`].
+    ///
+    /// This method can be called multiple times to register multiple health checks.
+    pub fn add_health_check(
+        mut self,
+        health_check: impl 'static + HealthCheck,
+    ) -> Self {
+        self.inner
+            .common
+            .add_health_check(health_check);
+        self
+    }
+
+    /// Provide the logic to register [`HealthCheck`]s for the [`RoadsterApp`].
     ///
     /// This method can be called multiple times to register multiple health checks in separate
     /// callbacks.
-    pub fn health_check_provider(
+    pub fn add_health_check_provider(
         mut self,
         health_check_provider: impl 'static
             + Send
@@ -334,12 +419,22 @@ where
         self
     }
 
-    /// Provide the logic to register [`crate::service::AppService`]s for the
-    /// [`RoadsterApp`].
+    /// Add a [`AppService`] for the [`RoadsterApp`].
+    ///
+    /// This method can be called multiple times to register multiple services.
+    pub fn add_service(
+        mut self,
+        service: impl 'static + AppService<RoadsterApp<S, Cli, M>, S>,
+    ) -> Self {
+        self.services.push(Box::new(service));
+        self
+    }
+
+    /// Provide the logic to register [`AppService`]s for the [`RoadsterApp`].
     ///
     /// This method can be called multiple times to register multiple services in separate
     /// callbacks.
-    pub fn service_provider(
+    pub fn add_service_provider(
         mut self,
         service_provider: impl 'static
             + Send
@@ -356,7 +451,7 @@ where
     }
 
     /// Provide a custom signal to listen for in order to shutdown the [`RoadsterApp`].
-    pub fn provide_graceful_shutdown_signal(
+    pub fn graceful_shutdown_signal_provider(
         mut self,
         graceful_shutdown_signal_provider: impl 'static
             + Send
@@ -371,7 +466,11 @@ where
 
     /// Build the [`RoadsterApp`] from this [`RoadsterAppBuilder`].
     pub fn build(self) -> RoadsterApp<S, Cli, M> {
-        RoadsterApp { inner: self.inner }
+        RoadsterApp {
+            inner: self.inner,
+            lifecycle_handlers: Mutex::new(self.lifecycle_handlers),
+            services: Mutex::new(self.services),
+        }
     }
 }
 
@@ -391,7 +490,7 @@ where
     }
 
     fn metadata(&self, config: &AppConfig) -> RoadsterResult<AppMetadata> {
-        self.inner.common.metadata(config)
+        self.inner.common.get_metadata(config)
     }
 
     fn db_connection_options(&self, config: &AppConfig) -> RoadsterResult<ConnectOptions> {
@@ -407,6 +506,15 @@ where
         registry: &mut LifecycleHandlerRegistry<Self, S>,
         state: &S,
     ) -> RoadsterResult<()> {
+        {
+            let mut lifecycle_handlers = self.lifecycle_handlers
+                .lock()
+                .map_err(|err| anyhow!("Unable to lock lifecycle_handlers mutex: {err}"))?;
+            for lifecycle_handler in lifecycle_handlers.drain(..) {
+                registry.register_boxed(lifecycle_handler)?;
+            }
+        }
+
         for provider in self.inner.lifecycle_handler_providers.iter() {
             provider(registry, state)?;
         }
@@ -426,6 +534,15 @@ where
         registry: &mut ServiceRegistry<Self, S>,
         state: &S,
     ) -> RoadsterResult<()> {
+        {
+            let mut services = self.services
+                .lock()
+                .map_err(|err| anyhow!("Unable to lock services mutex: {err}"))?;
+            for service in services.drain(..) {
+                registry.register_boxed(service)?;
+            }
+        }
+
         for provider in self.inner.service_providers.iter() {
             provider(registry, state).await?;
         }
@@ -457,6 +574,8 @@ where
     Cli: clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync + 'static,
 {
     inner: Inner<S, Cli>,
+    lifecycle_handlers: Mutex<LifecycleHandlers<RoadsterApp<S, Cli>, S>>,
+    services: Mutex<Services<RoadsterApp<S, Cli>, S>>,
 }
 
 pub struct RoadsterAppBuilder<S, Cli>
@@ -466,6 +585,8 @@ where
     Cli: clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync + 'static,
 {
     inner: Inner<S, Cli>,
+    lifecycle_handlers: LifecycleHandlers<RoadsterApp<S, Cli>, S>,
+    services: Services<RoadsterApp<S, Cli>, S>,
 }
 
 impl<S, Cli> RoadsterApp<S, Cli>
@@ -481,6 +602,8 @@ where
                 lifecycle_handler_providers: Default::default(),
                 service_providers: Default::default(),
             },
+            lifecycle_handlers: Default::default(),
+            services: Default::default(),
         }
     }
 
@@ -505,6 +628,14 @@ where
         self
     }
 
+    pub fn metadata(
+        mut self,
+        metadata: AppMetadata,
+    ) -> Self {
+        self.inner.common.set_metadata(metadata);
+        self
+    }
+
     pub fn metadata_provider(
         mut self,
         metadata_provider: impl 'static + Send + Sync + Fn(&AppConfig) -> RoadsterResult<AppMetadata>,
@@ -521,7 +652,15 @@ where
         self
     }
 
-    pub fn lifecycle_handler_provider(
+    pub fn add_lifecycle_handler(
+        mut self,
+        lifecycle_handler: impl 'static + AppLifecycleHandler<RoadsterApp<S, Cli>, S>,
+    ) -> Self {
+        self.lifecycle_handlers.push(Box::new(lifecycle_handler));
+        self
+    }
+
+    pub fn add_lifecycle_handler_provider(
         mut self,
         lifecycle_handler_provider: impl 'static
             + Send
@@ -534,7 +673,17 @@ where
         self
     }
 
-    pub fn health_check_provider(
+    pub fn add_health_check(
+        mut self,
+        health_check: impl 'static + HealthCheck,
+    ) -> Self {
+        self.inner
+            .common
+            .add_health_check(health_check);
+        self
+    }
+
+    pub fn add_health_check_provider(
         mut self,
         health_check_provider: impl 'static
             + Send
@@ -547,7 +696,15 @@ where
         self
     }
 
-    pub fn service_provider(
+    pub fn add_service(
+        mut self,
+        service: impl 'static + AppService<RoadsterApp<S, Cli>, S>,
+    ) -> Self {
+        self.services.push(Box::new(service));
+        self
+    }
+
+    pub fn add_service_provider(
         mut self,
         service_provider: impl 'static
             + Send
@@ -563,7 +720,7 @@ where
         self
     }
 
-    pub fn provide_graceful_shutdown_signal(
+    pub fn graceful_shutdown_signal_provider(
         mut self,
         graceful_shutdown_signal_provider: impl 'static
             + Send
@@ -577,7 +734,11 @@ where
     }
 
     pub fn build(self) -> RoadsterApp<S, Cli> {
-        RoadsterApp { inner: self.inner }
+        RoadsterApp {
+            inner: self.inner,
+            lifecycle_handlers: Mutex::new(self.lifecycle_handlers),
+            services: Mutex::new(self.services),
+        }
     }
 }
 
@@ -595,7 +756,7 @@ where
     }
 
     fn metadata(&self, config: &AppConfig) -> RoadsterResult<AppMetadata> {
-        self.inner.common.metadata(config)
+        self.inner.common.get_metadata(config)
     }
 
     async fn provide_state(&self, context: AppContext) -> RoadsterResult<S> {
@@ -607,6 +768,15 @@ where
         registry: &mut LifecycleHandlerRegistry<Self, S>,
         state: &S,
     ) -> RoadsterResult<()> {
+        {
+            let mut lifecycle_handlers = self.lifecycle_handlers
+                .lock()
+                .map_err(|err| anyhow!("Unable to lock lifecycle_handlers mutex: {err}"))?;
+            for lifecycle_handler in lifecycle_handlers.drain(..) {
+                registry.register_boxed(lifecycle_handler)?;
+            }
+        }
+
         for provider in self.inner.lifecycle_handler_providers.iter() {
             provider(registry, state)?;
         }
@@ -626,6 +796,15 @@ where
         registry: &mut ServiceRegistry<Self, S>,
         state: &S,
     ) -> RoadsterResult<()> {
+        {
+            let mut services = self.services
+                .lock()
+                .map_err(|err| anyhow!("Unable to lock services mutex: {err}"))?;
+            for service in services.drain(..) {
+                registry.register_boxed(service)?;
+            }
+        }
+
         for provider in self.inner.service_providers.iter() {
             provider(registry, state).await?;
         }
@@ -658,6 +837,8 @@ where
     M: MigratorTrait + Send + Sync + 'static,
 {
     inner: Inner<S, M>,
+    lifecycle_handlers: Mutex<LifecycleHandlers<RoadsterApp<S, M>, S>>,
+    services: Mutex<Services<RoadsterApp<S, M>, S>>,
 }
 
 pub struct RoadsterAppBuilder<S, M>
@@ -667,6 +848,8 @@ where
     M: MigratorTrait + Send + Sync + 'static,
 {
     inner: Inner<S, M>,
+    lifecycle_handlers: LifecycleHandlers<RoadsterApp<S, M>, S>,
+    services: Services<RoadsterApp<S, M>, S>,
 }
 
 impl<S, M> RoadsterApp<S, M>
@@ -682,6 +865,8 @@ where
                 lifecycle_handler_providers: Default::default(),
                 service_providers: Default::default(),
             },
+            lifecycle_handlers: Default::default(),
+            services: Default::default(),
         }
     }
 
@@ -706,11 +891,29 @@ where
         self
     }
 
+    pub fn metadata(
+        mut self,
+        metadata: AppMetadata,
+    ) -> Self {
+        self.inner.common.set_metadata(metadata);
+        self
+    }
+
     pub fn metadata_provider(
         mut self,
         metadata_provider: impl 'static + Send + Sync + Fn(&AppConfig) -> RoadsterResult<AppMetadata>,
     ) -> Self {
         self.inner.common.metadata_provider(metadata_provider);
+        self
+    }
+
+    pub fn db_conn_options(
+        mut self,
+        db_conn_options: ConnectOptions,
+    ) -> Self {
+        self.inner
+            .common
+            .db_conn_options(db_conn_options);
         self
     }
 
@@ -735,7 +938,15 @@ where
         self
     }
 
-    pub fn lifecycle_handler_provider(
+    pub fn add_lifecycle_handler(
+        mut self,
+        lifecycle_handler: impl 'static + AppLifecycleHandler<RoadsterApp<S, M>, S>,
+    ) -> Self {
+        self.lifecycle_handlers.push(Box::new(lifecycle_handler));
+        self
+    }
+
+    pub fn add_lifecycle_handler_provider(
         mut self,
         lifecycle_handler_provider: impl 'static
             + Send
@@ -748,7 +959,17 @@ where
         self
     }
 
-    pub fn health_check_provider(
+    pub fn add_health_check(
+        mut self,
+        health_check: impl 'static + HealthCheck,
+    ) -> Self {
+        self.inner
+            .common
+            .add_health_check(health_check);
+        self
+    }
+
+    pub fn add_health_check_provider(
         mut self,
         health_check_provider: impl 'static
             + Send
@@ -761,7 +982,15 @@ where
         self
     }
 
-    pub fn service_provider(
+    pub fn add_service(
+        mut self,
+        service: impl 'static + AppService<RoadsterApp<S, M>, S>,
+    ) -> Self {
+        self.services.push(Box::new(service));
+        self
+    }
+
+    pub fn add_service_provider(
         mut self,
         service_provider: impl 'static
             + Send
@@ -777,7 +1006,7 @@ where
         self
     }
 
-    pub fn provide_graceful_shutdown_signal(
+    pub fn graceful_shutdown_signal_provider(
         mut self,
         graceful_shutdown_signal_provider: impl 'static
             + Send
@@ -791,7 +1020,11 @@ where
     }
 
     pub fn build(self) -> RoadsterApp<S, M> {
-        RoadsterApp { inner: self.inner }
+        RoadsterApp {
+            inner: self.inner,
+            lifecycle_handlers: Mutex::new(self.lifecycle_handlers),
+            services: Mutex::new(self.services),
+        }
     }
 }
 
@@ -812,7 +1045,7 @@ where
     }
 
     fn metadata(&self, config: &AppConfig) -> RoadsterResult<AppMetadata> {
-        self.inner.common.metadata(config)
+        self.inner.common.get_metadata(config)
     }
 
     fn db_connection_options(&self, config: &AppConfig) -> RoadsterResult<ConnectOptions> {
@@ -828,6 +1061,15 @@ where
         registry: &mut LifecycleHandlerRegistry<Self, S>,
         state: &S,
     ) -> RoadsterResult<()> {
+        {
+            let mut lifecycle_handlers = self.lifecycle_handlers
+                .lock()
+                .map_err(|err| anyhow!("Unable to lock lifecycle_handlers mutex: {err}"))?;
+            for lifecycle_handler in lifecycle_handlers.drain(..) {
+                registry.register_boxed(lifecycle_handler)?;
+            }
+        }
+
         for provider in self.inner.lifecycle_handler_providers.iter() {
             provider(registry, state)?;
         }
@@ -847,6 +1089,15 @@ where
         registry: &mut ServiceRegistry<Self, S>,
         state: &S,
     ) -> RoadsterResult<()> {
+        {
+            let mut services = self.services
+                .lock()
+                .map_err(|err| anyhow!("Unable to lock services mutex: {err}"))?;
+            for service in services.drain(..) {
+                registry.register_boxed(service)?;
+            }
+        }
+
         for provider in self.inner.service_providers.iter() {
             provider(registry, state).await?;
         }
@@ -876,6 +1127,8 @@ where
     AppContext: FromRef<S>,
 {
     inner: Inner<S>,
+    lifecycle_handlers: Mutex<LifecycleHandlers<RoadsterApp<S>, S>>,
+    services: Mutex<Services<RoadsterApp<S>, S>>,
 }
 
 pub struct RoadsterAppBuilder<S>
@@ -884,6 +1137,8 @@ where
     AppContext: FromRef<S>,
 {
     inner: Inner<S>,
+    lifecycle_handlers: LifecycleHandlers<RoadsterApp<S>, S>,
+    services: Services<RoadsterApp<S>, S>,
 }
 
 impl<S> RoadsterApp<S>
@@ -898,6 +1153,8 @@ where
                 lifecycle_handler_providers: Default::default(),
                 service_providers: Default::default(),
             },
+            lifecycle_handlers: Default::default(),
+            services: Default::default(),
         }
     }
 
@@ -921,6 +1178,14 @@ where
         self
     }
 
+    pub fn metadata(
+        mut self,
+        metadata: AppMetadata,
+    ) -> Self {
+        self.inner.common.set_metadata(metadata);
+        self
+    }
+
     pub fn metadata_provider(
         mut self,
         metadata_provider: impl 'static + Send + Sync + Fn(&AppConfig) -> RoadsterResult<AppMetadata>,
@@ -937,7 +1202,15 @@ where
         self
     }
 
-    pub fn lifecycle_handler_provider(
+    pub fn add_lifecycle_handler(
+        mut self,
+        lifecycle_handler: impl 'static + AppLifecycleHandler<RoadsterApp<S>, S>,
+    ) -> Self {
+        self.lifecycle_handlers.push(Box::new(lifecycle_handler));
+        self
+    }
+
+    pub fn add_lifecycle_handler_provider(
         mut self,
         lifecycle_handler_provider: impl 'static
             + Send
@@ -950,7 +1223,17 @@ where
         self
     }
 
-    pub fn health_check_provider(
+    pub fn add_health_check(
+        mut self,
+        health_check: impl 'static + HealthCheck,
+    ) -> Self {
+        self.inner
+            .common
+            .add_health_check(health_check);
+        self
+    }
+
+    pub fn add_health_check_provider(
         mut self,
         health_check_provider: impl 'static
             + Send
@@ -963,7 +1246,15 @@ where
         self
     }
 
-    pub fn service_provider(
+    pub fn add_service(
+        mut self,
+        service: impl 'static + AppService<RoadsterApp<S>, S>,
+    ) -> Self {
+        self.services.push(Box::new(service));
+        self
+    }
+
+    pub fn add_service_provider(
         mut self,
         service_provider: impl 'static
             + Send
@@ -979,7 +1270,7 @@ where
         self
     }
 
-    pub fn provide_graceful_shutdown_signal(
+    pub fn graceful_shutdown_signal_provider(
         mut self,
         graceful_shutdown_signal_provider: impl 'static
             + Send
@@ -993,7 +1284,11 @@ where
     }
 
     pub fn build(self) -> RoadsterApp<S> {
-        RoadsterApp { inner: self.inner }
+        RoadsterApp {
+            inner: self.inner,
+            lifecycle_handlers: Mutex::new(self.lifecycle_handlers),
+            services: Mutex::new(self.services),
+        }
     }
 }
 
@@ -1009,7 +1304,7 @@ where
     }
 
     fn metadata(&self, config: &AppConfig) -> RoadsterResult<AppMetadata> {
-        self.inner.common.metadata(config)
+        self.inner.common.get_metadata(config)
     }
 
     async fn provide_state(&self, context: AppContext) -> RoadsterResult<S> {
@@ -1021,6 +1316,15 @@ where
         registry: &mut LifecycleHandlerRegistry<Self, S>,
         state: &S,
     ) -> RoadsterResult<()> {
+        {
+            let mut lifecycle_handlers = self.lifecycle_handlers
+                .lock()
+                .map_err(|err| anyhow!("Unable to lock lifecycle_handlers mutex: {err}"))?;
+            for lifecycle_handler in lifecycle_handlers.drain(..) {
+                registry.register_boxed(lifecycle_handler)?;
+            }
+        }
+
         for provider in self.inner.lifecycle_handler_providers.iter() {
             provider(registry, state)?;
         }
@@ -1040,6 +1344,15 @@ where
         registry: &mut ServiceRegistry<Self, S>,
         state: &S,
     ) -> RoadsterResult<()> {
+        {
+            let mut services = self.services
+                .lock()
+                .map_err(|err| anyhow!("Unable to lock services mutex: {err}"))?;
+            for service in services.drain(..) {
+                registry.register_boxed(service)?;
+            }
+        }
+
         for provider in self.inner.service_providers.iter() {
             provider(registry, state).await?;
         }
