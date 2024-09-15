@@ -41,6 +41,13 @@ where
     where
         H: AppLifecycleHandler<A, S> + 'static,
     {
+        self.register_boxed(Box::new(handler))
+    }
+
+    pub(crate) fn register_boxed(
+        &mut self,
+        handler: Box<dyn AppLifecycleHandler<A, S>>,
+    ) -> RoadsterResult<()> {
         let name = handler.name();
 
         if !handler.enabled(&self.state) {
@@ -50,11 +57,7 @@ where
 
         info!(name=%name, "Registering lifecycle handler");
 
-        if self
-            .handlers
-            .insert(name.clone(), Box::new(handler))
-            .is_some()
-        {
+        if self.handlers.insert(name.clone(), handler).is_some() {
             return Err(anyhow!("Handler `{}` was already registered", name).into());
         }
 

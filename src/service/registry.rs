@@ -37,7 +37,7 @@ where
     where
         Service: AppService<A, S> + 'static,
     {
-        self.register_internal(service)
+        self.register_boxed(Box::new(service))
     }
 
     /// Build and register a new service. If the service is not enabled (e.g.,
@@ -55,13 +55,13 @@ where
         info!(name=%builder.name(), "Building service");
         let service = builder.build(&self.state).await?;
 
-        self.register_internal(service)
+        self.register_boxed(Box::new(service))
     }
 
-    fn register_internal<Service>(&mut self, service: Service) -> RoadsterResult<()>
-    where
-        Service: AppService<A, S> + 'static,
-    {
+    pub(crate) fn register_boxed(
+        &mut self,
+        service: Box<dyn AppService<A, S>>,
+    ) -> RoadsterResult<()> {
         let name = service.name();
 
         if !service.enabled(&self.state) {
@@ -71,11 +71,7 @@ where
 
         info!(name=%name, "Registering service");
 
-        if self
-            .services
-            .insert(name.clone(), Box::new(service))
-            .is_some()
-        {
+        if self.services.insert(name.clone(), service).is_some() {
             return Err(anyhow!("Service `{}` was already registered", name).into());
         }
         Ok(())
