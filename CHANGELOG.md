@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.2...roadster-v0.6.3) - 2024-09-15
+
+### Added
+
+- Add more builder methods for `RoadsterApp` ([#370](https://github.com/roadster-rs/roadster/pull/370))
+- Builder-style API for `App` ([#367](https://github.com/roadster-rs/roadster/pull/367))
+
+### Other
+
+- Add logs for successful health checks ([#371](https://github.com/roadster-rs/roadster/pull/371))
+
 ## [0.6.2](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.1...roadster-v0.6.2) - 2024-08-30
 
 ### Added
