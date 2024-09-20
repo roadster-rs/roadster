@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.3...roadster-v0.6.4) - 2024-09-20
+
+### Other
+
+- Update Otel and tower-http dependencies ([#374](https://github.com/roadster-rs/roadster/pull/374))
+
 ## [0.6.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.2...roadster-v0.6.3) - 2024-09-15
 
 ### Added
