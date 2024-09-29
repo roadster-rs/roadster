@@ -47,3 +47,7 @@ check:
 # Check if the Codecov config is valid
 validate-codecov-config:
     curl -X POST --data-binary @codecov.yml https://codecov.io/validate
+
+# Initialize a new installation of the repo (e.g., install deps)
+init:
+    cargo binstall cargo-nextest cargo-llvm-cov sea-orm-cli
