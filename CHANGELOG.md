@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.3...roadster-v0.6.4) - 2024-10-05
+
+### Other
+
+- Update dependencies ([#386](https://github.com/roadster-rs/roadster/pull/386))
+- Add `init` command to justfile ([#383](https://github.com/roadster-rs/roadster/pull/383))
+- Disable default features for `rstest` ([#380](https://github.com/roadster-rs/roadster/pull/380))
+- Use mold linker in CI ([#379](https://github.com/roadster-rs/roadster/pull/379))
+
 ## [0.6.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.2...roadster-v0.6.3) - 2024-09-15
 
 ### Added
