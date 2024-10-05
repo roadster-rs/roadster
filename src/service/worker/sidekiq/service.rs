@@ -172,7 +172,7 @@ trait RedisCommands {
         upper: isize,
     ) -> Result<Vec<String>, RedisError>;
 
-    async fn zrem<V>(&mut self, key: String, value: V) -> Result<bool, RedisError>
+    async fn zrem<V>(&mut self, key: String, value: V) -> Result<usize, RedisError>
     where
         V: ToRedisArgs + Send + Sync + 'static;
 }
@@ -188,7 +188,7 @@ impl<'a> RedisCommands for PooledConnection<'a, RedisConnectionManager> {
         RedisConnection::zrange(self, key, lower, upper).await
     }
 
-    async fn zrem<V>(&mut self, key: String, value: V) -> Result<bool, RedisError>
+    async fn zrem<V>(&mut self, key: String, value: V) -> Result<usize, RedisError>
     where
         V: ToRedisArgs + Send + Sync + 'static,
     {
@@ -280,7 +280,7 @@ mod tests {
             zrem.never();
         }
         zrem.withf(move |key, jobs| PERIODIC_KEY == key && expected_jobs_removed.iter().eq(jobs))
-            .return_once(|_, _: Vec<String>| Ok(true));
+            .return_once(|_, _: Vec<String>| Ok(1));
 
         let registered_jobs: HashSet<String> =
             registered_jobs.iter().map(|s| s.to_string()).collect();

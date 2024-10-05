@@ -34,7 +34,7 @@ sea-orm = { workspace = true, optional = true }
 clap = { version = "4.3.0", features = ["derive"], optional = true }
 
 # The default `rss-stats` feature has a dependency that currently can't be satisfied (memchr: ~2.3)
-rusty-sidekiq = { version = "0.10.5", default-features = false }
+rusty-sidekiq = { workspace = true, default-features = false }
 serde = { workspace = true, features = ["derive"] }
 
 [build-dependencies]
