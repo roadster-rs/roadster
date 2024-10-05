@@ -172,7 +172,7 @@ trait RedisCommands {
         upper: isize,
     ) -> Result<Vec<String>, RedisError>;
 
-    async fn zrem<V>(&mut self, key: String, value: V) -> Result<bool, RedisError>
+    async fn zrem<V>(&mut self, key: String, value: V) -> Result<usize, RedisError>
     where
         V: ToRedisArgs + Send + Sync + 'static;
 }
@@ -188,7 +188,7 @@ impl<'a> RedisCommands for PooledConnection<'a, RedisConnectionManager> {
         RedisConnection::zrange(self, key, lower, upper).await
     }
 
-    async fn zrem<V>(&mut self, key: String, value: V) -> Result<bool, RedisError>
+    async fn zrem<V>(&mut self, key: String, value: V) -> Result<usize, RedisError>
     where
         V: ToRedisArgs + Send + Sync + 'static,
     {

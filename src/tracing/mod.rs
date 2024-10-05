@@ -8,7 +8,7 @@ use opentelemetry::trace::TracerProvider;
 #[cfg(feature = "otel")]
 use opentelemetry_otlp::WithExportConfig;
 #[cfg(feature = "otel")]
-use opentelemetry_sdk::metrics::reader::{DefaultAggregationSelector, DefaultTemporalitySelector};
+use opentelemetry_sdk::metrics::reader::DefaultTemporalitySelector;
 #[cfg(feature = "otel")]
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 #[cfg(feature = "otel")]
@@ -140,7 +140,6 @@ pub fn init_tracing(
                     .with_endpoint(otlp_endpoint.clone()),
             )
             .with_resource(otel_resource)
-            .with_aggregation_selector(DefaultAggregationSelector::new())
             .with_temporality_selector(DefaultTemporalitySelector::new())
             .build()?;
         opentelemetry::global::set_meter_provider(provider.clone());
