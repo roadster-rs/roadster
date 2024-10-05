@@ -280,7 +280,7 @@ mod tests {
             zrem.never();
         }
         zrem.withf(move |key, jobs| PERIODIC_KEY == key && expected_jobs_removed.iter().eq(jobs))
-            .return_once(|_, _: Vec<String>| Ok(true));
+            .return_once(|_, _: Vec<String>| Ok(1));
 
         let registered_jobs: HashSet<String> =
             registered_jobs.iter().map(|s| s.to_string()).collect();

@@ -98,7 +98,7 @@ toml = "0.8.0"
 url = { version = "2.2.2", features = ["serde"] }
 uuid = { version = "1.1.2", features = ["v4", "serde"] }
 futures = "0.3.21"
-futures-core = "0.3.28"
+futures-core = "0.3.31"
 chrono = { version = "0.4.34", features = ["serde"] }
 byte-unit = { version = "5.0.0", features = ["serde"] }
 convert_case = "0.6.0"
