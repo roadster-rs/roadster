@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.5](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.4...roadster-v0.6.5) - 2024-10-07
+
+### Added
+
+- Add support to config for email via SMTP (`email-smtp` feature) ([#388](https://github.com/roadster-rs/roadster/pull/388))
+
 ## [0.6.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.3...roadster-v0.6.4) - 2024-10-05
 
 ### Other
