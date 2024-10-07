@@ -19,6 +19,8 @@ http = ["dep:axum-extra", "dep:tower", "dep:tower-http"]
 open-api = ["http", "dep:aide", "dep:schemars"]
 sidekiq = ["dep:rusty-sidekiq", "dep:bb8", "dep:num_cpus"]
 db-sql = ["dep:sea-orm", "dep:sea-orm-migration"]
+email = ["dep:lettre"]
+email-smtp = ["email"]
 jwt = ["dep:jsonwebtoken"]
 jwt-ietf = ["jwt"]
 jwt-openid = ["jwt"]
@@ -62,6 +64,9 @@ http-body-util = "0.1.0"
 sea-orm = { workspace = true, features = ["debug-print", "runtime-tokio-rustls", "sqlx-postgres", "macros"], optional = true }
 sea-orm-migration = { workspace = true, features = ["runtime-tokio-rustls", "sqlx-postgres"], optional = true }
 
+# Email
+lettre = { workspace = true, features = ["serde"], optional = true }
+
 # Workers
 rusty-sidekiq = { workspace = true, optional = true }
 bb8 = { version = "0.8.0", optional = true }
@@ -95,7 +100,7 @@ strum_macros = "0.26.0"
 itertools = "0.13.0"
 serde_json = "1.0.96"
 toml = "0.8.0"
-url = { version = "2.2.2", features = ["serde"] }
+url = { version = "2.4.0", features = ["serde"] }
 uuid = { version = "1.1.2", features = ["v4", "serde"] }
 futures = "0.3.21"
 futures-core = "0.3.31"
@@ -135,6 +140,9 @@ schemars = "0.8.16"
 # DB
 sea-orm = { version = "1.0.1" }
 sea-orm-migration = { version = "1.0.0" }
+
+# Email
+lettre = "0.11.0"
 
 # CLI
 clap = { version = "4.3.0", features = ["derive"] }

@@ -180,7 +180,7 @@ impl<B> OnResponse<B> for CustomOnResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::app_config::AppConfig;
+    use crate::config::AppConfig;
     use rstest::rstest;
 
     #[rstest]

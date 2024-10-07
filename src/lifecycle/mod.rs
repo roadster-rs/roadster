@@ -12,7 +12,7 @@ use axum::extract::FromRef;
 /// Trait used to hook into various stages of the app's lifecycle.
 ///
 /// The app's lifecycle generally looks something like this:
-/// 1. Parse the [`crate::config::app_config::AppConfig`]
+/// 1. Parse the [`crate::config::AppConfig`]
 /// 2. Initialize tracing to enable logs/traces
 /// 3. Build the [`crate::app::context::AppContext`] and the [`crate::app::App`]'s custom state
 /// 4. Run the roadster/app CLI command, if one was specified when the app was started

@@ -10,7 +10,7 @@ use migration::Migrator;
 use roadster::app::context::AppContext;
 use roadster::app::metadata::AppMetadata;
 use roadster::app::App as RoadsterApp;
-use roadster::config::app_config::AppConfig;
+use roadster::config::AppConfig;
 use roadster::error::RoadsterResult;
 use roadster::service::function::service::FunctionService;
 #[cfg(feature = "grpc")]

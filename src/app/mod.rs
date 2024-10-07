@@ -29,9 +29,9 @@ use crate::api::cli::MockTestCli;
 #[cfg(feature = "cli")]
 use crate::api::cli::RunCommand;
 use crate::app::metadata::AppMetadata;
-use crate::config::app_config::AppConfig;
 #[cfg(not(feature = "cli"))]
 use crate::config::environment::Environment;
+use crate::config::AppConfig;
 use crate::error::RoadsterResult;
 use crate::health_check::registry::HealthCheckRegistry;
 use crate::lifecycle::registry::LifecycleHandlerRegistry;

@@ -1,0 +1,9 @@
+---
+source: src/config/email/smtp.rs
+expression: email
+---
+from = 'no-reply@example.com'
+[smtp.connection]
+host = 'smtp.example.com'
+username = 'username'
+password = 'password'

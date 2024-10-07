@@ -200,7 +200,7 @@ impl<'a> RedisCommands for PooledConnection<'a, RedisConnectionManager> {
 mod tests {
     use super::*;
     use crate::app::context::AppContext;
-    use crate::config::app_config::AppConfig;
+    use crate::config::AppConfig;
     use bb8::Pool;
     use rstest::rstest;
     use sidekiq::RedisConnectionManager;

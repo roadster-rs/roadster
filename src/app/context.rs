@@ -1,6 +1,6 @@
 use crate::app::metadata::AppMetadata;
 use crate::app::App;
-use crate::config::app_config::AppConfig;
+use crate::config::AppConfig;
 use crate::error::RoadsterResult;
 use crate::health_check::registry::HealthCheckRegistry;
 use crate::health_check::HealthCheck;

@@ -134,7 +134,7 @@ async fn log_body(body: Body, max_len: i32, req: bool) -> Result<Bytes, Response
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::app_config::AppConfig;
+    use crate::config::AppConfig;
     use rstest::rstest;
 
     #[rstest]

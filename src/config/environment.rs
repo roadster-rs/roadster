@@ -1,4 +1,4 @@
-use crate::config::app_config::{ENV_VAR_PREFIX, ENV_VAR_SEPARATOR};
+use crate::config::{ENV_VAR_PREFIX, ENV_VAR_SEPARATOR};
 use crate::error::RoadsterResult;
 use anyhow::anyhow;
 #[cfg(feature = "cli")]

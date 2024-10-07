@@ -46,7 +46,7 @@ fn enabled(context: &AppContext) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::app_config::AppConfig;
+    use crate::config::AppConfig;
     use bb8::Pool;
     use rstest::rstest;
     use sidekiq::RedisConnectionManager;

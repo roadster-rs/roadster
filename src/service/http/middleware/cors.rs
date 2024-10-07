@@ -285,7 +285,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::app_config::AppConfig;
+    use crate::config::AppConfig;
     use crate::testing::snapshot::TestCase;
     use crate::util::serde::Wrapper;
     use insta::assert_toml_snapshot;
