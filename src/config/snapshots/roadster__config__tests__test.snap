@@ -1,5 +1,5 @@
 ---
-source: src/config/app_config.rs
+source: src/config/mod.rs
 expression: config
 ---
 environment = 'test'
@@ -162,3 +162,8 @@ connect-lazy = true
 acquire-timeout = 1000
 min-connections = 0
 max-connections = 10
+
+[email]
+from = 'no-reply@example.com'
+[email.smtp.connection]
+uri = 'smtps://username:password@smtp.example.com:425'

@@ -72,7 +72,7 @@ impl From<&Database> for ConnectOptions {
 }
 
 #[cfg(test)]
-mod deserialize_tests {
+mod tests {
     use super::*;
     use crate::testing::snapshot::TestCase;
     use insta::{assert_debug_snapshot, assert_toml_snapshot};
@@ -104,7 +104,7 @@ mod deserialize_tests {
         "#
     )]
     #[cfg_attr(coverage_nightly, coverage(off))]
-    fn sidekiq(_case: TestCase, #[case] config: &str) {
+    fn serialization(_case: TestCase, #[case] config: &str) {
         let database: Database = toml::from_str(config).unwrap();
 
         assert_toml_snapshot!(database);

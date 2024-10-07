@@ -91,7 +91,7 @@ fn ping_get_docs(op: TransformOperation) -> TransformOperation {
 #[cfg(test)]
 mod tests {
     use crate::app::context::AppContext;
-    use crate::config::app_config::AppConfig;
+    use crate::config::AppConfig;
     use rstest::rstest;
 
     // Todo: Is there a better way to structure this test (and the ones in `health` and `ping`)

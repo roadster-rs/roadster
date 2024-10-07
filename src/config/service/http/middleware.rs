@@ -1,5 +1,5 @@
 use crate::app::context::AppContext;
-use crate::config::app_config::CustomConfig;
+use crate::config::CustomConfig;
 use crate::service::http::middleware::catch_panic::CatchPanicConfig;
 use crate::service::http::middleware::compression::{
     RequestDecompressionConfig, ResponseCompressionConfig,
@@ -127,7 +127,7 @@ pub struct MiddlewareConfig<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::app_config::AppConfig;
+    use crate::config::AppConfig;
     use rstest::rstest;
 
     #[rstest]

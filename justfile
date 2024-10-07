@@ -4,8 +4,8 @@ help:
 
 # Run all of our unit tests.
 test:
-    cargo nextest run --all-features
-    cargo test --doc --all-features
+    cargo nextest run --all-features --no-fail-fast
+    cargo test --doc --all-features --no-fail-fast
 
 # Run all of our unit tests whenever files in the repo change.
 test-watch:
@@ -50,4 +50,4 @@ validate-codecov-config:
 
 # Initialize a new installation of the repo (e.g., install deps)
 init:
-    cargo binstall cargo-nextest cargo-llvm-cov sea-orm-cli
+    cargo binstall cargo-nextest cargo-llvm-cov sea-orm-cli cargo-insta cargo-minimal-versions cargo-hack

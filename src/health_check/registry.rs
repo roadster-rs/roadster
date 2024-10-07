@@ -59,7 +59,7 @@ impl HealthCheckRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::app_config::AppConfig;
+    use crate::config::AppConfig;
     use crate::health_check::MockHealthCheck;
     use rstest::rstest;
 

@@ -1,5 +1,5 @@
 use crate::app::context::AppContext;
-use crate::config::app_config::CustomConfig;
+use crate::config::CustomConfig;
 use crate::util::serde::default_true;
 use axum::extract::FromRef;
 use config::{FileFormat, FileSourceString};
@@ -120,7 +120,7 @@ pub struct MaxDuration {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::app_config::AppConfig;
+    use crate::config::AppConfig;
     use rstest::rstest;
 
     #[rstest]

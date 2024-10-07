@@ -125,7 +125,7 @@ fn api_schema_route(context: &AppContext) -> &str {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::app_config::AppConfig;
+    use crate::config::AppConfig;
     use rstest::rstest;
 
     // Todo: Is there a better way to structure these tests (and the ones in `health` and `ping`)

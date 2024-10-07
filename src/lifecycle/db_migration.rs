@@ -56,7 +56,7 @@ where
 mod tests {
     use super::*;
     use crate::app::MockApp;
-    use crate::config::app_config::AppConfig;
+    use crate::config::AppConfig;
     use rstest::rstest;
 
     #[rstest]

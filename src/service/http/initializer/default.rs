@@ -21,7 +21,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::app::context::AppContext;
-    use crate::config::app_config::AppConfig;
+    use crate::config::AppConfig;
     use rstest::rstest;
 
     #[rstest]

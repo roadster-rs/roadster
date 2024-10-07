@@ -1,5 +1,5 @@
 use crate::app::context::AppContext;
-use crate::config::app_config::CustomConfig;
+use crate::config::CustomConfig;
 use crate::util::serde::default_true;
 use config::{FileFormat, FileSourceString};
 use serde_derive::{Deserialize, Serialize};
@@ -82,7 +82,7 @@ pub struct LifecycleHandlerConfig<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::app_config::AppConfig;
+    use crate::config::AppConfig;
     use rstest::rstest;
 
     #[rstest]

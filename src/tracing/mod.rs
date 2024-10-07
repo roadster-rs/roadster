@@ -22,8 +22,8 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::EnvFilter;
 
-use crate::config::app_config::AppConfig;
 use crate::config::tracing::Format;
+use crate::config::AppConfig;
 use crate::error::RoadsterResult;
 
 pub fn init_tracing(
