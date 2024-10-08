@@ -11,6 +11,7 @@ pub enum EmailError {
     Other(#[from] Box<dyn std::error::Error + Send + Sync>),
 }
 
+#[cfg(feature = "email-smtp")]
 impl From<lettre::transport::smtp::Error> for Error {
     fn from(value: lettre::transport::smtp::Error) -> Self {
         Self::Email(EmailError::from(value))
