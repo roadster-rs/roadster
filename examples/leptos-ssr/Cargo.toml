@@ -123,8 +123,8 @@ lib-default-features = false
 #lib-profile-release = "wasm-release"
 
 [build-dependencies]
-vergen = { version = "9.0.0" }
-vergen-gitcl = { version = "1.0.0" }
+vergen = { workspace = true }
+vergen-gitcl = { workspace = true }
 
 #[[bin]]
 #name = "leptos_ssr_example"
