@@ -1,5 +1,8 @@
 use crate::config::email::Email;
 use lettre::message::MessageBuilder;
+use lettre::transport::smtp::authentication::Credentials;
+use lettre::transport::smtp::SmtpTransportBuilder;
+use lettre::SmtpTransport;
 use serde_derive::{Deserialize, Serialize};
 use url::Url;
 use validator::{Validate, ValidationErrors};
@@ -55,6 +58,30 @@ impl From<&Email> for MessageBuilder {
         };
 
         builder
+    }
+}
+
+impl TryFrom<&SmtpConnection> for SmtpTransportBuilder {
+    type Error = lettre::transport::smtp::Error;
+
+    fn try_from(value: &SmtpConnection) -> Result<Self, Self::Error> {
+        match value {
+            SmtpConnection::Fields(fields) => {
+                let credentials =
+                    Credentials::new(fields.username.clone(), fields.password.clone());
+                SmtpTransport::relay(&fields.host).map(|builder| builder.credentials(credentials))
+            }
+            SmtpConnection::Uri(fields) => SmtpTransport::from_url(fields.uri.as_ref()),
+        }
+    }
+}
+
+impl TryFrom<&SmtpConnection> for SmtpTransport {
+    type Error = lettre::transport::smtp::Error;
+
+    fn try_from(value: &SmtpConnection) -> Result<Self, Self::Error> {
+        let builder: SmtpTransportBuilder = value.try_into()?;
+        Ok(builder.build())
     }
 }
 

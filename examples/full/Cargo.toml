@@ -38,9 +38,9 @@ rusty-sidekiq = { workspace = true, default-features = false }
 serde = { workspace = true, features = ["derive"] }
 
 [build-dependencies]
-tonic-build = "0.12"
-vergen = { version = "9.0.0" }
-vergen-gitcl = { version = "1.0.0" }
+tonic-build = { workspace = true }
+vergen = { workspace = true }
+vergen-gitcl = { workspace = true }
 
 [[bin]]
 name = "full"

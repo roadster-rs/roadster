@@ -3,6 +3,8 @@ pub mod auth;
 #[cfg(feature = "http")]
 pub mod axum;
 pub mod config;
+#[cfg(feature = "email")]
+pub mod email;
 pub mod other;
 pub mod serde;
 #[cfg(feature = "sidekiq")]
@@ -16,6 +18,8 @@ use crate::error::api::ApiError;
 use crate::error::auth::AuthError;
 #[cfg(feature = "http")]
 use crate::error::axum::AxumError;
+#[cfg(feature = "email")]
+use crate::error::email::EmailError;
 use crate::error::other::OtherError;
 use crate::error::serde::SerdeError;
 #[cfg(feature = "sidekiq")]
@@ -80,6 +84,10 @@ pub enum Error {
     #[cfg(feature = "grpc")]
     #[error(transparent)]
     Tonic(#[from] TonicError),
+
+    #[cfg(feature = "email")]
+    #[error(transparent)]
+    Email(#[from] EmailError),
 
     #[error(transparent)]
     Other(#[from] OtherError),

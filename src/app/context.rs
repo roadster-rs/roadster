@@ -76,6 +76,10 @@ impl AppContext {
                 };
                 (redis_enqueue, redis_fetch)
             };
+
+            #[cfg(feature = "email-smtp")]
+            let mailer = lettre::SmtpTransport::try_from(&config.email.smtp.connection)?;
+
             let inner = AppContextInner {
                 config,
                 metadata,
@@ -86,6 +90,8 @@ impl AppContext {
                 redis_enqueue,
                 #[cfg(feature = "sidekiq")]
                 redis_fetch,
+                #[cfg(feature = "email-smtp")]
+                mailer,
             };
             AppContext {
                 inner: Arc::new(inner),
@@ -156,6 +162,11 @@ impl AppContext {
     pub fn redis_fetch(&self) -> &Option<sidekiq::RedisPool> {
         self.inner.redis_fetch()
     }
+
+    #[cfg(feature = "email-smtp")]
+    pub fn mailer(&self) -> &lettre::SmtpTransport {
+        self.inner.mailer()
+    }
 }
 
 struct AppContextInner {
@@ -171,6 +182,8 @@ struct AppContextInner {
     /// config is set to zero, in which case the [sidekiq::Processor] would also not be started.
     #[cfg(feature = "sidekiq")]
     redis_fetch: Option<sidekiq::RedisPool>,
+    #[cfg(feature = "email-smtp")]
+    mailer: lettre::SmtpTransport,
 }
 
 #[cfg_attr(test, mockall::automock)]
@@ -212,5 +225,10 @@ impl AppContextInner {
     #[cfg(feature = "sidekiq")]
     fn redis_fetch(&self) -> &Option<sidekiq::RedisPool> {
         &self.redis_fetch
+    }
+
+    #[cfg(feature = "email-smtp")]
+    fn mailer(&self) -> &lettre::SmtpTransport {
+        &self.mailer
     }
 }
