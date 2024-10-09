@@ -5,11 +5,15 @@ use aide::axum::ApiRouter;
 use aide::transform::TransformOperation;
 use axum::extract::State;
 use axum::Json;
+use lettre::message::header::ContentType;
+use lettre::message::{Mailbox, MessageBuilder};
+use lettre::Transport;
 use roadster::api::http::build_path;
 use roadster::error::RoadsterResult;
 use roadster::service::worker::sidekiq::app_worker::AppWorker;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use tracing::instrument;
 
 const BASE: &str = "/example";
@@ -28,6 +32,15 @@ pub struct ExampleResponse {}
 #[instrument(skip_all)]
 async fn example_get(State(state): State<AppState>) -> RoadsterResult<Json<ExampleResponse>> {
     ExampleWorker::enqueue(&state, "Example".to_string()).await?;
+
+    let email: MessageBuilder = (&state.app_context.config().email).into();
+    let email = email
+        .to(Mailbox::from_str("hello@example.com")?)
+        .subject("Greetings")
+        .header(ContentType::TEXT_PLAIN)
+        .body("Hello, World!".to_string())?;
+    state.app_context.mailer().send(&email)?;
+
     Ok(Json(ExampleResponse {}))
 }
 
