@@ -101,7 +101,7 @@ where
         .map(Duration::from_millis)
         .unwrap_or_else(|| {
             let context = AppContext::from_ref(&state);
-            context.config().health_check.max_duration.startup
+            context.config().health_check.max_duration.api
         });
     Ok(Json(health_check(&state, Some(duration)).await?))
 }
