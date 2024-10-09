@@ -3,7 +3,7 @@ use crate::error::RoadsterResult;
 use crate::health_check::{CheckResponse, ErrorData, HealthCheck, Status};
 #[cfg(feature = "open-api")]
 use aide::OperationIo;
-#[cfg(feature = "sidekiq")]
+#[cfg(any(feature = "sidekiq", feature = "email-smtp"))]
 use anyhow::anyhow;
 use axum::extract::FromRef;
 use futures::future::join_all;
