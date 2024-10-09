@@ -2,4 +2,10 @@
 from = "no-reply@example.com"
 
 [email.smtp.connection]
+# The `smtps` scheme should be used in production
 uri = "smtp://localhost:1025"
+# Alternatively, provide connection details as individual fields
+#host = "smtp.example.com"
+#port = 465
+#username = "username"
+#password = "password"
