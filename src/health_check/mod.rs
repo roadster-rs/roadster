@@ -1,6 +1,8 @@
 #[cfg(feature = "db-sql")]
 pub mod database;
 pub mod default;
+#[cfg(feature = "email")]
+pub mod email;
 pub mod registry;
 #[cfg(feature = "sidekiq")]
 pub mod sidekiq_enqueue;

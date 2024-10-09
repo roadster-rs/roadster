@@ -26,6 +26,8 @@ cli = 10000
 
 [health-check.sidekiq]
 
+[health-check.smtp]
+
 [service]
 default-enable = true
 

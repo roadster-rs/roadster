@@ -135,6 +135,37 @@ async fn ping_db(db: &DatabaseConnection, duration: Option<Duration>) -> Roadste
     Ok(())
 }
 
+#[cfg(feature = "email-smtp")]
+pub(crate) async fn smtp_health(context: &AppContext, duration: Option<Duration>) -> CheckResponse {
+    let timer = Instant::now();
+    let status = match ping_smtp(context.mailer(), duration).await {
+        Ok(_) => Status::Ok,
+        Err(err) => Status::Err(ErrorData::builder().msg(err.to_string()).build()),
+    };
+    let timer = timer.elapsed();
+    CheckResponse::builder()
+        .status(status)
+        .latency(timer)
+        .build()
+}
+
+#[cfg(feature = "email-smtp")]
+async fn ping_smtp(
+    mailer: &lettre::SmtpTransport,
+    duration: Option<Duration>,
+) -> RoadsterResult<()> {
+    let connected = if let Some(duration) = duration {
+        timeout(duration, async { mailer.test_connection() }).await??
+    } else {
+        mailer.test_connection()?
+    };
+    if connected {
+        Ok(())
+    } else {
+        Err(anyhow!("Not connected to the SMTP server").into())
+    }
+}
+
 #[cfg(feature = "sidekiq")]
 #[instrument(skip_all)]
 pub(crate) async fn redis_health(
