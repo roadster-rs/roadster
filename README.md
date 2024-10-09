@@ -38,6 +38,7 @@ and [Poem](https://github.com/poem-web/poem).
   the `db-sql` feature)
 - Built-in support for [Sidekiq.rs](https://crates.io/crates/rusty-sidekiq) for running async/background jobs (requires
   the `sidekiq` feature)
+- Built-in support for sending emails via SMTP (requires the `email-smtp` feature)
 - Structured logs/traces using tokio's [tracing](https://docs.rs/tracing/latest/tracing/) crate. Export traces/metrics
   using OpenTelemetry (requires the `otel` feature).
 - Health checks to ensure the app's external dependencies are healthy
@@ -50,20 +51,20 @@ and [Poem](https://github.com/poem-web/poem).
 ## Start local DB
 
 ```shell
-# Replace `example_dev` with your app name, e.g., `myapp_dev` (unless you're using our `full` example, as demonstrated below)
-# Dev
+# Replace `example_dev` with your app name, e.g., `myapp_dev`
 docker run -d -p 5432:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=example_dev -e POSTGRES_PASSWORD=roadster postgres:15.3-alpine
-# Test
-docker run -d -p 5433:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=example_test -e POSTGRES_PASSWORD=roadster postgres:15.3-alpine
 ```
 
 ## Start local Redis instance (for [Sidekiq.rs](https://crates.io/crates/rusty-sidekiq))
 
 ```shell
-# Dev
 docker run -d -p 6379:6379 redis:7.2-alpine
-# Test
-docker run -d -p 6380:6379 redis:7.2-alpine
+```
+
+## Start local SMTP server instance (example: [maildev](https://github.com/maildev/maildev))
+
+```shell
+docker run -d -p 1080:1080 -p 1025:1025 maildev/maildev
 ```
 
 ## Create your app
@@ -90,6 +91,10 @@ echo ROADSTER__ENVIRONMENT=development >> .env
 cargo run
 ```
 
+## Explore the API
+
+Navigate to http://localhost:3000/api/_docs to explore the app's OpenAPI playground
+
 # Add a UI
 
 Currently, Roadster is focused on back-end API development with Rust. We leave it to the consumer to decide how they
@@ -105,6 +110,15 @@ framework ([Leptos](https://github.com/leptos-rs/leptos) / [Yew](https://github.
 | Framework                                     | Example                                                                             |
 |-----------------------------------------------|-------------------------------------------------------------------------------------|
 | [Leptos](https://github.com/leptos-rs/leptos) | [leptos-ssr](https://github.com/roadster-rs/roadster/tree/main/examples/leptos-ssr) |
+
+# Email
+
+## Local testing of sending emails via SMTP
+
+If you're using our SMTP integration to send emails, you can test locally using a mock SMTP server. Some options:
+
+- [maildev](https://github.com/maildev/maildev)
+- [smtp4dev](https://github.com/rnwood/smtp4dev)
 
 # Tracing + OpenTelemetry
 

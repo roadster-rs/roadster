@@ -37,6 +37,7 @@ impl Validate for SmtpConnection {
 #[non_exhaustive]
 pub struct SmtpConnectionFields {
     pub host: String,
+    pub port: Option<u16>,
     pub username: String,
     pub password: String,
 }
@@ -69,7 +70,15 @@ impl TryFrom<&SmtpConnection> for SmtpTransportBuilder {
             SmtpConnection::Fields(fields) => {
                 let credentials =
                     Credentials::new(fields.username.clone(), fields.password.clone());
-                SmtpTransport::relay(&fields.host).map(|builder| builder.credentials(credentials))
+                SmtpTransport::relay(&fields.host)
+                    .map(|builder| {
+                        if let Some(port) = fields.port {
+                            builder.port(port)
+                        } else {
+                            builder
+                        }
+                    })
+                    .map(|builder| builder.credentials(credentials))
             }
             SmtpConnection::Uri(fields) => SmtpTransport::from_url(fields.uri.as_ref()),
         }
@@ -151,6 +160,17 @@ mod tests {
 
         [smtp.connection]
         uri = "smtps://username:password@smtp.example.com:425"
+        "#
+    )]
+    #[case(
+        r#"
+        from = "no-reply@example.com"
+
+        [smtp.connection]
+        host = "smtp.example.com"
+        port = 465
+        username = "username"
+        password = "password"
         "#
     )]
     #[cfg_attr(coverage_nightly, coverage(off))]
