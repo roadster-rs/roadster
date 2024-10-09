@@ -36,6 +36,7 @@ async fn example_get(State(state): State<AppState>) -> RoadsterResult<Json<Examp
     let email: MessageBuilder = (&state.app_context.config().email).into();
     let email = email
         .to(Mailbox::from_str("hello@example.com")?)
+        .subject("Greetings")
         .header(ContentType::TEXT_PLAIN)
         .body("Hello, World!".to_string())?;
     state.app_context.mailer().send(&email)?;
