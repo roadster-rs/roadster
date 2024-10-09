@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.5](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.4...roadster-v0.6.5) - 2024-10-09
+
+### Added
+
+The main feature included in this release is support for sending emails via SMTP. See the below items for more details.
+
+- Add `SmtpHealthCheck` ([#396](https://github.com/roadster-rs/roadster/pull/396))
+- Allow specifying the smtp port via config ([#395](https://github.com/roadster-rs/roadster/pull/395))
+- Add smtp client to `AppContext` ([#391](https://github.com/roadster-rs/roadster/pull/391))
+- Add support to config for email via SMTP (`email-smtp` feature) ([#388](https://github.com/roadster-rs/roadster/pull/388))
+
+### Fixed
+
+- Fix config value used for timeout of health check in api and cli ([#397](https://github.com/roadster-rs/roadster/pull/397))
+
+### Other
+
+- Add example of sending email using lettre smtp client ([#394](https://github.com/roadster-rs/roadster/pull/394))
+- Add doc comment explaining how NormalizePathLayer works ([#393](https://github.com/roadster-rs/roadster/pull/393))
+
 ## [0.6.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.3...roadster-v0.6.4) - 2024-10-05
 
 ### Other
