@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+The main feature included in this release is support for sending emails via SMTP. See the below items for more details.
+
 - Add `SmtpHealthCheck` ([#396](https://github.com/roadster-rs/roadster/pull/396))
 - Allow specifying the smtp port via config ([#395](https://github.com/roadster-rs/roadster/pull/395))
 - Add smtp client to `AppContext` ([#391](https://github.com/roadster-rs/roadster/pull/391))
