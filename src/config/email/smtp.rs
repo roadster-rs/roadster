@@ -145,6 +145,14 @@ mod tests {
         uri = "smtps://username:password@smtp.example.com:425"
         "#
     )]
+    #[case(
+        r#"
+        from = "no-reply@example.com"
+
+        [smtp.connection]
+        uri = "smtps://username:password@smtp.example.com:425"
+        "#
+    )]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn serialization(_case: TestCase, #[case] config: &str) {
         let email: Email = toml::from_str(config).unwrap();

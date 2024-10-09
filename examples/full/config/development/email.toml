@@ -1,0 +1,5 @@
+[email]
+from = "no-reply@example.com"
+
+[email.smtp.connection]
+uri = "smtp://localhost:1025"
