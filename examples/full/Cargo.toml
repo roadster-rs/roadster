@@ -38,7 +38,7 @@ rusty-sidekiq = { workspace = true, default-features = false }
 serde = { workspace = true, features = ["derive"] }
 
 # Email
-lettre = { workspace = true }
+lettre = { workspace = true, features = ["pool"] }
 
 [build-dependencies]
 tonic-build = { workspace = true }

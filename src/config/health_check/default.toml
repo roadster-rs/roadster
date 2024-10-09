@@ -6,3 +6,5 @@ cli = 10000
 [health-check.database]
 
 [health-check.sidekiq]
+
+[health-check.smtp]

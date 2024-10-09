@@ -1,6 +1,8 @@
 use crate::app::context::AppContext;
 #[cfg(feature = "db-sql")]
 use crate::health_check::database::DatabaseHealthCheck;
+#[cfg(feature = "email-smtp")]
+use crate::health_check::email::smtp::SmtpHealthCheck;
 #[cfg(feature = "sidekiq")]
 use crate::health_check::sidekiq_enqueue::SidekiqEnqueueHealthCheck;
 #[cfg(feature = "sidekiq")]
@@ -25,6 +27,10 @@ pub fn default_health_checks(
         Arc::new(SidekiqFetchHealthCheck {
             context: context.clone(),
         }),
+        #[cfg(feature = "email-smtp")]
+        Arc::new(SmtpHealthCheck {
+            context: context.clone(),
+        }),
     ];
 
     health_checks
@@ -34,7 +40,7 @@ pub fn default_health_checks(
         .collect()
 }
 
-#[cfg(all(test, feature = "sidekiq", feature = "db-sql",))]
+#[cfg(all(test, feature = "sidekiq", feature = "db-sql", feature = "email-smtp"))]
 mod tests {
     use crate::app::context::AppContext;
     use crate::config::AppConfig;

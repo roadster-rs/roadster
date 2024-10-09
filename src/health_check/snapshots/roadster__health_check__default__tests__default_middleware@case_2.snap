@@ -6,4 +6,5 @@ expression: health_checks
     'db',
     'sidekiq-enqueue',
     'sidekiq-fetch',
+    'smtp',
 ]

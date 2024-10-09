@@ -30,6 +30,10 @@ pub struct HealthCheck {
     #[validate(nested)]
     pub sidekiq: HealthCheckConfig<()>,
 
+    #[cfg(feature = "email-smtp")]
+    #[validate(nested)]
+    pub smtp: HealthCheckConfig<()>,
+
     /// Allows providing configs for custom health checks. Any configs that aren't pre-defined above
     /// will be collected here.
     ///
