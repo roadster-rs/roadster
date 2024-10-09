@@ -36,7 +36,7 @@ where
             .map(Duration::from_millis)
             .unwrap_or_else(|| {
                 let context = AppContext::from_ref(state);
-                context.config().health_check.max_duration.startup
+                context.config().health_check.max_duration.cli
             });
         let health = health_check(state, Some(duration)).await?;
         let health = serde_json::to_string_pretty(&health)?;
