@@ -80,6 +80,9 @@ impl AppContext {
             #[cfg(feature = "email-smtp")]
             let mailer = lettre::SmtpTransport::try_from(&config.email.smtp.connection)?;
 
+            #[cfg(feature = "email-sendgrid")]
+            let sendgrid = sendgrid::v3::Sender::try_from(&config.email.sendgrid)?;
+
             let inner = AppContextInner {
                 config,
                 metadata,
@@ -92,6 +95,8 @@ impl AppContext {
                 redis_fetch,
                 #[cfg(feature = "email-smtp")]
                 mailer,
+                #[cfg(feature = "email-sendgrid")]
+                sendgrid,
             };
             AppContext {
                 inner: Arc::new(inner),
@@ -167,6 +172,11 @@ impl AppContext {
     pub fn mailer(&self) -> &lettre::SmtpTransport {
         self.inner.mailer()
     }
+
+    #[cfg(feature = "email-sendgrid")]
+    pub fn sendgrid(&self) -> &sendgrid::v3::Sender {
+        self.inner.sendgrid()
+    }
 }
 
 struct AppContextInner {
@@ -184,6 +194,8 @@ struct AppContextInner {
     redis_fetch: Option<sidekiq::RedisPool>,
     #[cfg(feature = "email-smtp")]
     mailer: lettre::SmtpTransport,
+    #[cfg(feature = "email-sendgrid")]
+    sendgrid: sendgrid::v3::Sender,
 }
 
 #[cfg_attr(test, mockall::automock)]
@@ -230,5 +242,10 @@ impl AppContextInner {
     #[cfg(feature = "email-smtp")]
     fn mailer(&self) -> &lettre::SmtpTransport {
         &self.mailer
+    }
+
+    #[cfg(feature = "email-sendgrid")]
+    fn sendgrid(&self) -> &sendgrid::v3::Sender {
+        &self.sendgrid
     }
 }

@@ -6,6 +6,7 @@ pub mod config;
 #[cfg(feature = "email")]
 pub mod email;
 pub mod other;
+pub mod reqwest;
 pub mod serde;
 #[cfg(feature = "sidekiq")]
 pub mod sidekiq;
@@ -21,6 +22,7 @@ use crate::error::axum::AxumError;
 #[cfg(feature = "email")]
 use crate::error::email::EmailError;
 use crate::error::other::OtherError;
+use crate::error::reqwest::ReqwestError;
 use crate::error::serde::SerdeError;
 #[cfg(feature = "sidekiq")]
 use crate::error::sidekiq::SidekiqError;
@@ -76,6 +78,9 @@ pub enum Error {
 
     #[error(transparent)]
     Tracing(#[from] TracingError),
+
+    #[error(transparent)]
+    Reqwest(#[from] ReqwestError),
 
     #[cfg(feature = "http")]
     #[error(transparent)]
