@@ -180,6 +180,9 @@ impl AppConfig {
 
                     [email.smtp.connection]
                     uri = "smtps://username:password@smtp.example.com:425"
+
+                    [email.sendgrid]
+                    api-key = "api-key"
                     "#,
                 ),
                 FileFormat::Toml,
@@ -199,26 +202,34 @@ impl AppConfig {
                 include_str!("default.toml"),
                 FileFormat::Toml,
             ))
-            .add_source(crate::config::tracing::default_config());
+            .add_source(tracing::default_config());
 
         #[cfg(feature = "http")]
         let config = {
-            let config = config.add_source(crate::config::service::http::default_config());
-            let config = crate::config::service::http::default_config_per_env(environment)
+            let config = config.add_source(service::http::default_config());
+            let config = service::http::default_config_per_env(environment.clone())
                 .into_iter()
                 .fold(config, |config, source| config.add_source(source));
             config
         };
 
         #[cfg(feature = "grpc")]
-        let config = config.add_source(crate::config::service::grpc::default_config());
+        let config = config.add_source(service::grpc::default_config());
 
         #[cfg(feature = "sidekiq")]
-        let config = config.add_source(crate::config::service::worker::sidekiq::default_config());
+        let config = config.add_source(service::worker::sidekiq::default_config());
 
-        let config = config.add_source(crate::config::lifecycle::default_config());
+        let config = config.add_source(lifecycle::default_config());
 
-        let config = config.add_source(crate::config::health_check::default_config());
+        let config = config.add_source(health_check::default_config());
+
+        #[cfg(feature = "email-sendgrid")]
+        let config = {
+            let config = email::sendgrid::default_config_per_env(environment)
+                .into_iter()
+                .fold(config, |config, source| config.add_source(source));
+            config
+        };
 
         config
     }

@@ -200,15 +200,15 @@ pub fn snapshot_set_suffix<'a>(settings: &'a mut Settings, suffix: &str) -> &'a 
     settings
 }
 
-/// Redact instances of UUIDs in snapshots. Applies a filter on the [Settings] to replace
-/// sub-strings matching [UUID_REGEX] with `[uuid]`.
+/// Redact instances of UUIDs in snapshots. Applies a filter on the [`Settings`] to replace
+/// sub-strings matching [`UUID_REGEX`] with `[uuid]`.
 pub fn snapshot_redact_uuid(settings: &mut Settings) -> &mut Settings {
     settings.add_filter(UUID_REGEX, "[uuid]");
     settings
 }
 
-/// Redact instances of UUIDs in snapshots. Applies a filter on the [Settings] to replace
-/// sub-strings matching [UUID_REGEX] with `[uuid]`.
+/// Redact instances of bearer tokens in snapshots. Applies a filter on the [Settings] to replace
+/// sub-strings matching [`BEARER_TOKEN_REGEX`] with `Sensitive`.
 pub fn snapshot_redact_bearer_tokens(settings: &mut Settings) -> &mut Settings {
     settings.add_filter(BEARER_TOKEN_REGEX, "Sensitive");
     settings

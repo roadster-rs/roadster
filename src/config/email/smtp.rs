@@ -110,22 +110,13 @@ mod tests {
     #[rstest]
     #[case(
         r#"
-        [from]
-        email = "no-reply@example.com"
-
-        [smtp.connection]
+        [connection]
         uri = "smtps://username:password@smtp.example.com:425"
         "#
     )]
     #[case(
         r#"
-        from = "No Reply <no-reply@example.com>"
-
-        [reply-to]
-        email = "no-reply@example.com"
-        name = "No Reply"
-
-        [smtp.connection]
+        [connection]
         host = "smtp.example.com"
         username = "username"
         password = "password"
@@ -133,40 +124,7 @@ mod tests {
     )]
     #[case(
         r#"
-        [from]
-        email = "no-reply@example.com"
-
-        [smtp.connection]
-        host = "smtp.example.com"
-        username = "username"
-        password = "password"
-        "#
-    )]
-    #[case(
-        r#"
-        reply-to = "No Reply <no-reply@example.com>"
-
-        [from]
-        email = "no-reply@example.com"
-        name = "No Reply"
-
-        [smtp.connection]
-        uri = "smtps://username:password@smtp.example.com:425"
-        "#
-    )]
-    #[case(
-        r#"
-        from = "no-reply@example.com"
-
-        [smtp.connection]
-        uri = "smtps://username:password@smtp.example.com:425"
-        "#
-    )]
-    #[case(
-        r#"
-        from = "no-reply@example.com"
-
-        [smtp.connection]
+        [connection]
         host = "smtp.example.com"
         port = 465
         username = "username"
@@ -175,8 +133,8 @@ mod tests {
     )]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn serialization(_case: TestCase, #[case] config: &str) {
-        let email: Email = toml::from_str(config).unwrap();
+        let smtp: Smtp = toml::from_str(config).unwrap();
 
-        assert_toml_snapshot!(email);
+        assert_toml_snapshot!(smtp);
     }
 }

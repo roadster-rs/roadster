@@ -21,6 +21,7 @@ sidekiq = ["dep:rusty-sidekiq", "dep:bb8", "dep:num_cpus"]
 db-sql = ["dep:sea-orm", "dep:sea-orm-migration"]
 email = ["dep:lettre"]
 email-smtp = ["email"]
+email-sendgrid = ["email", "dep:sendgrid"]
 jwt = ["dep:jsonwebtoken"]
 jwt-ietf = ["jwt"]
 jwt-openid = ["jwt"]
@@ -66,6 +67,7 @@ sea-orm-migration = { workspace = true, features = ["runtime-tokio-rustls", "sql
 
 # Email
 lettre = { workspace = true, features = ["serde"], optional = true }
+sendgrid = { workspace = true, optional = true }
 
 # Workers
 rusty-sidekiq = { workspace = true, optional = true }
@@ -100,7 +102,7 @@ strum_macros = "0.26.0"
 itertools = "0.13.0"
 serde_json = "1.0.96"
 toml = "0.8.0"
-url = { version = "2.4.0", features = ["serde"] }
+url = { version = "2.5.0", features = ["serde"] }
 uuid = { version = "1.1.2", features = ["v4", "serde"] }
 futures = "0.3.21"
 futures-core = "0.3.31"
@@ -116,6 +118,7 @@ thiserror = "1.0.38"
 # https://github.com/time-rs/time/issues/681
 time = "0.3.36"
 cfg-if = { workspace = true }
+reqwest = { workspace = true }
 
 [dev-dependencies]
 cargo-husky = { version = "1.5.0", default-features = false, features = ["user-hooks"] }
@@ -143,6 +146,7 @@ sea-orm-migration = { version = "1.0.0" }
 
 # Email
 lettre = "0.11.0"
+sendgrid = "0.22.1"
 
 # CLI
 clap = { version = "4.3.0", features = ["derive"] }
@@ -170,6 +174,7 @@ serde = { version = "1.0.185", features = ["derive"] }
 cfg-if = "1.0.0"
 vergen = { version = "9.0.0" }
 vergen-gitcl = { version = "1.0.0" }
+reqwest = "0.12.8"
 
 [package.metadata.docs.rs]
 # Have docs.rs pass `--all-features` to ensure all features have their documentation built.

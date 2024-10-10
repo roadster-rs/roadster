@@ -1,9 +1,9 @@
 ---
 source: src/config/email/smtp.rs
-expression: email
+expression: smtp
 ---
-from = 'no-reply@example.com'
-[smtp.connection]
+[connection]
 host = 'smtp.example.com'
+port = 465
 username = 'username'
 password = 'password'

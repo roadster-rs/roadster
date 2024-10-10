@@ -1,7 +1,6 @@
 ---
 source: src/config/email/smtp.rs
-expression: email
+expression: smtp
 ---
-from = 'no-reply@example.com'
-[smtp.connection]
+[connection]
 uri = 'smtps://username:password@smtp.example.com:425'

@@ -1,0 +1,12 @@
+---
+source: src/config/email/mod.rs
+expression: email
+---
+from = 'no-reply@example.com'
+[smtp.connection]
+uri = 'smtps://username:password@smtp.example.com:425'
+
+[sendgrid]
+api-key = 'api-key'
+sandbox = true
+https-only = true

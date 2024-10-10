@@ -57,7 +57,7 @@ jobs:
       # protoc is needed to build examples that have grpc enabled
       - uses: taiki-e/install-action@protoc
       - name: Test
-        run: cargo hack nextest run --no-fail-fast --feature-powerset --depth 3 --skip default --group-features jwt-ietf,jwt --group-features jwt-openid,jwt --group-features open-api,http --group-features email-smtp,email --clean-per-run --log-group github-actions --exclude-no-default-features --exclude-all-features
+        run: cargo hack nextest run --no-fail-fast --feature-powerset --depth 3 --skip default --group-features jwt-ietf,jwt --group-features jwt-openid,jwt --group-features open-api,http --group-features email-smtp,email --group-features email-sendgrid,email --clean-per-run --log-group github-actions --exclude-no-default-features --exclude-all-features
       - name: Check disk usage
         run: df -h
 
@@ -74,7 +74,7 @@ jobs:
       # protoc is needed to build examples that have grpc enabled
       - uses: taiki-e/install-action@protoc
       - name: Doc test
-        run: cargo hack test --doc --no-fail-fast --feature-powerset --depth 3 --skip default --group-features jwt-ietf,jwt --group-features jwt-openid,jwt --group-features open-api,http --group-features email-smtp,email --clean-per-run --log-group github-actions --exclude-no-default-features --exclude-all-features
+        run: cargo hack test --doc --no-fail-fast --feature-powerset --depth 3 --skip default --group-features jwt-ietf,jwt --group-features jwt-openid,jwt --group-features open-api,http --group-features email-smtp,email --group-features email-sendgrid,email --clean-per-run --log-group github-actions --exclude-no-default-features --exclude-all-features
 
   powerset_check:
     name: Powerset Check
@@ -89,7 +89,7 @@ jobs:
       # protoc is needed to build examples that have grpc enabled
       - uses: taiki-e/install-action@protoc
       - name: Check
-        run: cargo hack check --feature-powerset --depth 3 --no-dev-deps --skip default --group-features jwt-ietf,jwt --group-features jwt-openid,jwt --group-features open-api,http --group-features email-smtp,email --clean-per-run --log-group github-actions --exclude-no-default-features --exclude-all-features
+        run: cargo hack check --feature-powerset --depth 3 --no-dev-deps --skip default --group-features jwt-ietf,jwt --group-features jwt-openid,jwt --group-features open-api,http --group-features email-smtp,email --group-features email-sendgrid,email --clean-per-run --log-group github-actions --exclude-no-default-features --exclude-all-features
 
   powerset_clippy:
     name: Powerset Clippy
@@ -104,4 +104,4 @@ jobs:
       # protoc is needed to build examples that have grpc enabled
       - uses: taiki-e/install-action@protoc
       - name: Clippy
-        run: cargo hack clippy --all-targets --feature-powerset --depth 3 --skip default --group-features jwt-ietf,jwt --group-features jwt-openid,jwt --group-features open-api,http --group-features email-smtp,email --clean-per-run --log-group github-actions --exclude-no-default-features --exclude-all-features -- -D warnings
+        run: cargo hack clippy --all-targets --feature-powerset --depth 3 --skip default --group-features jwt-ietf,jwt --group-features jwt-openid,jwt --group-features open-api,http --group-features email-smtp,email --group-features email-sendgrid,email --clean-per-run --log-group github-actions --exclude-no-default-features --exclude-all-features -- -D warnings
