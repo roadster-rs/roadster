@@ -1,0 +1,6 @@
+---
+source: src/config/email/sendgrid.rs
+expression: sendgrid
+---
+api-key = 'api-key'
+https-only = true

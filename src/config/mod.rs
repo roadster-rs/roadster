@@ -180,6 +180,9 @@ impl AppConfig {
 
                     [email.smtp.connection]
                     uri = "smtps://username:password@smtp.example.com:425"
+
+                    [email.sendgrid]
+                    api-key = "api-key"
                     "#,
                 ),
                 FileFormat::Toml,
