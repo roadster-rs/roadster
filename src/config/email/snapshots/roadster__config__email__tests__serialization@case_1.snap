@@ -8,4 +8,5 @@ uri = 'smtps://username:password@smtp.example.com:425'
 
 [sendgrid]
 api-key = 'api-key'
+sandbox = true
 https-only = true

@@ -3,9 +3,9 @@ pub mod sendgrid;
 #[cfg(feature = "email-smtp")]
 pub mod smtp;
 
-use lettre::message::Mailbox;
 #[cfg(feature = "email-sendgrid")]
-use sendgrid::Sendgrid;
+use crate::config::email::sendgrid::Sendgrid;
+use lettre::message::Mailbox;
 use serde_derive::{Deserialize, Serialize};
 #[cfg(feature = "email-smtp")]
 use smtp::Smtp;

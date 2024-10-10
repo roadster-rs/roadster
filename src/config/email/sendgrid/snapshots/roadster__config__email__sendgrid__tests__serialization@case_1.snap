@@ -1,6 +1,7 @@
 ---
-source: src/config/email/sendgrid.rs
+source: src/config/email/sendgrid/mod.rs
 expression: sendgrid
 ---
 api-key = 'api-key'
+sandbox = true
 https-only = true
