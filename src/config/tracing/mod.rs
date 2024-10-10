@@ -2,6 +2,7 @@
 use crate::util::serde::default_true;
 use config::{FileFormat, FileSourceString};
 use serde_derive::{Deserialize, Serialize};
+use serde_with::serde_as;
 use strum_macros::{EnumString, IntoStaticStr};
 #[cfg(feature = "otel")]
 use url::Url;
@@ -11,6 +12,7 @@ pub fn default_config() -> config::File<FileSourceString, FileFormat> {
     config::File::from_str(include_str!("default.toml"), FileFormat::Toml)
 }
 
+#[serde_as]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -33,6 +35,11 @@ pub struct Tracing {
     /// URI of the OTLP exporter where traces/metrics/logs will be sent.
     #[cfg(feature = "otel")]
     pub otlp_endpoint: Option<Url>,
+
+    /// The interval (in milliseconds) at which OTEL metrics are exported.
+    #[cfg(feature = "otel")]
+    #[serde_as(as = "Option<serde_with::DurationMilliSeconds>")]
+    pub metrics_export_interval: Option<std::time::Duration>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, EnumString, IntoStaticStr)]
