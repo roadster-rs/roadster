@@ -39,15 +39,15 @@ dotenvy = "0.15.5"
 # Tracing
 tracing = { workspace = true }
 tracing-subscriber = { version = "0.3.17", features = ["env-filter", "json"] }
-opentelemetry-semantic-conventions = "0.16.0"
-opentelemetry = { version = "0.24.0", features = ["trace", "metrics", "logs"], optional = true }
-opentelemetry_sdk = { version = "0.24.1", features = ["tokio", "rt-tokio", "metrics", "logs", "trace"], optional = true }
-opentelemetry-otlp = { version = "0.17.0", features = ["metrics", "trace", "logs"], optional = true }
+opentelemetry-semantic-conventions = "0.26.0"
+opentelemetry = { version = "0.26.0", features = ["trace", "metrics", "logs"], optional = true }
+opentelemetry_sdk = { version = "0.26.0", features = ["tokio", "rt-tokio", "metrics", "logs", "trace"], optional = true }
+opentelemetry-otlp = { version = "0.26.0", features = ["metrics", "trace", "logs"], optional = true }
 # Roadster technically doesn't need a direct dependency on `prost`, but we add one here to allow our
 # `cargo minimal-versions check` check to pass -- `opentelemetry-proto` requires version `0.13.2` or higher
 # in order to compile -- it fails to compile with `0.13.1` even though its dependencies don't specify `0.13.2`.
 prost = { workspace = true, optional = true }
-tracing-opentelemetry = { version = "0.25.0", features = ["metrics"], optional = true }
+tracing-opentelemetry = { version = "0.27.0", features = ["metrics"], optional = true }
 
 # Controllers
 # `axum` is not optional because we use the `FromRef` trait pretty extensively, even in parts of
