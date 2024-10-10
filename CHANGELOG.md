@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.6](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.5...roadster-v0.6.6) - 2024-10-10
+
+### Added
+
+- Allow configuring the interval at which metrics are exported ([#399](https://github.com/roadster-rs/roadster/pull/399))
+
 ## [0.6.5](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.4...roadster-v0.6.5) - 2024-10-09
 
 ### Added
