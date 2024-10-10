@@ -4,6 +4,7 @@ use crate::util::serde::default_true;
 use config::{FileFormat, FileSourceString};
 use lettre::message::Mailbox;
 use reqwest::Client;
+use sendgrid::v3::message::{MailSettings, SandboxMode};
 use sendgrid::v3::{Message, Sender};
 use serde_derive::{Deserialize, Serialize};
 use validator::Validate;
@@ -27,7 +28,8 @@ pub struct Sendgrid {
 
     /// Whether messages should be sent in [sandbox mode](https://www.twilio.com/docs/sendgrid/for-developers/sending-email/sandbox-mode).
     ///
-    /// Note that this is currently not supported by the [sendgrid crate](https://crates.io/crates/sendgrid).
+    /// This is automatically applied if creating a [`Message`] using the provided
+    /// [`From<&Email>`] implementation.
     #[serde(default = "default_true")]
     pub sandbox: bool,
 
@@ -44,7 +46,10 @@ pub struct Sendgrid {
 
 impl From<&Email> for Message {
     fn from(value: &Email) -> Self {
-        let message = Message::new(mailbox_to_email(&value.from));
+        let message = Message::new(mailbox_to_email(&value.from)).set_mail_settings(
+            MailSettings::new()
+                .set_sandbox_mode(SandboxMode::new().set_enable(value.sendgrid.sandbox)),
+        );
         let message = if let Some(reply_to) = value.reply_to.as_ref() {
             message.set_reply_to(mailbox_to_email(reply_to))
         } else {
