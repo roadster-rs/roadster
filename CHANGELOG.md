@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.7](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.6...roadster-v0.6.7) - 2024-10-11
+
+### Added
+
+- Set sandbox mode on Sendgrid message based on config ([#403](https://github.com/roadster-rs/roadster/pull/403))
+- Add Sendgrid client to `AppContext` ([#402](https://github.com/roadster-rs/roadster/pull/402))
+- Add support to config for email via Sendgrid (`email-sendgrid` feature) ([#401](https://github.com/roadster-rs/roadster/pull/401))
+
+### Other
+
+- Add note to readme about supporting Sendgrid ([#405](https://github.com/roadster-rs/roadster/pull/405))
+- Add example of using Sendgrid client ([#404](https://github.com/roadster-rs/roadster/pull/404))
+
 ## [0.6.6](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.5...roadster-v0.6.6) - 2024-10-10
 
 ### Added
