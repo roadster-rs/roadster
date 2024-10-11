@@ -18,7 +18,6 @@ pub enum AxumError {
     #[error(transparent)]
     ToStrError(#[from] axum::http::header::ToStrError),
 
-    #[cfg(feature = "jwt")]
     #[error(transparent)]
     TypedHeaderRejection(#[from] axum_extra::typed_header::TypedHeaderRejection),
 

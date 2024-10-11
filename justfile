@@ -5,7 +5,12 @@ help:
 # Run all of our unit tests.
 test:
     cargo nextest run --all-features --no-fail-fast
+
+test-doc:
     cargo test --doc --all-features --no-fail-fast
+
+# Run all of our unit tests.
+test-all: test test-doc
 
 # Run all of our unit tests whenever files in the repo change.
 test-watch:

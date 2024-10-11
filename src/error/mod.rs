@@ -5,6 +5,8 @@ pub mod axum;
 pub mod config;
 #[cfg(feature = "email")]
 pub mod email;
+#[cfg(feature = "http")]
+pub mod mime;
 pub mod other;
 pub mod reqwest;
 pub mod serde;
@@ -21,6 +23,8 @@ use crate::error::auth::AuthError;
 use crate::error::axum::AxumError;
 #[cfg(feature = "email")]
 use crate::error::email::EmailError;
+#[cfg(feature = "http")]
+use crate::error::mime::MimeError;
 use crate::error::other::OtherError;
 use crate::error::reqwest::ReqwestError;
 use crate::error::serde::SerdeError;
@@ -85,6 +89,10 @@ pub enum Error {
     #[cfg(feature = "http")]
     #[error(transparent)]
     Axum(#[from] AxumError),
+
+    #[cfg(feature = "http")]
+    #[error(transparent)]
+    Mime(#[from] MimeError),
 
     #[cfg(feature = "grpc")]
     #[error(transparent)]
