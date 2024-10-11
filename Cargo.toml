@@ -146,7 +146,7 @@ sea-orm-migration = { version = "1.0.0" }
 
 # Email
 lettre = "0.11.0"
-sendgrid = "0.22.1"
+sendgrid = "0.23.0"
 
 # CLI
 clap = { version = "4.3.0", features = ["derive"] }
