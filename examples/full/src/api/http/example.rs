@@ -12,9 +12,10 @@ use roadster::api::http::build_path;
 use roadster::error::RoadsterResult;
 use roadster::service::worker::sidekiq::app_worker::AppWorker;
 use schemars::JsonSchema;
+use sendgrid::v3::{Content, Email, Personalization};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-use tracing::instrument;
+use tracing::{instrument, warn};
 
 const BASE: &str = "/example";
 const TAG: &str = "Example";
@@ -33,6 +34,7 @@ pub struct ExampleResponse {}
 async fn example_get(State(state): State<AppState>) -> RoadsterResult<Json<ExampleResponse>> {
     ExampleWorker::enqueue(&state, "Example".to_string()).await?;
 
+    // Emails can be sent via SMTP
     let email: MessageBuilder = (&state.app_context.config().email).into();
     let email = email
         .to(Mailbox::from_str("hello@example.com")?)
@@ -40,6 +42,20 @@ async fn example_get(State(state): State<AppState>) -> RoadsterResult<Json<Examp
         .header(ContentType::TEXT_PLAIN)
         .body("Hello, World!".to_string())?;
     state.app_context.mailer().send(&email)?;
+
+    // Emails can also be sent using Sendgrid
+    let email: sendgrid::v3::Message = (&state.app_context.config().email).into();
+    let email = email
+        .set_subject("Greetings")
+        .add_content(
+            Content::new()
+                .set_content_type("text/plain")
+                .set_value("Hello, World!"),
+        )
+        .add_personalization(Personalization::new(Email::new("hello@example.com")));
+    if let Err(err) = state.app_context.sendgrid().send(&email).await {
+        warn!("An error occurred when sending email using Sendgrid. This may be expected in a dev/test environment if a prod API key is not used. Error: {err}");
+    }
 
     Ok(Json(ExampleResponse {}))
 }

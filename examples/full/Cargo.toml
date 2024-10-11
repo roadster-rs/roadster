@@ -11,7 +11,7 @@ default = ["grpc"]
 grpc = ["roadster/grpc", "dep:tonic", "dep:tonic-reflection", "dep:prost"]
 
 [dependencies]
-roadster = { version = "0.6", path = "../..", features = ["email-smtp"] }
+roadster = { version = "0.6", path = "../..", features = ["email-smtp", "email-sendgrid"] }
 tokio = { workspace = true }
 tokio-util = { workspace = true }
 anyhow = { workspace = true }
@@ -39,6 +39,7 @@ serde = { workspace = true, features = ["derive"] }
 
 # Email
 lettre = { workspace = true, features = ["pool"] }
+sendgrid = { workspace = true }
 
 [build-dependencies]
 tonic-build = { workspace = true }
