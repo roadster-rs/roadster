@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.8](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.7...roadster-v0.6.8) - 2024-10-11
+
+### Added
+
+- Allow configuring which req/res body content types to log ([#407](https://github.com/roadster-rs/roadster/pull/407))
+
 ## [0.6.7](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.6...roadster-v0.6.7) - 2024-10-11
 
 ### Added
