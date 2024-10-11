@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+The main feature included in this release is support for sending emails via [Sendgrid's Mail Send API](https://www.twilio.com/docs/sendgrid/api-reference/mail-send/mail-send). See the below items for more details.
+
 - Set sandbox mode on Sendgrid message based on config ([#403](https://github.com/roadster-rs/roadster/pull/403))
 - Add Sendgrid client to `AppContext` ([#402](https://github.com/roadster-rs/roadster/pull/402))
 - Add support to config for email via Sendgrid (`email-sendgrid` feature) ([#401](https://github.com/roadster-rs/roadster/pull/401))
