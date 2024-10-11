@@ -15,6 +15,10 @@ pub enum EmailError {
     #[error(transparent)]
     LettreError(#[from] lettre::error::Error),
 
+    #[cfg(feature = "email-sendgrid")]
+    #[error(transparent)]
+    SendgridError(#[from] sendgrid::SendgridError),
+
     #[error(transparent)]
     Other(#[from] Box<dyn std::error::Error + Send + Sync>),
 }
@@ -36,6 +40,13 @@ impl From<lettre::address::AddressError> for Error {
 #[cfg(feature = "email")]
 impl From<lettre::error::Error> for Error {
     fn from(value: lettre::error::Error) -> Self {
+        Self::Email(EmailError::from(value))
+    }
+}
+
+#[cfg(feature = "email-sendgrid")]
+impl From<sendgrid::SendgridError> for Error {
+    fn from(value: sendgrid::SendgridError) -> Self {
         Self::Email(EmailError::from(value))
     }
 }

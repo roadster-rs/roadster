@@ -9,3 +9,7 @@ uri = "smtp://localhost:1025"
 #port = 465
 #username = "username"
 #password = "password"
+
+[email.sendgrid]
+api-key = "api-key"
+sandbox = true
