@@ -39,6 +39,8 @@ and [Poem](https://github.com/poem-web/poem).
 - Built-in support for [Sidekiq.rs](https://crates.io/crates/rusty-sidekiq) for running async/background jobs (requires
   the `sidekiq` feature)
 - Built-in support for sending emails via SMTP (requires the `email-smtp` feature)
+  or [Sendgrid's Mail Send API](https://www.twilio.com/docs/sendgrid/api-reference/mail-send/mail-send) (requires the
+  `email-sendgrid` feature)
 - Structured logs/traces using tokio's [tracing](https://docs.rs/tracing/latest/tracing/) crate. Export traces/metrics
   using OpenTelemetry (requires the `otel` feature).
 - Health checks to ensure the app's external dependencies are healthy
