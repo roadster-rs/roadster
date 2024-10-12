@@ -10,7 +10,7 @@ test-doc:
     cargo test --doc --all-features --no-fail-fast
 
 test-examples:
-    for dir in ./examples/*/; do pushd $dir && cargo test --all-features --no-fail-fast && popd; done
+    for dir in ./examples/*/; do cd $dir && pwd && cargo test --all-features --no-fail-fast && cd ../.. && pwd; done
 
 # Run all of our unit tests.
 test-unit: test test-doc
@@ -19,7 +19,7 @@ test-book:
     mdbook test book
 
 test-book-examples:
-    for dir in ./book/examples/*/; do pushd $dir && cargo test --all-features --no-fail-fast && popd; done
+    for dir in ./book/examples/*/; do cd $dir && pwd && cargo test --all-features --no-fail-fast && cd ../../.. && pwd; done
 
 test-book-all: test-book test-book-examples
 
