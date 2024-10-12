@@ -43,12 +43,14 @@ jobs:
         uses: actions/configure-pages@v4
 
       - name: Build with mdBook
-        run: mdbook build
+        run: |
+          cd ./book
+          mdbook build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
-          path: ./book
+          path: ./book/book
 
       - name: Deploy to GitHub Pages
         id: deployment
