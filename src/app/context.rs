@@ -78,7 +78,7 @@ impl AppContext {
             };
 
             #[cfg(feature = "email-smtp")]
-            let mailer = lettre::SmtpTransport::try_from(&config.email.smtp.connection)?;
+            let smtp = lettre::SmtpTransport::try_from(&config.email.smtp.connection)?;
 
             #[cfg(feature = "email-sendgrid")]
             let sendgrid = sendgrid::v3::Sender::try_from(&config.email.sendgrid)?;
@@ -94,7 +94,7 @@ impl AppContext {
                 #[cfg(feature = "sidekiq")]
                 redis_fetch,
                 #[cfg(feature = "email-smtp")]
-                mailer,
+                smtp,
                 #[cfg(feature = "email-sendgrid")]
                 sendgrid,
             };
@@ -170,7 +170,12 @@ impl AppContext {
 
     #[cfg(feature = "email-smtp")]
     pub fn mailer(&self) -> &lettre::SmtpTransport {
-        self.inner.mailer()
+        self.inner.smtp()
+    }
+
+    #[cfg(feature = "email-smtp")]
+    pub fn smtp(&self) -> &lettre::SmtpTransport {
+        self.inner.smtp()
     }
 
     #[cfg(feature = "email-sendgrid")]
@@ -193,7 +198,7 @@ struct AppContextInner {
     #[cfg(feature = "sidekiq")]
     redis_fetch: Option<sidekiq::RedisPool>,
     #[cfg(feature = "email-smtp")]
-    mailer: lettre::SmtpTransport,
+    smtp: lettre::SmtpTransport,
     #[cfg(feature = "email-sendgrid")]
     sendgrid: sendgrid::v3::Sender,
 }
@@ -240,8 +245,8 @@ impl AppContextInner {
     }
 
     #[cfg(feature = "email-smtp")]
-    fn mailer(&self) -> &lettre::SmtpTransport {
-        &self.mailer
+    fn smtp(&self) -> &lettre::SmtpTransport {
+        &self.smtp
     }
 
     #[cfg(feature = "email-sendgrid")]
