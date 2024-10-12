@@ -129,7 +129,7 @@ mockall_double = "0.3.1"
 rstest = { workspace = true }
 
 [workspace]
-members = [".", "examples/*"]
+members = [".", "examples/*", "book/examples/*"]
 
 [workspace.dependencies]
 # Tracing

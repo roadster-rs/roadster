@@ -1,10 +1,11 @@
-# Copied from https://github.com/leptos-rs/book/blob/f6683d42f2a9f67230cfdf9fb94e094f1c8bfca4/.github/workflows/publish_mdbook.yml#L1
+# Originally copied from https://github.com/leptos-rs/book/blob/f6683d42f2a9f67230cfdf9fb94e094f1c8bfca4/.github/workflows/publish_mdbook.yml#L1
 
-name: Deploy Book to Github Pages
+name: Book
 
 on:
-  # Runs on pushes targeting the default branch
   push:
+    branches: [ main ]
+  pull_request:
     branches: [ main ]
 
   # Allows you to run this workflow manually from the Actions tab
@@ -22,18 +23,31 @@ concurrency:
   group: "pages"
   cancel-in-progress: false
 
+env:
+  MDBOOK_VERSION: 0.4.40
+
 jobs:
+  test-book:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/install-action@mdbook
+      - uses: taiki-e/install-action@just
 
-  # Job: Build and Deploy to Pages
-  build-and-deploy:
+      - name: Test mdbook
+        run: just test-book
 
+      - name: Test mdbook examples
+        run: just test-book-examples
+
+  build-and-deploy-book:
+    # Only deploy on pushes to `main` or manual workflow dispatches
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    needs: test-book
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
-    runs-on: ubuntu-latest
-    env:
-      MDBOOK_VERSION: 0.4.40
     steps:
       - uses: actions/checkout@v4
       - uses: taiki-e/install-action@mdbook
@@ -42,10 +56,8 @@ jobs:
         id: pages
         uses: actions/configure-pages@v4
 
-      - name: Build with mdBook
-        run: |
-          cd ./book
-          mdbook build
+      - name: Build
+        run: mdbook build book
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2

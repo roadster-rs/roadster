@@ -13,18 +13,30 @@ jobs:
   # `cargo hack --each-feature` runs the given command for each feature, including "no features", "all features",
   # and the `default` feature.
   build:
-    name: Build
+    name: Build each feature
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: rui314/setup-mold@v1
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-hack
-      - uses: taiki-e/install-action@nextest
       # protoc is needed to build examples that have grpc enabled
       - uses: taiki-e/install-action@protoc
       - name: Build
-        run: cargo hack build --each-feature --workspace --clean-per-run --log-group github-actions
+        run: cargo hack build --each-feature --clean-per-run --log-group github-actions
+
+  test-examples:
+    name: Test examples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rui314/setup-mold@v1
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@just
+      # protoc is needed to build examples that have grpc enabled
+      - uses: taiki-e/install-action@protoc
+      - name: Test
+        run: just test-examples
 
   test:
     name: Tests

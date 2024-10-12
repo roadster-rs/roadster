@@ -9,8 +9,22 @@ test:
 test-doc:
     cargo test --doc --all-features --no-fail-fast
 
+test-examples:
+    for dir in ./examples/*/; do pushd $dir && cargo test --all-features --no-fail-fast && popd; done
+
 # Run all of our unit tests.
-test-all: test test-doc
+test-unit: test test-doc
+
+test-book:
+    mdbook test book
+
+test-book-examples:
+    for dir in ./book/examples/*/; do pushd $dir && cargo test --all-features --no-fail-fast && popd; done
+
+test-book-all: test-book test-book-examples
+
+# Run all of our tests
+test-all: test-unit test-book-all
 
 # Run all of our unit tests whenever files in the repo change.
 test-watch:
@@ -55,4 +69,4 @@ validate-codecov-config:
 
 # Initialize a new installation of the repo (e.g., install deps)
 init:
-    cargo binstall cargo-nextest cargo-llvm-cov sea-orm-cli cargo-insta cargo-minimal-versions cargo-hack
+    cargo binstall cargo-nextest cargo-llvm-cov sea-orm-cli cargo-insta cargo-minimal-versions cargo-hack mdbook
