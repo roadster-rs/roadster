@@ -1,5 +1,5 @@
 [package]
-name = "chapter-1"
+name = "ch-01-introduction"
 version = "0.1.0"
 edition = "2021"
 publish = false
