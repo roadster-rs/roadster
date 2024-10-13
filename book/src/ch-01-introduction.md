@@ -8,6 +8,7 @@ This book is intended as a guide for how to use [Roadster](https://crates.io/cra
 Rust programming language. This book assumes the reader has some knowledge of how to program in Rust. If you are new
 to Rust, you may find the following helpful to better understand how to use Roadster:
 
-- https://doc.rust-lang.org/book/
-- https://doc.rust-lang.org/rust-by-example/
-- https://www.rust-lang.org/learn
+- [The Rust Programming Language](  https://doc.rust-lang.org/book/)
+- [Asynchronous Programming in Rust](https://rust-lang.github.io/async-book/)
+- [Rust By Example](https://doc.rust-lang.org/rust-by-example/)
+- [Rust website](https://www.rust-lang.org/learn)
