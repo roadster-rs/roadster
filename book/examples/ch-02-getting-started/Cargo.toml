@@ -1,5 +1,5 @@
 [package]
-name = "ch-01-introduction"
+name = "ch-02-getting-started"
 version = "0.1.0"
 edition = "2021"
 publish = false

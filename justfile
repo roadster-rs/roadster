@@ -30,6 +30,9 @@ test-all: test-unit test-book-all
 test-watch:
     cargo watch -s 'just test'
 
+serve-book:
+    mdbook serve book
+
 # Install dependencies required to generate code coverage.
 coverage-dependencies:
     cargo binstall cargo-llvm-cov
