@@ -8,6 +8,9 @@ title = "Roadster"
 [rust]
 edition = "2021"
 
+[build]
+create-missing = false
+
 [output.html]
 git-repository-url = "https://github.com/roadster-rs/roadster"
 edit-url-template = "https://github.com/roadster-rs/roadster/edit/main/book/{path}"
