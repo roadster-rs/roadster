@@ -9,7 +9,7 @@ plain Axum you can do with Roadster. However, using Roadster has some benefits c
   Roadster, such as the DB connection, app config, etc. See [Axum state](ch-03-03-features-app-state.md) for more
   information.
 - Roadster auto-generates a unique request ID for each request, if one wasn't provided in the request
-- Roadster configures [Tracing](https://crates.io/crates/tracing) and enables instrumentation for requests.
+- Roadster configures the [Tracing](https://crates.io/crates/tracing) crate and enables instrumentation for requests.
   See [Tracing](ch-03-05-features-tracing.md) for more information.
 - Roadster supports registering API routes using [Aide](https://crates.io/crates/aide) to enable auto-generating an
   OpenAPI schema and playground. See [OpenAPI with Aide](ch-03-04-features-openapi.md) for more information.
