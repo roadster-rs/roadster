@@ -13,8 +13,8 @@ customizable, and pluggable. This allows you to focus on creating your applicati
 dependencies, while still allowing you the flexibility to customize your dependencies if needed.
 
 If you're unsure if Roadster is the best fit for your project, a collection of comparisons to other Rust web frameworks
-can be found in [Web framework comparisons](ch-01-comparisons.md). The full list of Roadster's features can be
-found in [Roadster features](ch-03-features.md).
+can be found in [Web framework comparisons](ch-01-00-comparisons.md). The full list of Roadster's features can be
+found in [Roadster features](ch-03-00-features.md).
 
 ## Prerequisite reading
 
