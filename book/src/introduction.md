@@ -8,10 +8,9 @@ This book is intended as a guide for how to use [Roadster](https://crates.io/cra
 web framework for Rust designed to get you moving fast 🏎️. Compared to low-level web frameworks such
 as [Axum](https://github.com/tokio-rs/axum) or [Actix](https://actix.rs/), which only provide the functionality to
 create an API, Roadster aims to provide all the other functionality needed to create a fully-featured backend or
-fullstack web app for a more "batteries included"experience. Roadster is designed to provide sensible defaults for all
-features while remaining highly configurable, customizable, and pluggable. This allows you to focus on creating your
-application instead of wiring up all of your dependencies, while still allowing you the flexibility to customize your
-dependencies if needed.
+fullstack web app. Roadster is designed to provide sensible defaults for all features while remaining highly
+configurable, customizable, and pluggable. This allows you to focus on creating your application instead of wiring up
+all of your dependencies, while still allowing you the flexibility to customize your dependencies if needed.
 
 If you're unsure if Roadster is the best fit for your project, a collection of comparisons to other Rust web frameworks
 can be found in [Web framework comparisons](comparisons/index.md). The full list of Roadster's features can be
