@@ -1,6 +1,6 @@
-# Roadster vs. [Actix](https://actix.rs/)
+# Roadster vs. [Actix](https://crates.io/crates/actix-web)
 
-As mentioned in [Roadster vs. Axum](ch-01-01-comparisons-axum.md), Roadster uses [Axum](https://crates.io/crates/axum)
+As mentioned in [Roadster vs. Axum](axum.md), Roadster uses [Axum](https://crates.io/crates/axum)
 to provide an HTTP server, so it's probably more relevant to compare Actix and Axum. A quick internet search can provide
 various comparisons, some are included below:
 
