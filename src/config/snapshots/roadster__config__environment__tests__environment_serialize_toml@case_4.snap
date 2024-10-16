@@ -1,0 +1,5 @@
+---
+source: src/config/environment.rs
+expression: env
+---
+env = 'custom-environment'

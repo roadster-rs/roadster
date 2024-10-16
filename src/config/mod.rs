@@ -108,7 +108,8 @@ impl AppConfig {
         } else {
             Environment::new()?
         };
-        let environment_str: &str = environment.clone().into();
+        let environment_string = environment.clone().to_string();
+        let environment_str = environment_string.as_str();
 
         let config_root_dir = config_dir
             .unwrap_or_else(|| PathBuf::from("config/"))
@@ -116,7 +117,7 @@ impl AppConfig {
 
         println!("Loading configuration from directory {config_root_dir:?}");
 
-        let config = Self::default_config(environment);
+        let config = Self::default_config(environment.clone());
         let config = config_env_file("default", &config_root_dir, config);
         let config = config_env_dir("default", &config_root_dir, config)?;
         let config = config_env_file(environment_str, &config_root_dir, config);
