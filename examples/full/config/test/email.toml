@@ -1,0 +1,10 @@
+[email]
+from = "no-reply@example.com"
+
+[email.smtp.connection]
+# The `smtps` scheme should be used in production
+uri = "smtp://localhost:1025"
+
+[email.sendgrid]
+api-key = "api-key"
+sandbox = true
