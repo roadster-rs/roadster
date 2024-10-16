@@ -1,5 +1,5 @@
 ---
-source: src/cli/mod.rs
+source: src/api/cli/mod.rs
 expression: roadster_cli
 ---
 skip_validate_config = false
