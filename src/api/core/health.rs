@@ -20,7 +20,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
 use tokio::time::timeout;
-use tracing::{info, instrument};
+use tracing::{debug, error, info, instrument};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "open-api", derive(JsonSchema, OperationIo))]
@@ -59,7 +59,14 @@ where
             let check_timer = Instant::now();
             let result = match run_check(check, duration).await {
                 Ok(response) => {
-                    info!(%name, "Resource is healthy");
+                    info!(%name, latency_ms=%response.latency, "Check completed");
+                    match &response.status {
+                        Status::Ok => {}
+                        Status::Err(err) => {
+                            error!(%name, "Resource is not healthy");
+                            debug!(%name, "Error details: {response:?}");
+                        }
+                    }
                     response
                 }
                 Err(err) => CheckResponse::builder()
@@ -81,7 +88,7 @@ where
 
     let latency = timer.elapsed().as_millis();
 
-    info!(latency_ms=%latency, "Checks successful");
+    info!(latency_ms=%latency, "Checks completed");
 
     Ok(HeathCheckResponse { latency, resources })
 }
