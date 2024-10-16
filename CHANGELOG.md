@@ -13,11 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Enable consumers to provide custom Environment values ([#439](https://github.com/roadster-rs/roadster/pull/439))
 
-### Other
-
-- Remove `build` step from CI ([#440](https://github.com/roadster-rs/roadster/pull/440))
-- Add todo comment to book ([#441](https://github.com/roadster-rs/roadster/pull/441))
-
 ## [0.6.9](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.8...roadster-v0.6.9) - 2024-10-15
 
 ### Added
