@@ -1,6 +1,7 @@
 use crate::config::{ENV_VAR_PREFIX, ENV_VAR_SEPARATOR};
 use crate::error::RoadsterResult;
 use anyhow::anyhow;
+#[cfg(feature = "cli")]
 use clap::builder::PossibleValue;
 #[cfg(feature = "cli")]
 use clap::ValueEnum;
@@ -28,11 +29,8 @@ const DEVELOPMENT: &str = "development";
 const TEST: &str = "test";
 const PRODUCTION: &str = "production";
 
-// We need to manually implement (vs. deriving) `ValueEnum` in order to support the
-// `Environment::Custom` variant.
-#[cfg(feature = "cli")]
-impl ValueEnum for Environment {
-    fn value_variants<'a>() -> &'a [Self] {
+impl Environment {
+    fn value_variants_impl<'a>() -> &'a [Self] {
         ENV_VARIANTS.get_or_init(|| {
             vec![
                 Environment::Development,
@@ -43,13 +41,18 @@ impl ValueEnum for Environment {
         })
     }
 
-    fn from_str(input: &str, ignore_case: bool) -> Result<Self, String> {
-        let env = Self::value_variants()
+    fn from_str_impl(input: &str, ignore_case: bool) -> Result<Self, String> {
+        let env = Self::value_variants_impl()
             .iter()
-            .find(|v| {
-                v.to_possible_value()
-                    .map(|v| v.matches(input, ignore_case))
-                    .unwrap_or_default()
+            .find(|variant| {
+                let values = variant.to_possible_value_impl();
+                if ignore_case {
+                    values
+                        .iter()
+                        .any(|value| value.to_lowercase() == input.to_lowercase())
+                } else {
+                    values.iter().any(|value| value == input)
+                }
             })
             .cloned()
             .unwrap_or_else(|| Environment::Custom(input.to_string()))
@@ -58,15 +61,34 @@ impl ValueEnum for Environment {
         Ok(env)
     }
 
-    fn to_possible_value(&self) -> Option<PossibleValue> {
+    fn to_possible_value_impl(&self) -> Vec<String> {
         match self {
-            Environment::Development => Some(PossibleValue::new(DEVELOPMENT).alias("dev")),
-            Environment::Test => Some(PossibleValue::new(TEST)),
-            Environment::Production => Some(PossibleValue::new(PRODUCTION).alias("prod")),
-            Environment::Custom(custom) => Some(
-                PossibleValue::new(custom).help("Any other value will be captured as a String."),
-            ),
+            Environment::Development => vec![DEVELOPMENT.to_string(), "dev".to_string()],
+            Environment::Test => vec![TEST.to_string()],
+            Environment::Production => vec![PRODUCTION.to_string(), "prod".to_string()],
+            Environment::Custom(custom) => vec![custom.to_string()],
         }
+    }
+}
+
+// We need to manually implement (vs. deriving) `ValueEnum` in order to support the
+// `Environment::Custom` variant.
+#[cfg(feature = "cli")]
+impl ValueEnum for Environment {
+    fn value_variants<'a>() -> &'a [Self] {
+        Self::value_variants_impl()
+    }
+
+    fn from_str(input: &str, ignore_case: bool) -> Result<Self, String> {
+        Self::from_str_impl(input, ignore_case)
+    }
+
+    fn to_possible_value(&self) -> Option<PossibleValue> {
+        let values = self.to_possible_value_impl();
+        values
+            .first()
+            .map(PossibleValue::new)
+            .map(|possible_value| possible_value.aliases(&values[1..]))
     }
 }
 
@@ -97,7 +119,7 @@ impl FromStr for Environment {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let env = <Environment as ValueEnum>::from_str(s, true)?;
+        let env = Self::from_str_impl(s, true)?;
         Ok(env)
     }
 }
@@ -194,15 +216,19 @@ mod tests {
     }
 
     #[rstest]
-    #[case(DEVELOPMENT)]
-    #[case("dev")]
-    #[case(TEST)]
-    #[case(PRODUCTION)]
-    #[case("prod")]
-    #[case("custom-environment")]
+    #[case(DEVELOPMENT.to_string())]
+    #[case("dev".to_string())]
+    #[case(TEST.to_string())]
+    #[case(PRODUCTION.to_string())]
+    #[case("prod".to_string())]
+    #[case("custom-environment".to_string())]
+    #[case(DEVELOPMENT.to_uppercase())]
+    #[case(TEST.to_uppercase())]
+    #[case(PRODUCTION.to_uppercase())]
+    #[case("custom-environment".to_uppercase())]
     #[cfg_attr(coverage_nightly, coverage(off))]
-    fn environment_from_str(_case: TestCase, #[case] env: &str) {
-        let env = <Environment as FromStr>::from_str(env).unwrap();
+    fn environment_from_str(_case: TestCase, #[case] env: String) {
+        let env = <Environment as FromStr>::from_str(&env).unwrap();
         assert_debug_snapshot!(env);
     }
 
