@@ -11,33 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add `AppContext::smtp` method to alias to `AppContext::mailer` ([#409](https://github.com/roadster-rs/roadster/pull/409))
+- Add `AppContext::smtp` method to alias to
+  `AppContext::mailer` ([#409](https://github.com/roadster-rs/roadster/pull/409))
+- Create documentation website using [mdbook](https://github.com/rust-lang/mdBook). The website can be found
+  at [roadster.dev](https://roadster.dev).
 
 ### Other
 
-- Slight update to book intro ([#436](https://github.com/roadster-rs/roadster/pull/436))
-- Remove unneeded ignore from deny.toml ([#435](https://github.com/roadster-rs/roadster/pull/435))
 - Update sea-orm ([#434](https://github.com/roadster-rs/roadster/pull/434))
-- Add features list outline ([#433](https://github.com/roadster-rs/roadster/pull/433))
-- Add Actix comparison ([#431](https://github.com/roadster-rs/roadster/pull/431))
-- Update ch-01-01-comparisons-axum.md ([#428](https://github.com/roadster-rs/roadster/pull/428))
-- Increase size of the favicon ([#427](https://github.com/roadster-rs/roadster/pull/427))
-- Upgrade action dependencies for book deployment ([#426](https://github.com/roadster-rs/roadster/pull/426))
-- Add favicon for book ([#425](https://github.com/roadster-rs/roadster/pull/425))
-- Add comparison to Axum ([#424](https://github.com/roadster-rs/roadster/pull/424))
-- Improve book intro and add some chapters ([#423](https://github.com/roadster-rs/roadster/pull/423))
-- Update ch-01-introduction.md ([#422](https://github.com/roadster-rs/roadster/pull/422))
-- Start writing introduction ([#421](https://github.com/roadster-rs/roadster/pull/421))
 - Create SECURITY.md ([#420](https://github.com/roadster-rs/roadster/pull/420))
 - Create CODE_OF_CONDUCT.md ([#419](https://github.com/roadster-rs/roadster/pull/419))
-- Add link to repo in book header ([#417](https://github.com/roadster-rs/roadster/pull/417))
-- Remove extra quotes around name in book.authors config ([#418](https://github.com/roadster-rs/roadster/pull/418))
-- Use `mold` and rust cache in mdbook test step ([#416](https://github.com/roadster-rs/roadster/pull/416))
-- Add `Book` workflow badge to readme ([#414](https://github.com/roadster-rs/roadster/pull/414))
-- Test mdbook before deploying ([#413](https://github.com/roadster-rs/roadster/pull/413))
-- For now, link mdbook to docs.rs docs ([#412](https://github.com/roadster-rs/roadster/pull/412))
-- Fix mdbook deploy action ([#411](https://github.com/roadster-rs/roadster/pull/411))
-- Add documentation using mdbook ([#410](https://github.com/roadster-rs/roadster/pull/410))
 
 ## [0.6.8](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.7...roadster-v0.6.8) - 2024-10-11
 
