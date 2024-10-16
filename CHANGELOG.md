@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.10](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.9...roadster-v0.6.10) - 2024-10-16
+
+### Added
+
+- Enable consumers to provide custom Environment values ([#439](https://github.com/roadster-rs/roadster/pull/439))
+
 ## [0.6.9](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.8...roadster-v0.6.9) - 2024-10-15
 
 ### Added
