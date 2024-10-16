@@ -62,7 +62,7 @@ where
                     info!(%name, latency_ms=%response.latency, "Check completed");
                     match &response.status {
                         Status::Ok => {}
-                        Status::Err(err) => {
+                        Status::Err(_) => {
                             error!(%name, "Resource is not healthy");
                             debug!(%name, "Error details: {response:?}");
                         }
