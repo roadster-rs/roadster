@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.9](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.8...roadster-v0.6.9) - 2024-10-15
+
+### Added
+
+- Add `AppContext::smtp` method to alias to
+  `AppContext::mailer` ([#409](https://github.com/roadster-rs/roadster/pull/409))
+- Create documentation website using [mdbook](https://github.com/rust-lang/mdBook). The website can be found
+  at [roadster.dev](https://roadster.dev).
+
+### Other
+
+- Update sea-orm ([#434](https://github.com/roadster-rs/roadster/pull/434))
+- Create SECURITY.md ([#420](https://github.com/roadster-rs/roadster/pull/420))
+- Create CODE_OF_CONDUCT.md ([#419](https://github.com/roadster-rs/roadster/pull/419))
+
 ## [0.6.8](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.7...roadster-v0.6.8) - 2024-10-11
 
 ### Added
