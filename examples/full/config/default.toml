@@ -1,9 +1,6 @@
 [app]
 name = "Full Example"
 
-[tracing]
-level = "debug"
-
 [service.http]
 # Listen on any ipv4 or ipv6 addr, useful to allow connections from LAN for local dev
 # host = "[::]"
