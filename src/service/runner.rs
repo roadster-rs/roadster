@@ -14,7 +14,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, error, info, instrument};
+use tracing::{error, info, instrument};
 
 #[cfg(feature = "cli")]
 #[instrument(skip_all)]
@@ -40,10 +40,6 @@ where
 #[instrument(skip_all)]
 pub(crate) async fn health_checks(context: &AppContext) -> RoadsterResult<()> {
     let duration = Duration::from_secs(60);
-    info!(
-        "Running checks for a maximum duration of {} seconds",
-        duration.as_secs()
-    );
     let response = health_check(context, Some(duration)).await?;
 
     let error_responses = response
@@ -52,16 +48,11 @@ pub(crate) async fn health_checks(context: &AppContext) -> RoadsterResult<()> {
         .filter(|(_name, response)| !matches!(response.status, Status::Ok))
         .collect_vec();
 
-    error_responses.iter().for_each(|(name, response)| {
-        error!(%name, "Resource is not healthy");
-        debug!(%name, "Error details: {response:?}");
-    });
-
     if error_responses.is_empty() {
         Ok(())
     } else {
         let names = error_responses.iter().map(|(name, _)| name).collect_vec();
-        Err(anyhow!("Health checks failed: {names:?}"))?
+        Err(anyhow!("Health checks failed: {names:?}").into())
     }
 }
 
