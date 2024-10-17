@@ -29,6 +29,7 @@ cli = ["dep:clap"]
 otel = ["dep:opentelemetry", "dep:opentelemetry_sdk", "dep:opentelemetry-otlp", "dep:tracing-opentelemetry", "dep:prost"]
 grpc = ["dep:tonic"]
 testing = ["dep:insta", "dep:rstest"]
+config-yml = ["config/yaml"]
 
 [dependencies]
 # Config

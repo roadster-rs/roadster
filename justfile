@@ -72,4 +72,4 @@ validate-codecov-config:
 
 # Initialize a new installation of the repo (e.g., install deps)
 init:
-    cargo binstall cargo-nextest cargo-llvm-cov sea-orm-cli cargo-insta cargo-minimal-versions cargo-hack mdbook
+    cargo binstall cargo-nextest cargo-llvm-cov sea-orm-cli cargo-insta cargo-minimal-versions cargo-hack mdbook cargo-deny

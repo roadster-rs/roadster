@@ -83,6 +83,7 @@ pub struct AppConfig {
 
 pub const ENV_VAR_PREFIX: &str = "ROADSTER";
 pub const ENV_VAR_SEPARATOR: &str = "__";
+pub const FILE_EXTENSIONS: [&str; 3] = ["toml", "yaml", "yml"];
 
 impl AppConfig {
     #[deprecated(
@@ -246,20 +247,20 @@ impl AppConfig {
     }
 }
 
-/// Adds a config file in the relative path `config/{environment}.toml` to the
-/// [`ConfigBuilder`]. If no such file exists, does nothing.
+/// Adds the config file from the given config_dir for the given environment. The config file
+/// can have any file extension specified in [`FILE_EXTENSIONS`].
 fn config_env_file(
     environment: &str,
     config_dir: &Path,
     config: ConfigBuilder<DefaultState>,
 ) -> ConfigBuilder<DefaultState> {
-    // Todo: allow other file formats?
-    let path = config_dir.join(format!("{environment}.toml"));
-    if !path.is_file() {
-        return config;
-    }
-
-    config.add_source(config::File::from(path))
+    FILE_EXTENSIONS
+        .map(|ext| config_dir.join(format!("{environment}.{ext}")))
+        .into_iter()
+        .filter(|path| path.is_file())
+        .fold(config, |config, path| {
+            config.add_source(config::File::from(path))
+        })
 }
 
 /// Recursively adds all the config files in the given relative path `config/{environment}/` to the
@@ -288,7 +289,11 @@ fn config_env_dir_recursive(
         let path = dir_entry?.path();
         if path.is_dir() {
             config_env_dir_recursive(&path, config)
-        } else if path.is_file() && path.extension().unwrap_or_default() == "toml" {
+        } else if path.is_file()
+            && FILE_EXTENSIONS
+                .iter()
+                .any(|ext| *ext == path.extension().unwrap_or_default())
+        {
             Ok(config.add_source(config::File::from(path)))
         } else {
             Ok(config)

@@ -53,7 +53,7 @@ missing features are not planned but we'd be open to adding if there was enough 
 | &ensp;↳ via custom scheduler                                                                                                  | ❌          | ✅                                    |
 | Configuration via config files                                                                                                | ✅          | ✅                                    |
 | &ensp;↳ Toml                                                                                                                  | ✅          | ❌                                    |
-| &ensp;↳ Yaml                                                                                                                  | ❌*         | ✅                                    |
+| &ensp;↳ Yaml                                                                                                                  | ✅          | ✅                                    |
 | Config files can be split into multiple files                                                                                 | ✅          | ❌                                    |
 | Config values can be overridden via env vars                                                                                  | ✅          | ✅                                    |
 | Tracing via the [tracing](https://crates.io/crates/tracing) crate                                                             | ✅          | ✅                                    |
