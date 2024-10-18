@@ -1,4 +1,4 @@
-use axum_core::extract::FromRef;
+use axum::extract::FromRef;
 use roadster::app::context::AppContext;
 
 #[derive(Clone, FromRef)]

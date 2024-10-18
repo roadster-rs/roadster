@@ -1,4 +1,4 @@
-use axum_core::extract::FromRef;
+use axum::extract::FromRef;
 use leptos::LeptosOptions;
 use leptos_config::ConfFile;
 use roadster::app::context::AppContext;
