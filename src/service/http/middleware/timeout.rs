@@ -1,8 +1,8 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
-use axum::extract::FromRef;
 use axum::Router;
+use axum_core::extract::FromRef;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::serde_as;
 use std::time::Duration;

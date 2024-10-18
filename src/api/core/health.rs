@@ -5,7 +5,7 @@ use crate::health_check::{CheckResponse, ErrorData, HealthCheck, Status};
 use aide::OperationIo;
 #[cfg(any(feature = "sidekiq", feature = "email-smtp"))]
 use anyhow::anyhow;
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 use futures::future::join_all;
 #[cfg(feature = "open-api")]
 use schemars::JsonSchema;

@@ -4,7 +4,7 @@ use crate::error::RoadsterResult;
 use crate::lifecycle::default::default_lifecycle_handlers;
 use crate::lifecycle::AppLifecycleHandler;
 use anyhow::anyhow;
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 use itertools::Itertools;
 use std::collections::BTreeMap;
 use std::ops::Deref;

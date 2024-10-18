@@ -1,9 +1,9 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
-use axum::extract::FromRef;
 use axum::http::HeaderName;
 use axum::Router;
+use axum_core::extract::FromRef;
 use serde_derive::{Deserialize, Serialize};
 use std::str::FromStr;
 use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};

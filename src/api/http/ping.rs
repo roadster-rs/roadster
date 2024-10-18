@@ -7,10 +7,10 @@ use aide::axum::routing::get_with;
 use aide::axum::ApiRouter;
 #[cfg(feature = "open-api")]
 use aide::transform::TransformOperation;
-use axum::extract::FromRef;
 use axum::routing::get;
 use axum::Json;
 use axum::Router;
+use axum_core::extract::FromRef;
 #[cfg(feature = "open-api")]
 use schemars::JsonSchema;
 use serde_derive::{Deserialize, Serialize};

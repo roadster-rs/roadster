@@ -1,7 +1,7 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
 use sidekiq::Worker;

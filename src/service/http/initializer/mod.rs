@@ -3,8 +3,8 @@ pub mod normalize_path;
 
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
-use axum::extract::FromRef;
 use axum::Router;
+use axum_core::extract::FromRef;
 
 /// Provides hooks into various stages of the app's startup to allow initializing and installing
 /// anything that needs to be done during a specific stage of startup of the HTTP service.

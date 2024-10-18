@@ -1,6 +1,6 @@
 use crate::app::context::AppContext;
 use crate::util::serde::default_true;
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 use serde_derive::{Deserialize, Serialize};
 use validator::Validate;
 use validator::ValidationError;

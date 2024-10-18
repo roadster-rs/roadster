@@ -13,7 +13,7 @@ use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use std::path::PathBuf;
 
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 use clap::{Parser, Subcommand};
 use serde_derive::Serialize;
 

@@ -4,7 +4,7 @@ use crate::error::RoadsterResult;
 use crate::service::AppService;
 use anyhow::anyhow;
 use async_trait::async_trait;
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 use std::sync::Mutex;
 use tokio_util::sync::CancellationToken;
 use tonic::transport::server::Router;

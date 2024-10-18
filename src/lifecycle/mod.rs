@@ -7,7 +7,7 @@ use crate::app::context::AppContext;
 use crate::app::App;
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 
 /// Trait used to hook into various stages of the app's lifecycle.
 ///

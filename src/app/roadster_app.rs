@@ -14,7 +14,7 @@ use crate::service::registry::ServiceRegistry;
 use crate::service::AppService;
 use anyhow::anyhow;
 use async_trait::async_trait;
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 use cfg_if::cfg_if;
 #[cfg(feature = "db-sql")]
 use sea_orm::ConnectOptions;

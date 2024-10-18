@@ -2,7 +2,7 @@ use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::worker::sidekiq::app_worker::AppWorker;
 use crate::service::worker::sidekiq::roadster_worker::RoadsterWorker;
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 use serde::Serialize;
 use sidekiq::{periodic, ServerMiddleware};
 

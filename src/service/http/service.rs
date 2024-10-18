@@ -12,8 +12,8 @@ use crate::service::AppService;
 #[cfg(feature = "open-api")]
 use aide::openapi::OpenApi;
 use async_trait::async_trait;
-use axum::extract::FromRef;
 use axum::Router;
+use axum_core::extract::FromRef;
 #[cfg(feature = "open-api")]
 use itertools::Itertools;
 #[cfg(feature = "open-api")]
