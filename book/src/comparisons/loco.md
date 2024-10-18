@@ -24,7 +24,10 @@ missing features are not planned but we'd be open to adding if there was enough 
 | &ensp;↳ Default middleware configured with sensible defaults                                                                  | ✅          | ✅                                    |
 | &ensp;&ensp;↳ Middleware configurations can be customized via config files                                                    | ✅          | ✅                                    |
 | &ensp;&ensp;↳ Middleware execution order can be customized via config files                                                   | ✅          | ❌                                    |
-| OpenAPI schema and playground generation with [Aide](https://crates.io/crates/aide)                                           | ✅          | ❌                                    |
+| OpenAPI support                                                                                                               | ✅          | ✅                                    |
+| &ensp;↳ built-in via [Aide](https://crates.io/crates/aide)                                                                    | ✅          | ❌                                    |
+| &ensp;↳ 3rd party integration, e.g. [Utoipa](https://crates.io/crates/utoipa)                                                 | ✅          | ✅                                    |
+| &ensp;↳ OpenAPI docs explorer http route provided by default                                                                  | ✅          | ❌                                    |
 | GRPC API with [tonic](https://crates.io/crates/tonic)                                                                         | ✅          | ❌                                    |
 | Channels (websockets and/or http long-polling)                                                                                | ❌          | ✅                                    |
 | Support for running arbitrary long-running services                                                                           | ✅          | ❌                                    |
