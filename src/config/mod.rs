@@ -11,6 +11,7 @@ use crate::config::tracing::Tracing;
 use crate::error::RoadsterResult;
 use crate::util::serde::default_true;
 use ::tracing::warn;
+use cfg_if::cfg_if;
 use config::builder::DefaultState;
 use config::{Config, ConfigBuilder, FileFormat};
 use convert_case::Case;
@@ -83,7 +84,14 @@ pub struct AppConfig {
 
 pub const ENV_VAR_PREFIX: &str = "ROADSTER";
 pub const ENV_VAR_SEPARATOR: &str = "__";
-pub const FILE_EXTENSIONS: [&str; 3] = ["toml", "yaml", "yml"];
+
+cfg_if! {
+    if #[cfg(feature = "config-yaml")] {
+        pub const FILE_EXTENSIONS: [&str; 3] = ["toml", "yaml", "yml"];
+    } else {
+        pub const FILE_EXTENSIONS: [&str; 1] = ["toml"];
+    }
+}
 
 impl AppConfig {
     #[deprecated(
