@@ -4,10 +4,10 @@ use aide::axum::{ApiRouter, IntoApiResponse};
 use aide::openapi::OpenApi;
 use aide::redoc::Redoc;
 use aide::scalar::Scalar;
-use axum::extract::FromRef;
 use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::{Extension, Json};
+use axum_core::extract::FromRef;
 use std::ops::Deref;
 use std::sync::Arc;
 

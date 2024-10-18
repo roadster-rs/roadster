@@ -3,7 +3,7 @@ use crate::app::App;
 use crate::error::RoadsterResult;
 use crate::service::{AppService, AppServiceBuilder};
 use anyhow::anyhow;
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 use std::collections::BTreeMap;
 use tracing::info;
 

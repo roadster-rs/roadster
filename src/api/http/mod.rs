@@ -1,8 +1,8 @@
 use crate::app::context::AppContext;
 #[cfg(feature = "open-api")]
 use aide::axum::ApiRouter;
-use axum::extract::FromRef;
 use axum::Router;
+use axum_core::extract::FromRef;
 use itertools::Itertools;
 
 #[cfg(feature = "open-api")]

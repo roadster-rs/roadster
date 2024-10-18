@@ -7,7 +7,7 @@ use crate::error::RoadsterResult;
 use crate::health_check::Status;
 use crate::service::registry::ServiceRegistry;
 use anyhow::anyhow;
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 use itertools::Itertools;
 use std::future::Future;
 use std::sync::Arc;

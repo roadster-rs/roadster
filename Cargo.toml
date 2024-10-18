@@ -15,7 +15,7 @@ rust-version = "1.74.1"
 
 [features]
 default = ["sidekiq", "db-sql", "open-api", "jwt-ietf", "cli", "otel"]
-http = ["dep:axum-extra", "dep:tower", "dep:tower-http", "dep:http-body-util", "dep:mime"]
+http = ["dep:axum", "dep:axum-extra", "dep:tower", "dep:tower-http", "dep:http-body-util", "dep:mime"]
 open-api = ["http", "dep:aide", "dep:schemars"]
 sidekiq = ["dep:rusty-sidekiq", "dep:bb8", "dep:num_cpus"]
 db-sql = ["dep:sea-orm", "dep:sea-orm-migration"]
@@ -52,9 +52,10 @@ prost = { workspace = true, optional = true }
 tracing-opentelemetry = { version = "0.27.0", features = ["metrics"], optional = true }
 
 # HTTP APIs
-# `axum` is not optional because we use the `FromRef` trait pretty extensively, even in parts of
+# `axum-core` is not optional because we use the `FromRef` trait pretty extensively, even in parts of
 # the code that wouldn't otherwise need `axum`.
-axum = { workspace = true, features = ["macros"] }
+axum-core = { workspace = true }
+axum = { workspace = true, features = ["macros"], optional = true }
 axum-extra = { workspace = true, features = ["typed-header", "cookie"], optional = true }
 tower = { workspace = true, optional = true }
 tower-http = { workspace = true, features = ["trace", "timeout", "request-id", "util", "normalize-path", "sensitive-headers", "catch-panic", "compression-full", "decompression-full", "limit", "cors"], optional = true }
@@ -139,6 +140,7 @@ async-trait = "0.1.74"
 
 # HTTP APIs
 aide = { version = "0.13.4", features = ["axum"] }
+axum-core = "0.4.5"
 axum = "0.7.4"
 axum-extra = "0.9.0"
 tower-http = "0.6.0"

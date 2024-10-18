@@ -1,7 +1,7 @@
 use crate::app::context::AppContext;
 use crate::service::http::middleware::Middleware;
-use axum::extract::FromRef;
 use axum::Router;
+use axum_core::extract::FromRef;
 use serde_derive::{Deserialize, Serialize};
 
 use crate::error::RoadsterResult;

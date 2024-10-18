@@ -10,7 +10,7 @@ use crate::service::worker::sidekiq::Processor;
 use crate::service::AppServiceBuilder;
 use anyhow::anyhow;
 use async_trait::async_trait;
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
 use serde::Serialize;

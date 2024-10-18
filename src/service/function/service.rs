@@ -3,7 +3,7 @@ use crate::app::App;
 use crate::error::RoadsterResult;
 use crate::service::AppService;
 use async_trait::async_trait;
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 use std::future::Future;
 use std::marker::PhantomData;
 use tokio_util::sync::CancellationToken;

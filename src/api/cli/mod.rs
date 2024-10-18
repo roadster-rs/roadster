@@ -5,7 +5,7 @@ use crate::app::App;
 use crate::app::MockApp;
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 use clap::{Args, Command, FromArgMatches};
 use std::ffi::OsString;
 

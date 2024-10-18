@@ -1,7 +1,7 @@
 use crate::app::context::AppContext;
 use crate::service::http::initializer::normalize_path::NormalizePathInitializer;
 use crate::service::http::initializer::Initializer;
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 use std::collections::BTreeMap;
 
 pub fn default_initializers<S>(state: &S) -> BTreeMap<String, Box<dyn Initializer<S>>>

@@ -10,8 +10,8 @@ pub mod tracing;
 
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
-use axum::extract::FromRef;
 use axum::Router;
+use axum_core::extract::FromRef;
 
 /// Allows initializing and installing middleware on the app's [Router].
 ///

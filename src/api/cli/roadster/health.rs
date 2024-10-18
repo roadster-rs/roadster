@@ -4,7 +4,7 @@ use crate::app::context::AppContext;
 use crate::app::App;
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 use clap::Parser;
 use serde_derive::Serialize;
 use std::time::Duration;

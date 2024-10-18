@@ -1,8 +1,8 @@
 use crate::app::context::AppContext;
 use crate::service::http::middleware::Middleware;
-use axum::extract::FromRef;
 use axum::http::{header, HeaderName};
 use axum::Router;
+use axum_core::extract::FromRef;
 use itertools::Itertools;
 use serde_derive::{Deserialize, Serialize};
 use std::str::FromStr;

@@ -19,10 +19,10 @@ use aide::openapi::OpenApi;
 use aide::transform::TransformOpenApi;
 use anyhow::anyhow;
 use async_trait::async_trait;
-use axum::extract::FromRef;
 #[cfg(feature = "open-api")]
 use axum::Extension;
 use axum::Router;
+use axum_core::extract::FromRef;
 use itertools::Itertools;
 use std::collections::BTreeMap;
 #[cfg(feature = "open-api")]

@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 use clap::Parser;
 use serde_derive::{Deserialize, Serialize};
 use strum_macros::{EnumString, IntoStaticStr};

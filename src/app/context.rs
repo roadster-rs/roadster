@@ -5,7 +5,7 @@ use crate::error::RoadsterResult;
 use crate::health_check::registry::HealthCheckRegistry;
 use crate::health_check::HealthCheck;
 use anyhow::anyhow;
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 #[cfg(feature = "db-sql")]
 use sea_orm::DatabaseConnection;
 use std::sync::{Arc, OnceLock};

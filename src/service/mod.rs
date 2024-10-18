@@ -4,7 +4,7 @@ use crate::app::context::AppContext;
 use crate::app::App;
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 use tokio_util::sync::CancellationToken;
 
 pub mod function;

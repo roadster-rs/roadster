@@ -13,7 +13,7 @@ use crate::service::http::middleware::timeout::TimeoutMiddleware;
 use crate::service::http::middleware::tracing::req_res_logging::RequestResponseLoggingMiddleware;
 use crate::service::http::middleware::tracing::TracingMiddleware;
 use crate::service::http::middleware::Middleware;
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 use std::collections::BTreeMap;
 
 pub fn default_middleware<S>(state: &S) -> BTreeMap<String, Box<dyn Middleware<S>>>

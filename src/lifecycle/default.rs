@@ -1,7 +1,7 @@
 use crate::app::context::AppContext;
 use crate::app::App;
 use crate::lifecycle::AppLifecycleHandler;
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 use std::collections::BTreeMap;
 
 pub fn default_lifecycle_handlers<A, S>(

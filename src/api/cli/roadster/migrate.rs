@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use async_trait::async_trait;
 
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 use clap::{Parser, Subcommand};
 use sea_orm_migration::MigratorTrait;
 use serde_derive::Serialize;

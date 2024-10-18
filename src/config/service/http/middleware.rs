@@ -14,7 +14,7 @@ use crate::service::http::middleware::timeout::TimeoutConfig;
 use crate::service::http::middleware::tracing::req_res_logging::RequestResponseLoggingConfig;
 use crate::service::http::middleware::tracing::TracingConfig;
 use crate::util::serde::default_true;
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use validator::Validate;

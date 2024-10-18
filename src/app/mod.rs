@@ -38,7 +38,7 @@ use crate::lifecycle::registry::LifecycleHandlerRegistry;
 use crate::service::registry::ServiceRegistry;
 use crate::tracing::init_tracing;
 use async_trait::async_trait;
-use axum::extract::FromRef;
+use axum_core::extract::FromRef;
 use context::AppContext;
 #[cfg(feature = "db-sql")]
 use sea_orm::ConnectOptions;
