@@ -12,6 +12,9 @@ test-doc:
 test-examples:
     for dir in ./examples/*/; do cd $dir && pwd && cargo test --all-features --no-fail-fast && cd ../.. && pwd; done
 
+test-private:
+    for dir in ./private/*/; do cd $dir && pwd && cargo test --all-features --no-fail-fast && cd ../.. && pwd; done
+
 # Run all of our unit tests.
 test-unit: test test-doc
 

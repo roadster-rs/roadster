@@ -1,0 +1,12 @@
+---
+source: private/powerset_matrix/src/lib.rs
+expression: powerset
+---
+Ok(
+    [
+        [
+            "a",
+            "b",
+        ],
+    ],
+)

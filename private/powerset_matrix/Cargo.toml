@@ -1,0 +1,25 @@
+[package]
+name = "powerset_matrix"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cargo-manifest = { workspace = true }
+itertools = { workspace = true }
+anyhow = { workspace = true }
+clap = { workspace = true, features = ["derive"] }
+typed-builder = { workspace = true }
+rand = { workspace = true, features = ["std_rng"] }
+serde = { workspace = true }
+serde_derive = { workspace = true }
+serde_json = { workspace = true }
+strum = { workspace = true }
+strum_macros = { workspace = true }
+
+[dev-dependencies]
+roadster = { path = "../..", default-features = false, features = ["testing"] }
+rstest = { workspace = true }
+insta = { workspace = true }

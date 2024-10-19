@@ -1,3 +1,5 @@
+name: Test coverage
+
 on:
   push:
     branches: [ main ]
@@ -5,7 +7,10 @@ on:
     branches:
       - main
 
-name: Test coverage
+# https://stackoverflow.com/a/72408109
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   coverage:

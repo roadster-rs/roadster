@@ -329,7 +329,8 @@ pub struct App {
     feature = "jwt",
     feature = "jwt-ietf",
     feature = "otel",
-    feature = "email-smtp"
+    feature = "email-smtp",
+    feature = "email-sendgrid"
 ))]
 mod tests {
     use super::*;

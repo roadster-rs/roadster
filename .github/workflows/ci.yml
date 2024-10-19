@@ -9,6 +9,11 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+# https://stackoverflow.com/a/72408109
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test-examples:
     name: Test examples
@@ -22,6 +27,17 @@ jobs:
       - uses: taiki-e/install-action@protoc
       - name: Test
         run: just test-examples
+
+  test-private:
+    name: Test private
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rui314/setup-mold@v1
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@just
+      - name: Test
+        run: just test-private
 
   test:
     name: Tests
