@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.14](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.13...roadster-v0.6.14) - 2024-10-19
+
+### Other
+
+- Update openapi features in loco comparison ([#452](https://github.com/roadster-rs/roadster/pull/452))
+
 ## [0.6.13](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.12...roadster-v0.6.13) - 2024-10-19
 
 ### Fixed
