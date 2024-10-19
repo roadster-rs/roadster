@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.13](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.12...roadster-v0.6.13) - 2024-10-19
+
+### Fixed
+
+- Only attempt to load yaml files when `config-yaml` is enabled ([#451](https://github.com/roadster-rs/roadster/pull/451))
+
+### Other
+
+- Use `FromRef` from `axum-core` instead of `axum` ([#450](https://github.com/roadster-rs/roadster/pull/450))
+
 ## [0.6.12](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.11...roadster-v0.6.12) - 2024-10-17
 
 ### Added
