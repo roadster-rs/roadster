@@ -1,5 +1,5 @@
 [package]
-name = "leptos-ssr-example"
+name = "leptos-7-ssr-example"
 version = "0.1.0"
 edition = "2021"
 publish = false
@@ -7,11 +7,15 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate"]
+hydrate = [
+    "leptos/hydrate",
+    "dep:wasm-bindgen",
+    "dep:console_error_panic_hook",
+]
 ssr = [
     "dep:roadster",
-    "dep:leptos-example-entity",
-    "dep:leptos-example-migration",
+    "dep:leptos-7-example-entity",
+    "dep:leptos-7-example-migration",
     "dep:axum",
     "dep:tokio",
     "dep:tokio-util",
@@ -19,8 +23,6 @@ ssr = [
     "dep:tower-http",
     "dep:leptos_axum",
     "leptos/ssr",
-    "leptos_meta/ssr",
-    "leptos_router/ssr",
     "dep:tracing",
 ]
 
@@ -37,21 +39,21 @@ clap = { workspace = true }
 axum = { workspace = true, optional = true }
 
 # DB
-leptos-example-entity = { path = "entity", optional = true }
-leptos-example-migration = { path = "migration", optional = true }
+leptos-7-example-entity = { path = "entity", optional = true }
+leptos-7-example-migration = { path = "migration", optional = true }
 
 serde = { workspace = true, features = ["derive"] }
 
 # Leptos
-leptos = "0.6.14"
-console_error_panic_hook = "0.1"
-leptos_axum = { version = "0.6.14", optional = true }
-leptos_meta = { version = "0.6.14" }
-leptos_router = { version = "0.6.14" }
-leptos_config = { version = "0.6.14" }
+leptos = "0.7.0-gamma3"
+console_error_panic_hook = { version = "0.1", optional = true }
+leptos_axum = { version = "0.7.0-gamma3", optional = true }
+leptos_meta = { version = "0.7.0-gamma3" }
+leptos_router = { version = "0.7.0-gamma3" }
+leptos_config = { version = "0.7.0-gamma3" }
 tower = { workspace = true, features = ["full"], optional = true }
 tower-http = { workspace = true, features = ["full"], optional = true }
-wasm-bindgen = "=0.2.93"
+wasm-bindgen = { version = "=0.2.93", optional = true }
 
 # Defines a size-optimized profile for the WASM bundle in release mode
 # Commented out here because profiles are ignored for packages that aren't the workspace root
@@ -64,7 +66,7 @@ wasm-bindgen = "=0.2.93"
 
 [package.metadata.leptos]
 # The name used by wasm-bindgen/cargo-leptos for the JS/WASM bundle. Defaults to the crate name
-output-name = "leptos-ssr-example"
+output-name = "leptos-7-ssr-example"
 
 # The site root folder is where cargo-leptos generate all output. WARNING: all content of this folder will be erased on a rebuild. Use it in your server setup.
 site-root = "target/site"
@@ -128,5 +130,5 @@ vergen-gitcl = { workspace = true }
 
 [lib]
 crate-type = ["cdylib", "rlib"]
-name = "leptos_ssr_example"
+name = "leptos_7_ssr_example"
 path = "./src/lib.rs"

@@ -1,61 +1,32 @@
-use leptos::html::main;
 use leptos::*;
 use leptos_meta::*;
-use leptos_router::*;
 
 #[component]
 pub fn App() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
 
-    // Builder syntax -- provides better autocomplete support compared to the `view!` macro
-    (
-        StylesheetProps::builder()
-            .id("leptos")
-            .href("/pkg/leptos-ssr-example.css")
-            .build(),
-        TitleProps::builder().text("Welcome to Leptos").build(),
-        RouterProps::builder()
-            .children(ToChildren::to_children(|| {
-                main()
-                    .child(|| {
-                        RoutesProps::builder()
-                            .children(ToChildren::to_children(|| {
-                                RouteProps::builder()
-                                    .path("")
-                                    .view(HomePage)
-                                    .build()
-                                    .into_view()
-                                    .into()
-                            }))
-                            .build()
-                            .into_view()
-                    })
-                    .into_view()
-                    .into()
-            }))
-            .build(),
-    )
+    // Use the `view!` macro to build you UI using JSX-like syntax.
+    view! {
+        // injects a stylesheet into the document <head>
+        // id=leptos means cargo-leptos will hot-reload this stylesheet
+        <Stylesheet id="leptos" href="/pkg/leptos-ssr-example.css" />
 
-    // Alternatively, the `view!` macro can be used instead. This may be preferred as it's similar
-    // to JSX syntax. However, auto-complete support is not as good.
-    // view! {
-    //     // injects a stylesheet into the document <head>
-    //     // id=leptos means cargo-leptos will hot-reload this stylesheet
-    //     <Stylesheet id="leptos" href="/pkg/leptos-ssr-example.css"/>
-    //
-    //     // sets the document title
-    //     <Title text="Welcome to Leptos"/>
-    //
-    //     // content for this welcome page
-    //     <Router>
-    //         <main>
-    //             <Routes>
-    //                 <Route path="" view=HomePage/>
-    //             </Routes>
-    //         </main>
-    //     </Router>
-    // }
+        // sets the document title
+        <Title text="Welcome to Leptos" />
+
+        <HomePage/>
+    }
+
+    // Alternatively, you can use the builder syntax.
+    // (
+    //     StylesheetProps::builder()
+    //         .id("leptos")
+    //         .href("/pkg/leptos-ssr-example.css")
+    //         .build(),
+    //     TitleProps::builder().text("Welcome to Leptos").build(),
+    //     HomePage(),
+    // )
 }
 
 /// Renders the home page of your application.
