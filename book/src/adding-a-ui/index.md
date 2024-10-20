@@ -11,5 +11,11 @@ framework ([Leptos](https://github.com/leptos-rs/leptos) / [Yew](https://github.
 ## Examples
 
 | Framework                                 | Example                                                                             |
-|-------------------------------------------|-------------------------------------------------------------------------------------|
+|:------------------------------------------|:------------------------------------------------------------------------------------|
 | [Leptos](https://crates.io/crates/leptos) | [leptos-ssr](https://github.com/roadster-rs/roadster/tree/main/examples/leptos-ssr) |
+
+<style>
+table {
+    min-width: 100%
+}
+</style>
