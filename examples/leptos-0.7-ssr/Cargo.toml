@@ -14,8 +14,6 @@ hydrate = [
 ]
 ssr = [
     "dep:roadster",
-    "dep:leptos-7-example-entity",
-    "dep:leptos-7-example-migration",
     "dep:axum",
     "dep:tokio",
     "dep:tokio-util",
@@ -27,7 +25,7 @@ ssr = [
 ]
 
 [dependencies]
-roadster = { version = "0.6", path = "../..", optional = true, default-features = false, features = ["http", "db-sql", "cli"] }
+roadster = { version = "0.6", path = "../..", optional = true, default-features = false, features = ["http", "cli"] }
 tokio = { workspace = true, optional = true }
 tokio-util = { workspace = true, optional = true }
 anyhow = { workspace = true }
@@ -37,10 +35,6 @@ clap = { workspace = true }
 
 # Http API
 axum = { workspace = true, optional = true }
-
-# DB
-leptos-7-example-entity = { path = "entity", optional = true }
-leptos-7-example-migration = { path = "migration", optional = true }
 
 serde = { workspace = true, features = ["derive"] }
 

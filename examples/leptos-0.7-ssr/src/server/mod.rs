@@ -5,7 +5,6 @@ use async_trait::async_trait;
 use axum::Router;
 use leptos::prelude::*;
 use leptos_axum::{generate_route_list, LeptosRoutes};
-use migration::Migrator;
 use roadster::app::context::AppContext;
 use roadster::app::metadata::AppMetadata;
 use roadster::app::App as RoadsterApp;
@@ -23,7 +22,6 @@ pub struct Server;
 #[async_trait]
 impl RoadsterApp<AppState> for Server {
     type Cli = crate::cli::AppCli;
-    type M = Migrator;
 
     fn metadata(&self, _config: &AppConfig) -> RoadsterResult<AppMetadata> {
         Ok(AppMetadata::builder()
