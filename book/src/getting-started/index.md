@@ -1,9 +1,14 @@
 # Getting started
 
-See our examples:
+For now, see our main [README.md](https://github.com/roadster-rs/roadster/blob/main/README.md) which has some
+instructions for how to get started with Roadster.
 
-- [Full](https://github.com/roadster-rs/roadster/tree/main/examples/full) - Demo of all features
-- [App builder](https://github.com/roadster-rs/roadster/tree/main/examples/app-builder) - Demo of the builder-style API
+See also, our examples:
+
+- [full](https://github.com/roadster-rs/roadster/tree/main/examples/full) - Demo of all features
+- [app-builder](https://github.com/roadster-rs/roadster/tree/main/examples/app-builder) - Demo of the builder-style API
   to configure the app
-- [Leptos SSR](https://github.com/roadster-rs/roadster/tree/main/examples/leptos-ssr) - Demo of using Leptos with
+- [leptos-0.7-ssr](https://github.com/roadster-rs/roadster/tree/main/examples/leptos-0.7-ssr) - Demo of using Leptos 0.7
+  with Roadster
+- [leptos-ssr](https://github.com/roadster-rs/roadster/tree/main/examples/leptos-ssr) - Demo of using Leptos 0.6 with
   Roadster
