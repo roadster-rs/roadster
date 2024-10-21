@@ -15,16 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Other
 
-- A couple minor fixes for the loco comparison ([#471](https://github.com/roadster-rs/roadster/pull/471))
-- Update book favicon color ([#469](https://github.com/roadster-rs/roadster/pull/469))
-- Update Roadster features index.md ([#467](https://github.com/roadster-rs/roadster/pull/467))
-- Update links in getting started index ([#466](https://github.com/roadster-rs/roadster/pull/466))
 - Add leptos-0.7 example ([#465](https://github.com/roadster-rs/roadster/pull/465))
-- Update doc test log group name in feature powerset workflow ([#464](https://github.com/roadster-rs/roadster/pull/464))
-- Add links to relevant docs.rs links in book chapters ([#463](https://github.com/roadster-rs/roadster/pull/463))
-- Add Leptos comparison ([#462](https://github.com/roadster-rs/roadster/pull/462))
-- Add utility to generate the feature "powerset" list ([#454](https://github.com/roadster-rs/roadster/pull/454))
-- Update openapi features in loco comparison ([#452](https://github.com/roadster-rs/roadster/pull/452))
 
 ## [0.6.13](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.12...roadster-v0.6.13) - 2024-10-19
 
