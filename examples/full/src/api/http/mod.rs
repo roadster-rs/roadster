@@ -3,8 +3,6 @@ use aide::axum::ApiRouter;
 use axum::extract::Request;
 use axum::middleware::Next;
 use axum::response::Response;
-use roadster::service::http::middleware::any::AnyMiddleware;
-use roadster::service::http::middleware::Middleware;
 use tracing::info;
 
 pub mod example;

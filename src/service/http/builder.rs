@@ -196,12 +196,14 @@ where
         let router = initializers
             .iter()
             .try_fold(router, |router, initializer| {
+                info!(name=%initializer.name(), "Running Initializer::after_router");
                 initializer.after_router(router, state)
             })?;
 
         let router = initializers
             .iter()
             .try_fold(router, |router, initializer| {
+                info!(name=%initializer.name(), "Running Initializer::before_middleware");
                 initializer.before_middleware(router, state)
             })?;
 
@@ -221,12 +223,14 @@ where
         let router = initializers
             .iter()
             .try_fold(router, |router, initializer| {
+                info!(name=%initializer.name(), "Running Initializer::after_middleware");
                 initializer.after_middleware(router, state)
             })?;
 
         let router = initializers
             .iter()
             .try_fold(router, |router, initializer| {
+                info!(name=%initializer.name(), "Running Initializer::before_serve");
                 initializer.before_serve(router, state)
             })?;
 

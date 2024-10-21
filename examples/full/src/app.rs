@@ -16,11 +16,13 @@ use roadster::error::RoadsterResult;
 use roadster::service::function::service::FunctionService;
 #[cfg(feature = "grpc")]
 use roadster::service::grpc::service::GrpcService;
+use roadster::service::http::initializer::any::AnyInitializer;
 use roadster::service::http::middleware::any::AnyMiddleware;
 use roadster::service::http::service::HttpService;
 use roadster::service::registry::ServiceRegistry;
 use roadster::service::worker::sidekiq::app_worker::AppWorker;
 use roadster::service::worker::sidekiq::service::SidekiqWorkerService;
+use tracing::info;
 
 const BASE: &str = "/api";
 
@@ -51,11 +53,22 @@ impl RoadsterApp<AppState> for App {
             .register_builder(
                 HttpService::builder(Some(BASE), state)
                     .api_router(http::routes(BASE))
+                    .initializer(
+                        AnyInitializer::builder()
+                            .name("hello-world")
+                            .stage(roadster::service::http::initializer::any::Stage::BeforeServe)
+                            .apply(|router, _state| {
+                                info!("Running `hello-world` initializer");
+                                Ok(router)
+                            })
+                            .build(),
+                    )?
                     .middleware(
                         AnyMiddleware::builder()
                             .name("hello-world")
-                            .layer_provider(|_state| {
-                                axum::middleware::from_fn(hello_world_middleware_fn)
+                            .apply(|router, _state| {
+                                Ok(router
+                                    .layer(axum::middleware::from_fn(hello_world_middleware_fn)))
                             })
                             .build(),
                     )?,
