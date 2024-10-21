@@ -8,6 +8,10 @@ name = "Full Example"
 host = "127.0.0.1"
 port = 3000
 
+[service.http.middleware.hello-world]
+enable = true
+priority = 5
+
 [service.grpc]
 host = "127.0.0.1"
 port = 3001

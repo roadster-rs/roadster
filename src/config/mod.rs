@@ -86,7 +86,7 @@ pub const ENV_VAR_PREFIX: &str = "ROADSTER";
 pub const ENV_VAR_SEPARATOR: &str = "__";
 
 cfg_if! {
-    if #[cfg(feature = "config-yaml")] {
+    if #[cfg(feature = "config-yml")] {
         pub const FILE_EXTENSIONS: [&str; 3] = ["toml", "yaml", "yml"];
     } else {
         pub const FILE_EXTENSIONS: [&str; 1] = ["toml"];

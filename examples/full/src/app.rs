@@ -1,6 +1,7 @@
 #[cfg(feature = "grpc")]
 use crate::api::grpc::routes;
 use crate::api::http;
+use crate::api::http::hello_world_middleware_fn;
 use crate::app_state::AppState;
 use crate::cli::AppCli;
 use crate::service::example::example_service;
@@ -15,6 +16,7 @@ use roadster::error::RoadsterResult;
 use roadster::service::function::service::FunctionService;
 #[cfg(feature = "grpc")]
 use roadster::service::grpc::service::GrpcService;
+use roadster::service::http::middleware::any::AnyMiddleware;
 use roadster::service::http::service::HttpService;
 use roadster::service::registry::ServiceRegistry;
 use roadster::service::worker::sidekiq::app_worker::AppWorker;
@@ -47,7 +49,16 @@ impl RoadsterApp<AppState> for App {
     ) -> RoadsterResult<()> {
         registry
             .register_builder(
-                HttpService::builder(Some(BASE), state).api_router(http::routes(BASE)),
+                HttpService::builder(Some(BASE), state)
+                    .api_router(http::routes(BASE))
+                    .middleware(
+                        AnyMiddleware::builder()
+                            .name("hello-world")
+                            .layer_provider(|_state| {
+                                axum::middleware::from_fn(hello_world_middleware_fn)
+                            })
+                            .build(),
+                    )?,
             )
             .await?;
 

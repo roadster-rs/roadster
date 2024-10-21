@@ -1,3 +1,4 @@
+pub mod any;
 pub mod catch_panic;
 pub mod compression;
 pub mod cors;
