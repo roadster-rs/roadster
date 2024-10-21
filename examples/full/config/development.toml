@@ -3,3 +3,10 @@ secret = "secret-dev"
 
 [database]
 uri = "postgres://roadster:roadster@localhost:5432/example_dev"
+
+# Sidekiq fails to connect a lot locally for some reason. Uncomment the below configs to disable it temporarily.
+#[service.sidekiq]
+#num-workers = 0
+#queues = []
+#[health-check.sidekiq]
+#enable = false
