@@ -5,6 +5,8 @@ use axum::Router;
 use axum_core::extract::FromRef;
 use typed_builder::TypedBuilder;
 
+type ApplyFn<S> = Box<dyn Fn(Router, &S) -> RoadsterResult<Router> + Send>;
+
 #[derive(TypedBuilder)]
 pub struct AnyInitializer<S>
 where
@@ -20,7 +22,7 @@ where
     #[builder(default, setter(strip_option))]
     stage: Option<Stage>,
     #[builder(setter(transform = |a: impl Fn(Router, &S) -> RoadsterResult<Router> + Send + 'static| to_box_fn(a) ))]
-    apply: Box<dyn Fn(Router, &S) -> RoadsterResult<Router> + Send>,
+    apply: ApplyFn<S>,
 }
 
 #[derive(Default)]
@@ -33,9 +35,7 @@ pub enum Stage {
     BeforeServe,
 }
 
-fn to_box_fn<S>(
-    p: impl Fn(Router, &S) -> RoadsterResult<Router> + Send + 'static,
-) -> Box<dyn Fn(Router, &S) -> RoadsterResult<Router> + Send> {
+fn to_box_fn<S>(p: impl Fn(Router, &S) -> RoadsterResult<Router> + Send + 'static) -> ApplyFn<S> {
     Box::new(p)
 }
 

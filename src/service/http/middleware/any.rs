@@ -5,6 +5,8 @@ use axum::Router;
 use axum_core::extract::FromRef;
 use typed_builder::TypedBuilder;
 
+type ApplyFn<S> = Box<dyn Fn(Router, &S) -> RoadsterResult<Router> + Send>;
+
 #[derive(TypedBuilder)]
 #[non_exhaustive]
 pub struct AnyMiddleware<S>
@@ -19,12 +21,10 @@ where
     #[builder(default, setter(strip_option))]
     priority: Option<i32>,
     #[builder(setter(transform = |a: impl Fn(Router, &S) -> RoadsterResult<Router> + Send + 'static| to_box_fn(a) ))]
-    apply: Box<dyn Fn(Router, &S) -> RoadsterResult<Router> + Send>,
+    apply: ApplyFn<S>,
 }
 
-fn to_box_fn<S>(
-    p: impl Fn(Router, &S) -> RoadsterResult<Router> + Send + 'static,
-) -> Box<dyn Fn(Router, &S) -> RoadsterResult<Router> + Send> {
+fn to_box_fn<S>(p: impl Fn(Router, &S) -> RoadsterResult<Router> + Send + 'static) -> ApplyFn<S> {
     Box::new(p)
 }
 
