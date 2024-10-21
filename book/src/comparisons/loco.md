@@ -22,7 +22,7 @@ missing features are not planned but we'd be open to adding if there was enough 
 | &ensp;↳ Default "ping" and "health" HTTP routes                                                                               | ✅              | ✅                                         |
 | &ensp;&ensp;↳ Default routes can be disabled via config                                                                       | ✅              | ❌                                         |
 | &ensp;↳ Default middleware configured with sensible defaults                                                                  | ✅              | ✅                                         |
-| &ensp;&ensp;↳ Middleware configurations can be customized via config files                                                    | ✅              | ✅                                         |
+| &ensp;&ensp;↳ Middleware can be customized via config files                                                                   | ✅              | ✅                                         |
 | &ensp;&ensp;↳ Middleware execution order can be customized via config files                                                   | ✅              | ❌                                         |
 | OpenAPI support                                                                                                               | ✅              | ✅                                         |
 | &ensp;↳ built-in via [Aide](https://crates.io/crates/aide)                                                                    | ✅              | ❌                                         |
@@ -33,10 +33,9 @@ missing features are not planned but we'd be open to adding if there was enough 
 | Support for running arbitrary long-running services                                                                           | ✅              | ❌                                         |
 | Health checks                                                                                                                 | ✅              | ✅                                         |
 | &ensp;↳ Run in "health" API route                                                                                             | ✅              | ✅                                         |
-| &ensp;↳ Run via CLI                                                                                                           | ✅              | ❌                                         |
 | &ensp;↳ Run on app startup                                                                                                    | ✅              | ❌                                         |
+| &ensp;↳ Run via CLI                                                                                                           | ✅              | ❌                                         |
 | &ensp;↳ Consumer can provide custom checks                                                                                    | ✅              | ❌                                         |
-| Health checks run in "health" route and on app startup                                                                        | ✅              | ❌                                         |
 | Custom app context / Axum state using Axum's [FromRef](https://docs.rs/axum-core/latest/axum_core/extract/trait.FromRef.html) | ✅              | ❌                                         |
 | SQL DB via SeaORM                                                                                                             | ✅              | ✅                                         |
 | &ensp;↳ Migrations for common DB schemas                                                                                      | ✅<br/>(in lib) | ✅<br/>(in starters)                       |
