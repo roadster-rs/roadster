@@ -1,0 +1,11 @@
+---
+source: src/migration/collation/mod.rs
+expression: statement
+---
+Some(
+    Statement {
+        sql: "CREATE COLLATION IF NOT EXISTS case_insensitive (\nprovider = icu,\nlocale = 'und-u-ks-level2',\ndeterministic = false\n);\n",
+        values: None,
+        db_backend: Postgres,
+    },
+)

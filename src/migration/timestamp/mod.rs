@@ -9,19 +9,19 @@ pub mod m20240723_201404_add_update_timestamp_function;
 #[derive(DeriveIden)]
 #[non_exhaustive]
 pub enum Timestamps {
-    /// When the row was created. When used with the [crate::migration::schema::timestamps] method, will default to
+    /// When the row was created. When used with the [`crate::migration::schema::timestamps`] method, will default to
     /// the current timestamp (with timezone).
     CreatedAt,
-    /// When the row was updated. When used with the [crate::migration::schema::timestamps] method, will be initially set to
+    /// When the row was updated. When used with the [`crate::migration::schema::timestamps`] method, will be initially set to
     /// the current timestamp (with timezone).
     ///
     /// To automatically update the value for a row whenever the row is updated, include the
-    /// [m20240723_201404_add_update_timestamp_function::Migration]
-    /// in your [MigratorTrait] implementation, along with a [MigrationTrait] for your table
+    /// [`m20240723_201404_add_update_timestamp_function::Migration`]
+    /// in your [`MigratorTrait`] implementation, along with a [`MigrationTrait`] for your table
     /// that add a trigger to update the column. Helper methods are provided for this in
-    /// the [crate::migration::timestamp] module. Specifically, see:
-    /// - [exec_create_update_timestamp_trigger]
-    /// - [exec_drop_update_timestamp_trigger]
+    /// the [`crate::migration::timestamp`] module. Specifically, see:
+    /// - [`exec_create_update_timestamp_trigger`]
+    /// - [`exec_drop_update_timestamp_trigger`]
     ///
     /// Note that the auto-updates mentioned above are currently only supported on Postgres. If
     /// an app is using a different DB, it will need to manually update the timestamp when updating
@@ -29,7 +29,7 @@ pub enum Timestamps {
     UpdatedAt,
 }
 
-/// Wrapper around [create_update_timestamp_function] to execute the returned [Statement], if
+/// Wrapper around [`create_update_timestamp_function`] to execute the returned [`Statement`], if
 /// present.
 ///
 /// # Examples
@@ -66,8 +66,8 @@ pub async fn exec_create_update_timestamp_function<C: IntoIden>(
     Ok(())
 }
 
-/// Wrapper around [create_update_timestamp_function_dep_column] to execute the returned
-/// [Statement], if present.
+/// Wrapper around [`create_update_timestamp_function_dep_column`] to execute the returned
+/// [`Statement`], if present.
 ///
 /// # Examples
 /// ```rust
@@ -119,9 +119,9 @@ pub async fn exec_create_update_timestamp_function_dep_column<C: IntoIden, D: In
 }
 
 /// Create a SQL function to update a timestamp column with the current timestamp. Returns
-/// a [Statement] containing the SQL instructions to create the function.
+/// a [`Statement`] containing the SQL instructions to create the function.
 ///
-/// Note: Currently only supports Postgres. If another DB is used, will return [None].
+/// Note: Currently only supports Postgres. If another DB is used, will return [`None`].
 pub fn create_update_timestamp_function<C: IntoIden>(
     manager: &SchemaManager<'_>,
     timestamp_column: C,
@@ -131,10 +131,10 @@ pub fn create_update_timestamp_function<C: IntoIden>(
 }
 
 /// Create a SQL function to update a timestamp column with the current timestamp, but only
-/// if the provided dependent column is modified. Returns a [Statement] containing the SQL
+/// if the provided dependent column is modified. Returns a [`Statement`] containing the SQL
 /// instructions to create the function.
 ///
-/// Note: Currently only supports Postgres. If another DB is used, will return [None].
+/// Note: Currently only supports Postgres. If another DB is used, will return [`None`].
 pub fn create_update_timestamp_function_dep_column<C: IntoIden, D: IntoIden>(
     manager: &SchemaManager<'_>,
     timestamp_column: C,
@@ -149,9 +149,9 @@ pub fn create_update_timestamp_function_dep_column<C: IntoIden, D: IntoIden>(
 }
 
 /// Create a SQL function to update a timestamp column with the current timestamp. Returns
-/// a [Statement] containing the SQL instructions to create the function.
+/// a [`Statement`] containing the SQL instructions to create the function.
 ///
-/// Note: Currently only supports Postgres. If another DB is used, will return [None].
+/// Note: Currently only supports Postgres. If another DB is used, will return [`None`].
 fn create_update_timestamp_function_for_db_backend<C: IntoIden>(
     backend: DbBackend,
     timestamp_column: C,
@@ -183,10 +183,10 @@ $$ language 'plpgsql';
 }
 
 /// Create a SQL function to update a timestamp column with the current timestamp, but only
-/// if the provided dependent column is modified. Returns a [Statement] containing the SQL
+/// if the provided dependent column is modified. Returns a [`Statement`] containing the SQL
 /// instructions to create the function.
 ///
-/// Note: Currently only supports Postgres. If another DB is used, will return [None].
+/// Note: Currently only supports Postgres. If another DB is used, will return [`None`].
 fn create_update_timestamp_function_dep_column_for_db_backend<C: IntoIden, D: IntoIden>(
     backend: DbBackend,
     timestamp_column: C,
@@ -223,7 +223,7 @@ $$ language 'plpgsql';
     }
 }
 
-/// Wrapper around [drop_update_timestamp_function] to execute the returned [Statement], if
+/// Wrapper around [`drop_update_timestamp_function`] to execute the returned [`Statement`], if
 /// present.
 ///
 /// # Examples
@@ -288,7 +288,7 @@ fn drop_update_timestamp_function_for_db_backend<C: IntoIden>(
     }
 }
 
-/// Wrapper around [create_update_timestamp_trigger] to execute the returned [Statement], if
+/// Wrapper around [`create_update_timestamp_trigger`] to execute the returned [`Statement`], if
 /// present.
 ///
 /// # Examples
@@ -334,10 +334,10 @@ pub async fn exec_create_update_timestamp_trigger<T: IntoTableRef + IntoIden, C:
 }
 
 /// Create a SQL trigger to automatically update a timestamp column of a row whenever the row is
-/// updated. Depends on the function created by [create_update_timestamp_function].
-/// Returns a [Statement] containing the SQL instructions to create the trigger.
+/// updated. Depends on the function created by [`create_update_timestamp_function`].
+/// Returns a [`Statement`] containing the SQL instructions to create the trigger.
 ///
-/// Note: Currently only supports Postgres. If another DB is used, will return [None].
+/// Note: Currently only supports Postgres. If another DB is used, will return [`None`].
 pub fn create_update_timestamp_trigger<T: IntoTableRef + IntoIden, C: IntoIden>(
     manager: &SchemaManager<'_>,
     table: T,
@@ -378,7 +378,7 @@ EXECUTE PROCEDURE {fn_call};
     }
 }
 
-/// Wrapper around [drop_update_timestamp_trigger] to execute the returned [Statement], if
+/// Wrapper around [`drop_update_timestamp_trigger`] to execute the returned [`Statement`], if
 /// present.
 ///
 /// # Examples
@@ -423,10 +423,10 @@ pub async fn exec_drop_update_timestamp_trigger<T: IntoTableRef + IntoIden, C: I
     Ok(())
 }
 
-/// Drop a SQL trigger that was previously created by [create_update_timestamp_trigger].
-/// Returns a [Statement] containing the SQL instructions to create the function.
+/// Drop a SQL trigger that was previously created by [`create_update_timestamp_trigger`].
+/// Returns a [`Statement`] containing the SQL instructions to create the function.
 ///
-/// Note: Currently only supports Postgres. If another DB is used, will return [None].
+/// Note: Currently only supports Postgres. If another DB is used, will return [`None`].
 pub fn drop_update_timestamp_trigger<T: IntoTableRef + IntoIden, C: IntoIden>(
     manager: &SchemaManager<'_>,
     table: T,
