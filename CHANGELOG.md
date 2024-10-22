@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.15](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.14...roadster-v0.6.15) - 2024-10-22
+
+### Added
+
+- Case-insensitive username and email fields ([#480](https://github.com/roadster-rs/roadster/pull/480))
+
+### Other
+
+- Add `AnyInitializer` feature to changelog ([#476](https://github.com/roadster-rs/roadster/pull/476))
+
 ## [0.6.14](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.13...roadster-v0.6.14) - 2024-10-21
 
 ### Added
