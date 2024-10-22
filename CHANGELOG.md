@@ -11,7 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add `AnyMiddleware` to minimize boilerplate for Axum middleware ([#472](https://github.com/roadster-rs/roadster/pull/472))
+- Add `AnyMiddleware` to minimize boilerplate for Axum
+  middleware ([#472](https://github.com/roadster-rs/roadster/pull/472))
+- Add `AnyIntializer` to minimize boilerplate for Axum Router
+  initializers ([#475](https://github.com/roadster-rs/roadster/pull/475))
 
 ### Other
 
@@ -21,7 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Only attempt to load yaml files when `config-yaml` is enabled ([#451](https://github.com/roadster-rs/roadster/pull/451))
+- Only attempt to load yaml files when `config-yaml` is
+  enabled ([#451](https://github.com/roadster-rs/roadster/pull/451))
 
 ### Other
 
@@ -74,11 +78,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-The main feature included in this release is support for sending emails via [Sendgrid's Mail Send API](https://www.twilio.com/docs/sendgrid/api-reference/mail-send/mail-send). See the below items for more details.
+The main feature included in this release is support for sending emails
+via [Sendgrid's Mail Send API](https://www.twilio.com/docs/sendgrid/api-reference/mail-send/mail-send). See the below
+items for more details.
 
 - Set sandbox mode on Sendgrid message based on config ([#403](https://github.com/roadster-rs/roadster/pull/403))
 - Add Sendgrid client to `AppContext` ([#402](https://github.com/roadster-rs/roadster/pull/402))
-- Add support to config for email via Sendgrid (`email-sendgrid` feature) ([#401](https://github.com/roadster-rs/roadster/pull/401))
+- Add support to config for email via Sendgrid (`email-sendgrid`
+  feature) ([#401](https://github.com/roadster-rs/roadster/pull/401))
 
 ### Other
 
@@ -89,7 +96,8 @@ The main feature included in this release is support for sending emails via [Sen
 
 ### Added
 
-- Allow configuring the interval at which metrics are exported ([#399](https://github.com/roadster-rs/roadster/pull/399))
+- Allow configuring the interval at which metrics are
+  exported ([#399](https://github.com/roadster-rs/roadster/pull/399))
 
 ## [0.6.5](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.4...roadster-v0.6.5) - 2024-10-09
 
@@ -100,11 +108,13 @@ The main feature included in this release is support for sending emails via SMTP
 - Add `SmtpHealthCheck` ([#396](https://github.com/roadster-rs/roadster/pull/396))
 - Allow specifying the smtp port via config ([#395](https://github.com/roadster-rs/roadster/pull/395))
 - Add smtp client to `AppContext` ([#391](https://github.com/roadster-rs/roadster/pull/391))
-- Add support to config for email via SMTP (`email-smtp` feature) ([#388](https://github.com/roadster-rs/roadster/pull/388))
+- Add support to config for email via SMTP (`email-smtp`
+  feature) ([#388](https://github.com/roadster-rs/roadster/pull/388))
 
 ### Fixed
 
-- Fix config value used for timeout of health check in api and cli ([#397](https://github.com/roadster-rs/roadster/pull/397))
+- Fix config value used for timeout of health check in api and
+  cli ([#397](https://github.com/roadster-rs/roadster/pull/397))
 
 ### Other
 
@@ -132,200 +142,259 @@ The main feature included in this release is support for sending emails via SMTP
 ## [0.6.2](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.1...roadster-v0.6.2) - 2024-08-30
 
 ### Added
+
 - Allow specifying a custom config dir ([#361](https://github.com/roadster-rs/roadster/pull/361))
 - Add lifecycle handlers ([#360](https://github.com/roadster-rs/roadster/pull/360))
 
 ## [0.6.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.0...roadster-v0.6.1) - 2024-08-28
 
 ### Added
-- Allow running CLI commands without requiring DB/Redis connections ([#353](https://github.com/roadster-rs/roadster/pull/353))
+
+- Allow running CLI commands without requiring DB/Redis
+  connections ([#353](https://github.com/roadster-rs/roadster/pull/353))
 
 ### Other
+
 - Update `typed-builder` and several examples' dependencies ([#352](https://github.com/roadster-rs/roadster/pull/352))
 
 ## [0.6.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.19...roadster-v0.6.0) - 2024-08-25
 
 ### Added
+
 - Add a public method to decode a JWT from a string ([#348](https://github.com/roadster-rs/roadster/pull/348))
 - Mark refresh token headers as sensitive ([#347](https://github.com/roadster-rs/roadster/pull/347))
 - Make the `User` sea-orm migration enum public ([#346](https://github.com/roadster-rs/roadster/pull/346))
-- Allow splitting config files into many files in env directories ([#344](https://github.com/roadster-rs/roadster/pull/344))
+- Allow splitting config files into many files in env
+  directories ([#344](https://github.com/roadster-rs/roadster/pull/344))
 - [**breaking**] App methods take `self` ([#337](https://github.com/roadster-rs/roadster/pull/337))
-- Remove cookie extraction for `Jwt`, but allow it in `JwtCsrf` ([#332](https://github.com/roadster-rs/roadster/pull/332))
+- Remove cookie extraction for `Jwt`, but allow it in
+  `JwtCsrf` ([#332](https://github.com/roadster-rs/roadster/pull/332))
 - Allow custom sub-claims in provided `Claims` types ([#331](https://github.com/roadster-rs/roadster/pull/331))
-- Allow jwt from cookie, but only if it's explicitly requested ([#329](https://github.com/roadster-rs/roadster/pull/329))
+- Allow jwt from cookie, but only if it's explicitly
+  requested ([#329](https://github.com/roadster-rs/roadster/pull/329))
 
 ### Fixed
-- [**breaking**] Don't expect a "Bearer" token in the auth token cookie ([#340](https://github.com/roadster-rs/roadster/pull/340))
+
+- [**breaking**] Don't expect a "Bearer" token in the auth token
+  cookie ([#340](https://github.com/roadster-rs/roadster/pull/340))
 
 ### Other
-- Update leptos example to use site-addr and env from roadster config ([#341](https://github.com/roadster-rs/roadster/pull/341))
+
+- Update leptos example to use site-addr and env from roadster
+  config ([#341](https://github.com/roadster-rs/roadster/pull/341))
 - sea-orm workspace dep and upgrade to `1.0.0` ([#336](https://github.com/roadster-rs/roadster/pull/336))
 - [**breaking**] Update tower to `0.5.0` ([#334](https://github.com/roadster-rs/roadster/pull/334))
 
 ## [0.5.19](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.18...roadster-v0.5.19) - 2024-08-12
 
 ### Added
+
 - Redact bearer tokens in insta snapshots ([#325](https://github.com/roadster-rs/roadster/pull/325))
 
 ### Fixed
+
 - Do not simply use bearer token from cookie for auth ([#326](https://github.com/roadster-rs/roadster/pull/326))
 - Derive `Clone` in JWT claim types ([#323](https://github.com/roadster-rs/roadster/pull/323))
 - Implement `From` for various `Subject` enum variants ([#323](https://github.com/roadster-rs/roadster/pull/323))
-- Use `leptos_routes` in leptos example instead of `leptos_routes_with_context` ([#322](https://github.com/roadster-rs/roadster/pull/322))
+- Use `leptos_routes` in leptos example instead of
+  `leptos_routes_with_context` ([#322](https://github.com/roadster-rs/roadster/pull/322))
 
 ### Other
+
 - *(deps)* Bump EmbarkStudios/cargo-deny-action from 1 to 2 ([#319](https://github.com/roadster-rs/roadster/pull/319))
 
 ## [0.5.18](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.17...roadster-v0.5.18) - 2024-08-05
 
 ### Other
+
 - Update `rstest` dependency ([#318](https://github.com/roadster-rs/roadster/pull/318))
 
 ## [0.5.17](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.16...roadster-v0.5.17) - 2024-08-05
 
 ### Fixed
+
 - Extract jwt as a bearer token from cookies ([#316](https://github.com/roadster-rs/roadster/pull/316))
 
 ## [0.5.16](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.15...roadster-v0.5.16) - 2024-08-04
 
 ### Added
+
 - Extract JWT from cookie ([#314](https://github.com/roadster-rs/roadster/pull/314))
 - Derive `OperationIo` for `Jwt` struct ([#311](https://github.com/roadster-rs/roadster/pull/311))
 - Change user.last_sign_in_at column to non-null with default ([#312](https://github.com/roadster-rs/roadster/pull/312))
 
 ### Other
+
 - Add pre-commit hook to check formatting ([#313](https://github.com/roadster-rs/roadster/pull/313))
 
 ## [0.5.15](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.14...roadster-v0.5.15) - 2024-08-01
 
 ### Added
-- Allow configuring the max len for the `ReqResLoggingMiddleware` ([#309](https://github.com/roadster-rs/roadster/pull/309))
+
+- Allow configuring the max len for the
+  `ReqResLoggingMiddleware` ([#309](https://github.com/roadster-rs/roadster/pull/309))
 
 ## [0.5.14](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.13...roadster-v0.5.14) - 2024-08-01
 
 ### Added
-- Enable ReqResLogging middleware by default, but disable in prod ([#307](https://github.com/roadster-rs/roadster/pull/307))
+
+- Enable ReqResLogging middleware by default, but disable in
+  prod ([#307](https://github.com/roadster-rs/roadster/pull/307))
 
 ## [0.5.13](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.12...roadster-v0.5.13) - 2024-07-31
 
 ### Added
+
 - Add middleware to log the request/response payloads ([#304](https://github.com/roadster-rs/roadster/pull/304))
 - Log errors at debug level in `IntoResponse` impl ([#303](https://github.com/roadster-rs/roadster/pull/303))
 
 ## [0.5.12](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.11...roadster-v0.5.12) - 2024-07-29
 
 ### Added
-- PasswordUpdatedAt column + auto-update with a fn and trigger ([#301](https://github.com/roadster-rs/roadster/pull/301))
+
+- PasswordUpdatedAt column + auto-update with a fn and
+  trigger ([#301](https://github.com/roadster-rs/roadster/pull/301))
 
 ## [0.5.11](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.10...roadster-v0.5.11) - 2024-07-26
 
 ### Added
+
 - Migration to enable the uuid-ossp Postgres extension ([#297](https://github.com/roadster-rs/roadster/pull/297))
 - Add non-pk versions of uuid schema helper methods ([#296](https://github.com/roadster-rs/roadster/pull/296))
 
 ## [0.5.10](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.9...roadster-v0.5.10) - 2024-07-25
 
 ### Added
-- Use IDENTITY column for int primary keys instead of BIGSERIAL ([#293](https://github.com/roadster-rs/roadster/pull/293))
+
+- Use IDENTITY column for int primary keys instead of
+  BIGSERIAL ([#293](https://github.com/roadster-rs/roadster/pull/293))
 
 ### Fixed
+
 - Add "if exists" to user's drop_table migration statement ([#292](https://github.com/roadster-rs/roadster/pull/292))
 
 ### Other
+
 - Add tests for schema and check helper methods ([#289](https://github.com/roadster-rs/roadster/pull/289))
 
 ## [0.5.9](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.8...roadster-v0.5.9) - 2024-07-24
 
 ### Added
+
 - Auto-update timestamp columns ([#287](https://github.com/roadster-rs/roadster/pull/287))
 - Add SeaORM migrations and utils to create `user` table ([#284](https://github.com/roadster-rs/roadster/pull/284))
 
 ### Other
+
 - Disallow `unwrap` and `expect` except in tests ([#286](https://github.com/roadster-rs/roadster/pull/286))
 
 ## [0.5.8](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.7...roadster-v0.5.8) - 2024-07-22
 
 ### Other
+
 - Remove the `update` justfile command ([#282](https://github.com/roadster-rs/roadster/pull/282))
-- Use the main project README.md as the library's top-level docs ([#281](https://github.com/roadster-rs/roadster/pull/281))
+- Use the main project README.md as the library's top-level
+  docs ([#281](https://github.com/roadster-rs/roadster/pull/281))
 
 ## [0.5.7](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.6...roadster-v0.5.7) - 2024-07-22
 
 ### Other
+
 - Update dependencies ([#279](https://github.com/roadster-rs/roadster/pull/279))
 
 ## [0.5.6](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.5...roadster-v0.5.6) - 2024-07-22
 
 ### Added
+
 - Add `TestCase` utility for configuring `insta` settings ([#277](https://github.com/roadster-rs/roadster/pull/277))
 
 ## [0.5.5](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.4...roadster-v0.5.5) - 2024-07-08
 
 ### Added
+
 - Allow configuring the tracing log output format ([#275](https://github.com/roadster-rs/roadster/pull/275))
 
 ## [0.5.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.3...roadster-v0.5.4) - 2024-07-07
 
 ### Added
+
 - Add method to prepare the app separately from running it ([#270](https://github.com/roadster-rs/roadster/pull/270))
 
 ### Fixed
-- Correctly add the `ApiRouter` to the HTTP service's `ApiRouter` ([#273](https://github.com/roadster-rs/roadster/pull/273))
+
+- Correctly add the `ApiRouter` to the HTTP service's
+  `ApiRouter` ([#273](https://github.com/roadster-rs/roadster/pull/273))
 
 ### Other
+
 - Fixes for default openapi docs ([#271](https://github.com/roadster-rs/roadster/pull/271))
 
 ## [0.5.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.2...roadster-v0.5.3) - 2024-07-04
 
 ### Other
+
 - Update the `_health` HTTP API docs ([#267](https://github.com/roadster-rs/roadster/pull/267))
 
 ## [0.5.2](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.1...roadster-v0.5.2) - 2024-07-02
 
 ### Added
+
 - Allow configuring the max duration of health checks ([#264](https://github.com/roadster-rs/roadster/pull/264))
 
 ## [0.5.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.5.0...roadster-v0.5.1) - 2024-07-02
 
 ### Added
+
 - Place health check results under `resources` in response ([#261](https://github.com/roadster-rs/roadster/pull/261))
 
 ### Other
+
 - Fix typos in README ([#260](https://github.com/roadster-rs/roadster/pull/260))
 
 ## [0.5.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.4.0...roadster-v0.5.0) - 2024-07-01
 
 ### Added
-- [**breaking**] Remove interior mutability of `HealthCheckRegistry` ([#258](https://github.com/roadster-rs/roadster/pull/258))
+
+- [**breaking**] Remove interior mutability of
+  `HealthCheckRegistry` ([#258](https://github.com/roadster-rs/roadster/pull/258))
 
 ## [0.4.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.3.5...roadster-v0.4.0) - 2024-07-01
 
 ### Added
-- [**breaking**] Implement health check API using `HealthCheck` trait ([#255](https://github.com/roadster-rs/roadster/pull/255))
+
+- [**breaking**] Implement health check API using `HealthCheck`
+  trait ([#255](https://github.com/roadster-rs/roadster/pull/255))
 - [**breaking**] Switch to Axum's `FromRef` for custom state ([#250](https://github.com/roadster-rs/roadster/pull/250))
 
 ### Other
-- [**breaking**] Remove deprecated items in preparation of 0.4 release ([#253](https://github.com/roadster-rs/roadster/pull/253))
+
+- [**breaking**] Remove deprecated items in preparation of 0.4
+  release ([#253](https://github.com/roadster-rs/roadster/pull/253))
 - Add example for integrating with Leptos ([#252](https://github.com/roadster-rs/roadster/pull/252))
-- Use small number of sidekiq workers for `full` example in dev/test ([#251](https://github.com/roadster-rs/roadster/pull/251))
+- Use small number of sidekiq workers for `full` example in
+  dev/test ([#251](https://github.com/roadster-rs/roadster/pull/251))
 
 ## [0.3.5](https://github.com/roadster-rs/roadster/compare/roadster-v0.3.4...roadster-v0.3.5) - 2024-06-24
 
 ### Fixed
+
 - Health check config is missing a `custom` field ([#246](https://github.com/roadster-rs/roadster/pull/246))
 
 ### Other
+
 - Check PR title for compliance with conventional commits ([#247](https://github.com/roadster-rs/roadster/pull/247))
 
 ## [0.3.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.3.3...roadster-v0.3.4) - 2024-06-23
 
 ### Added
+
 - Add health checks to run before starting services ([#242](https://github.com/roadster-rs/roadster/pull/242))
 - Add `From` impl to convert db config to ConnectOptions ([#240](https://github.com/roadster-rs/roadster/pull/240))
-- Move sidekiq "stale cleanup" to new `before_run` service method ([#239](https://github.com/roadster-rs/roadster/pull/239))
+- Move sidekiq "stale cleanup" to new `before_run` service
+  method ([#239](https://github.com/roadster-rs/roadster/pull/239))
 
 ### Other
+
 - Add dependabot config to update github actions weekly ([#243](https://github.com/roadster-rs/roadster/pull/243))
 - Update READMEs to use `__` as the env var separator instead of `.`
 - Update list of UI frameworks in readme
@@ -334,9 +403,11 @@ The main feature included in this release is support for sending emails via SMTP
 ## [0.3.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.3.2...roadster-v0.3.3) - 2024-06-21
 
 ### Fixed
+
 - Invalid env var separator on bash
 
 ### Other
+
 - Add inclusive language check to CI
 - Fix clippy error
 - Remove non-inclusive language
@@ -344,6 +415,7 @@ The main feature included in this release is support for sending emails via SMTP
 ## [0.3.2](https://github.com/roadster-rs/roadster/compare/roadster-v0.3.1...roadster-v0.3.2) - 2024-06-14
 
 ### Other
+
 - Run Feature Powerset checks + perform a release twice a week
 - Add goals and future plans to readme + some getting started steps
 - Add github action to verify commits follow 'Conventional Commits' format
@@ -351,12 +423,14 @@ The main feature included in this release is support for sending emails via SMTP
 ## [0.3.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.3.0...roadster-v0.3.1) - 2024-06-11
 
 ### Other
+
 - Implement the health check API as a protocol agnostic `core` module
 - Minor changes to the `FunctionService` doc example
 
 ## [0.3.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.2.6...roadster-v0.3.0) - 2024-06-10
 
 ### Other
+
 - Fix minimal version of serde
 - Add #[non_exhaustive] to public enums
 - Add Add #[non_exhaustive] to public structs
@@ -368,7 +442,7 @@ The main feature included in this release is support for sending emails via SMTP
 - Update FunctionService doctest to only run with default features
 - Add a generic app service to run an async function as a service
 - Move semver checks to a separate workflow
-- Use depth 3 in feature powerset 
+- Use depth 3 in feature powerset
 - Install protoc in feature powerset workflow
 - Remove the old deprecated cli mod
 - Add basic grpc example
@@ -378,6 +452,7 @@ The main feature included in this release is support for sending emails via SMTP
 ## [0.2.6](https://github.com/roadster-rs/roadster/compare/roadster-v0.2.5...roadster-v0.2.6) - 2024-06-03
 
 ### Other
+
 - Add builder method to add middleware for the sidekiq processor
 - Declare minimal version of dependencies that's actually needed
 - Add `cargo-minimal-versions` for direct dependencies
