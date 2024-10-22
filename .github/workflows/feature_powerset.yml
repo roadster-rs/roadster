@@ -70,7 +70,7 @@ jobs:
         id: build_data
         run: |
           cd private/powerset_matrix
-          echo "data=$(cargo run -- -s 40 -f json -c 50 ${{ steps.random_seed.outputs.seed }})" >> "$GITHUB_OUTPUT"
+          echo "data=$(cargo run -- -s 60 -f json -c 50 ${{ steps.random_seed.outputs.seed }})" >> "$GITHUB_OUTPUT"
 
   powerset_test:
     name: Powerset Tests
