@@ -28,6 +28,7 @@ where
     state: BuilderState<S>,
 }
 
+#[allow(clippy::large_enum_variant)]
 enum BuilderState<S>
 where
     S: Clone + Send + Sync + 'static,

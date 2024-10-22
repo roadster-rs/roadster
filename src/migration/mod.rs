@@ -4,6 +4,7 @@
 //! Additionally, some utilities are provided to create some common column types.
 
 pub mod check;
+pub mod collation;
 pub mod schema;
 pub mod timestamp;
 pub mod user;

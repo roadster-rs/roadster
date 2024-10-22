@@ -10,4 +10,6 @@ expression: user_migrations
     "m20240729_000812_password_updated_at",
     "m20240729_002549_password_updated_at_function",
     "m20240729_002615_password_updated_at_trigger",
+    "m20241022_065427_case_insensitive_collation",
+    "m20241022_072216_case_insensitive_username_email",
 ]
