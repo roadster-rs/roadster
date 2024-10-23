@@ -50,7 +50,7 @@ pub enum Timestamps {
 ///     }
 /// #
 /// #    async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-/// #        todo!()
+/// #        unimplemented!()
 /// #    }
 /// }
 /// ```
@@ -100,7 +100,7 @@ pub async fn exec_create_update_timestamp_function<C: IntoIden>(
 ///     }
 /// #
 /// #    async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-/// #        todo!()
+/// #        unimplemented!()
 /// #    }
 /// }
 /// ```
@@ -240,7 +240,7 @@ $$ language 'plpgsql';
 /// #[async_trait::async_trait]
 /// impl MigrationTrait for Migration {
 /// #    async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-/// #        todo!()
+/// #        unimplemented!()
 /// #    }
 /// #
 ///     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
@@ -310,7 +310,7 @@ fn drop_update_timestamp_function_for_db_backend<C: IntoIden>(
 ///     }
 /// #
 /// #    async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-/// #        todo!()
+/// #        unimplemented!()
 /// #    }
 /// }
 ///
@@ -396,7 +396,7 @@ EXECUTE PROCEDURE {fn_call};
 /// #[async_trait::async_trait]
 /// impl MigrationTrait for Migration {
 /// #    async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-/// #        todo!()
+/// #        unimplemented!()
 /// #    }
 /// #
 ///     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
