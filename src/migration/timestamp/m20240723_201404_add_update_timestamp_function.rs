@@ -1,4 +1,4 @@
-//! Migration to create a SQL function to update the [Timestamps::UpdatedAt] column for a row
+//! Migration to create a SQL function to update the [`Timestamps::UpdatedAt`] column for a row
 //! with the current timestamp.
 //!
 //! Note: Currently only supports Postgres. If another DB is used, will do nothing.
