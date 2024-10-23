@@ -1,3 +1,4 @@
+use crate::migration::collation::m20241022_065427_case_insensitive_collation;
 use crate::migration::timestamp::m20240723_201404_add_update_timestamp_function;
 use sea_orm_migration::prelude::*;
 
@@ -9,6 +10,7 @@ pub mod m20240724_005115_user_update_timestamp;
 pub mod m20240729_000812_password_updated_at;
 pub mod m20240729_002549_password_updated_at_function;
 pub mod m20240729_002615_password_updated_at_trigger;
+pub mod m20241022_072216_case_insensitive_username_email;
 #[cfg(test)]
 mod tests;
 
@@ -69,6 +71,8 @@ impl MigratorTrait for UserMigrator {
             Box::new(m20240729_000812_password_updated_at::Migration),
             Box::new(m20240729_002549_password_updated_at_function::Migration),
             Box::new(m20240729_002615_password_updated_at_trigger::Migration),
+            Box::new(m20241022_065427_case_insensitive_collation::Migration),
+            Box::new(m20241022_072216_case_insensitive_username_email::Migration),
         ]
     }
 }
