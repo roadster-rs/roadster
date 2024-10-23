@@ -288,7 +288,6 @@ fn config_env_dir(
 
 /// Helper method for [`config_env_dir`] to recursively add config files in the given path
 /// to the [`ConfigBuilder`].
-// Todo: allow other file formats?
 fn config_env_dir_recursive(
     path: &Path,
     config: ConfigBuilder<DefaultState>,
