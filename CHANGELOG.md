@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.16](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.15...roadster-v0.6.16) - 2024-10-25
+
+### Other
+
+- Use `unimplemented!()` in hidden doc example instead of `todo!()` ([#483](https://github.com/roadster-rs/roadster/pull/483))
+- Remove a todo comment that was completed ([#482](https://github.com/roadster-rs/roadster/pull/482))
+
 ## [0.6.15](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.14...roadster-v0.6.15) - 2024-10-22
 
 ### Added
