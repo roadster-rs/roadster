@@ -2,9 +2,11 @@ use crate::config::environment::Environment;
 use crate::config::service::common::address::Address;
 use crate::config::service::http::initializer::Initializer;
 use crate::config::service::http::middleware::Middleware;
+use crate::error::RoadsterResult;
 use config::{FileFormat, FileSourceString};
 use default_routes::DefaultRoutes;
 use serde_derive::{Deserialize, Serialize};
+use url::Url;
 use validator::Validate;
 
 pub mod default_routes;
@@ -29,6 +31,8 @@ pub(crate) fn default_config_per_env(
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct HttpServiceConfig {
+    /// A URL for the domain where the service is hosted, if available.
+    pub url: Option<Url>,
     #[serde(flatten)]
     #[validate(nested)]
     pub address: Address,
@@ -38,4 +42,16 @@ pub struct HttpServiceConfig {
     pub initializer: Initializer,
     #[validate(nested)]
     pub default_routes: DefaultRoutes,
+}
+
+impl HttpServiceConfig {
+    /// Get either the URL for the domain where the service is hosted if available, or the URL for
+    /// the socket address where the service is running locally.  
+    pub fn url(&self) -> RoadsterResult<Url> {
+        if let Some(url) = self.url.as_ref() {
+            Ok(url.clone())
+        } else {
+            Ok(self.address.url_with_scheme().parse()?)
+        }
+    }
 }

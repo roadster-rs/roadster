@@ -1,3 +1,6 @@
+[service.http]
+scheme = "https"
+
 [service.http.middleware.request-response-logging]
 enable = false
 max-len = 0

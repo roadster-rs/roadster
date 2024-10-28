@@ -1,3 +1,6 @@
+[service.http]
+scheme = "http"
+
 # Middleware
 [service.http.middleware]
 default-enable = true
