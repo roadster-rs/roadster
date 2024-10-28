@@ -1,0 +1,23 @@
+---
+source: src/config/service/common/address.rs
+expression: url
+---
+Ok(
+    Url {
+        scheme: "http",
+        cannot_be_a_base: false,
+        username: "",
+        password: None,
+        host: Some(
+            Domain(
+                "localhost",
+            ),
+        ),
+        port: Some(
+            1234,
+        ),
+        path: "/",
+        query: None,
+        fragment: None,
+    },
+)

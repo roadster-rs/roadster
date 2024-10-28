@@ -1,0 +1,23 @@
+---
+source: src/config/service/common/address.rs
+expression: url
+---
+Ok(
+    Url {
+        scheme: "https",
+        cannot_be_a_base: false,
+        username: "",
+        password: None,
+        host: Some(
+            Ipv6(
+                ::,
+            ),
+        ),
+        port: Some(
+            3000,
+        ),
+        path: "/",
+        query: None,
+        fragment: None,
+    },
+)

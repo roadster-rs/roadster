@@ -8,6 +8,7 @@ pub mod email;
 #[cfg(feature = "http")]
 pub mod mime;
 pub mod other;
+pub mod parse;
 pub mod reqwest;
 pub mod serde;
 #[cfg(feature = "sidekiq")]
@@ -26,6 +27,7 @@ use crate::error::email::EmailError;
 #[cfg(feature = "http")]
 use crate::error::mime::MimeError;
 use crate::error::other::OtherError;
+use crate::error::parse::ParseError;
 use crate::error::reqwest::ReqwestError;
 use crate::error::serde::SerdeError;
 #[cfg(feature = "sidekiq")]
@@ -89,6 +91,9 @@ pub enum Error {
     #[cfg(feature = "http")]
     #[error(transparent)]
     Axum(#[from] AxumError),
+
+    #[error(transparent)]
+    Parse(#[from] ParseError),
 
     #[cfg(feature = "http")]
     #[error(transparent)]

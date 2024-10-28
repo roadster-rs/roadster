@@ -169,10 +169,12 @@ impl AppConfig {
                     secret = "secret-test"
 
                     [service.http]
+                    scheme = "http"
                     host = "127.0.0.1"
                     port = 3000
 
                     [service.grpc]
+                    scheme = "http"
                     host = "127.0.0.1"
                     port = 3001
 
@@ -224,7 +226,13 @@ impl AppConfig {
         };
 
         #[cfg(feature = "grpc")]
-        let config = config.add_source(service::grpc::default_config());
+        let config = {
+            let config = config.add_source(service::grpc::default_config());
+            let config = service::grpc::default_config_per_env(environment.clone())
+                .into_iter()
+                .fold(config, |config, source| config.add_source(source));
+            config
+        };
 
         #[cfg(feature = "sidekiq")]
         let config = config.add_source(service::worker::sidekiq::default_config());
