@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.16](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.15...roadster-v0.6.16) - 2024-10-28
+
+### Added
+
+- Add config to specify the domain where the service is hosted ([#490](https://github.com/roadster-rs/roadster/pull/490))
+
 ## [0.6.15](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.14...roadster-v0.6.15) - 2024-10-22
 
 ### Added
