@@ -3,4 +3,4 @@
 # Exit immediately if any command returns non-zero exit status.
 set -e
 
-cargo fmt --all --check
+just pre-commit
