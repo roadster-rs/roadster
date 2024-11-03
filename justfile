@@ -33,6 +33,9 @@ test-all: test-unit test-book-all
 test-watch:
     cargo watch -s 'just test'
 
+insta:
+    cargo insta review --workspace
+
 serve-book:
     mdbook serve book
 
@@ -65,9 +68,43 @@ alias fmt := format
 format:
     cargo fmt
 
+check-fmt:
+    cargo fmt --all --check
+
+pre-commit: check-fmt
+pre-push: check-fmt
+
+check-no-features:
+    cargo nextest run --no-default-features --no-fail-fast
+    # Nextest doesn't support doc tests, run those separately
+    cargo test --doc --no-default-features --no-fail-fast
+    cargo check --no-default-features
+    cargo clippy --all-targets --no-default-features -- -D warnings
+
+check-default-features:
+    # With default features
+    cargo nextest run --no-fail-fast
+    # Nextest doesn't support doc tests, run those separately
+    cargo test --doc --no-fail-fast
+    cargo check
+    cargo clippy --all-targets -- -D warnings
+
+check-all-features:
+    # With all features
+    cargo nextest run --all-features --no-fail-fast
+    # Nextest doesn't support doc tests, run those separately
+    cargo test --doc --all-features --no-fail-fast
+    cargo check --all-features
+    cargo clippy --all-targets --all-features -- -D warnings
+
+check-docs:
+    RUSTDOCFLAGS="-D rustdoc::all -A rustdoc::private_intra_doc_links" cargo doc --all-features --no-deps
+
+check-msrv:
+    cargo minimal-versions check --direct --all-features --no-dev-deps
+
 # Run a suite of checks. These checks are fairly comprehensive and will catch most issues. However, they are still less than what is run in CI.
-check:
-    .cargo-husky/hooks/pre-push
+check: check-fmt check-no-features check-default-features check-all-features check-docs check-msrv
 
 # Check if the Codecov config is valid
 validate-codecov-config:
