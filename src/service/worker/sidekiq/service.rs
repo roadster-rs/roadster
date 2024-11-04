@@ -178,7 +178,7 @@ trait RedisCommands {
 }
 
 #[async_trait]
-impl<'a> RedisCommands for PooledConnection<'a, RedisConnectionManager> {
+impl RedisCommands for PooledConnection<'_, RedisConnectionManager> {
     async fn zrange(
         &mut self,
         key: String,
