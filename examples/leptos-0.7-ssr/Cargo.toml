@@ -47,7 +47,7 @@ leptos_router = { version = "0.7.0-rc1" }
 leptos_config = { version = "0.7.0-rc1" }
 tower = { workspace = true, features = ["full"], optional = true }
 tower-http = { workspace = true, features = ["full"], optional = true }
-wasm-bindgen = { version = "0.2.93", optional = true }
+wasm-bindgen = { version = "0.2.95", optional = true }
 
 # Defines a size-optimized profile for the WASM bundle in release mode
 # Commented out here because profiles are ignored for packages that aren't the workspace root
