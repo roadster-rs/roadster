@@ -191,7 +191,7 @@ itertools = "0.13.0"
 cargo-manifest = "0.15.0"
 typed-builder = "0.20.0"
 rand = "0.8.5"
-thiserror = "1.0.61"
+thiserror = "2.0.0"
 
 [package.metadata.docs.rs]
 # Have docs.rs pass `--all-features` to ensure all features have their documentation built.
