@@ -28,7 +28,8 @@ jwt-openid = ["jwt"]
 cli = ["dep:clap"]
 otel = ["dep:opentelemetry", "dep:opentelemetry_sdk", "dep:opentelemetry-otlp", "dep:tracing-opentelemetry", "dep:prost"]
 grpc = ["dep:tonic"]
-testing = ["dep:insta", "dep:rstest"]
+testing = ["dep:insta", "dep:rstest", "dep:testcontainers-modules"]
+test-containers = ["testing", "dep:testcontainers-modules"]
 config-yml = ["config/yaml"]
 
 [dependencies]
@@ -94,13 +95,14 @@ tonic = { workspace = true, optional = true }
 # Testing
 insta = { workspace = true, optional = true }
 rstest = { workspace = true, optional = true }
+testcontainers-modules = { workspace = true, features = ["postgres", "redis"], optional = true }
 
 # Others
 anyhow = { workspace = true }
 serde = { workspace = true }
 serde_derive = { workspace = true }
 serde_json = { workspace = true }
-serde_with = { version = "3.0.0", features = ["macros", "chrono_0_4"] }
+serde_with = { version = "3.7.0", features = ["macros", "chrono_0_4"] }
 strum = { workspace = true }
 strum_macros = { workspace = true }
 itertools = { workspace = true }
@@ -171,6 +173,7 @@ rusty-sidekiq = { version = "0.11.0", default-features = false }
 # Testing
 insta = { version = "1.39.0", features = ["toml", "filters"] }
 rstest = { version = "0.23.0", default-features = false }
+testcontainers-modules = { version = "0.11.3" }
 
 # Others
 # Todo: minimize tokio features included in `roadster`

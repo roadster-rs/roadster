@@ -21,6 +21,7 @@ use serde_json::Value;
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
+use typed_builder::TypedBuilder;
 use validator::Validate;
 
 pub mod app_config;
@@ -85,6 +86,8 @@ pub struct AppConfig {
 pub const ENV_VAR_PREFIX: &str = "ROADSTER";
 pub const ENV_VAR_SEPARATOR: &str = "__";
 
+const DEFAULT_CONFIG_DIR: &str = "config/";
+
 cfg_if! {
     if #[cfg(feature = "config-yml")] {
         pub const FILE_EXTENSIONS: [&str; 3] = ["toml", "yaml", "yml"];
@@ -93,26 +96,36 @@ cfg_if! {
     }
 }
 
+#[derive(TypedBuilder)]
+#[non_exhaustive]
+pub struct AppConfigOptions {
+    #[builder(default, setter(strip_option(fallback = environment_opt)))]
+    pub environment: Option<Environment>,
+    #[builder(default, setter(strip_option(fallback = config_dir_opt)))]
+    pub config_dir: Option<PathBuf>,
+}
+
 impl AppConfig {
     #[deprecated(
         since = "0.6.2",
         note = "This wasn't intended to be made public and may be removed in a future version."
     )]
     pub fn new(environment: Option<Environment>) -> RoadsterResult<Self> {
-        Self::new_with_config_dir(environment, Some(PathBuf::from("config/")))
+        let options = AppConfigOptions::builder()
+            .environment_opt(environment)
+            .config_dir(PathBuf::from(DEFAULT_CONFIG_DIR))
+            .build();
+        Self::new_with_options(options)
     }
 
     // This runs before tracing is initialized, so we need to use `println` in order to
     // log from this method.
     #[allow(clippy::disallowed_macros)]
-    pub(crate) fn new_with_config_dir(
-        environment: Option<Environment>,
-        config_dir: Option<PathBuf>,
-    ) -> RoadsterResult<Self> {
+    pub fn new_with_options(options: AppConfigOptions) -> RoadsterResult<Self> {
         dotenv().ok();
 
-        let environment = if let Some(environment) = environment {
-            println!("Using environment from CLI args: {environment:?}");
+        let environment = if let Some(environment) = options.environment {
+            println!("Using environment from options: {environment:?}");
             environment
         } else {
             Environment::new()?
@@ -120,8 +133,9 @@ impl AppConfig {
         let environment_string = environment.clone().to_string();
         let environment_str = environment_string.as_str();
 
-        let config_root_dir = config_dir
-            .unwrap_or_else(|| PathBuf::from("config/"))
+        let config_root_dir = options
+            .config_dir
+            .unwrap_or_else(|| PathBuf::from(DEFAULT_CONFIG_DIR))
             .canonicalize()?;
 
         println!("Loading configuration from directory {config_root_dir:?}");
@@ -324,6 +338,15 @@ pub struct App {
     /// Shutdown the whole app if an error occurs in one of the app's top-level tasks (API, workers, etc).
     #[serde(default = "default_true")]
     pub shutdown_on_error: bool,
+}
+
+#[cfg(feature = "test-containers")]
+#[derive(Debug, Default, Validate, Clone, Serialize, Deserialize)]
+#[serde(default, rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct TestContainer {
+    pub enable: bool,
+    pub tag: String,
 }
 
 #[cfg(all(

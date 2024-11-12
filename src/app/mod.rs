@@ -31,7 +31,7 @@ use crate::api::cli::RunCommand;
 use crate::app::metadata::AppMetadata;
 #[cfg(not(feature = "cli"))]
 use crate::config::environment::Environment;
-use crate::config::AppConfig;
+use crate::config::{AppConfig, AppConfigOptions};
 use crate::error::RoadsterResult;
 use crate::health_check::registry::HealthCheckRegistry;
 use crate::lifecycle::registry::LifecycleHandlerRegistry;
@@ -76,7 +76,13 @@ where
         }
     }
 
-    run_prepared_without_app_cli(prepare_from_cli_and_state(cli_and_state).await?).await
+    let prepared = prepare_from_cli_and_state(cli_and_state).await?;
+
+    if run_prepared_service_cli(&prepared).await? {
+        return Ok(());
+    }
+
+    run_prepared_without_cli(prepared).await
 }
 
 #[non_exhaustive]
@@ -113,7 +119,12 @@ where
     #[cfg(not(feature = "cli"))]
     let config_dir: Option<std::path::PathBuf> = None;
 
-    let config = AppConfig::new_with_config_dir(environment, config_dir)?;
+    let config = AppConfig::new_with_options(
+        AppConfigOptions::builder()
+            .environment_opt(environment)
+            .config_dir_opt(config_dir)
+            .build(),
+    )?;
 
     app.init_tracing(&config)?;
 
@@ -122,17 +133,7 @@ where
     #[cfg(feature = "cli")]
     config.validate(!roadster_cli.skip_validate_config)?;
 
-    #[cfg(not(test))]
-    let metadata = app.metadata(&config)?;
-
-    // The `config.clone()` here is technically not necessary. However, without it, RustRover
-    // is giving a "value used after move" error when creating an actual `AppContext` below.
-    #[cfg(test)]
-    let context = AppContext::test(Some(config.clone()), None, None)?;
-    #[cfg(not(test))]
-    let context = AppContext::new::<A, S>(&app, config, metadata).await?;
-
-    let state = app.provide_state(context.clone()).await?;
+    let state = build_state(&app, config).await?;
 
     Ok(CliAndState {
         app,
@@ -142,6 +143,26 @@ where
         app_cli,
         state,
     })
+}
+
+/// Utility method to build the app's state object.
+async fn build_state<A, S>(app: &A, config: AppConfig) -> RoadsterResult<S>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S> + Send + Sync + 'static,
+{
+    #[cfg(not(test))]
+    let metadata = app.metadata(&config)?;
+
+    // The `config.clone()` here is technically not necessary. However, without it, RustRover
+    // is giving a "value used after move" error when creating an actual `AppContext` below.
+    #[cfg(test)]
+    let context = AppContext::test(Some(config.clone()), None, None)?;
+    #[cfg(not(test))]
+    let context = AppContext::new::<A, S>(app, config, metadata).await?;
+
+    app.provide_state(context).await
 }
 
 /// Contains all the objects needed to run the [`App`]. Useful if a consumer needs access to some
@@ -161,15 +182,30 @@ where
     #[cfg(feature = "cli")]
     pub app_cli: A::Cli,
     pub state: S,
+    pub health_check_registry: HealthCheckRegistry,
     pub service_registry: ServiceRegistry<A, S>,
     pub lifecycle_handler_registry: LifecycleHandlerRegistry<A, S>,
 }
 
-/// Prepare the app. Does everything to prepare the app short of starting the app. Specifically,
-/// the following are skipped:
+#[non_exhaustive]
+struct PreparedAppWithoutCli<A, S>
+where
+    A: App<S> + 'static,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    health_check_registry: HealthCheckRegistry,
+    service_registry: ServiceRegistry<A, S>,
+    lifecycle_handler_registry: LifecycleHandlerRegistry<A, S>,
+}
+
+/// Prepare the app. Sets up everything needed to start the app, but does not execute anything.
+/// Specifically, the following are skipped:
+///
 /// 1. Handling CLI commands
 /// 2. Health checks
-/// 3. Starting any services
+/// 3. Lifecycle Handlers
+/// 4. Starting any services
 pub async fn prepare<A, S>(app: A) -> RoadsterResult<PreparedApp<A, S>>
 where
     S: Clone + Send + Sync + 'static,
@@ -177,6 +213,44 @@ where
     A: App<S> + Send + Sync + 'static,
 {
     prepare_from_cli_and_state(build_cli_and_state(app).await?).await
+}
+
+/// Initialize the app state. Does everything to initialize the app short of starting the app.
+/// Similar to [`prepare`], except performs some steps that are skipped in [`prepare`]:
+/// 1. Health checks
+/// 2. Lifecycle Handlers
+///
+/// The following are still skipped:
+/// 1. Handling CLI commands
+/// 2. Starting any services
+///
+/// Additionally, the health checks are not attached to the [`AppContext`] to avoid a reference
+/// cycle that prevents the [`AppContext`] from being dropped between tests.
+///
+/// This is intended to only be used to get access to the app's fully set up state in tests.
+#[cfg(feature = "testing")]
+pub async fn init_state<A, S>(app: &A, config: AppConfig) -> RoadsterResult<S>
+where
+    A: App<S> + 'static,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    let state = build_state(app, config).await?;
+
+    let PreparedAppWithoutCli {
+        health_check_registry,
+        service_registry,
+        lifecycle_handler_registry,
+    } = prepare_without_cli(app, &state).await?;
+    before_app(
+        &state,
+        Some(health_check_registry),
+        &service_registry,
+        &lifecycle_handler_registry,
+    )
+    .await?;
+
+    Ok(state)
 }
 
 async fn prepare_from_cli_and_state<A, S>(
@@ -195,19 +269,12 @@ where
         app_cli,
         state,
     } = cli_and_state;
-    let context = AppContext::from_ref(&state);
 
-    let mut lifecycle_handler_registry = LifecycleHandlerRegistry::new(&state);
-    app.lifecycle_handlers(&mut lifecycle_handler_registry, &state)
-        .await?;
-
-    let mut health_check_registry = HealthCheckRegistry::new(&context);
-    app.health_checks(&mut health_check_registry, &state)
-        .await?;
-    context.set_health_checks(health_check_registry)?;
-
-    let mut service_registry = ServiceRegistry::new(&state);
-    app.services(&mut service_registry, &state).await?;
+    let PreparedAppWithoutCli {
+        health_check_registry,
+        service_registry,
+        lifecycle_handler_registry,
+    } = prepare_without_cli(&app, &state).await?;
 
     Ok(PreparedApp {
         app,
@@ -216,6 +283,40 @@ where
         #[cfg(feature = "cli")]
         app_cli,
         state,
+        health_check_registry,
+        service_registry,
+        lifecycle_handler_registry,
+    })
+}
+
+async fn prepare_without_cli<A, S>(
+    app: &A,
+    state: &S,
+) -> RoadsterResult<PreparedAppWithoutCli<A, S>>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S> + Send + Sync + 'static,
+{
+    let context = AppContext::from_ref(state);
+
+    let mut lifecycle_handler_registry = LifecycleHandlerRegistry::new(state);
+    app.lifecycle_handlers(&mut lifecycle_handler_registry, state)
+        .await?;
+
+    let mut health_check_registry = HealthCheckRegistry::new(&context);
+    app.health_checks(&mut health_check_registry, state).await?;
+    // Note that we used to set the health check registry on the `AppContext` here. However, we
+    // don't do that anymore because it causes a reference cycle between the `AppContext` and the
+    // `HealthChecks` (at least the ones that contain an `AppContext`). This shouldn't normally
+    // be a problem, but it causes TestContainers containers to not be cleaned up in tests.
+    // We may want to re-think some designs to avoid this reference cycle.
+
+    let mut service_registry = ServiceRegistry::new(state);
+    app.services(&mut service_registry, state).await?;
+
+    Ok(PreparedAppWithoutCli {
+        health_check_registry,
         service_registry,
         lifecycle_handler_registry,
     })
@@ -242,30 +343,31 @@ where
         }
     }
 
-    run_prepared_without_app_cli(prepared_app).await
+    if run_prepared_service_cli(&prepared_app).await? {
+        return Ok(());
+    }
+
+    run_prepared_without_cli(prepared_app).await
 }
 
 /// Run a [PreparedApp] that was previously crated by [prepare]
-async fn run_prepared_without_app_cli<A, S>(prepared_app: PreparedApp<A, S>) -> RoadsterResult<()>
+async fn run_prepared_service_cli<A, S>(prepared_app: &PreparedApp<A, S>) -> RoadsterResult<bool>
 where
     A: App<S> + 'static,
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    let state = &prepared_app.state;
-
-    let context = AppContext::from_ref(state);
     let service_registry = &prepared_app.service_registry;
 
     if service_registry.services.is_empty() {
-        warn!("No enabled services were registered, exiting.");
-        return Ok(());
+        warn!("No enabled services were registered.");
+        return Ok(false);
     }
-
-    let lifecycle_handlers = prepared_app.lifecycle_handler_registry.handlers(state);
 
     #[cfg(feature = "cli")]
     {
+        let state = &prepared_app.state;
+        let lifecycle_handlers = prepared_app.lifecycle_handler_registry.handlers(state);
         info!("Running AppLifecycleHandler::before_service_cli");
         for handler in lifecycle_handlers.iter() {
             info!(name=%handler.name(), "Running AppLifecycleHandler::before_service_cli");
@@ -280,16 +382,43 @@ where
         if crate::service::runner::handle_cli(roadster_cli, app_cli, service_registry, state)
             .await?
         {
-            return Ok(());
+            return Ok(true);
         }
     }
+
+    Ok(false)
+}
+
+/// Run the app's initialization logic (lifecycle handlers, health checks, etc).
+async fn before_app<A, S>(
+    state: &S,
+    health_check_registry: Option<HealthCheckRegistry>,
+    service_registry: &ServiceRegistry<A, S>,
+    lifecycle_handler_registry: &LifecycleHandlerRegistry<A, S>,
+) -> RoadsterResult<()>
+where
+    A: App<S> + 'static,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    if service_registry.services.is_empty() {
+        warn!("No enabled services were registered.");
+    }
+
+    let lifecycle_handlers = lifecycle_handler_registry.handlers(state);
 
     info!("Running AppLifecycleHandler::before_health_checks");
     for handler in lifecycle_handlers.iter() {
         info!(name=%handler.name(), "Running AppLifecycleHandler::before_health_checks");
         handler.before_health_checks(state).await?;
     }
-    crate::service::runner::health_checks(&context).await?;
+    let checks = if let Some(health_check_registry) = health_check_registry {
+        health_check_registry.checks()
+    } else {
+        let context = AppContext::from_ref(state);
+        context.health_checks()
+    };
+    crate::service::runner::health_checks(checks).await?;
 
     info!("Running AppLifecycleHandler::before_services");
     for handler in lifecycle_handlers.iter() {
@@ -297,18 +426,45 @@ where
         handler.before_services(state).await?
     }
     crate::service::runner::before_run(service_registry, state).await?;
-    let result =
-        crate::service::runner::run(prepared_app.app, prepared_app.service_registry, state).await;
+
+    Ok(())
+}
+
+/// Run a [`PreparedApp`] that was previously crated by [`prepare`] without handling CLI commands
+/// (they should have been handled already).
+async fn run_prepared_without_cli<A, S>(prepared_app: PreparedApp<A, S>) -> RoadsterResult<()>
+where
+    A: App<S> + 'static,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    let PreparedApp {
+        app,
+        state,
+        health_check_registry,
+        service_registry,
+        lifecycle_handler_registry,
+        ..
+    } = prepared_app;
+
+    let context = AppContext::from_ref(&state);
+    context.set_health_checks(health_check_registry)?;
+
+    before_app(&state, None, &service_registry, &lifecycle_handler_registry).await?;
+
+    let result = crate::service::runner::run(app, service_registry, &state).await;
     if let Err(err) = result {
         error!("An error occurred in the app: {err}");
     }
 
     info!("Shutting down");
 
+    let lifecycle_handlers = lifecycle_handler_registry.handlers(&state);
+
     info!("Running AppLifecycleHandler::before_shutdown");
     for handler in lifecycle_handlers.iter() {
         info!(name=%handler.name(), "Running AppLifecycleHandler::before_shutdown");
-        let result = handler.on_shutdown(state).await;
+        let result = handler.on_shutdown(&state).await;
         if let Err(err) = result {
             error!(name=%handler.name(), "An error occurred when running AppLifecycleHandler::before_shutdown: {err}");
         }
