@@ -84,15 +84,24 @@ pub enum StaleCleanUpBehavior {
 #[non_exhaustive]
 pub struct Redis {
     pub uri: Url,
+
     /// The configuration for the Redis connection pool used for enqueuing Sidekiq jobs in Redis.
     #[serde(default)]
     #[validate(nested)]
     pub enqueue_pool: ConnectionPool,
+
     /// The configuration for the Redis connection pool used by [sidekiq::Processor] to fetch
     /// Sidekiq jobs from Redis.
     #[serde(default)]
     #[validate(nested)]
     pub fetch_pool: ConnectionPool,
+
+    /// Options for creating a Test Container instance for the DB. If enabled, the `Redis#uri`
+    /// field will be overridden to be the URI for the Test Container instance that's created when
+    /// building the app's [`crate::app::context::AppContext`].
+    #[cfg(feature = "test-containers")]
+    #[serde(default)]
+    pub test_container: Option<crate::config::TestContainer>,
 }
 
 #[derive(Debug, Default, Validate, Clone, Serialize, Deserialize)]

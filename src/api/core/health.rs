@@ -41,6 +41,19 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
+    let context = AppContext::from_ref(state);
+    health_check_with_checks(context.health_checks(), duration).await
+}
+
+#[instrument(skip_all)]
+pub(crate) async fn health_check_with_checks<S>(
+    checks: Vec<Arc<dyn HealthCheck>>,
+    duration: Option<Duration>,
+) -> RoadsterResult<HeathCheckResponse>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
     if let Some(duration) = duration.as_ref() {
         info!(
             "Running checks for a maximum duration of {} ms",
@@ -49,10 +62,9 @@ where
     } else {
         info!("Running checks");
     }
-    let context = AppContext::from_ref(state);
     let timer = Instant::now();
 
-    let check_futures = context.health_checks().into_iter().map(|check| {
+    let check_futures = checks.into_iter().map(|check| {
         Box::pin(async move {
             let name = check.name();
             info!(%name, "Running check");

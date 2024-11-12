@@ -13,26 +13,41 @@ use validator::Validate;
 pub struct Database {
     /// This can be overridden with an environment variable, e.g. `ROADSTER__DATABASE__URI=postgres://example:example@example:1234/example_app`
     pub uri: Url,
+
     /// Whether to automatically apply migrations during the app's start up. Migrations can also
     /// be manually performed via the `roadster migration [COMMAND]` CLI command.
     pub auto_migrate: bool,
+
     #[serde(default = "Database::default_connect_timeout")]
     #[serde_as(as = "serde_with::DurationMilliSeconds")]
     pub connect_timeout: Duration,
+
     /// Whether to attempt to connect to the DB immediately upon creating the [`ConnectOptions`].
     /// If `true` will wait to connect to the DB until the first DB query is attempted.
     #[serde(default = "default_true")]
     pub connect_lazy: bool,
+
     #[serde(default = "Database::default_acquire_timeout")]
     #[serde_as(as = "serde_with::DurationMilliSeconds")]
     pub acquire_timeout: Duration,
+
     #[serde_as(as = "Option<serde_with::DurationSeconds>")]
     pub idle_timeout: Option<Duration>,
+
     #[serde_as(as = "Option<serde_with::DurationSeconds>")]
     pub max_lifetime: Option<Duration>,
+
     #[serde(default)]
     pub min_connections: u32,
+
     pub max_connections: u32,
+
+    /// Options for creating a Test Container instance for the DB. If enabled, the `Database#uri`
+    /// field will be overridden to be the URI for the Test Container instance that's created when
+    /// building the app's [`crate::app::context::AppContext`].
+    #[cfg(feature = "test-containers")]
+    #[serde(default)]
+    pub test_container: Option<crate::config::TestContainer>,
 }
 
 impl Database {
@@ -115,6 +130,8 @@ mod tests {
     fn db_config_to_connect_options() {
         let db = Database {
             uri: Url::parse("postgres://example:example@example:1234/example_app").unwrap(),
+            #[cfg(feature = "test-containers")]
+            test_container: None,
             auto_migrate: true,
             connect_timeout: Duration::from_secs(1),
             connect_lazy: true,

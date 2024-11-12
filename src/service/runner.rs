@@ -1,9 +1,10 @@
 #[cfg(feature = "cli")]
 use crate::api::cli::roadster::RoadsterCli;
-use crate::api::core::health::health_check;
+use crate::api::core::health::health_check_with_checks;
 use crate::app::context::AppContext;
 use crate::app::App;
 use crate::error::RoadsterResult;
+use crate::health_check::HealthCheck;
 use crate::health_check::Status;
 use crate::service::registry::ServiceRegistry;
 use anyhow::anyhow;
@@ -38,9 +39,9 @@ where
 }
 
 #[instrument(skip_all)]
-pub(crate) async fn health_checks(context: &AppContext) -> RoadsterResult<()> {
+pub(crate) async fn health_checks(checks: Vec<Arc<dyn HealthCheck>>) -> RoadsterResult<()> {
     let duration = Duration::from_secs(60);
-    let response = health_check(context, Some(duration)).await?;
+    let response = health_check_with_checks(checks, Some(duration)).await?;
 
     let error_responses = response
         .resources

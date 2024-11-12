@@ -25,7 +25,10 @@ impl AppContext {
     #[cfg_attr(test, allow(dead_code))]
     pub(crate) async fn new<A, S>(
         #[allow(unused_variables)] app: &A,
-        config: AppConfig,
+        #[cfg(not(feature = "test-containers"))] config: AppConfig,
+        #[cfg(feature = "test-containers")]
+        #[allow(unused_mut)]
+        mut config: AppConfig,
         metadata: AppMetadata,
     ) -> RoadsterResult<Self>
     where
@@ -40,6 +43,11 @@ impl AppContext {
 
         #[cfg(not(test))]
         let context = {
+            #[cfg(all(feature = "db-sql", feature = "test-containers"))]
+            let db_test_container = db_test_container(&mut config).await?;
+            #[cfg(all(feature = "sidekiq", feature = "test-containers"))]
+            let sidekiq_redis_test_container = sidekiq_redis_test_container(&mut config).await?;
+
             #[cfg(feature = "db-sql")]
             let db = sea_orm::Database::connect(app.db_connection_options(&config)?).await?;
 
@@ -89,10 +97,14 @@ impl AppContext {
                 health_checks: OnceLock::new(),
                 #[cfg(feature = "db-sql")]
                 db,
+                #[cfg(all(feature = "db-sql", feature = "test-containers"))]
+                db_test_container,
                 #[cfg(feature = "sidekiq")]
                 redis_enqueue,
                 #[cfg(feature = "sidekiq")]
                 redis_fetch,
+                #[cfg(all(feature = "sidekiq", feature = "test-containers"))]
+                sidekiq_redis_test_container,
                 #[cfg(feature = "email-smtp")]
                 smtp,
                 #[cfg(feature = "email-sendgrid")]
@@ -184,12 +196,96 @@ impl AppContext {
     }
 }
 
+#[cfg(all(feature = "db-sql", feature = "test-containers"))]
+pub async fn db_test_container(
+    config: &mut AppConfig,
+) -> RoadsterResult<
+    Option<
+        testcontainers_modules::testcontainers::ContainerAsync<
+            testcontainers_modules::postgres::Postgres,
+        >,
+    >,
+> {
+    use testcontainers_modules::testcontainers::runners::AsyncRunner;
+    use testcontainers_modules::testcontainers::ImageExt;
+
+    let container = if let Some(test_container) = config.database.test_container.as_ref() {
+        let container = testcontainers_modules::postgres::Postgres::default()
+            .with_tag(test_container.tag.to_string())
+            .start()
+            .await
+            .map_err(|err| anyhow!("{err}"))?;
+        Some(container)
+    } else {
+        None
+    };
+
+    if let Some(container) = container.as_ref() {
+        let host_ip = container.get_host().await.map_err(|err| anyhow!("{err}"))?;
+
+        let host_port = container
+            .get_host_port_ipv4(5432)
+            .await
+            .map_err(|err| anyhow!("{err}"))?;
+
+        config.database.uri =
+            format!("postgres://postgres:postgres@{host_ip}:{host_port}/postgres").parse()?;
+    }
+    Ok(container)
+}
+
+#[cfg(all(feature = "sidekiq", feature = "test-containers"))]
+pub async fn sidekiq_redis_test_container(
+    config: &mut AppConfig,
+) -> RoadsterResult<
+    Option<
+        testcontainers_modules::testcontainers::ContainerAsync<
+            testcontainers_modules::redis::Redis,
+        >,
+    >,
+> {
+    use testcontainers_modules::testcontainers::runners::AsyncRunner;
+    use testcontainers_modules::testcontainers::ImageExt;
+
+    let container =
+        if let Some(test_container) = config.service.sidekiq.custom.redis.test_container.as_ref() {
+            let container = testcontainers_modules::redis::Redis::default()
+                .with_tag(test_container.tag.to_string())
+                .start()
+                .await
+                .map_err(|err| anyhow!("{err}"))?;
+            Some(container)
+        } else {
+            None
+        };
+
+    if let Some(container) = container.as_ref() {
+        let host_ip = container.get_host().await.map_err(|err| anyhow!("{err}"))?;
+
+        let host_port = container
+            .get_host_port_ipv4(testcontainers_modules::redis::REDIS_PORT)
+            .await
+            .map_err(|err| anyhow!("{err}"))?;
+
+        config.service.sidekiq.custom.redis.uri =
+            format!("redis://{host_ip}:{host_port}").parse()?;
+    }
+    Ok(container)
+}
+
 struct AppContextInner {
     config: AppConfig,
     metadata: AppMetadata,
     health_checks: OnceLock<HealthCheckRegistry>,
     #[cfg(feature = "db-sql")]
     db: DatabaseConnection,
+    #[cfg(all(feature = "db-sql", feature = "test-containers"))]
+    #[allow(dead_code)]
+    db_test_container: Option<
+        testcontainers_modules::testcontainers::ContainerAsync<
+            testcontainers_modules::postgres::Postgres,
+        >,
+    >,
     #[cfg(feature = "sidekiq")]
     redis_enqueue: sidekiq::RedisPool,
     /// The Redis connection pool used by [sidekiq::Processor] to fetch Sidekiq jobs from Redis.
@@ -197,6 +293,13 @@ struct AppContextInner {
     /// config is set to zero, in which case the [sidekiq::Processor] would also not be started.
     #[cfg(feature = "sidekiq")]
     redis_fetch: Option<sidekiq::RedisPool>,
+    #[cfg(all(feature = "sidekiq", feature = "test-containers"))]
+    #[allow(dead_code)]
+    sidekiq_redis_test_container: Option<
+        testcontainers_modules::testcontainers::ContainerAsync<
+            testcontainers_modules::redis::Redis,
+        >,
+    >,
     #[cfg(feature = "email-smtp")]
     smtp: lettre::SmtpTransport,
     #[cfg(feature = "email-sendgrid")]
