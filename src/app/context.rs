@@ -197,7 +197,7 @@ impl AppContext {
 }
 
 #[cfg(all(feature = "db-sql", feature = "test-containers"))]
-pub async fn db_test_container(
+async fn db_test_container(
     config: &mut AppConfig,
 ) -> RoadsterResult<
     Option<
@@ -235,7 +235,7 @@ pub async fn db_test_container(
 }
 
 #[cfg(all(feature = "sidekiq", feature = "test-containers"))]
-pub async fn sidekiq_redis_test_container(
+async fn sidekiq_redis_test_container(
     config: &mut AppConfig,
 ) -> RoadsterResult<
     Option<
