@@ -7,11 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.17](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.16...roadster-v0.6.17) - 2024-11-12
+
+### Added
+
+- Add support for TestContainers (pgsql + redis modules) ([#503](https://github.com/roadster-rs/roadster/pull/503))
+
+### Other
+
+- Update `thiserror` to 2.x ([#499](https://github.com/roadster-rs/roadster/pull/499))
+- Update `validator` crate ([#497](https://github.com/roadster-rs/roadster/pull/497))
+
 ## [0.6.16](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.15...roadster-v0.6.16) - 2024-10-28
 
 ### Added
 
-- Add config to specify the domain where the service is hosted ([#490](https://github.com/roadster-rs/roadster/pull/490))
+- Add config to specify the domain where the service is
+  hosted ([#490](https://github.com/roadster-rs/roadster/pull/490))
 
 ## [0.6.15](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.14...roadster-v0.6.15) - 2024-10-22
 
