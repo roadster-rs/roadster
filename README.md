@@ -64,7 +64,15 @@ docker run -d -p 5432:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=example_dev 
 docker run -d -p 6379:6379 redis:7.2-alpine
 ```
 
-## Start local SMTP server instance (example: [maildev](https://github.com/maildev/maildev))
+## Start local SMTP server instance
+
+### [smtp4dev](https://github.com/rnwood/smtp4dev)
+
+```shell
+docker run -d -p 1080:80 -p 1025:25 rnwood/smtp4dev
+```
+
+### [maildev](https://github.com/maildev/maildev)
 
 ```shell
 docker run -d -p 1080:1080 -p 1025:1025 maildev/maildev
