@@ -8,6 +8,9 @@ use std::thread::current;
 use typed_builder::TypedBuilder;
 
 const BEARER_TOKEN_REGEX: &str = r"Bearer [\w\.-]+";
+const POSTGRES_URI_REGEX: &str = r"postgres://(\w|\d|@|:|\/|\.)+";
+const REDIS_URI_REGEX: &str = r"redis://(\w|\d|@|:|\/|\.)+";
+const SMTP_URI_REGEX: &str = r"smtp://(\w|\d|@|:|\/|\.)+";
 
 /// Configure which settings to apply on the snapshot [Settings].
 ///
@@ -87,6 +90,24 @@ pub struct TestCaseConfig {
     /// auth tokens that you don't want leaked in your source code.
     #[builder(default = true)]
     pub redact_auth_tokens: bool,
+
+    /// Whether to Postgres URIs from snapshots. This is useful for tests involving
+    /// dynamically created Postgres instances that will be different on every test run, or involve
+    /// real Postgres instances that you don't want leaked in your source code.
+    #[builder(default = true)]
+    pub redact_postgres_uri: bool,
+
+    /// Whether to Redis URIs from snapshots. This is useful for tests involving
+    /// dynamically created Redis instances that will be different on every test run, or involve
+    /// real Redis instances that you don't want leaked in your source code.
+    #[builder(default = true)]
+    pub redact_redis_uri: bool,
+
+    /// Whether to SMTP URIs from snapshots. This is useful for tests involving
+    /// dynamically created SMTP instances that will be different on every test run, or involve
+    /// real SMTP instances that you don't want leaked in your source code.
+    #[builder(default = true)]
+    pub redact_smtp_uri: bool,
 
     /// Whether to automatically bind the [Settings] to the current scope. If `true`, the settings
     /// will be automatically applied for the test in which the [TestCase] was built. If `false`,
@@ -176,6 +197,15 @@ impl From<TestCaseConfig> for TestCase {
         if value.redact_auth_tokens {
             snapshot_redact_bearer_tokens(&mut settings);
         }
+        if value.redact_postgres_uri {
+            snapshot_redact_postgres_uri(&mut settings);
+        }
+        if value.redact_redis_uri {
+            snapshot_redact_redis_uri(&mut settings);
+        }
+        if value.redact_smtp_uri {
+            snapshot_redact_smtp_uri(&mut settings);
+        }
 
         let _settings_guard = if value.bind_scope {
             Some(settings.bind_to_scope())
@@ -211,6 +241,27 @@ pub fn snapshot_redact_uuid(settings: &mut Settings) -> &mut Settings {
 /// sub-strings matching [`BEARER_TOKEN_REGEX`] with `Sensitive`.
 pub fn snapshot_redact_bearer_tokens(settings: &mut Settings) -> &mut Settings {
     settings.add_filter(BEARER_TOKEN_REGEX, "Sensitive");
+    settings
+}
+
+/// Redact instances of Postgres URIs in snapshots. Applies a filter on the [Settings] to replace
+/// sub-strings matching [`POSTGRES_URI_REGEX`] with `postgres://[Sensitive]`.
+pub fn snapshot_redact_postgres_uri(settings: &mut Settings) -> &mut Settings {
+    settings.add_filter(POSTGRES_URI_REGEX, "postgres://[Sensitive]");
+    settings
+}
+
+/// Redact instances of Redis URIs in snapshots. Applies a filter on the [Settings] to replace
+/// sub-strings matching [`REDIS_URI_REGEX`] with `redis://[Sensitive]`.
+pub fn snapshot_redact_redis_uri(settings: &mut Settings) -> &mut Settings {
+    settings.add_filter(REDIS_URI_REGEX, "redis://[Sensitive]");
+    settings
+}
+
+/// Redact instances of Smtp URIs in snapshots. Applies a filter on the [Settings] to replace
+/// sub-strings matching [`SMTP_URI_REGEX`] with `smtp://[Sensitive]`.
+pub fn snapshot_redact_smtp_uri(settings: &mut Settings) -> &mut Settings {
+    settings.add_filter(SMTP_URI_REGEX, "smtp://[Sensitive]");
     settings
 }
 
@@ -313,6 +364,42 @@ mod tests {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn bearer_token(_case: TestCase, #[case] token: &str) {
         assert_snapshot!(format!("Foo {token} bar"));
+    }
+
+    #[rstest]
+    #[case("postgres://example:example@example.com:1234/example")]
+    #[case("postgres://example:1234")]
+    #[case("postgres://localhost")]
+    #[case("postgres://example.com")]
+    #[case("postgres://192.168.1.1:3000")]
+    #[case("postgres://192.168.1.1:3000/example")]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn postgres_uri(_case: TestCase, #[case] uri: &str) {
+        assert_snapshot!(format!("uri = {uri}"));
+    }
+
+    #[rstest]
+    #[case("redis://example:example@example.com:1234/example")]
+    #[case("redis://example:1234")]
+    #[case("redis://localhost")]
+    #[case("redis://example.com")]
+    #[case("redis://192.168.1.1:3000")]
+    #[case("redis://192.168.1.1:3000/example")]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn redis_uri(_case: TestCase, #[case] uri: &str) {
+        assert_snapshot!(format!("uri = {uri}"));
+    }
+
+    #[rstest]
+    #[case("smtp://example:example@example.com:1234/example")]
+    #[case("smtp://example:1234")]
+    #[case("smtp://localhost")]
+    #[case("smtp://example.com")]
+    #[case("smtp://192.168.1.1:3000")]
+    #[case("smtp://192.168.1.1:3000/example")]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn smtp_uri(_case: TestCase, #[case] uri: &str) {
+        assert_snapshot!(format!("uri = {uri}"));
     }
 
     #[rstest]

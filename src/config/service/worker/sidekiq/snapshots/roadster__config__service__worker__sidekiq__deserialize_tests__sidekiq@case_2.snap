@@ -6,7 +6,7 @@ num-workers = 1
 queues = []
 
 [redis]
-uri = 'redis://localhost:6379'
+uri = 'redis://[Sensitive]'
 
 [redis.enqueue-pool]
 
