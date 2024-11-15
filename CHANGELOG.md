@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.18](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.17...roadster-v0.6.18) - 2024-11-15
+
+### Added
+
+- Add support for redacting postgres/redis/smtp URIs ([#507](https://github.com/roadster-rs/roadster/pull/507))
+
+### Other
+
+- Add `smtp4dev` to example local SMTP servers ([#506](https://github.com/roadster-rs/roadster/pull/506))
+
 ## [0.6.17](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.16...roadster-v0.6.17) - 2024-11-12
 
 ### Added
