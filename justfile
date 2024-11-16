@@ -52,16 +52,21 @@ coverage-clean:
     cargo +nightly llvm-cov clean
 
 # Run tests with coverage.
-coverage: coverage-clean
+coverage-tests: coverage-clean
     cargo +nightly llvm-cov --no-report nextest --all-features
     cargo +nightly llvm-cov --no-report --doc --all-features
+
+# Run tests with coverage and generate an html report.
+coverage: coverage-tests
     # Generate and open an HTML coverage report
     cargo +nightly llvm-cov report --lcov --output-path ./target/llvm-cov-target/debug/lcov.info
     genhtml -o ./target/llvm-cov-target/debug/coverage/ --show-details --highlight --ignore-errors source --legend ./target/llvm-cov-target/debug/lcov.info
 
+open_cmd := if os() == "macos" { "open" } else { "xdg-open" }
+
 # Run tests with coverage and open the generated HTML report.
 coverage-open: coverage
-    open target/llvm-cov-target/debug/coverage/index.html
+    {{ open_cmd }} target/llvm-cov-target/debug/coverage/index.html
 
 alias fmt := format
 # Format the project
