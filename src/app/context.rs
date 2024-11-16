@@ -56,7 +56,7 @@ impl AppContext {
                 let sidekiq_config = &config.service.sidekiq;
                 let redis_config = &sidekiq_config.custom.redis;
                 let redis = sidekiq::RedisConnectionManager::new(redis_config.uri.to_string())?;
-                let redis_enqueue = {
+                let redis_enqueue = RedisEnqueue({
                     let pool = bb8::Pool::builder().min_idle(redis_config.enqueue_pool.min_idle);
                     let pool = redis_config
                         .enqueue_pool
@@ -64,7 +64,7 @@ impl AppContext {
                         .iter()
                         .fold(pool, |pool, max_conns| pool.max_size(*max_conns));
                     pool.build(redis.clone()).await?
-                };
+                });
                 let redis_fetch = if redis_config
                     .fetch_pool
                     .max_connections
@@ -136,7 +136,9 @@ impl AppContext {
 
         #[cfg(feature = "sidekiq")]
         if let Some(redis) = redis {
-            inner.expect_redis_enqueue().return_const(redis.clone());
+            inner
+                .expect_redis_enqueue()
+                .return_const(RedisEnqueue(redis.clone()));
             inner.expect_redis_fetch().return_const(Some(redis));
         } else {
             inner.expect_redis_fetch().return_const(None);
@@ -170,11 +172,13 @@ impl AppContext {
         self.inner.db()
     }
 
+    // todo: In the next breaking version, return the pool wrapped in the `RedisEnqueue` new-type
     #[cfg(feature = "sidekiq")]
     pub fn redis_enqueue(&self) -> &sidekiq::RedisPool {
         self.inner.redis_enqueue()
     }
 
+    // todo: In the next breaking version, return the pool wrapped in the `RedisFetch` new-type
     #[cfg(feature = "sidekiq")]
     pub fn redis_fetch(&self) -> &Option<sidekiq::RedisPool> {
         self.inner.redis_fetch()
@@ -193,6 +197,134 @@ impl AppContext {
     #[cfg(feature = "email-sendgrid")]
     pub fn sendgrid(&self) -> &sendgrid::v3::Sender {
         self.inner.sendgrid()
+    }
+}
+
+#[cfg_attr(any(test, feature = "testing-mocks"), mockall::automock)]
+pub trait ProvideRef<T> {
+    fn provide(&self) -> &T;
+}
+
+#[cfg_attr(any(test, feature = "testing-mocks"), mockall::automock)]
+pub trait Provide<T> {
+    fn provide(&self) -> T;
+}
+
+impl ProvideRef<AppConfig> for AppContext {
+    fn provide(&self) -> &AppConfig {
+        self.config()
+    }
+}
+
+impl Provide<AppConfig> for AppContext {
+    fn provide(&self) -> AppConfig {
+        self.config().clone()
+    }
+}
+
+impl ProvideRef<AppMetadata> for AppContext {
+    fn provide(&self) -> &AppMetadata {
+        self.metadata()
+    }
+}
+
+impl Provide<AppMetadata> for AppContext {
+    fn provide(&self) -> AppMetadata {
+        self.metadata().clone()
+    }
+}
+
+impl Provide<Vec<Arc<dyn HealthCheck>>> for AppContext {
+    fn provide(&self) -> Vec<Arc<dyn HealthCheck>> {
+        self.health_checks()
+    }
+}
+
+#[cfg(feature = "db-sql")]
+impl ProvideRef<DatabaseConnection> for AppContext {
+    fn provide(&self) -> &DatabaseConnection {
+        self.db()
+    }
+}
+
+#[cfg(feature = "db-sql")]
+impl Provide<DatabaseConnection> for AppContext {
+    fn provide(&self) -> DatabaseConnection {
+        self.db().clone()
+    }
+}
+
+#[cfg(feature = "email-smtp")]
+impl ProvideRef<lettre::SmtpTransport> for AppContext {
+    fn provide(&self) -> &lettre::SmtpTransport {
+        self.smtp()
+    }
+}
+
+#[cfg(feature = "email-smtp")]
+impl Provide<lettre::SmtpTransport> for AppContext {
+    fn provide(&self) -> lettre::SmtpTransport {
+        self.smtp().clone()
+    }
+}
+
+#[cfg(feature = "email-sendgrid")]
+impl ProvideRef<sendgrid::v3::Sender> for AppContext {
+    fn provide(&self) -> &sendgrid::v3::Sender {
+        self.sendgrid()
+    }
+}
+
+#[cfg(feature = "email-sendgrid")]
+impl Provide<sendgrid::v3::Sender> for AppContext {
+    fn provide(&self) -> sendgrid::v3::Sender {
+        self.sendgrid().clone()
+    }
+}
+
+#[cfg(feature = "sidekiq")]
+pub struct RedisEnqueue(sidekiq::RedisPool);
+#[cfg(feature = "sidekiq")]
+pub struct RedisFetch(sidekiq::RedisPool);
+
+#[cfg(feature = "sidekiq")]
+impl std::ops::Deref for RedisEnqueue {
+    type Target = sidekiq::RedisPool;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+#[cfg(feature = "sidekiq")]
+impl std::ops::Deref for RedisFetch {
+    type Target = sidekiq::RedisPool;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+#[cfg(feature = "sidekiq")]
+impl Provide<RedisEnqueue> for AppContext {
+    fn provide(&self) -> RedisEnqueue {
+        RedisEnqueue(self.redis_enqueue().clone())
+    }
+}
+
+#[cfg(feature = "sidekiq")]
+impl ProvideRef<RedisEnqueue> for AppContext {
+    fn provide(&self) -> &RedisEnqueue {
+        self.inner.redis_enqueue()
+    }
+}
+
+#[cfg(feature = "sidekiq")]
+impl Provide<Option<RedisFetch>> for AppContext {
+    fn provide(&self) -> Option<RedisFetch> {
+        self.redis_fetch()
+            .as_ref()
+            .map(|redis_fetch| RedisFetch(redis_fetch.clone()))
     }
 }
 
@@ -289,10 +421,11 @@ struct AppContextInner {
         >,
     >,
     #[cfg(feature = "sidekiq")]
-    redis_enqueue: sidekiq::RedisPool,
+    redis_enqueue: RedisEnqueue,
     /// The Redis connection pool used by [sidekiq::Processor] to fetch Sidekiq jobs from Redis.
     /// May be `None` if the [fetch_pool.max_connections][crate::config::service::worker::sidekiq::ConnectionPool]
     /// config is set to zero, in which case the [sidekiq::Processor] would also not be started.
+    // todo: In the next breaking version, wrap the pool in the `RedisFetch` new-type
     #[cfg(feature = "sidekiq")]
     redis_fetch: Option<sidekiq::RedisPool>,
     #[cfg(all(feature = "sidekiq", feature = "test-containers"))]
@@ -340,7 +473,7 @@ impl AppContextInner {
     }
 
     #[cfg(feature = "sidekiq")]
-    fn redis_enqueue(&self) -> &sidekiq::RedisPool {
+    fn redis_enqueue(&self) -> &RedisEnqueue {
         &self.redis_enqueue
     }
 
