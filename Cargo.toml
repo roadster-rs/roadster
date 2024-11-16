@@ -30,6 +30,7 @@ otel = ["dep:opentelemetry", "dep:opentelemetry_sdk", "dep:opentelemetry-otlp", 
 grpc = ["dep:tonic"]
 testing = ["dep:insta", "dep:rstest", "dep:testcontainers-modules"]
 test-containers = ["testing", "dep:testcontainers-modules"]
+testing-mocks = ["testing", "dep:mockall"]
 config-yml = ["config/yaml"]
 
 [dependencies]
@@ -96,6 +97,7 @@ tonic = { workspace = true, optional = true }
 insta = { workspace = true, optional = true }
 rstest = { workspace = true, optional = true }
 testcontainers-modules = { workspace = true, features = ["postgres", "redis"], optional = true }
+mockall = { workspace = true, optional = true }
 
 # Others
 anyhow = { workspace = true }
@@ -128,7 +130,7 @@ reqwest = { workspace = true }
 [dev-dependencies]
 cargo-husky = { version = "1.5.0", default-features = false, features = ["user-hooks"] }
 insta = { workspace = true, features = ["json"] }
-mockall = "0.13.0"
+mockall = { workspace = true }
 mockall_double = "0.3.1"
 rstest = { workspace = true }
 
@@ -174,6 +176,7 @@ rusty-sidekiq = { version = "0.11.0", default-features = false }
 insta = { version = "1.39.0", features = ["toml", "filters"] }
 rstest = { version = "0.23.0", default-features = false }
 testcontainers-modules = { version = "0.11.3" }
+mockall = "0.13.0"
 
 # Others
 # Todo: minimize tokio features included in `roadster`
