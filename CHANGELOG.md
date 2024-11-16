@@ -13,10 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `Provide` and `ProvideRef` traits to provide `AppContext` objects ([#510](https://github.com/roadster-rs/roadster/pull/510))
 
-### Other
-
-- Use justfile command to run coverage ([#509](https://github.com/roadster-rs/roadster/pull/509))
-
 ## [0.6.18](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.17...roadster-v0.6.18) - 2024-11-15
 
 ### Added
