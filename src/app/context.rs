@@ -247,7 +247,9 @@ impl ProvideRef<DatabaseConnection> for AppContext {
     }
 }
 
-#[cfg(feature = "db-sql")]
+/// Unfortunately, [`Provide<DatabaseConnection>`] can not be implemented when the `sea-orm/mock`
+/// feature is enabled because `MockDatabase` is not [`Clone`]
+#[cfg(all(feature = "db-sql", not(feature = "testing-mocks")))]
 impl Provide<DatabaseConnection> for AppContext {
     fn provide(&self) -> DatabaseConnection {
         self.db().clone()

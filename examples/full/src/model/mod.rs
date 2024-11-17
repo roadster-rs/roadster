@@ -6,3 +6,5 @@
 /// be in the same crate as our application-specific logic in order to use `impl` on the models
 /// contained in [`entity`].
 pub mod entity;
+
+pub mod user;

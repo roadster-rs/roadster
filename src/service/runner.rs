@@ -240,7 +240,7 @@ where
 
     info!("Received shutdown signal. Shutting down gracefully.");
 
-    #[cfg(feature = "db-sql")]
+    #[cfg(all(feature = "db-sql", not(feature = "testing-mocks")))]
     let db_close_result = {
         info!("Closing the DB connection pool.");
         context.db().clone().close().await
@@ -251,7 +251,7 @@ where
     info!("Running App::graceful_shutdown.");
     let app_graceful_shutdown_result = app_graceful_shutdown.await;
 
-    #[cfg(feature = "db-sql")]
+    #[cfg(all(feature = "db-sql", not(feature = "testing-mocks")))]
     db_close_result?;
     app_graceful_shutdown_result?;
 
