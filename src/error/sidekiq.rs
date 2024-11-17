@@ -33,3 +33,21 @@ impl From<bb8::RunError<sidekiq::RedisError>> for Error {
         Self::Sidekiq(SidekiqError::from(value))
     }
 }
+
+impl From<Error> for sidekiq::Error {
+    fn from(value: Error) -> Self {
+        match value {
+            Error::Sidekiq(err) => err.into(),
+            _ => sidekiq::Error::Any(Box::new(value)),
+        }
+    }
+}
+
+impl From<SidekiqError> for sidekiq::Error {
+    fn from(value: SidekiqError) -> Self {
+        match value {
+            SidekiqError::Sidekiq(err) => err,
+            _ => sidekiq::Error::Any(Box::new(value)),
+        }
+    }
+}
