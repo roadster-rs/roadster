@@ -9,17 +9,23 @@ use opentelemetry::trace::TracerProvider;
 #[cfg(feature = "otel")]
 use opentelemetry_otlp::WithExportConfig;
 #[cfg(feature = "otel")]
-use opentelemetry_sdk::metrics::reader::DefaultTemporalitySelector;
+use opentelemetry_otlp::{MetricExporter, SpanExporter};
+#[cfg(feature = "otel")]
+use opentelemetry_sdk::metrics::{PeriodicReader, SdkMeterProvider};
 #[cfg(feature = "otel")]
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 #[cfg(feature = "otel")]
 use opentelemetry_sdk::runtime::Tokio;
+#[cfg(feature = "otel")]
+use opentelemetry_sdk::trace::Config;
 #[cfg(feature = "otel")]
 use opentelemetry_semantic_conventions::resource::{SERVICE_NAME, SERVICE_VERSION};
 use std::str::FromStr;
 use tracing::Level;
 #[cfg(feature = "otel")]
 use tracing_opentelemetry::MetricsLayer;
+#[cfg(feature = "otel")]
+use tracing_opentelemetry::OpenTelemetryLayer;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::EnvFilter;
@@ -109,20 +115,19 @@ pub fn init_tracing(
     // Trace layer
     #[cfg(feature = "otel")]
     let oltp_traces_layer = if let Some(otlp_endpoint) = config.tracing.otlp_endpoint.as_ref() {
-        let otlp_tracer = opentelemetry_otlp::new_pipeline()
-            .tracing()
-            .with_exporter(
-                opentelemetry_otlp::new_exporter()
-                    .tonic()
-                    .with_endpoint(otlp_endpoint.to_string()),
-            )
-            .with_trace_config(
-                opentelemetry_sdk::trace::Config::default().with_resource(otel_resource.clone()),
-            )
-            .install_batch(Tokio)?
-            .tracer(service_name);
+        let exporter = SpanExporter::builder()
+            .with_tonic()
+            .with_endpoint(otlp_endpoint.to_string())
+            .build()?;
+        let provider = opentelemetry_sdk::trace::TracerProvider::builder()
+            .with_config(Config::default().with_resource(otel_resource.clone()))
+            .with_batch_exporter(exporter, Tokio)
+            .build();
+        opentelemetry::global::set_tracer_provider(provider.clone());
         // Create a tracing layer with the configured tracer
-        Some(tracing_opentelemetry::layer().with_tracer(otlp_tracer))
+        Some(OpenTelemetryLayer::new(
+            provider.tracer("tracing-otel-subscriber"),
+        ))
     } else {
         None
     };
@@ -130,21 +135,20 @@ pub fn init_tracing(
     // Metric layer
     #[cfg(feature = "otel")]
     let otlp_metrics_layer = if let Some(otlp_endpoint) = config.tracing.otlp_endpoint.as_ref() {
-        let builder = opentelemetry_otlp::new_pipeline()
-            .metrics(Tokio)
-            .with_exporter(
-                opentelemetry_otlp::new_exporter()
-                    .tonic()
-                    .with_endpoint(otlp_endpoint.clone()),
-            )
-            .with_resource(otel_resource)
-            .with_temporality_selector(DefaultTemporalitySelector::new());
-        let builder = if let Some(interval) = config.tracing.metrics_export_interval {
-            builder.with_period(interval)
+        let exporter = MetricExporter::builder()
+            .with_tonic()
+            .with_endpoint(otlp_endpoint.clone())
+            .build()?;
+        let reader = PeriodicReader::builder(exporter, Tokio);
+        let reader = if let Some(interval) = config.tracing.metrics_export_interval {
+            reader.with_interval(interval)
         } else {
-            builder
+            reader
         };
-        let provider = builder.build()?;
+        let provider = SdkMeterProvider::builder()
+            .with_reader(reader.build())
+            .with_resource(otel_resource.clone())
+            .build();
         opentelemetry::global::set_meter_provider(provider.clone());
         Some(MetricsLayer::new(provider))
     } else {
