@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.20](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.19...roadster-v0.6.20) - 2024-11-17
+
+### Added
+
+- Enable converting `roadster::Error` to `sidekiq::Error` ([#514](https://github.com/roadster-rs/roadster/pull/514))
+
+### Other
+
+- Use `MockProvideRef<DatabaseConnection>` in an example test ([#513](https://github.com/roadster-rs/roadster/pull/513))
+
 ## [0.6.19](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.18...roadster-v0.6.19) - 2024-11-16
 
 ### Added
