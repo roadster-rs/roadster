@@ -8,6 +8,8 @@ pub mod app_state;
 pub mod cli;
 pub mod health_check;
 pub mod lifecycle;
+#[cfg(feature = "db-sql")]
+pub mod model;
 pub mod worker;
 
 cfg_if! {

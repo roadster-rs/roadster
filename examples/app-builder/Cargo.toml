@@ -9,7 +9,7 @@ publish = false
 [features]
 default = ["cli", "db-sql"]
 cli = ["roadster/cli", "clap"]
-db-sql = ["roadster/db-sql", "app-builder-entity", "app-builder-migration", "sea-orm"]
+db-sql = ["roadster/db-sql", "app-builder-migration", "sea-orm"]
 
 [dependencies]
 roadster = { version = "0.6", path = "../..", default-features = false, features = ["open-api", "sidekiq"] }
@@ -26,7 +26,6 @@ axum = { workspace = true }
 schemars = { workspace = true }
 
 # DB
-app-builder-entity = { path = "entity", optional = true }
 app-builder-migration = { path = "migration", optional = true }
 sea-orm = { workspace = true, optional = true }
 
