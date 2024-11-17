@@ -1,4 +1,4 @@
-//! [`model`] contains our application-specific logic for interacting with the DB. It is kept
+//! This module contains our application-specific logic for interacting with the DB. It is kept
 //! separate from the [`entity`] module because SeaORM will override all code in the [`entity`]
 //! module when we generate code from our DB schema.
 
