@@ -41,6 +41,13 @@ serde = { workspace = true, features = ["derive"] }
 lettre = { workspace = true, features = ["pool"] }
 sendgrid = { workspace = true }
 
+# Other
+uuid = { workspace = true, features = ["v7"] }
+chrono = { workspace = true, features = ["serde"] }
+
+[dev-dependencies]
+roadster = { version = "0.6", path = "../..", features = ["testing-mocks"] }
+
 [build-dependencies]
 tonic-build = { workspace = true }
 vergen = { workspace = true }

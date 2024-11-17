@@ -30,7 +30,7 @@ otel = ["dep:opentelemetry", "dep:opentelemetry_sdk", "dep:opentelemetry-otlp", 
 grpc = ["dep:tonic"]
 testing = ["dep:insta", "dep:rstest", "dep:testcontainers-modules"]
 test-containers = ["testing", "dep:testcontainers-modules"]
-testing-mocks = ["testing", "dep:mockall"]
+testing-mocks = ["testing", "dep:mockall", "sea-orm?/mock"]
 config-yml = ["config/yaml"]
 
 [dependencies]
@@ -110,10 +110,10 @@ strum_macros = { workspace = true }
 itertools = { workspace = true }
 toml = "0.8.0"
 url = { version = "2.5.0", features = ["serde"] }
-uuid = { version = "1.10.0", features = ["v4", "serde"] }
+uuid = { workspace = true }
 futures = "0.3.30"
 futures-core = "0.3.31"
-chrono = { version = "0.4.34", features = ["serde"] }
+chrono = { workspace = true, features = ["serde"] }
 byte-unit = { version = "5.0.0", features = ["serde"] }
 convert_case = "0.6.0"
 const_format = "0.2.32"
@@ -198,6 +198,8 @@ cargo-manifest = "0.15.0"
 typed-builder = "0.20.0"
 rand = "0.8.5"
 thiserror = "2.0.0"
+uuid = { version = "1.10.0", features = ["v4", "serde"] }
+chrono = { version = "0.4.34", features = ["serde"] }
 
 [package.metadata.docs.rs]
 # Have docs.rs pass `--all-features` to ensure all features have their documentation built.
