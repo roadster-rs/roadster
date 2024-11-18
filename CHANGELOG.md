@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.21](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.20...roadster-v0.6.21) - 2024-11-18
+
+### Other
+
+- Upgrade otel/tracing dependencies ([#516](https://github.com/roadster-rs/roadster/pull/516))
+
 ## [0.6.20](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.19...roadster-v0.6.20) - 2024-11-17
 
 ### Added
