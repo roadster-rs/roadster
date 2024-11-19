@@ -66,6 +66,12 @@ docker run -d -p 6379:6379 redis:7.2-alpine
 
 ## Start local SMTP server instance
 
+### [Mailpit](https://github.com/axllent/mailpit)
+
+```shell
+docker run -d -p 8025:8025 -p 1025:1025 axllent/mailpit
+```
+
 ### [smtp4dev](https://github.com/rnwood/smtp4dev)
 
 ```shell
