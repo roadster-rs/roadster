@@ -61,13 +61,16 @@ missing features are not planned but we'd be open to adding if there was enough 
 | Tracing via the [tracing](https://crates.io/crates/tracing) crate                                                             | ✅              | ✅                                         |
 | &ensp;↳ Built-in support for trace/metric exporting via OpenTelemetry                                                         | ✅              | ❌ <!--todo: double check-->               |
 | [insta](https://crates.io/crates/insta) snapshot utilities                                                                    | ✅              | ✅                                         |
-| Data seeding and cleanup for tests                                                                                            | ❌*             | ✅<br/>(⚠️ makes tests non-parallelizable) |
+| Data seeding and cleanup hooks for tests                                                                                      | ❌*             | ✅<br/>(⚠️ makes tests non-parallelizable) |
+| Mock DB support for tests                                                                                                     | ✅              | ❌                                         |
+| &ensp;↳ via SeaORM's [MockDatabase](https://www.sea-ql.org/SeaORM/docs/write-test/mock/)                                      | ✅              | ❌                                         |
+| &ensp;↳ via [TestContainers](https://testcontainers.com/)                                                                     | ✅              | ❌                                         |
 | Allows following any design pattern                                                                                           | ✅              | ❌<br/>(MVC only)                          |
 | Lifecycle hooks                                                                                                               | ✅              | ✅                                         |
 | &ensp;↳ Customizable shutdown signal                                                                                          | ✅              | ❌                                         |
 | HTML rendering                                                                                                                | ✅              | ✅                                         |
 | &ensp;↳ Built-in                                                                                                              | ❌              | ✅                                         |
-| &ensp;↳ via 3rd party integration, e.g. [Leptos](https://crates.io/crates/leptos)                                             | ✅              | ❌                                         |
+| &ensp;↳ via 3rd party integration, e.g. [Leptos](https://crates.io/crates/leptos)                                             | ✅              | ⚠️ (Partial support)                      |
 | Deployment config generation                                                                                                  | ❌              | ✅                                         |
 | Starter templates                                                                                                             | ❌*             | ✅                                         |
 
