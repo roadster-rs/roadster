@@ -17,8 +17,6 @@ use opentelemetry_sdk::propagation::TraceContextPropagator;
 #[cfg(feature = "otel")]
 use opentelemetry_sdk::runtime::Tokio;
 #[cfg(feature = "otel")]
-use opentelemetry_sdk::trace::Config;
-#[cfg(feature = "otel")]
 use opentelemetry_semantic_conventions::resource::{SERVICE_NAME, SERVICE_VERSION};
 use std::str::FromStr;
 use tracing::Level;
@@ -120,7 +118,7 @@ pub fn init_tracing(
             .with_endpoint(otlp_endpoint.to_string())
             .build()?;
         let provider = opentelemetry_sdk::trace::TracerProvider::builder()
-            .with_config(Config::default().with_resource(otel_resource.clone()))
+            .with_resource(otel_resource.clone())
             .with_batch_exporter(exporter, Tokio)
             .build();
         opentelemetry::global::set_tracer_provider(provider.clone());
