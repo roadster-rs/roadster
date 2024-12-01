@@ -106,7 +106,7 @@ check-docs:
     RUSTDOCFLAGS="-D rustdoc::all -A rustdoc::private_intra_doc_links" cargo doc --all-features --no-deps
 
 check-msrv:
-    cargo minimal-versions check --direct --all-features --no-dev-deps
+    cargo minimal-versions check --direct --all-features
 
 # Run a suite of checks. These checks are fairly comprehensive and will catch most issues. However, they are still less than what is run in CI.
 check: check-fmt check-no-features check-default-features check-all-features check-docs check-msrv
