@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.21](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.20...roadster-v0.6.21) - 2024-12-01
+
+### Other
+
+- Update OTEL patch version and remove a deprecated fn call ([#527](https://github.com/roadster-rs/roadster/pull/527))
+- Update Loco comparisons and add some links to other sections ([#522](https://github.com/roadster-rs/roadster/pull/522))
+- Add mailpit to SMTP dev server examples ([#521](https://github.com/roadster-rs/roadster/pull/521))
+- *(deps)* bump codecov/codecov-action from 4 to 5 ([#517](https://github.com/roadster-rs/roadster/pull/517))
+- Upgrade otel/tracing dependencies ([#516](https://github.com/roadster-rs/roadster/pull/516))
+
 ## [0.6.20](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.19...roadster-v0.6.20) - 2024-11-17
 
 ### Added
