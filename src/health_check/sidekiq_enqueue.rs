@@ -1,12 +1,12 @@
 use crate::api::core::health::redis_health;
-use crate::app::context::AppContext;
+use crate::app::context::{AppContext, AppContextWeak};
 use crate::error::RoadsterResult;
-use crate::health_check::{CheckResponse, HealthCheck};
+use crate::health_check::{missing_context_response, CheckResponse, HealthCheck};
 use async_trait::async_trait;
 use tracing::instrument;
 
 pub struct SidekiqEnqueueHealthCheck {
-    pub(crate) context: AppContext,
+    pub(crate) context: AppContextWeak,
 }
 
 #[async_trait]
@@ -16,12 +16,20 @@ impl HealthCheck for SidekiqEnqueueHealthCheck {
     }
 
     fn enabled(&self) -> bool {
-        enabled(&self.context)
+        self.context
+            .upgrade()
+            .map(|context| enabled(&context))
+            .unwrap_or_default()
     }
 
     #[instrument(skip_all)]
     async fn check(&self) -> RoadsterResult<CheckResponse> {
-        Ok(redis_health(self.context.redis_enqueue(), None).await)
+        let context = self.context.upgrade();
+        let response = match context {
+            Some(context) => redis_health(context.redis_enqueue(), None).await,
+            None => missing_context_response(),
+        };
+        Ok(response)
     }
 }
 

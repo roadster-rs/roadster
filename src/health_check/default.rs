@@ -17,19 +17,19 @@ pub fn default_health_checks(
     let health_checks: Vec<Arc<dyn HealthCheck>> = vec![
         #[cfg(feature = "db-sql")]
         Arc::new(DatabaseHealthCheck {
-            context: context.clone(),
+            context: context.downgrade(),
         }),
         #[cfg(feature = "sidekiq")]
         Arc::new(SidekiqEnqueueHealthCheck {
-            context: context.clone(),
+            context: context.downgrade(),
         }),
         #[cfg(feature = "sidekiq")]
         Arc::new(SidekiqFetchHealthCheck {
-            context: context.clone(),
+            context: context.downgrade(),
         }),
         #[cfg(feature = "email-smtp")]
         Arc::new(SmtpHealthCheck {
-            context: context.clone(),
+            context: context.downgrade(),
         }),
     ];
 
