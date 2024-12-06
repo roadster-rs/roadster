@@ -1,13 +1,13 @@
 use crate::api::core::health::redis_health;
-use crate::app::context::AppContext;
+use crate::app::context::{AppContext, AppContextWeak};
 use crate::error::RoadsterResult;
-use crate::health_check::{CheckResponse, HealthCheck};
+use crate::health_check::{missing_context_response, CheckResponse, HealthCheck};
 use anyhow::anyhow;
 use async_trait::async_trait;
 use tracing::instrument;
 
 pub struct SidekiqFetchHealthCheck {
-    pub(crate) context: AppContext,
+    pub(crate) context: AppContextWeak,
 }
 
 #[async_trait]
@@ -17,19 +17,26 @@ impl HealthCheck for SidekiqFetchHealthCheck {
     }
 
     fn enabled(&self) -> bool {
-        enabled(&self.context)
+        self.context
+            .upgrade()
+            .map(|context| enabled(&context))
+            .unwrap_or_default()
     }
 
     #[instrument(skip_all)]
     async fn check(&self) -> RoadsterResult<CheckResponse> {
-        Ok(redis_health(
-            self.context
-                .redis_fetch()
-                .as_ref()
-                .ok_or_else(|| anyhow!("Redis fetch connection pool is not present"))?,
-            None,
-        )
-        .await)
+        let context = self.context.upgrade();
+        let response = match context {
+            Some(context) => {
+                let redis = context
+                    .redis_fetch()
+                    .as_ref()
+                    .ok_or_else(|| anyhow!("Redis fetch connection pool is not present"))?;
+                redis_health(redis, None).await
+            }
+            None => missing_context_response(),
+        };
+        Ok(response)
     }
 }
 

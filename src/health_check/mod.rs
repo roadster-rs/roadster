@@ -16,6 +16,8 @@ use schemars::JsonSchema;
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_with::{serde_as, skip_serializing_none};
+use std::time::Duration;
+use tracing::error;
 use typed_builder::TypedBuilder;
 
 #[serde_as]
@@ -27,11 +29,14 @@ use typed_builder::TypedBuilder;
 pub struct CheckResponse {
     pub status: Status,
     /// Total latency of checking the health of the resource in milliseconds.
-    #[builder(setter(transform = |duration: std::time::Duration| duration.as_millis() ))]
+    #[builder(setter(transform = |duration: std::time::Duration| duration.as_millis()))]
     pub latency: u128,
     /// Custom health data, for example, separate latency measurements for acquiring a connection
     /// from a resource pool vs making a request with the connection.
-    #[builder(default, setter(transform = |custom: impl serde::Serialize| serialize_custom(custom) ))]
+    #[builder(
+        default,
+        setter(transform = |custom: impl serde::Serialize| serialize_custom(custom))
+    )]
     pub custom: Option<Value>,
 }
 
@@ -85,4 +90,18 @@ pub trait HealthCheck: Send + Sync {
 
     /// Run the [`HealthCheck`].
     async fn check(&self) -> RoadsterResult<CheckResponse>;
+}
+
+// This method is not used in all feature configurations.
+#[allow(dead_code)]
+fn missing_context_response() -> CheckResponse {
+    error!("AppContext missing");
+    CheckResponse::builder()
+        .status(Status::Err(
+            ErrorData::builder()
+                .msg("Unknown error".to_string())
+                .build(),
+        ))
+        .latency(Duration::from_secs(0))
+        .build()
 }

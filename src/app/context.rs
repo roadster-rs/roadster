@@ -8,7 +8,7 @@ use anyhow::anyhow;
 use axum_core::extract::FromRef;
 #[cfg(feature = "db-sql")]
 use sea_orm::DatabaseConnection;
-use std::sync::{Arc, OnceLock};
+use std::sync::{Arc, OnceLock, Weak};
 
 #[cfg(not(test))]
 type Inner = AppContextInner;
@@ -18,6 +18,21 @@ type Inner = MockAppContextInner;
 #[derive(Clone)]
 pub struct AppContext {
     inner: Arc<Inner>,
+}
+
+/// A version of [`AppContext`] that holds a [`Weak`] pointer to the inner context. Useful for
+/// preventing reference cycles between things that are held in the [`AppContext`] and also
+/// need a reference to the [`AppContext`]; for example, [`HealthCheck`]s.
+#[derive(Clone)]
+pub struct AppContextWeak {
+    inner: Weak<Inner>,
+}
+
+impl AppContextWeak {
+    /// Get an [`AppContext`] from [`Self`].
+    pub fn upgrade(&self) -> Option<AppContext> {
+        self.inner.upgrade().map(|inner| AppContext { inner })
+    }
 }
 
 impl AppContext {
@@ -116,6 +131,13 @@ impl AppContext {
         };
 
         Ok(context)
+    }
+
+    /// Get an [`AppContextWeak`] from [`Self`].
+    pub fn downgrade(&self) -> AppContextWeak {
+        AppContextWeak {
+            inner: Arc::downgrade(&self.inner),
+        }
     }
 
     #[cfg(test)]

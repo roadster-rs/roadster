@@ -9,7 +9,7 @@ license = "MIT OR Apache-2.0"
 keywords = ["web", "framework"]
 categories = ["web-programming", "web-programming::http-server"]
 # Determined using `cargo msrv` -- https://github.com/foresterre/cargo-msrv
-rust-version = "1.77.2"
+rust-version = "1.81"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -153,8 +153,8 @@ schemars = "0.8.16"
 mime = "0.3.17"
 
 # DB
-sea-orm = { version = "1.1.0" }
-sea-orm-migration = { version = "1.1.0" }
+sea-orm = { version = "1.1.2" }
+sea-orm-migration = { version = "1.1.2" }
 
 # Email
 lettre = "0.11.0"
