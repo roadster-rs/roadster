@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.22](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.21...roadster-v0.6.22) - 2024-12-07
+
+### Added
+
+- Add `AppContextWeak` to prevent reference cycles ([#529](https://github.com/roadster-rs/roadster/pull/529))
+
 ## [0.6.21](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.20...roadster-v0.6.21) - 2024-12-01
 
 ### Other
