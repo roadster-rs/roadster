@@ -11,6 +11,8 @@ const BEARER_TOKEN_REGEX: &str = r"Bearer [\w\.-]+";
 const POSTGRES_URI_REGEX: &str = r"postgres://(\w|\d|@|:|\/|\.)+";
 const REDIS_URI_REGEX: &str = r"redis://(\w|\d|@|:|\/|\.)+";
 const SMTP_URI_REGEX: &str = r"smtp://(\w|\d|@|:|\/|\.)+";
+// https://stackoverflow.com/questions/3143070/regex-to-match-an-iso-8601-datetime-string
+const TIMESTAMP_REGEX: &str = r"(\d{4}-[01]\d-[0-3]\d\s?T?\s?[0-2]\d:[0-5]\d:[0-5]\d\.\d+\s?([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\d\s?T?\s?[0-2]\d:[0-5]\d:[0-5]\d\s?([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\d\s?T?\s?[0-2]\d:[0-5]\d\s?([+-][0-2]\d:[0-5]\d|Z))";
 
 /// Configure which settings to apply on the snapshot [Settings].
 ///
@@ -91,23 +93,28 @@ pub struct TestCaseConfig {
     #[builder(default = true)]
     pub redact_auth_tokens: bool,
 
-    /// Whether to Postgres URIs from snapshots. This is useful for tests involving
+    /// Whether to redact Postgres URIs from snapshots. This is useful for tests involving
     /// dynamically created Postgres instances that will be different on every test run, or involve
     /// real Postgres instances that you don't want leaked in your source code.
     #[builder(default = true)]
     pub redact_postgres_uri: bool,
 
-    /// Whether to Redis URIs from snapshots. This is useful for tests involving
+    /// Whether to redact Redis URIs from snapshots. This is useful for tests involving
     /// dynamically created Redis instances that will be different on every test run, or involve
     /// real Redis instances that you don't want leaked in your source code.
     #[builder(default = true)]
     pub redact_redis_uri: bool,
 
-    /// Whether to SMTP URIs from snapshots. This is useful for tests involving
+    /// Whether to redact SMTP URIs from snapshots. This is useful for tests involving
     /// dynamically created SMTP instances that will be different on every test run, or involve
     /// real SMTP instances that you don't want leaked in your source code.
     #[builder(default = true)]
     pub redact_smtp_uri: bool,
+
+    /// Whether to redact timestamps. This is useful for tests involving
+    /// dynamically created timestamps that will be different on every test run.
+    #[builder(default = true)]
+    pub redact_timestamp: bool,
 
     /// Whether to automatically bind the [Settings] to the current scope. If `true`, the settings
     /// will be automatically applied for the test in which the [TestCase] was built. If `false`,
@@ -206,6 +213,9 @@ impl From<TestCaseConfig> for TestCase {
         if value.redact_smtp_uri {
             snapshot_redact_smtp_uri(&mut settings);
         }
+        if value.redact_timestamp {
+            snapshot_redact_timestamp(&mut settings);
+        }
 
         let _settings_guard = if value.bind_scope {
             Some(settings.bind_to_scope())
@@ -262,6 +272,13 @@ pub fn snapshot_redact_redis_uri(settings: &mut Settings) -> &mut Settings {
 /// sub-strings matching [`SMTP_URI_REGEX`] with `smtp://[Sensitive]`.
 pub fn snapshot_redact_smtp_uri(settings: &mut Settings) -> &mut Settings {
     settings.add_filter(SMTP_URI_REGEX, "smtp://[Sensitive]");
+    settings
+}
+
+/// Redact instances of timestamps in snapshots. Applies a filter on the [Settings] to replace
+/// sub-strings matching [`TIMESTAMP_REGEX`] with `[timestamp]`.
+pub fn snapshot_redact_timestamp(settings: &mut Settings) -> &mut Settings {
+    settings.add_filter(TIMESTAMP_REGEX, "[timestamp]");
     settings
 }
 
