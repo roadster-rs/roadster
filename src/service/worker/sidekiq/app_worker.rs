@@ -65,6 +65,14 @@ where
         Ok(())
     }
 
+    /// Enqueue the worker into its Sidekiq queue. This is a helper method around [Worker::perform_in]
+    /// so the caller can simply provide the app state instead of needing to access the
+    /// [sidekiq::RedisPool] from inside the app state.
+    async fn enqueue_delayed(state: &S, delay: Duration, args: Args) -> RoadsterResult<()> {
+        Self::perform_in(AppContext::from_ref(state).redis_enqueue(), delay, args).await?;
+        Ok(())
+    }
+
     /// Provide the [AppWorkerConfig] for [Self]. The default implementation populates the
     /// [AppWorkerConfig] using the values from the corresponding methods on [Self], e.g.,
     /// [Self::max_retries].
