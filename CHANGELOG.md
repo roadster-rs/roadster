@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.23](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.22...roadster-v0.6.23) - 2024-12-24
+
+### Added
+
+- Enable redacting timestamps from `insta` snapshots (#532)
+- Add `AppWorker#enqueue_delayed` (#531)
+
 ## [0.6.22](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.21...roadster-v0.6.22) - 2024-12-07
 
 ### Added
