@@ -1,6 +1,7 @@
 ---
 source: src/migration/user/tests.rs
 expression: user_migrations
+snapshot_kind: text
 ---
 [
     "m20240714_203551_create_user_table_uuid_pk",
@@ -12,4 +13,5 @@ expression: user_migrations
     "m20240729_002615_password_updated_at_trigger",
     "m20241022_065427_case_insensitive_collation",
     "m20241022_072216_case_insensitive_username_email",
+    "m20241226_080735_pending_email",
 ]
