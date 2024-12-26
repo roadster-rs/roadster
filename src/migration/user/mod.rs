@@ -12,6 +12,7 @@ pub mod m20240729_002549_password_updated_at_function;
 pub mod m20240729_002615_password_updated_at_trigger;
 pub mod m20241022_072216_case_insensitive_username_email;
 pub mod m20241226_080735_pending_email;
+mod m20241226_203420_email_change_validation_timestamps;
 #[cfg(test)]
 mod tests;
 
@@ -49,6 +50,10 @@ pub enum User {
     DeletedAt,
     /// The user's new email address that has not yet been confirmed.
     PendingEmail,
+    /// The timestamp when the new email address was confirmed.
+    EmailChangeNewConfirmedAt,
+    /// The timestamp when the user confirmed the email change was authorized.
+    EmailChangeCurrentConfirmedAt,
 }
 
 /// The collection of migrations defined to create a `user` table. Relevant [MigrationTrait]s
@@ -77,6 +82,7 @@ impl MigratorTrait for UserMigrator {
             Box::new(m20241022_065427_case_insensitive_collation::Migration),
             Box::new(m20241022_072216_case_insensitive_username_email::Migration),
             Box::new(m20241226_080735_pending_email::Migration),
+            Box::new(m20241226_203420_email_change_validation_timestamps::Migration),
         ]
     }
 }
