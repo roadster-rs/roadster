@@ -40,8 +40,6 @@ pub enum User {
     LastSignInAt,
     RecoverySentAt,
     RecoveryToken,
-    /// The user's new email address that has not yet been confirmed.
-    PendingEmail,
     EmailChangeSentAt,
     /// Token sent to the new email to confirm it's a valid email and the user has access to it.
     EmailChangeTokenNew,
@@ -49,6 +47,8 @@ pub enum User {
     EmailChangeTokenCurrent,
     /// When the user was deleted.
     DeletedAt,
+    /// The user's new email address that has not yet been confirmed.
+    PendingEmail,
 }
 
 /// The collection of migrations defined to create a `user` table. Relevant [MigrationTrait]s
