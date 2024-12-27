@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.24](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.23...roadster-v0.6.24) - 2024-12-27
+
+### Added
+
+- Add timestamps for when email change is confirmed (#537)
+- Add User column to store the user's new email before it's confirmed (#536)
+
 ## [0.6.23](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.22...roadster-v0.6.23) - 2024-12-24
 
 ### Added
