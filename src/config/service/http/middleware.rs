@@ -1,10 +1,12 @@
 use crate::app::context::AppContext;
 use crate::config::CustomConfig;
+use crate::service::http::middleware::cache_control::CacheControlConfig;
 use crate::service::http::middleware::catch_panic::CatchPanicConfig;
 use crate::service::http::middleware::compression::{
     RequestDecompressionConfig, ResponseCompressionConfig,
 };
 use crate::service::http::middleware::cors::CorsConfig;
+use crate::service::http::middleware::etag::EtagConfig;
 use crate::service::http::middleware::request_id::{PropagateRequestIdConfig, SetRequestIdConfig};
 use crate::service::http::middleware::sensitive_headers::{
     SensitiveRequestHeadersConfig, SensitiveResponseHeadersConfig,
@@ -52,6 +54,10 @@ pub struct Middleware {
     pub cors: MiddlewareConfig<CorsConfig>,
 
     pub request_response_logging: MiddlewareConfig<RequestResponseLoggingConfig>,
+
+    pub cache_control: MiddlewareConfig<CacheControlConfig>,
+
+    pub etag: MiddlewareConfig<EtagConfig>,
 
     /// Allows providing configs for custom middleware. Any configs that aren't pre-defined above
     /// will be collected here.

@@ -30,6 +30,15 @@ priority = 0
 [service.http.middleware.response-compression]
 priority = 0
 
+[service.http.middleware.cache-control]
+priority = 0
+max-age = 86400
+
+[service.http.middleware.cache-control.content-types]
+
+[service.http.middleware.etag]
+priority = 0
+
 [service.http.middleware.request-decompression]
 priority = -9960
 
