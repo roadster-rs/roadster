@@ -1,7 +1,9 @@
 use crate::app::context::AppContext;
+use crate::service::http::middleware::cache_control::CacheControlMiddleware;
 use crate::service::http::middleware::catch_panic::CatchPanicMiddleware;
 use crate::service::http::middleware::compression::RequestDecompressionMiddleware;
 use crate::service::http::middleware::cors::CorsMiddleware;
+use crate::service::http::middleware::etag::EtagMiddleware;
 use crate::service::http::middleware::request_id::{
     PropagateRequestIdMiddleware, SetRequestIdMiddleware,
 };
@@ -33,6 +35,8 @@ where
         Box::new(RequestBodyLimitMiddleware),
         Box::new(CorsMiddleware),
         Box::new(RequestResponseLoggingMiddleware),
+        Box::new(CacheControlMiddleware),
+        Box::new(EtagMiddleware),
     ];
 
     middleware
@@ -65,6 +69,16 @@ mod tests {
         // Arrange
         let mut config = AppConfig::test(None).unwrap();
         config.service.http.custom.middleware.default_enable = default_enable;
+
+        config
+            .service
+            .http
+            .custom
+            .middleware
+            .cache_control
+            .custom
+            .content_types
+            .insert("text/css".to_string(), Default::default());
 
         let context = AppContext::test(Some(config), None, None).unwrap();
 

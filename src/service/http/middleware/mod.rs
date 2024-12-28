@@ -1,8 +1,10 @@
 pub mod any;
+pub mod cache_control;
 pub mod catch_panic;
 pub mod compression;
 pub mod cors;
 pub mod default;
+pub mod etag;
 pub mod request_id;
 pub mod sensitive_headers;
 pub mod size_limit;
