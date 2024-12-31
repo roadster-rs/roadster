@@ -118,21 +118,29 @@ where
             );
             debug!("Sidekiq.rs queues: {queues:?}");
             let processor = {
-                let num_workers = context
+                let config = context.config().service.sidekiq.custom.clone();
+                let num_workers = config.num_workers.to_usize().ok_or_else(|| {
+                    anyhow!(
+                        "Unable to convert num_workers `{}` to usize",
+                        context.config().service.sidekiq.custom.num_workers
+                    )
+                })?;
+                let processor_config: ProcessorConfig = Default::default();
+                let processor_config = processor_config
+                    .num_workers(num_workers)
+                    .balance_strategy(config.balance_strategy.into());
+
+                let processor_config = context
                     .config()
                     .service
                     .sidekiq
                     .custom
-                    .num_workers
-                    .to_usize()
-                    .ok_or_else(|| {
-                        anyhow!(
-                            "Unable to convert num_workers `{}` to usize",
-                            context.config().service.sidekiq.custom.num_workers
-                        )
-                    })?;
-                let processor_config: ProcessorConfig = Default::default();
-                let processor_config = processor_config.num_workers(num_workers);
+                    .queue_config
+                    .iter()
+                    .fold(processor_config, |processor_config, (queue, config)| {
+                        processor_config.queue_config(queue.clone(), config.into())
+                    });
+
                 let processor = sidekiq::Processor::new(redis_fetch.clone(), queues.clone())
                     .with_config(processor_config);
                 Processor::new(processor)
