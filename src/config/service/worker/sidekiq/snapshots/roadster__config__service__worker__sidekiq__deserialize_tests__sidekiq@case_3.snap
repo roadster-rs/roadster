@@ -3,6 +3,7 @@ source: src/config/service/worker/sidekiq/mod.rs
 expression: sidekiq
 ---
 num-workers = 1
+balance-strategy = 'round-robin'
 queues = ['foo']
 
 [redis]
@@ -20,3 +21,5 @@ max-retries = 5
 timeout = true
 max-duration = 60
 disable-argument-coercion = false
+
+[queue-config]

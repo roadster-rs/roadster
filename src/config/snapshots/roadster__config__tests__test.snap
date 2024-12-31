@@ -1,7 +1,6 @@
 ---
 source: src/config/mod.rs
 expression: config
-snapshot_kind: text
 ---
 environment = 'test'
 
@@ -139,6 +138,7 @@ port = 3001
 
 [service.sidekiq]
 num-workers = 16
+balance-strategy = 'round-robin'
 queues = []
 
 [service.sidekiq.redis]
@@ -156,6 +156,8 @@ max-retries = 25
 timeout = true
 max-duration = 60
 disable-argument-coercion = false
+
+[service.sidekiq.queue-config]
 [auth.jwt]
 secret = 'secret-test'
 
