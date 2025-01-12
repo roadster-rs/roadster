@@ -134,6 +134,9 @@ mockall = { workspace = true }
 mockall_double = "0.3.1"
 rstest = { workspace = true }
 
+[build-dependencies]
+rustc_version = { workspace = true }
+
 [workspace]
 members = [".", "examples/*", "book/examples/*", "private/*"]
 
@@ -200,6 +203,9 @@ rand = "0.8.5"
 thiserror = "2.0.0"
 uuid = { version = "1.10.0", features = ["v4", "serde"] }
 chrono = { version = "0.4.34", features = ["serde"] }
+
+# Build dependencies
+rustc_version = "0.4.1"
 
 [package.metadata.docs.rs]
 # Have docs.rs pass `--all-features` to ensure all features have their documentation built.
