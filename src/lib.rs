@@ -4,6 +4,7 @@
 #![deny(clippy::expect_used)]
 // Ignore the warning that the `coverage_nightly` cfg is not recognized.
 #![cfg_attr(test, allow(unexpected_cfgs))]
+#![feature(coverage_attribute)]
 
 pub mod api;
 pub mod app;
