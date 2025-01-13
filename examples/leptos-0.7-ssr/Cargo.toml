@@ -46,7 +46,7 @@ leptos_meta = { version = "0.7.0-rc1" }
 leptos_router = { version = "0.7.0-rc1" }
 leptos_config = { version = "0.7.0-rc1" }
 tower = { version = "0.5.2", features = ["full"], optional = true }
-tower-http = { version = "0.6.2", features = ["full"], optional = true }
+tower-http = { version = "0.6.0", features = ["full"], optional = true }
 wasm-bindgen = { version = "0.2.95", optional = true }
 
 # Defines a size-optimized profile for the WASM bundle in release mode
