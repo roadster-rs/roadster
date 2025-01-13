@@ -151,7 +151,7 @@ axum-core = "0.5.0"
 axum = "0.8.1"
 axum-extra = "0.10.0"
 tower-http = "0.6.0"
-tower = "0.5.0"
+tower = "0.5.2"
 schemars = "0.8.16"
 mime = "0.3.17"
 
