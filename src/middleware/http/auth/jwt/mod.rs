@@ -11,7 +11,6 @@ use crate::middleware::http::auth::jwt::ietf::Claims;
 #[cfg(all(feature = "jwt-openid", not(feature = "jwt-ietf")))]
 use crate::middleware::http::auth::jwt::openid::Claims;
 use crate::util::serde::{deserialize_from_str, serialize_to_str};
-use async_trait::async_trait;
 use axum::extract::{FromRef, FromRequestParts};
 use axum::http::request::Parts;
 use axum::RequestPartsExt;
@@ -44,7 +43,6 @@ pub struct Jwt<C = Claims> {
     pub claims: C,
 }
 
-#[async_trait]
 impl<S, C> FromRequestParts<S> for Jwt<C>
 where
     S: Clone + Send + Sync + 'static,
@@ -81,7 +79,6 @@ pub struct JwtCsrf<C = Claims> {
     pub csrf_status: CsrfStatus,
 }
 
-#[async_trait]
 impl<S, C> FromRequestParts<S> for JwtCsrf<C>
 where
     S: Clone + Send + Sync + 'static,
