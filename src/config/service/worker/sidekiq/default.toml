@@ -1,3 +1,6 @@
+[service.sidekiq]
+balance-strategy = "round-robin"
+
 [service.sidekiq.periodic]
 stale-cleanup = "auto-clean-stale"
 

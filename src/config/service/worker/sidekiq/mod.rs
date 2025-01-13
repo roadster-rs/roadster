@@ -1,6 +1,7 @@
 use crate::service::worker::sidekiq::app_worker::AppWorkerConfig;
 use config::{FileFormat, FileSourceString};
 use serde_derive::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use strum_macros::{EnumString, IntoStaticStr};
 use url::Url;
 use validator::Validate;
@@ -24,6 +25,17 @@ pub struct SidekiqServiceConfig {
     #[serde(default = "SidekiqServiceConfig::default_num_workers")]
     pub num_workers: u32,
 
+    /// The strategy for balancing the priority of fetching queues' jobs from Redis. Defaults
+    /// to [`BalanceStrategy::RoundRobin`].
+    ///
+    /// The Redis API used to fetch jobs ([brpop](https://redis.io/docs/latest/commands/brpop/))
+    /// checks queues for jobs in the order the queues are provided. This means that if the first
+    /// queue in the list provided to [`sidekiq::Processor::new`] always has an item, the other queues
+    /// will never have their jobs run. To mitigate this, a [`BalanceStrategy`] is provided
+    /// (configurable in this field) to ensure that no queue is starved indefinitely.
+    #[serde(default)]
+    pub balance_strategy: BalanceStrategy,
+
     /// The names of the worker queues to handle.
     // Todo: Allow overriding this via CLI args?
     #[serde(default)]
@@ -41,6 +53,12 @@ pub struct SidekiqServiceConfig {
     #[serde(default)]
     #[validate(nested)]
     pub app_worker: AppWorkerConfig,
+
+    /// Queue-specific configurations. The queues specified in this field do not need to match
+    /// the list of queues listed in the `queues` field.
+    #[serde(default)]
+    #[validate(nested)]
+    pub queue_config: BTreeMap<String, QueueConfig>,
 }
 
 impl SidekiqServiceConfig {
@@ -112,6 +130,59 @@ pub struct ConnectionPool {
     pub max_connections: Option<u32>,
 }
 
+#[derive(
+    Debug, Default, Clone, Eq, PartialEq, Serialize, Deserialize, EnumString, IntoStaticStr,
+)]
+#[serde(rename_all = "kebab-case")]
+#[strum(serialize_all = "kebab-case")]
+#[non_exhaustive]
+pub enum BalanceStrategy {
+    /// Rotate the list of queues by 1 every time jobs are fetched from Redis. This allows each
+    /// queue in the list to have an equal opportunity to have its jobs run.
+    #[default]
+    RoundRobin,
+    /// Do not modify the list of queues. Warning: This can lead to queue starvation! For example,
+    /// if the first queue in the list provided to [`sidekiq::Processor::new`] is heavily used and always
+    /// has a job available to run, then the jobs in the other queues will never be run.
+    None,
+}
+
+impl From<BalanceStrategy> for sidekiq::BalanceStrategy {
+    fn from(value: BalanceStrategy) -> Self {
+        match value {
+            BalanceStrategy::RoundRobin => sidekiq::BalanceStrategy::RoundRobin,
+            BalanceStrategy::None => sidekiq::BalanceStrategy::None,
+        }
+    }
+}
+
+#[derive(Debug, Default, Validate, Clone, Serialize, Deserialize)]
+#[serde(default, rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct QueueConfig {
+    /// Similar to `SidekiqServiceConfig#num_workers`, except allows configuring the number of
+    /// additional workers to dedicate to a specific queue. If provided, `num_workers` additional
+    /// workers will be created for this specific queue.
+    pub num_workers: Option<u32>,
+}
+
+impl From<QueueConfig> for sidekiq::QueueConfig {
+    fn from(value: QueueConfig) -> Self {
+        value
+            .num_workers
+            .iter()
+            .fold(Default::default(), |config, num_workers| {
+                config.num_workers(*num_workers as usize)
+            })
+    }
+}
+
+impl From<&QueueConfig> for sidekiq::QueueConfig {
+    fn from(value: &QueueConfig) -> Self {
+        value.clone().into()
+    }
+}
+
 #[cfg(test)]
 mod deserialize_tests {
     use super::*;
@@ -179,6 +250,39 @@ mod deserialize_tests {
         uri = "redis://localhost:6379"
         [periodic]
         stale-cleanup = "auto-clean-stale"
+        "#
+    )]
+    #[case(
+        r#"
+        num-workers = 1
+        balance-strategy = "none"
+        [redis]
+        uri = "redis://localhost:6379"
+        [periodic]
+        stale-cleanup = "auto-clean-stale"
+        "#
+    )]
+    #[case(
+        r#"
+        num-workers = 1
+        balance-strategy = "round-robin"
+        [redis]
+        uri = "redis://localhost:6379"
+        [periodic]
+        stale-cleanup = "auto-clean-stale"
+        "#
+    )]
+    #[case(
+        r#"
+        num-workers = 1
+        [redis]
+        uri = "redis://localhost:6379"
+        [periodic]
+        stale-cleanup = "auto-clean-stale"
+        [queue-config]
+        "foo" = { num-workers = 10 }
+        [queue-config.bar]
+        num-workers = 100
         "#
     )]
     #[cfg_attr(coverage_nightly, coverage(off))]

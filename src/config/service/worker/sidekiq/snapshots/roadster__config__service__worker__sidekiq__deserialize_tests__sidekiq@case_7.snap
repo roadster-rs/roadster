@@ -3,17 +3,15 @@ source: src/config/service/worker/sidekiq/mod.rs
 expression: sidekiq
 ---
 num-workers = 1
-balance-strategy = 'round-robin'
+balance-strategy = 'none'
 queues = []
 
 [redis]
 uri = 'redis://[Sensitive]'
 
 [redis.enqueue-pool]
-min-idle = 1
 
 [redis.fetch-pool]
-min-idle = 2
 
 [periodic]
 stale-cleanup = 'auto-clean-stale'
