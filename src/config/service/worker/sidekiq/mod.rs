@@ -30,7 +30,7 @@ pub struct SidekiqServiceConfig {
     ///
     /// The Redis API used to fetch jobs ([brpop](https://redis.io/docs/latest/commands/brpop/))
     /// checks queues for jobs in the order the queues are provided. This means that if the first
-    /// queue in the list provided to [`Processor::new`] always has an item, the other queues
+    /// queue in the list provided to [`sidekiq::Processor::new`] always has an item, the other queues
     /// will never have their jobs run. To mitigate this, a [`BalanceStrategy`] is provided
     /// (configurable in this field) to ensure that no queue is starved indefinitely.
     #[serde(default)]
@@ -142,7 +142,7 @@ pub enum BalanceStrategy {
     #[default]
     RoundRobin,
     /// Do not modify the list of queues. Warning: This can lead to queue starvation! For example,
-    /// if the first queue in the list provided to [`Processor::new`] is heavily used and always
+    /// if the first queue in the list provided to [`sidekiq::Processor::new`] is heavily used and always
     /// has a job available to run, then the jobs in the other queues will never be run.
     None,
 }
