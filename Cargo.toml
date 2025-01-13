@@ -115,7 +115,7 @@ futures = "0.3.30"
 futures-core = "0.3.31"
 chrono = { workspace = true, features = ["serde"] }
 byte-unit = { version = "5.0.0", features = ["serde"] }
-convert_case = "0.6.0"
+convert_case = "0.7.1"
 const_format = "0.2.32"
 typed-builder = { workspace = true }
 num-traits = "0.2.14"
@@ -173,11 +173,11 @@ tonic-build = { version = "0.12.3" }
 
 # Sidekiq
 # Todo: the default `rss-stats` feature has a dependency that currently can't be satisfied (memchr: ~2.3)
-rusty-sidekiq = { version = "0.11.0", default-features = false }
+rusty-sidekiq = { version = "0.12.0", default-features = false }
 
 # Testing
 insta = { version = "1.39.0", features = ["toml", "filters"] }
-rstest = { version = "0.23.0", default-features = false }
+rstest = { version = "0.24.0", default-features = false }
 testcontainers-modules = { version = "0.11.3" }
 mockall = "0.13.0"
 
@@ -196,11 +196,11 @@ cfg-if = "1.0.0"
 vergen = { version = "9.0.0" }
 vergen-gitcl = { version = "1.0.0" }
 reqwest = "0.12.8"
-itertools = "0.13.0"
-cargo-manifest = "0.15.0"
+itertools = "0.14.0"
+cargo-manifest = "0.18.0"
 typed-builder = "0.20.0"
 rand = "0.8.5"
-thiserror = "2.0.0"
+thiserror = "2.0.9"
 uuid = { version = "1.10.0", features = ["v4", "serde"] }
 chrono = { version = "0.4.34", features = ["serde"] }
 
