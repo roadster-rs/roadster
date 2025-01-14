@@ -46,7 +46,7 @@ uuid = { workspace = true, features = ["v7"] }
 chrono = { workspace = true, features = ["serde"] }
 
 [dev-dependencies]
-roadster = { version = "0.7", path = "../..", features = ["testing-mocks"] }
+roadster = { version = "0.7-alpha", path = "../..", features = ["testing-mocks"] }
 
 [build-dependencies]
 tonic-build = { workspace = true }
