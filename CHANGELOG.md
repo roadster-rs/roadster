@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.24...roadster-v0.7.0) - 2025-01-14
+
+### Added
+
+- Support sidekiq balance strategy and dedicated queues (#543)
+
+### Fixed
+
+- Propagate `Validate` calls to all app config fields (#557)
+
+### Other
+
+- [**breaking**] Update bb8 to v0.9 and sidekiq-rs to 0.13.1 (#555)
+- Add some details to config book page (#553)
+- Upgrade various crates that are used internally (#551)
+- [**breaking**] Upgrade Axum to 0.8 and Aide to 0.14 (#548)
+- Enable nightly coverage feature (#545)
+
 ## [0.6.24](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.23...roadster-v0.6.24) - 2024-12-28
 
 ### Added
