@@ -31,6 +31,7 @@ impl Default for CommonRequestIdConfig {
 #[non_exhaustive]
 pub struct SetRequestIdConfig {
     #[serde(flatten)]
+    #[validate(nested)]
     pub common: CommonRequestIdConfig,
 }
 
@@ -39,6 +40,7 @@ pub struct SetRequestIdConfig {
 #[non_exhaustive]
 pub struct PropagateRequestIdConfig {
     #[serde(flatten)]
+    #[validate(nested)]
     pub common: CommonRequestIdConfig,
 }
 

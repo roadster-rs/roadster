@@ -17,7 +17,9 @@ pub struct Initializer {
     #[serde(default = "default_true")]
     pub default_enable: bool,
 
+    #[validate(nested)]
     pub normalize_path: InitializerConfig<NormalizePathConfig>,
+
     /// Allows providing configs for custom initializers. Any configs that aren't pre-defined above
     /// will be collected here.
     ///
@@ -45,10 +47,11 @@ pub struct Initializer {
     /// }
     /// ```
     #[serde(flatten)]
+    #[validate(nested)]
     pub custom: BTreeMap<String, InitializerConfig<CustomConfig>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct CommonConfig {
@@ -79,12 +82,14 @@ impl CommonConfig {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
-pub struct InitializerConfig<T> {
+pub struct InitializerConfig<T: Validate> {
     #[serde(flatten)]
+    #[validate(nested)]
     pub common: CommonConfig,
     #[serde(flatten)]
+    #[validate(nested)]
     pub custom: T,
 }

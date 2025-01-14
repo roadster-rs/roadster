@@ -12,8 +12,10 @@ use crate::config::service::grpc::GrpcServiceConfig;
 use crate::config::service::http::HttpServiceConfig;
 #[cfg(feature = "sidekiq")]
 use crate::config::service::worker::sidekiq::SidekiqServiceConfig;
+use crate::config::CustomConfig;
 use crate::util::serde::default_true;
 use serde_derive::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use validator::Validate;
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
@@ -34,9 +36,13 @@ pub struct Service {
     #[cfg(feature = "sidekiq")]
     #[validate(nested)]
     pub sidekiq: ServiceConfig<SidekiqServiceConfig>,
+
+    #[serde(flatten)]
+    #[validate(nested)]
+    pub custom: BTreeMap<String, ServiceConfig<CustomConfig>>,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "kebab-case", default)]
 #[non_exhaustive]
 pub struct CommonConfig {
@@ -59,6 +65,7 @@ impl CommonConfig {
 #[non_exhaustive]
 pub struct ServiceConfig<T: Validate> {
     #[serde(flatten, default)]
+    #[validate(nested)]
     pub common: CommonConfig,
     #[serde(flatten)]
     #[validate(nested)]

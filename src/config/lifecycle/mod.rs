@@ -19,7 +19,7 @@ pub struct LifecycleHandler {
 
     #[cfg(feature = "db-sql")]
     #[validate(nested)]
-    pub db_migration: LifecycleHandlerConfig<()>,
+    pub db_migration: LifecycleHandlerConfig<crate::config::EmptyConfig>,
 
     /// Allows providing configs for custom lifecycle handlers. Any configs that aren't pre-defined
     /// above will be collected here.
@@ -47,10 +47,11 @@ pub struct LifecycleHandler {
     /// }
     /// ```
     #[serde(flatten)]
+    #[validate(nested)]
     pub custom: BTreeMap<String, LifecycleHandlerConfig<CustomConfig>>,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "kebab-case", default)]
 #[non_exhaustive]
 pub struct CommonConfig {
@@ -72,10 +73,12 @@ impl CommonConfig {
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
-pub struct LifecycleHandlerConfig<T> {
+pub struct LifecycleHandlerConfig<T: Validate> {
     #[serde(flatten, default)]
+    #[validate(nested)]
     pub common: CommonConfig,
     #[serde(flatten)]
+    #[validate(nested)]
     pub custom: T,
 }
 

@@ -31,32 +31,46 @@ pub struct Middleware {
     #[serde(default = "default_true")]
     pub default_enable: bool,
 
+    #[validate(nested)]
     pub sensitive_request_headers: MiddlewareConfig<SensitiveRequestHeadersConfig>,
 
+    #[validate(nested)]
     pub sensitive_response_headers: MiddlewareConfig<SensitiveResponseHeadersConfig>,
 
+    #[validate(nested)]
     pub set_request_id: MiddlewareConfig<SetRequestIdConfig>,
 
+    #[validate(nested)]
     pub propagate_request_id: MiddlewareConfig<PropagateRequestIdConfig>,
 
+    #[validate(nested)]
     pub tracing: MiddlewareConfig<TracingConfig>,
 
+    #[validate(nested)]
     pub catch_panic: MiddlewareConfig<CatchPanicConfig>,
 
+    #[validate(nested)]
     pub response_compression: MiddlewareConfig<ResponseCompressionConfig>,
 
+    #[validate(nested)]
     pub request_decompression: MiddlewareConfig<RequestDecompressionConfig>,
 
+    #[validate(nested)]
     pub timeout: MiddlewareConfig<TimeoutConfig>,
 
+    #[validate(nested)]
     pub size_limit: MiddlewareConfig<SizeLimitConfig>,
 
+    #[validate(nested)]
     pub cors: MiddlewareConfig<CorsConfig>,
 
+    #[validate(nested)]
     pub request_response_logging: MiddlewareConfig<RequestResponseLoggingConfig>,
 
+    #[validate(nested)]
     pub cache_control: MiddlewareConfig<CacheControlConfig>,
 
+    #[validate(nested)]
     pub etag: MiddlewareConfig<EtagConfig>,
 
     /// Allows providing configs for custom middleware. Any configs that aren't pre-defined above
@@ -86,10 +100,11 @@ pub struct Middleware {
     /// }
     /// ```
     #[serde(flatten)]
+    #[validate(nested)]
     pub custom: BTreeMap<String, MiddlewareConfig<CustomConfig>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct CommonConfig {
@@ -124,10 +139,12 @@ impl CommonConfig {
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
-pub struct MiddlewareConfig<T> {
+pub struct MiddlewareConfig<T: Validate> {
     #[serde(flatten)]
+    #[validate(nested)]
     pub common: CommonConfig,
     #[serde(flatten)]
+    #[validate(nested)]
     pub custom: T,
 }
 

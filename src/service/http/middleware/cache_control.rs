@@ -26,6 +26,7 @@ pub struct CacheControlConfig {
     /// The content types to set the `cache-control` header for and any custom configuration for
     /// each content type.
     #[serde(default)]
+    #[validate(nested)]
     pub content_types: BTreeMap<String, ContentTypeConfig>,
 }
 
