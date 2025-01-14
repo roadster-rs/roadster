@@ -1,5 +1,5 @@
 use crate::app::context::AppContext;
-use crate::config::CustomConfig;
+use crate::config::{CustomConfig, EmptyConfig};
 use crate::util::serde::default_true;
 use axum_core::extract::FromRef;
 use config::{FileFormat, FileSourceString};
@@ -20,19 +20,20 @@ pub struct HealthCheck {
     #[serde(default = "default_true")]
     pub default_enable: bool,
 
+    #[validate(nested)]
     pub max_duration: MaxDuration,
 
     #[cfg(feature = "db-sql")]
     #[validate(nested)]
-    pub database: HealthCheckConfig<()>,
+    pub database: HealthCheckConfig<EmptyConfig>,
 
     #[cfg(feature = "sidekiq")]
     #[validate(nested)]
-    pub sidekiq: HealthCheckConfig<()>,
+    pub sidekiq: HealthCheckConfig<EmptyConfig>,
 
     #[cfg(feature = "email-smtp")]
     #[validate(nested)]
-    pub smtp: HealthCheckConfig<()>,
+    pub smtp: HealthCheckConfig<EmptyConfig>,
 
     /// Allows providing configs for custom health checks. Any configs that aren't pre-defined above
     /// will be collected here.
@@ -60,6 +61,7 @@ pub struct HealthCheck {
     /// }
     /// ```
     #[serde(flatten)]
+    #[validate(nested)]
     pub custom: BTreeMap<String, HealthCheckConfig<CustomConfig>>,
 }
 
@@ -93,10 +95,12 @@ impl CommonConfig {
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
-pub struct HealthCheckConfig<T> {
+pub struct HealthCheckConfig<T: Validate> {
     #[serde(flatten)]
+    #[validate(nested)]
     pub common: CommonConfig,
     #[serde(flatten)]
+    #[validate(nested)]
     pub custom: T,
 }
 

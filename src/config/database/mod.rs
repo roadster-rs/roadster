@@ -47,6 +47,7 @@ pub struct Database {
     /// building the app's [`crate::app::context::AppContext`].
     #[cfg(feature = "test-containers")]
     #[serde(default)]
+    #[validate(nested)]
     pub test_container: Option<crate::config::TestContainer>,
 }
 

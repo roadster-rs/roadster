@@ -49,6 +49,7 @@ impl CommonSensitiveHeadersConfig {
 #[non_exhaustive]
 pub struct SensitiveRequestHeadersConfig {
     #[serde(flatten)]
+    #[validate(nested)]
     pub common: CommonSensitiveHeadersConfig,
 }
 
@@ -57,6 +58,7 @@ pub struct SensitiveRequestHeadersConfig {
 #[non_exhaustive]
 pub struct SensitiveResponseHeadersConfig {
     #[serde(flatten)]
+    #[validate(nested)]
     pub common: CommonSensitiveHeadersConfig,
 }
 

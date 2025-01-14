@@ -6,8 +6,9 @@ use axum_core::extract::FromRef;
 use serde_derive::{Deserialize, Serialize};
 use tower::Layer;
 use tower_http::normalize_path::NormalizePathLayer;
+use validator::Validate;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "kebab-case", default)]
 #[non_exhaustive]
 pub struct NormalizePathConfig {}

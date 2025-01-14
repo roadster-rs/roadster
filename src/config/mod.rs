@@ -19,9 +19,10 @@ use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::fs;
+use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use typed_builder::TypedBuilder;
-use validator::Validate;
+use validator::{Validate, ValidationErrors};
 
 pub mod app_config;
 pub mod auth;
@@ -34,8 +35,6 @@ pub mod health_check;
 pub mod lifecycle;
 pub mod service;
 pub mod tracing;
-
-pub type CustomConfig = BTreeMap<String, Value>;
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -79,7 +78,37 @@ pub struct AppConfig {
     /// }
     /// ```
     #[serde(flatten, default)]
+    #[validate(nested)]
     pub custom: CustomConfig,
+}
+
+// pub type CustomConfig = BTreeMap<String, Value>;
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
+pub struct CustomConfig {
+    #[serde(flatten)]
+    inner: BTreeMap<String, Value>,
+}
+
+impl Deref for CustomConfig {
+    type Target = BTreeMap<String, Value>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl Into<BTreeMap<String, Value>> for CustomConfig {
+    fn into(self) -> BTreeMap<String, Value> {
+        self.inner
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EmptyConfig;
+impl Validate for EmptyConfig {
+    fn validate(&self) -> Result<(), ValidationErrors> {
+        Ok(())
+    }
 }
 
 pub const ENV_VAR_PREFIX: &str = "ROADSTER";
@@ -351,15 +380,19 @@ pub struct TestContainer {
 #[cfg(all(
     test,
     feature = "http",
-    feature = "grpc",
+    feature = "open-api",
     feature = "sidekiq",
     feature = "db-sql",
-    feature = "open-api",
+    feature = "email-smtp",
+    feature = "email-sendgrid",
     feature = "jwt",
     feature = "jwt-ietf",
     feature = "otel",
-    feature = "email-smtp",
-    feature = "email-sendgrid"
+    feature = "grpc",
+    feature = "testing",
+    feature = "test-containers",
+    feature = "testing-mocks",
+    feature = "config-yml",
 ))]
 mod tests {
     use super::*;

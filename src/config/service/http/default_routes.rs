@@ -13,17 +13,22 @@ pub struct DefaultRoutes {
     #[serde(default = "default_true")]
     pub default_enable: bool,
 
+    #[validate(nested)]
     pub ping: DefaultRouteConfig,
 
+    #[validate(nested)]
     pub health: DefaultRouteConfig,
 
     #[cfg(feature = "open-api")]
+    #[validate(nested)]
     pub api_schema: DefaultRouteConfig,
 
     #[cfg(feature = "open-api")]
+    #[validate(nested)]
     pub scalar: DefaultRouteConfig,
 
     #[cfg(feature = "open-api")]
+    #[validate(nested)]
     pub redoc: DefaultRouteConfig,
 }
 
@@ -53,7 +58,7 @@ fn validate_default_routes(
     Ok(())
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct DefaultRouteConfig {
