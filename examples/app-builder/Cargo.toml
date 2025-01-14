@@ -12,7 +12,7 @@ cli = ["roadster/cli", "clap"]
 db-sql = ["roadster/db-sql", "app-builder-migration", "sea-orm"]
 
 [dependencies]
-roadster = { version = "0.6", path = "../..", default-features = false, features = ["open-api", "sidekiq"] }
+roadster = { version = "0.7.0-alpha", path = "../..", default-features = false, features = ["open-api", "sidekiq"] }
 tokio = { workspace = true }
 tokio-util = { workspace = true }
 anyhow = { workspace = true }
