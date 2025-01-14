@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.7.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.24...roadster-v0.7.0) - 2025-01-14
+## [0.7.0-alpha](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.24...roadster-v0.7.0) - 2025-01-14
 
 ### Added
 
