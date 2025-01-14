@@ -1,5 +1,5 @@
 use crate::app::context::AppContext;
-use crate::config::{CustomConfig, EmptyConfig};
+use crate::config::CustomConfig;
 use crate::util::serde::default_true;
 use axum_core::extract::FromRef;
 use config::{FileFormat, FileSourceString};
@@ -25,15 +25,15 @@ pub struct HealthCheck {
 
     #[cfg(feature = "db-sql")]
     #[validate(nested)]
-    pub database: HealthCheckConfig<EmptyConfig>,
+    pub database: HealthCheckConfig<crate::config::EmptyConfig>,
 
     #[cfg(feature = "sidekiq")]
     #[validate(nested)]
-    pub sidekiq: HealthCheckConfig<EmptyConfig>,
+    pub sidekiq: HealthCheckConfig<crate::config::EmptyConfig>,
 
     #[cfg(feature = "email-smtp")]
     #[validate(nested)]
-    pub smtp: HealthCheckConfig<EmptyConfig>,
+    pub smtp: HealthCheckConfig<crate::config::EmptyConfig>,
 
     /// Allows providing configs for custom health checks. Any configs that aren't pre-defined above
     /// will be collected here.

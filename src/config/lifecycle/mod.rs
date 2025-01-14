@@ -1,5 +1,5 @@
 use crate::app::context::AppContext;
-use crate::config::{CustomConfig, EmptyConfig};
+use crate::config::CustomConfig;
 use crate::util::serde::default_true;
 use config::{FileFormat, FileSourceString};
 use serde_derive::{Deserialize, Serialize};
@@ -19,7 +19,7 @@ pub struct LifecycleHandler {
 
     #[cfg(feature = "db-sql")]
     #[validate(nested)]
-    pub db_migration: LifecycleHandlerConfig<EmptyConfig>,
+    pub db_migration: LifecycleHandlerConfig<crate::config::EmptyConfig>,
 
     /// Allows providing configs for custom lifecycle handlers. Any configs that aren't pre-defined
     /// above will be collected here.

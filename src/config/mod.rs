@@ -97,9 +97,9 @@ impl Deref for CustomConfig {
     }
 }
 
-impl Into<BTreeMap<String, Value>> for CustomConfig {
-    fn into(self) -> BTreeMap<String, Value> {
-        self.inner
+impl From<CustomConfig> for BTreeMap<String, Value> {
+    fn from(value: CustomConfig) -> Self {
+        value.inner
     }
 }
 
