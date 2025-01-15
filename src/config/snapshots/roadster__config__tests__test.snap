@@ -100,7 +100,7 @@ max-len = 1000
 
 [service.http.middleware.cache-control]
 priority = 0
-max-age = 86400
+max-age = 604800
 
 [service.http.middleware.cache-control.content-types]
 
