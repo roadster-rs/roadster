@@ -20,7 +20,6 @@ use roadster::service::http::initializer::any::AnyInitializer;
 use roadster::service::http::middleware::any::AnyMiddleware;
 use roadster::service::http::service::HttpService;
 use roadster::service::registry::ServiceRegistry;
-use roadster::service::worker::sidekiq::app_worker::AppWorker;
 use roadster::service::worker::sidekiq::service::SidekiqWorkerService;
 use tracing::info;
 
@@ -79,7 +78,7 @@ impl RoadsterApp<AppState> for App {
             .register_builder(
                 SidekiqWorkerService::builder(state)
                     .await?
-                    .register_app_worker(ExampleWorker::build(state))?,
+                    .register_worker(ExampleWorker::default())?,
             )
             .await?;
 

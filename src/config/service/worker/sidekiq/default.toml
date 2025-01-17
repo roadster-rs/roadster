@@ -8,4 +8,3 @@ stale-cleanup = "auto-clean-stale"
 max-retries = 25
 timeout = true
 max-duration = 60
-disable-argument-coercion = false

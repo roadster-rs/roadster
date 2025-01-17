@@ -17,12 +17,9 @@ uri = 'redis://[Sensitive]'
 stale-cleanup = 'auto-clean-stale'
 
 [app-worker]
-max-retries = 5
+max-retries = 10
 timeout = true
-max-duration = 60
-disable-argument-coercion = false
-[queue-config.bar]
-num-workers = 100
+max-duration = 100
+disable-argument-coercion = true
 
-[queue-config.foo]
-num-workers = 10
+[queue-config]

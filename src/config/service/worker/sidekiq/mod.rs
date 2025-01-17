@@ -209,13 +209,6 @@ mod deserialize_tests {
     #[case(
         r#"
         num-workers = 1
-        [redis]
-        uri = "redis://localhost:6379"
-        "#
-    )]
-    #[case(
-        r#"
-        num-workers = 1
         queues = ["foo"]
         [redis]
         uri = "redis://localhost:6379"
@@ -283,6 +276,18 @@ mod deserialize_tests {
         "foo" = { num-workers = 10 }
         [queue-config.bar]
         num-workers = 100
+        "#
+    )]
+    #[case(
+        r#"
+        num-workers = 1
+        [redis]
+        uri = "redis://localhost:6379"
+        [app-worker]
+        max-retries = 10
+        timeout = true
+        max-duration = 100
+        disable-argument-coercion = true
         "#
     )]
     #[cfg_attr(coverage_nightly, coverage(off))]

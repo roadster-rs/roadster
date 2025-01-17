@@ -4,22 +4,20 @@ expression: sidekiq
 ---
 num-workers = 1
 balance-strategy = 'round-robin'
-queues = ['foo']
+queues = []
 
 [redis]
 uri = 'redis://[Sensitive]'
 
 [redis.enqueue-pool]
+min-idle = 1
 
 [redis.fetch-pool]
+min-idle = 2
 
 [periodic]
 stale-cleanup = 'auto-clean-stale'
 
 [app-worker]
-max-retries = 5
-timeout = true
-max-duration = 60
-disable-argument-coercion = false
 
 [queue-config]
