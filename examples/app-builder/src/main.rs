@@ -9,7 +9,6 @@ use roadster::app::RoadsterApp;
 use roadster::error::RoadsterResult;
 use roadster::service::function::service::FunctionService;
 use roadster::service::http::service::HttpService;
-use roadster::service::worker::sidekiq::app_worker::AppWorker;
 use roadster::service::worker::sidekiq::service::SidekiqWorkerService;
 use std::future;
 use tokio_util::sync::CancellationToken;
