@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-alpha.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha...roadster-v0.7.0-alpha.1) - 2025-01-17
+
+### Added
+
+- [**breaking**] Allow registering `Worker` instead of requiring `AppWorker` (#564)
+- Increase the default cache-control max-age to 1 week (#559)
+
+### Fixed
+
+- Use `Router#fallback_service` in `NormalizePathInitializer` (#562)
+
+### Other
+
+- Update `config` to 0.15.6 (#560)
+
 ## [0.7.0-alpha](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.24...roadster-v0.7.0-alpha) - 2025-01-14
 
 ### Added
