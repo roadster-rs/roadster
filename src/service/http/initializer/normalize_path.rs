@@ -61,7 +61,7 @@ where
     /// See: <https://docs.rs/axum/latest/axum/middleware/index.html#rewriting-request-uri-in-middleware>
     fn before_serve(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
         let router = NormalizePathLayer::trim_trailing_slash().layer(router);
-        let router = Router::new().nest_service("/", router);
+        let router = Router::new().fallback_service(router);
         Ok(router)
     }
 }
