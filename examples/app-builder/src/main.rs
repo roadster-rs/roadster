@@ -96,7 +96,7 @@ async fn main() -> RoadsterResult<()> {
                     .register_builder(
                         SidekiqWorkerService::builder(state)
                             .await?
-                            .register_app_worker(ExampleWorker::build(state))?,
+                            .register_worker(ExampleWorker::default())?,
                     )
                     .await?;
                 Ok(())

@@ -1,8 +1,7 @@
 use crate::app::context::AppContext;
-use crate::service::worker::sidekiq::app_worker::AppWorker;
 use crate::service::worker::sidekiq::app_worker::AppWorkerConfig;
+use crate::service::worker::sidekiq::app_worker::DEFAULT_MAX_DURATION;
 use async_trait::async_trait;
-use axum_core::extract::FromRef;
 use serde::Serialize;
 use sidekiq::{RedisPool, Worker, WorkerOpts};
 use std::marker::PhantomData;
@@ -12,47 +11,52 @@ use tracing::{error, instrument};
 /// Worker used by Roadster to wrap the consuming app's workers to add additional behavior. For
 /// example, [RoadsterWorker] is by default configured to automatically abort the app's worker
 /// when it exceeds a certain timeout.
-pub struct RoadsterWorker<S, Args, W>
+pub(crate) struct RoadsterWorker<Args, W>
 where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
     Args: Send + Sync + Serialize + 'static,
-    W: AppWorker<S, Args>,
+    W: Worker<Args>,
 {
     inner: W,
-    inner_config: AppWorkerConfig,
-    _state: PhantomData<S>,
+    inner_config: Option<AppWorkerConfig>,
+    context: AppContext,
     _args: PhantomData<Args>,
 }
 
-impl<S, Args, W> RoadsterWorker<S, Args, W>
+impl<Args, W> RoadsterWorker<Args, W>
 where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
     Args: Send + Sync + Serialize,
-    W: AppWorker<S, Args>,
+    W: Worker<Args>,
 {
-    pub(crate) fn new(inner: W, state: &S) -> Self {
-        let config = inner.config(state);
+    pub(crate) fn new(context: &AppContext, inner: W, config: Option<AppWorkerConfig>) -> Self {
         Self {
             inner,
             inner_config: config,
-            _state: PhantomData,
+            context: context.clone(),
             _args: PhantomData,
         }
     }
 }
 
 #[async_trait]
-impl<S, Args, W> Worker<Args> for RoadsterWorker<S, Args, W>
+impl<Args, W> Worker<Args> for RoadsterWorker<Args, W>
 where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
     Args: Send + Sync + Serialize,
-    W: AppWorker<S, Args>,
+    W: Worker<Args>,
 {
     fn disable_argument_coercion(&self) -> bool {
-        self.inner_config.disable_argument_coercion
+        self.inner_config
+            .as_ref()
+            .and_then(|config| config.disable_argument_coercion)
+            .unwrap_or_else(|| {
+                self.context
+                    .config()
+                    .service
+                    .sidekiq
+                    .custom
+                    .app_worker
+                    .disable_argument_coercion
+                    .unwrap_or_else(|| W::disable_argument_coercion(&self.inner))
+            })
     }
 
     fn opts() -> WorkerOpts<Args, Self>
@@ -66,7 +70,19 @@ where
     }
 
     fn max_retries(&self) -> usize {
-        self.inner_config.max_retries
+        self.inner_config
+            .as_ref()
+            .and_then(|config| config.max_retries)
+            .unwrap_or_else(|| {
+                self.context
+                    .config()
+                    .service
+                    .sidekiq
+                    .custom
+                    .app_worker
+                    .max_retries
+                    .unwrap_or_else(|| W::max_retries(&self.inner))
+            })
     }
 
     fn class_name() -> String
@@ -103,13 +119,43 @@ where
     async fn perform(&self, args: Args) -> sidekiq::Result<()> {
         let inner = self.inner.perform(args);
 
-        if self.inner_config.timeout {
-            tokio::time::timeout(self.inner_config.max_duration, inner)
+        let timeout = self
+            .inner_config
+            .as_ref()
+            .and_then(|config| config.timeout)
+            .unwrap_or_else(|| {
+                self.context
+                    .config()
+                    .service
+                    .sidekiq
+                    .custom
+                    .app_worker
+                    .timeout
+                    .unwrap_or_default()
+            });
+
+        if timeout {
+            let max_duration = self
+                .inner_config
+                .as_ref()
+                .and_then(|config| config.max_duration)
+                .unwrap_or_else(|| {
+                    self.context
+                        .config()
+                        .service
+                        .sidekiq
+                        .custom
+                        .app_worker
+                        .max_duration
+                        .unwrap_or(DEFAULT_MAX_DURATION)
+                });
+
+            tokio::time::timeout(max_duration, inner)
                 .await
                 .map_err(|err| {
                     error!(
                         worker = %W::class_name(),
-                        max_duration = %self.inner_config.max_duration.as_secs(),
+                        max_duration = %max_duration.as_secs(),
                         %err,
                         "Worker timed out"
                     );

@@ -2,11 +2,11 @@ use crate::app::context::AppContext;
 use crate::app::App;
 use crate::config::service::worker::sidekiq::StaleCleanUpBehavior;
 use crate::error::RoadsterResult;
-use crate::service::worker::sidekiq::app_worker::AppWorker;
+use crate::service::worker::sidekiq::app_worker::{AppWorker, AppWorkerConfig};
+#[cfg_attr(test, mockall_double::double)]
+use crate::service::worker::sidekiq::processor_wrapper::ProcessorWrapper;
 use crate::service::worker::sidekiq::roadster_worker::RoadsterWorker;
 use crate::service::worker::sidekiq::service::{enabled, SidekiqWorkerService, NAME};
-#[cfg_attr(test, mockall_double::double)]
-use crate::service::worker::sidekiq::Processor;
 use crate::service::AppServiceBuilder;
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -14,7 +14,7 @@ use axum_core::extract::FromRef;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
 use serde::Serialize;
-use sidekiq::{periodic, ProcessorConfig, ServerMiddleware};
+use sidekiq::{periodic, ProcessorConfig, ServerMiddleware, Worker};
 use std::collections::HashSet;
 use tracing::{debug, info};
 
@@ -35,7 +35,7 @@ where
     AppContext: FromRef<S>,
 {
     Enabled {
-        processor: Processor,
+        processor: ProcessorWrapper,
         state: S,
         registered_workers: HashSet<String>,
         registered_periodic_workers: HashSet<String>,
@@ -89,7 +89,7 @@ where
     AppContext: FromRef<S>,
 {
     pub async fn with_processor(state: &S, processor: sidekiq::Processor) -> RoadsterResult<Self> {
-        Self::new(state.clone(), Some(Processor::new(processor))).await
+        Self::new(state.clone(), Some(ProcessorWrapper::new(processor))).await
     }
 
     pub async fn with_default_processor(
@@ -143,7 +143,7 @@ where
 
                 let processor = sidekiq::Processor::new(redis_fetch.clone(), queues.clone())
                     .with_config(processor_config);
-                Processor::new(processor)
+                ProcessorWrapper::new(processor)
             };
 
             Some(processor)
@@ -157,7 +157,7 @@ where
         Self::new(state.clone(), processor).await
     }
 
-    async fn new(state: S, processor: Option<Processor>) -> RoadsterResult<Self> {
+    async fn new(state: S, processor: Option<ProcessorWrapper>) -> RoadsterResult<Self> {
         let context = AppContext::from_ref(&state);
         let processor = if enabled(&context) { processor } else { None };
 
@@ -218,43 +218,84 @@ where
         Ok(self)
     }
 
-    /// Register a [worker][AppWorker] to handle Sidekiq.rs jobs.
+    /// Register a [`Worker`] to handle Sidekiq.rs jobs.
     ///
-    /// The worker will be wrapped by a [RoadsterWorker], which provides some common behavior, such
-    /// as enforcing a timeout/max duration of worker jobs.
-    pub fn register_app_worker<Args, W>(mut self, worker: W) -> RoadsterResult<Self>
+    /// The worker will be wrapped by internal logic which provides some common behavior, such
+    /// as enforcing a timeout/max duration of worker jobs. Note that this internal logic my not
+    /// use the values of [`Worker::disable_argument_coercion`] and [`Worker::max_retries`] -- if
+    /// the respective fields are set in the app's [`AppWorkerConfig`], that will be used first.
+    /// It's recommended to use [`Self::register_worker_with_config`] to override the
+    /// fields from the app's config as needed instead.
+    pub fn register_worker<Args, W>(self, worker: W) -> RoadsterResult<Self>
     where
         Args: Sync + Send + Serialize + for<'de> serde::Deserialize<'de> + 'static,
-        W: AppWorker<S, Args> + 'static,
+        W: Worker<Args> + 'static,
+    {
+        self.register_worker_inner(worker, None)
+    }
+
+    /// Register a [`Worker`] to handle Sidekiq.rs jobs.
+    ///
+    /// The worker will be wrapped by internal logic which provides some common behavior, such
+    /// as enforcing a timeout/max duration of worker jobs. Note that this internal logic my not
+    /// use the values of [`Worker::disable_argument_coercion`] and [`Worker::max_retries`] -- if
+    /// the respective fields are set in the app's [`AppWorkerConfig`], that will be used first.
+    /// It's recommended to use this method to override the fields from the app's config as needed
+    /// instead.
+    pub fn register_worker_with_config<Args, W>(
+        self,
+        worker: W,
+        config: AppWorkerConfig,
+    ) -> RoadsterResult<Self>
+    where
+        Args: Sync + Send + Serialize + for<'de> serde::Deserialize<'de> + 'static,
+        W: Worker<Args> + 'static,
+    {
+        self.register_worker_inner(worker, Some(config))
+    }
+
+    fn register_worker_inner<Args, W>(
+        mut self,
+        worker: W,
+        config: Option<AppWorkerConfig>,
+    ) -> RoadsterResult<Self>
+    where
+        Args: Sync + Send + Serialize + for<'de> serde::Deserialize<'de> + 'static,
+        W: Worker<Args> + 'static,
     {
         if let BuilderState::Enabled {
             processor,
             registered_workers,
-            state: context,
+            state,
             ..
         } = &mut self.state
         {
+            let context = AppContext::from_ref(state);
             let class_name = W::class_name();
             debug!(worker = %class_name, "Registering worker");
             if !registered_workers.insert(class_name.clone()) {
                 return Err(anyhow!("Worker `{class_name}` was already registered").into());
             }
-            let roadster_worker = RoadsterWorker::new(worker, context);
+            let roadster_worker = RoadsterWorker::new(&context, worker, config);
             processor.register(roadster_worker);
         }
 
         Ok(self)
     }
 
-    /// Register a periodic [worker][AppWorker] that will run with the provided args. The cadence
+    /// Register a periodic [`Worker`] that will run with the provided args. The cadence
     /// of the periodic worker, the worker's queue name, and other attributes are specified using
     /// the [builder][periodic::Builder]. However, to help ensure type-safety the args are provided
     /// to this method instead of the [builder][periodic::Builder].
     ///
-    /// The worker will be wrapped by a [RoadsterWorker], which provides some common behavior, such
-    /// as enforcing a timeout/max duration of worker jobs.
-    pub async fn register_periodic_app_worker<Args, W>(
-        mut self,
+    /// The worker will be wrapped by internal logic which provides some common behavior, such
+    /// as enforcing a timeout/max duration of worker jobs. Note that this internal logic my not
+    /// use the values of [`Worker::disable_argument_coercion`] and [`Worker::max_retries`] -- if
+    /// the respective fields are set in the app's [`AppWorkerConfig`], that will be used first.
+    /// It's recommended to use [`Self::register_periodic_worker_with_config`] to override the
+    /// fields from the app's config as needed instead.
+    pub async fn register_periodic_worker<Args, W>(
+        self,
         builder: periodic::Builder,
         worker: W,
         args: Args,
@@ -263,16 +304,58 @@ where
         Args: Sync + Send + Serialize + for<'de> serde::Deserialize<'de> + 'static,
         W: AppWorker<S, Args> + 'static,
     {
+        self.register_periodic_worker_inner(builder, worker, args, None)
+            .await
+    }
+
+    /// Register a periodic [`Worker`] that will run with the provided args. The cadence
+    /// of the periodic worker, the worker's queue name, and other attributes are specified using
+    /// the [builder][periodic::Builder]. However, to help ensure type-safety the args are provided
+    /// to this method instead of the [builder][periodic::Builder].
+    ///
+    /// The worker will be wrapped by internal logic which provides some common behavior, such
+    /// as enforcing a timeout/max duration of worker jobs. Note that this internal logic my not
+    /// use the values of [`Worker::disable_argument_coercion`] and [`Worker::max_retries`] -- if
+    /// the respective fields are set in the app's [`AppWorkerConfig`], that will be used first.
+    /// It's recommended to use this method to override the fields from the app's config as needed
+    /// instead.
+    pub async fn register_periodic_worker_with_config<Args, W>(
+        self,
+        builder: periodic::Builder,
+        worker: W,
+        args: Args,
+        config: AppWorkerConfig,
+    ) -> RoadsterResult<Self>
+    where
+        Args: Sync + Send + Serialize + for<'de> serde::Deserialize<'de> + 'static,
+        W: AppWorker<S, Args> + 'static,
+    {
+        self.register_periodic_worker_inner(builder, worker, args, Some(config))
+            .await
+    }
+
+    async fn register_periodic_worker_inner<Args, W>(
+        mut self,
+        builder: periodic::Builder,
+        worker: W,
+        args: Args,
+        config: Option<AppWorkerConfig>,
+    ) -> RoadsterResult<Self>
+    where
+        Args: Sync + Send + Serialize + for<'de> serde::Deserialize<'de> + 'static,
+        W: AppWorker<S, Args> + 'static,
+    {
         if let BuilderState::Enabled {
             processor,
-            state: context,
+            state,
             registered_periodic_workers,
             ..
         } = &mut self.state
         {
+            let context = AppContext::from_ref(state);
             let class_name = W::class_name();
             debug!(worker = %class_name, "Registering periodic worker");
-            let roadster_worker = RoadsterWorker::new(worker, context);
+            let roadster_worker = RoadsterWorker::new(&context, worker, config);
             let builder = builder.args(args)?;
             let job_json = serde_json::to_string(&builder.into_periodic_job(class_name.clone())?)?;
             if !registered_periodic_workers.insert(job_json.clone()) {
@@ -305,7 +388,7 @@ mod tests {
     use super::*;
     use crate::app::context::AppContext;
     use crate::config::AppConfig;
-    use crate::service::worker::sidekiq::MockProcessor;
+    use crate::service::worker::sidekiq::processor_wrapper::MockProcessorWrapper;
     use bb8::Pool;
     use futures::StreamExt;
     use rstest::rstest;
@@ -326,7 +409,7 @@ mod tests {
 
         // Act
         let builder = builder
-            .register_app_worker(MockTestAppWorker::default())
+            .register_worker(MockTestAppWorker::default())
             .unwrap();
 
         // Assert
@@ -343,9 +426,9 @@ mod tests {
 
         // Act
         builder
-            .register_app_worker(MockTestAppWorker::default())
+            .register_worker(MockTestAppWorker::default())
             .unwrap()
-            .register_app_worker(MockTestAppWorker::default())
+            .register_worker(MockTestAppWorker::default())
             .unwrap();
     }
 
@@ -362,7 +445,7 @@ mod tests {
         let builder = futures::stream::iter(job_names.clone())
             .fold(builder, |builder, name| async move {
                 builder
-                    .register_periodic_app_worker(
+                    .register_periodic_worker(
                         periodic::builder("* * * * * *").unwrap().name(name),
                         MockTestAppWorker::default(),
                         (),
@@ -384,12 +467,6 @@ mod tests {
         impl Worker<()> for TestAppWorker {
             async fn perform(&self, args: ()) -> sidekiq::Result<()>;
         }
-
-        #[async_trait]
-        impl AppWorker<AppContext, ()> for TestAppWorker
-        {
-            fn build(context: &AppContext) -> Self;
-        }
     }
 
     #[cfg_attr(coverage_nightly, coverage(off))]
@@ -407,13 +484,13 @@ mod tests {
         let pool = Pool::builder().build_unchecked(redis_fetch);
         let context = AppContext::test(Some(config), None, Some(pool)).unwrap();
 
-        let mut processor = MockProcessor::default();
+        let mut processor = MockProcessorWrapper::default();
         processor
-            .expect_register::<AppContext, (), MockTestAppWorker>()
+            .expect_register::<(), MockTestAppWorker>()
             .times(register_count)
             .returning(|_| ());
         processor
-            .expect_register_periodic::<AppContext, (), MockTestAppWorker>()
+            .expect_register_periodic::<(), MockTestAppWorker>()
             .times(periodic_count)
             .returning(|_, _| Ok(()));
 
@@ -484,7 +561,7 @@ mod tests {
         let builder = setup(enabled, 0, register_count).await;
         let builder = if enabled {
             builder
-                .register_periodic_app_worker(
+                .register_periodic_worker(
                     periodic::builder("* * * * * *").unwrap().name("foo"),
                     MockTestAppWorker::default(),
                     (),
