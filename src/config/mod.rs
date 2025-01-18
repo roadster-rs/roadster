@@ -24,7 +24,6 @@ use std::path::{Path, PathBuf};
 use typed_builder::TypedBuilder;
 use validator::{Validate, ValidationErrors};
 
-pub mod app_config;
 pub mod auth;
 #[cfg(feature = "db-sql")]
 pub mod database;
@@ -134,18 +133,6 @@ pub struct AppConfigOptions {
 }
 
 impl AppConfig {
-    #[deprecated(
-        since = "0.6.2",
-        note = "This wasn't intended to be made public and may be removed in a future version."
-    )]
-    pub fn new(environment: Option<Environment>) -> RoadsterResult<Self> {
-        let options = AppConfigOptions::builder()
-            .environment_opt(environment)
-            .config_dir(PathBuf::from(DEFAULT_CONFIG_DIR))
-            .build();
-        Self::new_with_options(options)
-    }
-
     // This runs before tracing is initialized, so we need to use `println` in order to
     // log from this method.
     #[allow(clippy::disallowed_macros)]
