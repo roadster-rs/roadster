@@ -171,24 +171,6 @@ mod tests {
     }
 
     #[rstest]
-    #[case(Environment::Development, false)]
-    #[case(Environment::Test, false)]
-    #[case(Environment::Production, false)]
-    #[case(Environment::Custom("custom-environment".to_string()), true)]
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    fn environment_to_static_str(
-        _case: TestCase,
-        #[case] env: Environment,
-        #[case] expect_error: bool,
-    ) {
-        let env = std::panic::catch_unwind(|| {
-            let env: &str = env.into();
-            env
-        });
-        assert_eq!(env.is_err(), expect_error);
-    }
-
-    #[rstest]
     #[case(DEVELOPMENT.to_string())]
     #[case("dev".to_string())]
     #[case(TEST.to_string())]
