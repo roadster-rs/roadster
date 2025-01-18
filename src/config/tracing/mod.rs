@@ -23,7 +23,7 @@ pub struct Tracing {
     pub format: Format,
 
     /// The name of the service to use for the OpenTelemetry `service.name` field. If not provided,
-    /// will use the [`App::name`][crate::config::app_config::App] config value, translated to `snake_case`.
+    /// will use the [`App::name`][crate::config::App] config value, translated to `snake_case`.
     #[cfg(feature = "otel")]
     pub service_name: Option<String>,
 
