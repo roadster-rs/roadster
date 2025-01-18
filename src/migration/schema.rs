@@ -5,14 +5,9 @@
 //! but with some minor differences. For example, our updated/created at timestamps include the
 //! timezone, while SeaORM/Loco do not.
 
+use crate::migration::timestamp::Timestamps;
 use sea_orm_migration::{prelude::*, schema::*};
 use typed_builder::TypedBuilder;
-
-#[deprecated(
-    since = "0.6.0",
-    note = "Moved to migration::timestamps, import from there instead."
-)]
-pub use crate::migration::timestamp::Timestamps;
 
 /// Create a table if it does not exist yet and add some default columns
 /// (e.g., create/update timestamps).
@@ -36,19 +31,6 @@ where
     T: IntoIden,
 {
     big_integer(name).primary_key().to_owned()
-}
-
-/// Create an auto-incrementing primary key column using [BigInteger][sea_orm::sea_query::ColumnType::BigInteger]
-/// as the column type.
-#[deprecated(
-    since = "0.5.10",
-    note = "This creates a `BIGSERIAL` column, which is not recommended. Use `pk_bigint_identity` instead to create an IDENTITY column, as recommended [here](https://wiki.postgresql.org/wiki/Don%27t_Do_This#Don.27t_use_serial)."
-)]
-pub fn pk_bigint_auto<T>(name: T) -> ColumnDef
-where
-    T: IntoIden,
-{
-    pk_bigint(name).auto_increment().to_owned()
 }
 
 /// Create an auto-incrementing primary key column using [BigInteger][sea_orm::sea_query::ColumnType::BigInteger]
@@ -124,9 +106,6 @@ where
     uuid_default(name, Expr::cust("uuid_generate_v4()"))
 }
 
-#[deprecated(since = "0.5.11", note = "Renamed as `pk_uuid_v4`.")]
-pub use pk_uuid_v4 as pk_uuidv4;
-
 /// Create a primary key column using [Uuid][sea_orm::sea_query::ColumnType::Uuid] as the column
 /// type. A new v4 UUID will be generated as the default if no value is provided by the application.
 ///
@@ -150,9 +129,6 @@ where
 {
     uuid_default(name, Expr::cust("uuid_generate_v7()"))
 }
-
-#[deprecated(since = "0.5.11", note = "Renamed as `pk_uuid_v7`.")]
-pub use pk_uuid_v7 as pk_uuidv7;
 
 /// Create a primary key column using [Uuid][sea_orm::sea_query::ColumnType::Uuid] as the column
 /// type. A new v7 UUID will be generated as the default if no value is provided by the application.
@@ -236,15 +212,6 @@ mod tests {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn pk_bigint(_case: TestCase, mut table_stmt: TableCreateStatement) {
         table_stmt.col(super::pk_bigint(Foo::Bar));
-
-        assert_snapshot!(table_stmt.to_string(PostgresQueryBuilder));
-    }
-
-    #[rstest]
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    fn pk_bigint_auto(_case: TestCase, mut table_stmt: TableCreateStatement) {
-        #[allow(deprecated)]
-        table_stmt.col(super::pk_bigint_auto(Foo::Bar));
 
         assert_snapshot!(table_stmt.to_string(PostgresQueryBuilder));
     }
