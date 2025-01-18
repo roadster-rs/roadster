@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-alpha.2](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.1...roadster-v0.7.0-alpha.2) - 2025-01-18
+
+### Added
+
+- Map `Error::Auth` to `StatusCode::UNAUTHORIZED` HTTP response (#571)
+- [**breaking**] Return `RedisEnqueue` and `RedisFetch` redis pool "new-types" (#568)
+
+### Other
+
+- Remove todos (#570)
+- [**breaking**] Remove `From<Environment>` impl for `&'static str` (#569)
+- Declare all dependencies in workspace (#567)
+- [**breaking**] Remove deprecated items (#566)
+
 ## [0.7.0-alpha.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha...roadster-v0.7.0-alpha.1) - 2025-01-17
 
 ### Added
