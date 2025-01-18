@@ -71,7 +71,7 @@ impl AppContext {
                 let sidekiq_config = &config.service.sidekiq;
                 let redis_config = &sidekiq_config.custom.redis;
                 let redis = sidekiq::RedisConnectionManager::new(redis_config.uri.to_string())?;
-                let redis_enqueue = RedisEnqueue({
+                let redis_enqueue = RedisEnqueue::from({
                     let pool = bb8::Pool::builder().min_idle(redis_config.enqueue_pool.min_idle);
                     let pool = redis_config
                         .enqueue_pool
@@ -95,7 +95,7 @@ impl AppContext {
                         .max_connections
                         .iter()
                         .fold(pool, |pool, max_conns| pool.max_size(*max_conns));
-                    Some(pool.build(redis.clone()).await?)
+                    Some(RedisFetch::from(pool.build(redis.clone()).await?))
                 };
                 (redis_enqueue, redis_fetch)
             };
@@ -160,8 +160,10 @@ impl AppContext {
         if let Some(redis) = redis {
             inner
                 .expect_redis_enqueue()
-                .return_const(RedisEnqueue(redis.clone()));
-            inner.expect_redis_fetch().return_const(Some(redis));
+                .return_const(RedisEnqueue::from(redis.clone()));
+            inner
+                .expect_redis_fetch()
+                .return_const(Some(RedisFetch::from(redis)));
         } else {
             inner.expect_redis_fetch().return_const(None);
         }
@@ -194,15 +196,13 @@ impl AppContext {
         self.inner.db()
     }
 
-    // todo: In the next breaking version, return the pool wrapped in the `RedisEnqueue` new-type
     #[cfg(feature = "sidekiq")]
-    pub fn redis_enqueue(&self) -> &sidekiq::RedisPool {
+    pub fn redis_enqueue(&self) -> &RedisEnqueue {
         self.inner.redis_enqueue()
     }
 
-    // todo: In the next breaking version, return the pool wrapped in the `RedisFetch` new-type
     #[cfg(feature = "sidekiq")]
-    pub fn redis_fetch(&self) -> &Option<sidekiq::RedisPool> {
+    pub fn redis_fetch(&self) -> &Option<RedisFetch> {
         self.inner.redis_fetch()
     }
 
@@ -307,16 +307,39 @@ impl Provide<sendgrid::v3::Sender> for AppContext {
 }
 
 #[cfg(feature = "sidekiq")]
-pub struct RedisEnqueue(sidekiq::RedisPool);
+#[derive(Clone)]
+#[non_exhaustive]
+pub struct RedisEnqueue {
+    pub inner: sidekiq::RedisPool,
+}
+
 #[cfg(feature = "sidekiq")]
-pub struct RedisFetch(sidekiq::RedisPool);
+impl From<sidekiq::RedisPool> for RedisEnqueue {
+    fn from(value: sidekiq::RedisPool) -> Self {
+        Self { inner: value }
+    }
+}
+
+#[cfg(feature = "sidekiq")]
+#[derive(Clone)]
+#[non_exhaustive]
+pub struct RedisFetch {
+    pub inner: sidekiq::RedisPool,
+}
+
+#[cfg(feature = "sidekiq")]
+impl From<sidekiq::RedisPool> for RedisFetch {
+    fn from(value: sidekiq::RedisPool) -> Self {
+        Self { inner: value }
+    }
+}
 
 #[cfg(feature = "sidekiq")]
 impl std::ops::Deref for RedisEnqueue {
     type Target = sidekiq::RedisPool;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.inner
     }
 }
 
@@ -325,14 +348,14 @@ impl std::ops::Deref for RedisFetch {
     type Target = sidekiq::RedisPool;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.inner
     }
 }
 
 #[cfg(feature = "sidekiq")]
 impl Provide<RedisEnqueue> for AppContext {
     fn provide(&self) -> RedisEnqueue {
-        RedisEnqueue(self.redis_enqueue().clone())
+        self.redis_enqueue().clone()
     }
 }
 
@@ -346,9 +369,7 @@ impl ProvideRef<RedisEnqueue> for AppContext {
 #[cfg(feature = "sidekiq")]
 impl Provide<Option<RedisFetch>> for AppContext {
     fn provide(&self) -> Option<RedisFetch> {
-        self.redis_fetch()
-            .as_ref()
-            .map(|redis_fetch| RedisFetch(redis_fetch.clone()))
+        self.redis_fetch().as_ref().cloned()
     }
 }
 
@@ -451,7 +472,7 @@ struct AppContextInner {
     /// config is set to zero, in which case the [sidekiq::Processor] would also not be started.
     // todo: In the next breaking version, wrap the pool in the `RedisFetch` new-type
     #[cfg(feature = "sidekiq")]
-    redis_fetch: Option<sidekiq::RedisPool>,
+    redis_fetch: Option<RedisFetch>,
     #[cfg(all(feature = "sidekiq", feature = "test-containers"))]
     #[allow(dead_code)]
     sidekiq_redis_test_container: Option<
@@ -502,7 +523,7 @@ impl AppContextInner {
     }
 
     #[cfg(feature = "sidekiq")]
-    fn redis_fetch(&self) -> &Option<sidekiq::RedisPool> {
+    fn redis_fetch(&self) -> &Option<RedisFetch> {
         &self.redis_fetch
     }
 

@@ -141,7 +141,7 @@ where
                         processor_config.queue_config(queue.clone(), config.into())
                     });
 
-                let processor = sidekiq::Processor::new(redis_fetch.clone(), queues.clone())
+                let processor = sidekiq::Processor::new(redis_fetch.inner.clone(), queues.clone())
                     .with_config(processor_config);
                 ProcessorWrapper::new(processor)
             };
@@ -188,7 +188,7 @@ where
             // Periodic jobs are not removed automatically. Remove any periodic jobs that were
             // previously added. They should be re-added by `App::worker`.
             info!("Auto-cleaning periodic jobs");
-            periodic::destroy_all(context.redis_enqueue().clone()).await?;
+            periodic::destroy_all(context.redis_enqueue().inner.clone()).await?;
         }
 
         Ok(())
@@ -212,7 +212,7 @@ where
                 return Err(anyhow!("Can only clean up previous periodic jobs if no periodic jobs have been registered yet.").into());
             }
             let context = AppContext::from_ref(context);
-            periodic::destroy_all(context.redis_enqueue().clone()).await?;
+            periodic::destroy_all(context.redis_enqueue().inner.clone()).await?;
         }
 
         Ok(self)
