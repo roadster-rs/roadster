@@ -49,7 +49,6 @@ fn alter_table_set_case_insensitive_collation(db_backend: DbBackend, column: Use
             r#"ALTER table "{}" ALTER COLUMN "{}" type {} COLLATE {}"#,
             User::Table.to_string(),
             column.to_string(),
-            // Todo: Can we get this dynamically?
             "varchar",
             Collation::CaseInsensitive.to_string(),
         ),
@@ -70,7 +69,6 @@ fn alter_table_reset_collation(db_backend: DbBackend, column: User) -> Statement
             r#"ALTER table "{}" ALTER COLUMN "{}" type {} COLLATE "{}""#,
             User::Table.to_string(),
             column.to_string(),
-            // Todo: Can we get this dynamically?
             "varchar",
             Collation::Default.to_string(),
         ),

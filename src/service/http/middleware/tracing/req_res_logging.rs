@@ -210,7 +210,6 @@ fn should_log_content_type(
             config.content_types_res.as_ref(),
         )
     };
-    // Todo: Is there a cleaner way to write this?
     match config {
         (Some(a), Some(b)) => {
             if let Some(content_type) = content_type {

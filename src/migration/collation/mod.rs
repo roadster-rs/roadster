@@ -35,7 +35,7 @@ pub enum Collation {
 ///     }
 /// #
 /// #    async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-/// #        todo!()
+/// #        unimplemented!()
 /// #    }
 /// }
 /// ```
@@ -93,7 +93,7 @@ deterministic = false
 /// #[async_trait::async_trait]
 /// impl MigrationTrait for Migration {
 /// #    async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-/// #        todo!()
+/// #        unimplemented!()
 /// #    }
 /// #
 ///     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {

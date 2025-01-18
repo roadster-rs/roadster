@@ -173,7 +173,6 @@ async fn remove_stale_periodic_jobs<C: RedisCommands>(
 }
 
 /// Trait to help with mocking responses from Redis.
-// Todo: Make available to other parts of the project?
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
 trait RedisCommands {
