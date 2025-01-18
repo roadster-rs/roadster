@@ -37,21 +37,21 @@ config-yml = ["config/yaml"]
 # Config
 # We only support `toml` configs currently, and one of the default features (`rust-ini`) pulls in a dependency
 # that breaks the coverage build on nightly.
-config = { version = "0.15.6", default-features = false, features = ["toml", "convert-case"] }
-dotenvy = "0.15.5"
+config = { workspace = true }
+dotenvy = { workspace = true }
 
 # Tracing
 tracing = { workspace = true }
-tracing-subscriber = { version = "0.3.17", features = ["env-filter", "json"] }
-opentelemetry-semantic-conventions = "0.27.0"
-opentelemetry = { version = "0.27.0", features = ["trace", "metrics", "logs"], optional = true }
-opentelemetry_sdk = { version = "0.27.1", features = ["tokio", "rt-tokio", "metrics", "logs", "trace"], optional = true }
-opentelemetry-otlp = { version = "0.27.0", features = ["metrics", "trace", "logs"], optional = true }
+tracing-subscriber = { workspace = true }
+opentelemetry-semantic-conventions = { workspace = true }
+opentelemetry = { workspace = true, optional = true }
+opentelemetry_sdk = { workspace = true, optional = true }
+opentelemetry-otlp = { workspace = true, optional = true }
 # Roadster technically doesn't need a direct dependency on `prost`, but we add one here to allow our
 # `cargo minimal-versions check` check to pass -- `opentelemetry-proto` requires version `0.13.2` or higher
 # in order to compile -- it fails to compile with `0.13.1` even though its dependencies don't specify `0.13.2`.
 prost = { workspace = true, optional = true }
-tracing-opentelemetry = { version = "0.28.0", features = ["metrics"], optional = true }
+tracing-opentelemetry = { workspace = true, optional = true }
 
 # HTTP APIs
 # `axum-core` is not optional because we use the `FromRef` trait pretty extensively, even in parts of
@@ -63,7 +63,7 @@ tower = { workspace = true, optional = true }
 tower-http = { workspace = true, features = ["trace", "timeout", "request-id", "util", "normalize-path", "sensitive-headers", "catch-panic", "compression-full", "decompression-full", "limit", "cors", "set-header"], optional = true }
 aide = { workspace = true, features = ["axum", "axum-json", "axum-query", "redoc", "scalar", "macros"], optional = true }
 schemars = { workspace = true, optional = true }
-http-body-util = { version = "0.1.2", optional = true }
+http-body-util = { workspace = true, optional = true }
 mime = { workspace = true, optional = true }
 
 # DB
@@ -76,8 +76,8 @@ sendgrid = { workspace = true, optional = true }
 
 # Workers
 rusty-sidekiq = { workspace = true, optional = true }
-bb8 = { version = "0.9.0", optional = true }
-num_cpus = { version = "1.13.0", optional = true }
+bb8 = { workspace = true, optional = true }
+num_cpus = { workspace = true, optional = true }
 
 # Rust async
 tokio = { workspace = true }
@@ -85,7 +85,7 @@ tokio-util = { workspace = true }
 async-trait = { workspace = true }
 
 # Auth
-jsonwebtoken = { version = "9.0.0", optional = true }
+jsonwebtoken = { workspace = true, optional = true }
 
 # CLI
 clap = { workspace = true, features = ["derive", "string"], optional = true }
@@ -104,34 +104,30 @@ anyhow = { workspace = true }
 serde = { workspace = true }
 serde_derive = { workspace = true }
 serde_json = { workspace = true }
-serde_with = { version = "3.7.0", features = ["macros", "chrono_0_4"] }
+serde_with = { workspace = true }
 strum = { workspace = true }
 strum_macros = { workspace = true }
 itertools = { workspace = true }
-toml = "0.8.0"
-url = { version = "2.5.0", features = ["serde"] }
+toml = { workspace = true }
+url = { workspace = true }
 uuid = { workspace = true }
-futures = "0.3.30"
-futures-core = "0.3.31"
+futures = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
-byte-unit = { version = "5.0.0", features = ["serde"] }
-convert_case = "0.7.1"
-const_format = "0.2.32"
+byte-unit = { workspace = true }
+convert_case = { workspace = true }
+const_format = { workspace = true }
 typed-builder = { workspace = true }
-num-traits = "0.2.18"
-validator = { version = "0.19.0", features = ["derive"] }
+num-traits = { workspace = true }
+validator = { workspace = true }
 thiserror = { workspace = true }
-# Add latest version of `time` to resolve a build error on nightly
-# https://github.com/time-rs/time/issues/681
-time = "0.3.36"
 cfg-if = { workspace = true }
 reqwest = { workspace = true }
 
 [dev-dependencies]
-cargo-husky = { version = "1.5.0", default-features = false, features = ["user-hooks"] }
+cargo-husky = { workspace = true }
 insta = { workspace = true, features = ["json"] }
 mockall = { workspace = true }
-mockall_double = "0.3.1"
+mockall_double = { workspace = true }
 rstest = { workspace = true }
 
 [build-dependencies]
@@ -141,9 +137,22 @@ rustc_version = { workspace = true }
 members = [".", "examples/*", "book/examples/*", "private/*"]
 
 [workspace.dependencies]
+# Config
+config = { version = "0.15.6", default-features = false, features = ["toml", "convert-case"] }
+dotenvy = "0.15.5"
+
 # Tracing
 tracing = { version = "0.1.40", features = ["async-await"] }
-async-trait = "0.1.74"
+tracing-subscriber = { version = "0.3.17", features = ["env-filter", "json"] }
+opentelemetry-semantic-conventions = "0.27.0"
+opentelemetry = { version = "0.27.0", features = ["trace", "metrics", "logs"] }
+opentelemetry_sdk = { version = "0.27.1", features = ["tokio", "rt-tokio", "metrics", "logs", "trace"] }
+opentelemetry-otlp = { version = "0.27.0", features = ["metrics", "trace", "logs"] }
+# Roadster technically doesn't need a direct dependency on `prost`, but we add one here to allow our
+# `cargo minimal-versions check` check to pass -- `opentelemetry-proto` requires version `0.13.2` or higher
+# in order to compile -- it fails to compile with `0.13.1` even though its dependencies don't specify `0.13.2`.
+prost = { version = "0.13.2" }
+tracing-opentelemetry = { version = "0.28.0", features = ["metrics"] }
 
 # HTTP APIs
 aide = { version = "0.14.0", features = ["axum"] }
@@ -154,6 +163,7 @@ tower-http = "0.6.0"
 tower = "0.5.2"
 schemars = "0.8.16"
 mime = "0.3.17"
+http-body-util = { version = "0.1.2" }
 
 # DB
 sea-orm = { version = "1.1.2" }
@@ -166,14 +176,19 @@ sendgrid = "0.23.0"
 # CLI
 clap = { version = "4.3.0", features = ["derive"] }
 
+# Auth
+jsonwebtoken = { version = "9.0.0" }
+
 # gRPC
 tonic = { version = "0.12.3" }
-prost = { version = "0.13.2" }
 tonic-build = { version = "0.12.3" }
+tonic-reflection = { version = "0.12.0" }
 
 # Sidekiq
 # Todo: the default `rss-stats` feature has a dependency that currently can't be satisfied (memchr: ~2.3)
 rusty-sidekiq = { version = "0.13.1", default-features = false }
+bb8 = { version = "0.9.0" }
+num_cpus = { version = "1.13.0" }
 
 # Testing
 insta = { version = "1.39.0", features = ["toml", "filters"] }
@@ -190,8 +205,18 @@ anyhow = "1.0.86"
 serde = { version = "1.0.185", features = ["derive"] }
 serde_derive = "1.0.185"
 serde_json = "1.0.96"
+serde_with = { version = "3.7.0", features = ["macros", "chrono_0_4"] }
 strum = "0.26.0"
 strum_macros = "0.26.0"
+toml = "0.8.0"
+url = { version = "2.5.0", features = ["serde"] }
+futures = "0.3.30"
+futures-core = "0.3.31"
+byte-unit = { version = "5.0.0", features = ["serde"] }
+convert_case = "0.7.1"
+const_format = "0.2.32"
+num-traits = "0.2.18"
+validator = { version = "0.19.0", features = ["derive"] }
 cfg-if = "1.0.0"
 vergen = { version = "9.0.0" }
 vergen-gitcl = { version = "1.0.0" }
@@ -203,9 +228,14 @@ rand = "0.8.5"
 thiserror = "2.0.9"
 uuid = { version = "1.10.0", features = ["v4", "serde"] }
 chrono = { version = "0.4.34", features = ["serde"] }
+async-trait = "0.1.74"
 
 # Build dependencies
 rustc_version = "0.4.1"
+
+# Dev dependencies
+cargo-husky = { version = "1.5.0", default-features = false, features = ["user-hooks"] }
+mockall_double = "0.3.1"
 
 [package.metadata.docs.rs]
 # Have docs.rs pass `--all-features` to ensure all features have their documentation built.
