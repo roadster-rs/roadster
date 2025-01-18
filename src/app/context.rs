@@ -470,7 +470,6 @@ struct AppContextInner {
     /// The Redis connection pool used by [sidekiq::Processor] to fetch Sidekiq jobs from Redis.
     /// May be `None` if the [fetch_pool.max_connections][crate::config::service::worker::sidekiq::ConnectionPool]
     /// config is set to zero, in which case the [sidekiq::Processor] would also not be started.
-    // todo: In the next breaking version, wrap the pool in the `RedisFetch` new-type
     #[cfg(feature = "sidekiq")]
     redis_fetch: Option<RedisFetch>,
     #[cfg(all(feature = "sidekiq", feature = "test-containers"))]
