@@ -124,33 +124,6 @@ impl FromStr for Environment {
     }
 }
 
-/// Note: A future release may remove this implementation because it's not possible to convert
-/// `Environment::Custom` to a static str. It's kept for now because it was implemented before
-/// we added the `Environment::Custom` variant.
-// todo: remove this implementation in a semver breaking version bump
-impl From<Environment> for &'static str {
-    fn from(value: Environment) -> Self {
-        (&value).into()
-    }
-}
-
-/// Note: A future release may remove this implementation because it's not possible to convert
-/// `Environment::Custom` to a static str. It's kept for now because it was implemented before
-/// we added the `Environment::Custom` variant.
-// todo: remove this implementation in a semver breaking version bump
-impl From<&Environment> for &'static str {
-    fn from(value: &Environment) -> Self {
-        match value {
-            Environment::Development => DEVELOPMENT,
-            Environment::Test => TEST,
-            Environment::Production => PRODUCTION,
-            Environment::Custom(_) => {
-                unimplemented!("It's not possible to convert `Environment::Custom` to a static str. Use ToString/Display instead.")
-            }
-        }
-    }
-}
-
 pub(crate) const ENVIRONMENT_ENV_VAR_NAME: &str = "ENVIRONMENT";
 
 const ENV_VAR_WITH_PREFIX: &str =

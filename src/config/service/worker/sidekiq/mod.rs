@@ -37,7 +37,6 @@ pub struct SidekiqServiceConfig {
     pub balance_strategy: BalanceStrategy,
 
     /// The names of the worker queues to handle.
-    // Todo: Allow overriding this via CLI args?
     #[serde(default)]
     pub queues: Vec<String>,
 
