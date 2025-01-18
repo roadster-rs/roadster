@@ -117,6 +117,7 @@ impl IntoResponse for Error {
         ::tracing::debug!("{}", self);
         match self {
             Error::Api(err) => err.into_response(),
+            Error::Auth(_) => StatusCode::UNAUTHORIZED.into_response(),
             _ => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
         }
     }
