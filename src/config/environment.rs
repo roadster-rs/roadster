@@ -124,33 +124,6 @@ impl FromStr for Environment {
     }
 }
 
-/// Note: A future release may remove this implementation because it's not possible to convert
-/// `Environment::Custom` to a static str. It's kept for now because it was implemented before
-/// we added the `Environment::Custom` variant.
-// todo: remove this implementation in a semver breaking version bump
-impl From<Environment> for &'static str {
-    fn from(value: Environment) -> Self {
-        (&value).into()
-    }
-}
-
-/// Note: A future release may remove this implementation because it's not possible to convert
-/// `Environment::Custom` to a static str. It's kept for now because it was implemented before
-/// we added the `Environment::Custom` variant.
-// todo: remove this implementation in a semver breaking version bump
-impl From<&Environment> for &'static str {
-    fn from(value: &Environment) -> Self {
-        match value {
-            Environment::Development => DEVELOPMENT,
-            Environment::Test => TEST,
-            Environment::Production => PRODUCTION,
-            Environment::Custom(_) => {
-                unimplemented!("It's not possible to convert `Environment::Custom` to a static str. Use ToString/Display instead.")
-            }
-        }
-    }
-}
-
 pub(crate) const ENVIRONMENT_ENV_VAR_NAME: &str = "ENVIRONMENT";
 
 const ENV_VAR_WITH_PREFIX: &str =
@@ -195,24 +168,6 @@ mod tests {
     fn environment_to_string(_case: TestCase, #[case] env: Environment) {
         let env = env.to_string();
         assert_debug_snapshot!(env);
-    }
-
-    #[rstest]
-    #[case(Environment::Development, false)]
-    #[case(Environment::Test, false)]
-    #[case(Environment::Production, false)]
-    #[case(Environment::Custom("custom-environment".to_string()), true)]
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    fn environment_to_static_str(
-        _case: TestCase,
-        #[case] env: Environment,
-        #[case] expect_error: bool,
-    ) {
-        let env = std::panic::catch_unwind(|| {
-            let env: &str = env.into();
-            env
-        });
-        assert_eq!(env.is_err(), expect_error);
     }
 
     #[rstest]
