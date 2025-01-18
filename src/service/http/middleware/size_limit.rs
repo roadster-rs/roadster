@@ -74,7 +74,6 @@ where
             .as_u64()
             .to_usize();
 
-        // Todo: is there a cleaner way to write this?
         let limit = match limit {
             Some(limit) => limit,
             None => return Err(anyhow!("Unable to convert bytes from u64 to usize").into()),
