@@ -1,7 +1,7 @@
 use crate::app_state::{AppState, AppStateWeak};
 use async_trait::async_trait;
 use roadster::error::RoadsterResult;
-use roadster::health_check::{CheckResponse, ErrorData, HealthCheck, Status};
+use roadster::health::check::{CheckResponse, ErrorData, HealthCheck, Status};
 use std::time::Duration;
 use tracing::error;
 

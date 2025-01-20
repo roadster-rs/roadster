@@ -1,6 +1,6 @@
 use app_builder::api::http;
 use app_builder::app_state::AppState;
-use app_builder::health_check::example::ExampleHealthCheck;
+use app_builder::health::check::example::ExampleHealthCheck;
 use app_builder::lifecycle::example::ExampleLifecycleHandler;
 use app_builder::worker::example::ExampleWorker;
 use app_builder::App;

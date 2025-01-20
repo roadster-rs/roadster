@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use roadster::error::RoadsterResult;
-use roadster::health_check::{CheckResponse, HealthCheck, Status};
+use roadster::health::check::{CheckResponse, HealthCheck, Status};
 use std::time::Duration;
 
 pub struct ExampleHealthCheck {
