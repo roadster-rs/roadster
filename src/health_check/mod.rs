@@ -95,13 +95,10 @@ pub trait HealthCheck: Send + Sync {
 // This method is not used in all feature configurations.
 #[allow(dead_code)]
 fn missing_context_response() -> CheckResponse {
-    error!("AppContext missing");
+    let msg = "AppContext missing; is the app shutting down?".to_string();
+    error!(msg);
     CheckResponse::builder()
-        .status(Status::Err(
-            ErrorData::builder()
-                .msg("Unknown error".to_string())
-                .build(),
-        ))
+        .status(Status::Err(ErrorData::builder().msg(msg).build()))
         .latency(Duration::from_secs(0))
         .build()
 }

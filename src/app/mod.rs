@@ -552,6 +552,7 @@ where
     /// This method is intentionally not provided in the builder-style API of [`RoadsterApp`]; it's
     /// expected that consumers would provide their shutdown logic in a
     /// [`crate::lifecycle::AppLifecycleHandler::on_shutdown`] implementation instead.
+    // todo: remove in favor of [`crate::lifecycle::AppLifecycleHandler`]s
     #[instrument(skip_all)]
     async fn graceful_shutdown(self: Arc<Self>, _state: &S) -> RoadsterResult<()> {
         Ok(())
