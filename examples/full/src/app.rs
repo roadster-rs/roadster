@@ -4,6 +4,7 @@ use crate::api::http;
 use crate::api::http::hello_world_middleware_fn;
 use crate::app_state::AppState;
 use crate::cli::AppCli;
+use crate::health::example::ExampleHealthCheck;
 use crate::service::example::example_service;
 use crate::worker::example::ExampleWorker;
 use async_trait::async_trait;
@@ -13,6 +14,7 @@ use roadster::app::metadata::AppMetadata;
 use roadster::app::App as RoadsterApp;
 use roadster::config::AppConfig;
 use roadster::error::RoadsterResult;
+use roadster::health_check::registry::HealthCheckRegistry;
 use roadster::service::function::service::FunctionService;
 #[cfg(feature = "grpc")]
 use roadster::service::grpc::service::GrpcService;
@@ -40,7 +42,16 @@ impl RoadsterApp<AppState> for App {
     }
 
     async fn provide_state(&self, app_context: AppContext) -> RoadsterResult<AppState> {
-        Ok(AppState { app_context })
+        Ok(AppState::new(app_context))
+    }
+
+    async fn health_checks(
+        &self,
+        registry: &mut HealthCheckRegistry,
+        state: &AppState,
+    ) -> RoadsterResult<()> {
+        registry.register(ExampleHealthCheck::new(state))?;
+        Ok(())
     }
 
     async fn services(
@@ -78,7 +89,7 @@ impl RoadsterApp<AppState> for App {
             .register_builder(
                 SidekiqWorkerService::builder(state)
                     .await?
-                    .register_worker(ExampleWorker::default())?,
+                    .register_worker(ExampleWorker)?,
             )
             .await?;
 
