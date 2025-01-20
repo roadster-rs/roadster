@@ -10,7 +10,7 @@ pub mod api;
 pub mod app;
 pub mod config;
 pub mod error;
-pub mod health_check;
+pub mod health;
 pub mod lifecycle;
 pub mod middleware;
 #[cfg(feature = "db-sql")]

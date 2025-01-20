@@ -1,13 +1,13 @@
 use crate::app::context::AppContext;
 #[cfg(feature = "db-sql")]
-use crate::health_check::database::DatabaseHealthCheck;
+use crate::health::check::database::DatabaseHealthCheck;
 #[cfg(feature = "email-smtp")]
-use crate::health_check::email::smtp::SmtpHealthCheck;
+use crate::health::check::email::smtp::SmtpHealthCheck;
 #[cfg(feature = "sidekiq")]
-use crate::health_check::sidekiq_enqueue::SidekiqEnqueueHealthCheck;
+use crate::health::check::sidekiq_enqueue::SidekiqEnqueueHealthCheck;
 #[cfg(feature = "sidekiq")]
-use crate::health_check::sidekiq_fetch::SidekiqFetchHealthCheck;
-use crate::health_check::HealthCheck;
+use crate::health::check::sidekiq_fetch::SidekiqFetchHealthCheck;
+use crate::health::check::HealthCheck;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 

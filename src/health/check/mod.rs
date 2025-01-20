@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 #[cfg(feature = "db-sql")]
 pub mod database;
 pub mod default;
@@ -16,7 +18,6 @@ use schemars::JsonSchema;
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_with::{serde_as, skip_serializing_none};
-use std::time::Duration;
 use tracing::error;
 use typed_builder::TypedBuilder;
 

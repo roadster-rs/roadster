@@ -4,7 +4,6 @@ use crate::config::database::Database;
 #[cfg(feature = "email")]
 use crate::config::email::Email;
 use crate::config::environment::{Environment, ENVIRONMENT_ENV_VAR_NAME};
-use crate::config::health_check::HealthCheck;
 use crate::config::lifecycle::LifecycleHandler;
 use crate::config::service::Service;
 use crate::config::tracing::Tracing;
@@ -15,6 +14,8 @@ use cfg_if::cfg_if;
 use config::builder::DefaultState;
 use config::{Case, Config, ConfigBuilder, FileFormat};
 use dotenvy::dotenv;
+use health::check;
+use health::check::HealthCheck;
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -30,7 +31,7 @@ pub mod database;
 #[cfg(feature = "email")]
 pub mod email;
 pub mod environment;
-pub mod health_check;
+pub mod health;
 pub mod lifecycle;
 pub mod service;
 pub mod tracing;
@@ -268,7 +269,7 @@ impl AppConfig {
 
         let config = config.add_source(lifecycle::default_config());
 
-        let config = config.add_source(health_check::default_config());
+        let config = config.add_source(check::default_config());
 
         #[cfg(feature = "email-sendgrid")]
         let config = {

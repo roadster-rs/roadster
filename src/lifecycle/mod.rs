@@ -16,12 +16,12 @@ use axum_core::extract::FromRef;
 /// 2. Initialize tracing to enable logs/traces
 /// 3. Build the [`crate::app::context::AppContext`] and the [`crate::app::App`]'s custom state
 /// 4. Run the roadster/app CLI command, if one was specified when the app was started
-/// 5. Register [`AppLifecycleHandler`]s, [`crate::health_check::HealthCheck`]s, and
+/// 5. Register [`AppLifecycleHandler`]s, [`crate::health::check::HealthCheck`]s, and
 ///    [`crate::service::AppService`]s
 /// 6. Run the app's registered [`AppLifecycleHandler::before_service_cli`] hooks.
 /// 7. Run any CLI commands that are implemented by [`crate::service::AppService::handle_cli`]
 /// 8. Run the app's registered [`AppLifecycleHandler::before_health_checks`] hooks.
-/// 9. Run the registered [`crate::health_check::HealthCheck`]s
+/// 9. Run the registered [`crate::health::check::HealthCheck`]s
 /// 10. Run the app's registered [`AppLifecycleHandler::before_services`] hooks.
 /// 11. Run the registered [`crate::service::AppService`]s
 /// 12. Wait for a shutdown signal, e.g., `Ctrl+c` or a custom signal from
@@ -67,7 +67,7 @@ where
         Ok(())
     }
 
-    /// This method is run right before the app's [`crate::health_check::HealthCheck`]s during
+    /// This method is run right before the app's [`crate::health::check::HealthCheck`]s during
     /// app startup.
     async fn before_health_checks(&self, _state: &S) -> RoadsterResult<()> {
         Ok(())

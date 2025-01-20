@@ -33,7 +33,7 @@ use crate::app::metadata::AppMetadata;
 use crate::config::environment::Environment;
 use crate::config::{AppConfig, AppConfigOptions};
 use crate::error::RoadsterResult;
-use crate::health_check::registry::HealthCheckRegistry;
+use crate::health::check::registry::HealthCheckRegistry;
 use crate::lifecycle::registry::LifecycleHandlerRegistry;
 use crate::service::registry::ServiceRegistry;
 use crate::tracing::init_tracing;
@@ -517,7 +517,7 @@ where
         Ok(())
     }
 
-    /// Provide the [crate::health_check::HealthCheck]s to use throughout the app.
+    /// Provide the [crate::health::check::HealthCheck]s to use throughout the app.
     async fn health_checks(
         &self,
         _registry: &mut HealthCheckRegistry,

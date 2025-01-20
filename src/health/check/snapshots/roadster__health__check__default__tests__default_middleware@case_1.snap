@@ -1,5 +1,5 @@
 ---
-source: src/health_check/default.rs
+source: src/health/check/default.rs
 expression: health_checks
 ---
 []
