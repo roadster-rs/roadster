@@ -14,7 +14,9 @@ where
 {
     let lifecycle_handlers: Vec<Box<dyn AppLifecycleHandler<A, S>>> = vec![
         #[cfg(feature = "db-sql")]
-        Box::new(crate::lifecycle::db_migration::DbMigrationLifecycleHandler),
+        Box::new(crate::lifecycle::db::migration::DbMigrationLifecycleHandler),
+        #[cfg(feature = "db-sql")]
+        Box::new(crate::lifecycle::db::graceful_shutdown::DbGracefulShutdownLifecycleHandler),
     ];
 
     lifecycle_handlers

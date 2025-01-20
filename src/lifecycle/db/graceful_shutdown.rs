@@ -1,5 +1,4 @@
-//! This [`AppLifecycleHandler`] runs the app's ['up' migration][`MigratorTrait::up`]
-//! in [`AppLifecycleHandler::before_services`].
+//! This [`AppLifecycleHandler`] closes the DB connection pool when the app is shutting down.
 
 use crate::app::context::AppContext;
 use crate::app::App;
@@ -7,30 +6,29 @@ use crate::error::RoadsterResult;
 use crate::lifecycle::AppLifecycleHandler;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
-use sea_orm_migration::MigratorTrait;
+use tracing::instrument;
 
-pub struct DbMigrationLifecycleHandler;
+pub struct DbGracefulShutdownLifecycleHandler;
 
 #[async_trait]
-impl<A, S> AppLifecycleHandler<A, S> for DbMigrationLifecycleHandler
+impl<A, S> AppLifecycleHandler<A, S> for DbGracefulShutdownLifecycleHandler
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
     A: App<S> + 'static,
 {
     fn name(&self) -> String {
-        "db-migration".to_string()
+        "db-graceful-shutdown".to_string()
     }
 
     fn enabled(&self, state: &S) -> bool {
         let context = AppContext::from_ref(state);
-        context.config().database.auto_migrate
-            && context
-                .config()
-                .lifecycle_handler
-                .db_migration
-                .common
-                .enabled(&context)
+        context
+            .config()
+            .lifecycle_handler
+            .db_graceful_shutdown
+            .common
+            .enabled(&context)
     }
 
     fn priority(&self, state: &S) -> i32 {
@@ -38,15 +36,23 @@ where
         context
             .config()
             .lifecycle_handler
-            .db_migration
+            .db_graceful_shutdown
             .common
             .priority
     }
 
-    async fn before_services(&self, state: &S) -> RoadsterResult<()> {
-        let context = AppContext::from_ref(state);
-
-        A::M::up(context.db(), None).await?;
+    #[instrument(skip_all)]
+    async fn on_shutdown(&self, #[allow(unused_variables)] state: &S) -> RoadsterResult<()> {
+        #[cfg(not(feature = "testing-mocks"))]
+        {
+            tracing::info!("Closing the DB connection pool.");
+            let context = AppContext::from_ref(state);
+            context.db().clone().close().await?;
+        }
+        #[cfg(feature = "testing-mocks")]
+        {
+            tracing::warn!("Unable to manually close the db connection pool when `testing-mocks` feature is enabled.");
+        }
 
         Ok(())
     }
@@ -71,11 +77,11 @@ mod tests {
         // Arrange
         let mut config = AppConfig::test(None).unwrap();
         config.lifecycle_handler.default_enable = default_enable;
-        config.lifecycle_handler.db_migration.common.enable = enable;
+        config.lifecycle_handler.db_graceful_shutdown.common.enable = enable;
 
         let context = AppContext::test(Some(config), None, None).unwrap();
 
-        let handler = DbMigrationLifecycleHandler;
+        let handler = DbGracefulShutdownLifecycleHandler;
 
         // Act/Assert
         assert_eq!(
@@ -97,7 +103,7 @@ mod tests {
 
         let context = AppContext::test(Some(config), None, None).unwrap();
 
-        let handler = DbMigrationLifecycleHandler;
+        let handler = DbGracefulShutdownLifecycleHandler;
 
         // Act/Assert
         assert_eq!(

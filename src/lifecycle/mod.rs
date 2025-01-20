@@ -1,5 +1,5 @@
 #[cfg(feature = "db-sql")]
-pub mod db_migration;
+pub mod db;
 pub mod default;
 pub mod registry;
 

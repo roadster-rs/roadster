@@ -21,6 +21,10 @@ pub struct LifecycleHandler {
     #[validate(nested)]
     pub db_migration: LifecycleHandlerConfig<crate::config::EmptyConfig>,
 
+    #[cfg(feature = "db-sql")]
+    #[validate(nested)]
+    pub db_graceful_shutdown: LifecycleHandlerConfig<crate::config::EmptyConfig>,
+
     /// Allows providing configs for custom lifecycle handlers. Any configs that aren't pre-defined
     /// above will be collected here.
     ///

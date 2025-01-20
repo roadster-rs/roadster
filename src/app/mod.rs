@@ -50,7 +50,7 @@ use sea_orm_migration::MigratorTrait;
 use std::env;
 use std::future;
 use std::sync::Arc;
-use tracing::{error, info, instrument, warn};
+use tracing::{error, info, warn};
 
 pub async fn run<A, S>(app: A) -> RoadsterResult<()>
 where
@@ -503,10 +503,10 @@ where
     }
 
     /// Provide the app state that will be used throughout the app. The state can simply be the
-    /// provided [AppContext], or a custom type that implements [FromRef] to allow Roadster to
-    /// extract its [AppContext] when needed.
+    /// provided [`AppContext`], or a custom type that implements [`FromRef`] to allow Roadster to
+    /// extract its [`AppContext`] when needed.
     ///
-    /// See the following for more details regarding [FromRef]: <https://docs.rs/axum/0.7.5/axum/extract/trait.FromRef.html>
+    /// See the following for more details regarding [`FromRef`]: <https://docs.rs/axum/0.7.5/axum/extract/trait.FromRef.html>
     async fn provide_state(&self, context: AppContext) -> RoadsterResult<S>;
 
     async fn lifecycle_handlers(
@@ -540,22 +540,6 @@ where
     /// server when a particular API is called.
     async fn graceful_shutdown_signal(self: Arc<Self>, _state: &S) {
         let _output: () = future::pending().await;
-    }
-
-    /// Override to provide custom graceful shutdown logic to clean up any resources created by
-    /// the app. Roadster will take care of cleaning up the resources it created.
-    ///
-    /// Alternatively, provide a [`crate::lifecycle::AppLifecycleHandler::on_shutdown`]
-    /// implementation and provide the handler to the [`LifecycleHandlerRegistry`] in
-    /// [`Self::lifecycle_handlers`].
-    ///
-    /// This method is intentionally not provided in the builder-style API of [`RoadsterApp`]; it's
-    /// expected that consumers would provide their shutdown logic in a
-    /// [`crate::lifecycle::AppLifecycleHandler::on_shutdown`] implementation instead.
-    // todo: remove in favor of [`crate::lifecycle::AppLifecycleHandler`]s
-    #[instrument(skip_all)]
-    async fn graceful_shutdown(self: Arc<Self>, _state: &S) -> RoadsterResult<()> {
-        Ok(())
     }
 }
 
