@@ -15,7 +15,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
-use tracing::{error, info, instrument};
+use tracing::{error, info, instrument, warn};
 
 #[cfg(feature = "cli")]
 #[instrument(skip_all)]
@@ -89,38 +89,18 @@ where
     let cancel_token = CancellationToken::new();
     let mut join_set = JoinSet::new();
 
+    let context = AppContext::from_ref(state);
+
     // Spawn tasks for the app's services
     for (name, service) in service_registry.services {
-        let context = state.clone();
+        let state = state.clone();
         let cancel_token = cancel_token.clone();
         join_set.spawn(Box::pin(async move {
             info!(%name, "Running service");
-            service.run(&context, cancel_token).await
+            service.run(&state, cancel_token).await
         }));
     }
 
-    // Task to clean up resources when gracefully shutting down.
-    {
-        let cancel_token = cancel_token.clone();
-        let app_graceful_shutdown = {
-            let state = state.clone();
-            let app = app.clone();
-            Box::pin(async move { app.graceful_shutdown(&state).await })
-        };
-        let context = AppContext::from_ref(state);
-        join_set.spawn(Box::pin(async move {
-            cancel_on_error(
-                cancel_token.clone(),
-                context.clone(),
-                graceful_shutdown(
-                    token_shutdown_signal(cancel_token.clone()),
-                    app_graceful_shutdown,
-                    context.clone(),
-                ),
-            )
-            .await
-        }));
-    }
     // Task to listen for the signal to gracefully shutdown, and trigger other tasks to stop.
     {
         let app_graceful_shutdown_signal = {
@@ -142,12 +122,14 @@ where
             Ok(join_ok) => {
                 if let Err(err) = join_ok {
                     error!("An error occurred in one of the app's tasks. Error: {err}");
+                    cancel_on_error(cancel_token.clone(), context.clone());
                 }
             }
             Err(join_err) => {
                 error!(
                     "An error occurred when trying to join on one of the app's tasks. Error: {join_err}"
                 );
+                cancel_on_error(cancel_token.clone(), context.clone());
             }
         }
     }
@@ -206,54 +188,9 @@ where
     Ok(())
 }
 
-async fn token_shutdown_signal(cancellation_token: CancellationToken) {
-    cancellation_token.cancelled().await
-}
-
-async fn cancel_on_error<T, F>(
-    cancellation_token: CancellationToken,
-    context: AppContext,
-    f: F,
-) -> RoadsterResult<T>
-where
-    F: Future<Output = RoadsterResult<T>> + Send + 'static,
-{
-    let result = f.await;
-    if result.is_err() && context.config().app.shutdown_on_error {
+fn cancel_on_error(cancellation_token: CancellationToken, context: AppContext) {
+    if context.config().app.shutdown_on_error {
+        warn!("Cancelling other tasks");
         cancellation_token.cancel();
     }
-    result
-}
-
-#[instrument(skip_all)]
-async fn graceful_shutdown<F1, F2>(
-    shutdown_signal: F1,
-    app_graceful_shutdown: F2,
-    // This parameter is (currently) not used when no features are enabled.
-    #[allow(unused_variables)] context: AppContext,
-) -> RoadsterResult<()>
-where
-    F1: Future<Output = ()> + Send + 'static,
-    F2: Future<Output = RoadsterResult<()>> + Send + 'static,
-{
-    shutdown_signal.await;
-
-    info!("Received shutdown signal. Shutting down gracefully.");
-
-    #[cfg(all(feature = "db-sql", not(feature = "testing-mocks")))]
-    let db_close_result = {
-        info!("Closing the DB connection pool.");
-        context.db().clone().close().await
-    };
-
-    // Futures are lazy -- the custom `app_graceful_shutdown` future won't run until we call `await` on it.
-    // https://rust-lang.github.io/async-book/03_async_await/01_chapter.html
-    info!("Running App::graceful_shutdown.");
-    let app_graceful_shutdown_result = app_graceful_shutdown.await;
-
-    #[cfg(all(feature = "db-sql", not(feature = "testing-mocks")))]
-    db_close_result?;
-    app_graceful_shutdown_result?;
-
-    Ok(())
 }

@@ -1,2 +1,5 @@
 [lifecycle-handler.db-migration]
 priority = 0
+
+[lifecycle-handler.db-graceful-shutdown]
+priority = 10000
