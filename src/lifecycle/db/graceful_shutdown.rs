@@ -98,7 +98,11 @@ mod tests {
         // Arrange
         let mut config = AppConfig::test(None).unwrap();
         if let Some(priority) = override_priority {
-            config.lifecycle_handler.db_migration.common.priority = priority;
+            config
+                .lifecycle_handler
+                .db_graceful_shutdown
+                .common
+                .priority = priority;
         }
 
         let context = AppContext::test(Some(config), None, None).unwrap();
