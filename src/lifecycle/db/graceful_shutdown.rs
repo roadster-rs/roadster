@@ -91,7 +91,7 @@ mod tests {
     }
 
     #[rstest]
-    #[case(None, 0)]
+    #[case(None, 10000)]
     #[case(Some(1234), 1234)]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn priority(#[case] override_priority: Option<i32>, #[case] expected_priority: i32) {
