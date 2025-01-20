@@ -1,7 +1,7 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
-use crate::health_check::default::default_health_checks;
-use crate::health_check::HealthCheck;
+use crate::health::check::default::default_health_checks;
+use crate::health::check::HealthCheck;
 use anyhow::anyhow;
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -60,7 +60,7 @@ impl HealthCheckRegistry {
 mod tests {
     use super::*;
     use crate::config::AppConfig;
-    use crate::health_check::MockHealthCheck;
+    use crate::health::check::MockHealthCheck;
     use rstest::rstest;
 
     #[rstest]

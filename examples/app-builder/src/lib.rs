@@ -6,7 +6,7 @@ pub mod api;
 pub mod app_state;
 #[cfg(feature = "cli")]
 pub mod cli;
-pub mod health_check;
+pub mod health;
 pub mod lifecycle;
 #[cfg(feature = "db-sql")]
 pub mod model;

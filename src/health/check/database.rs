@@ -1,7 +1,7 @@
 use crate::api::core::health::db_health;
 use crate::app::context::{AppContext, AppContextWeak};
 use crate::error::RoadsterResult;
-use crate::health_check::{missing_context_response, CheckResponse, HealthCheck};
+use crate::health::check::{missing_context_response, CheckResponse, HealthCheck};
 use async_trait::async_trait;
 use tracing::instrument;
 

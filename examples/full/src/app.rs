@@ -14,7 +14,7 @@ use roadster::app::metadata::AppMetadata;
 use roadster::app::App as RoadsterApp;
 use roadster::config::AppConfig;
 use roadster::error::RoadsterResult;
-use roadster::health_check::registry::HealthCheckRegistry;
+use roadster::health::check::registry::HealthCheckRegistry;
 use roadster::service::function::service::FunctionService;
 #[cfg(feature = "grpc")]
 use roadster::service::grpc::service::GrpcService;

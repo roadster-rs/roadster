@@ -3,7 +3,7 @@ use crate::api::http::build_path;
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 #[cfg(feature = "open-api")]
-use crate::health_check::{CheckResponse, ErrorData, Status};
+use crate::health::check::{CheckResponse, ErrorData, Status};
 #[cfg(feature = "open-api")]
 use aide::axum::routing::get_with;
 #[cfg(feature = "open-api")]
