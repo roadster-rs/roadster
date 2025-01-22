@@ -57,12 +57,6 @@ pub const fn default_true() -> bool {
     true
 }
 
-// This method isn't used for some feature combinations
-#[allow(dead_code)]
-pub(crate) fn empty_json_object() -> impl for<'de> Deserializer<'de> {
-    Value::Object(Map::new()).into_deserializer()
-}
-
 #[cfg(test)]
 #[derive(Debug, Deserialize, Serialize)]
 pub(crate) struct Wrapper<T> {
