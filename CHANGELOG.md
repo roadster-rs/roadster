@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-alpha.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.2...roadster-v0.7.0-alpha.3) - 2025-01-22
+
+### Added
+
+- [**breaking**] Enable fetching concrete service from registry via downcast (#580)
+
+### Other
+
+- [**breaking**] Rename/move the `health_check` mod to `health::check` (#578)
+- [**breaking**] Remove the `App#graceful_shutdown` method (#577)
+- Add `ExampleHealthCheck` to the `full` example (#576)
+
 ## [0.7.0-alpha.2](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.1...roadster-v0.7.0-alpha.2) - 2025-01-18
 
 ### Added
