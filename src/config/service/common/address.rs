@@ -36,6 +36,7 @@ mod tests {
     use url::Url;
 
     #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn case() -> TestCase {
         Default::default()
     }
