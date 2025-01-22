@@ -168,16 +168,17 @@ impl HttpService {
 }
 
 #[cfg(feature = "open-api")]
-#[derive(Debug, clap::Parser, serde_derive::Serialize, typed_builder::TypedBuilder)]
+#[derive(Debug, serde_derive::Serialize, typed_builder::TypedBuilder)]
+#[cfg_attr(feature = "cli", derive(clap::Parser))]
 #[non_exhaustive]
 pub struct OpenApiArgs {
     /// The file to write the schema to. If not provided, will write to stdout.
     #[builder(default, setter(strip_option))]
-    #[clap(short, long, value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
+    #[cfg_attr(feature = "cli", clap(short, long, value_name = "FILE", value_hint = clap::ValueHint::FilePath))]
     pub output: Option<PathBuf>,
 
     /// Whether to pretty-print the schema. Default: false.
-    #[clap(short, long, default_value_t = false)]
+    #[cfg_attr(feature = "cli", clap(short, long, default_value_t = false))]
     #[builder(default)]
     pub pretty_print: bool,
 }
