@@ -552,6 +552,7 @@ mod tests {
     #[case(true, true)]
     #[case(false, false)]
     #[tokio::test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     async fn clean_up_periodic_jobs_already_registered(
         #[case] enabled: bool,
         #[case] expect_err: bool,

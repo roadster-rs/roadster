@@ -320,6 +320,7 @@ mod tests {
 
     #[rstest]
     #[case::valid_token("foo")]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn token_from_cookies(_case: TestCase, #[case] cookie_value: &str) {
         let cookies = CookieJar::new().add(Cookie::new(
             AUTHORIZATION.as_str(),

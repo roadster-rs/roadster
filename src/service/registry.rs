@@ -306,13 +306,16 @@ mod tests {
         id: Uuid,
     }
     #[async_trait]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     impl AppService<MockApp<AppContext>, AppContext> for FooService {
         fn name(&self) -> String {
             "foo".to_string()
         }
+        #[cfg_attr(coverage_nightly, coverage(off))]
         fn enabled(&self, _: &AppContext) -> bool {
             true
         }
+        #[cfg_attr(coverage_nightly, coverage(off))]
         async fn run(self: Box<Self>, _: &AppContext, _: CancellationToken) -> RoadsterResult<()> {
             todo!()
         }
@@ -320,13 +323,16 @@ mod tests {
 
     struct BarService;
     #[async_trait]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     impl AppService<MockApp<AppContext>, AppContext> for BarService {
         fn name(&self) -> String {
             "bar".to_string()
         }
+        #[cfg_attr(coverage_nightly, coverage(off))]
         fn enabled(&self, _: &AppContext) -> bool {
             true
         }
+        #[cfg_attr(coverage_nightly, coverage(off))]
         async fn run(self: Box<Self>, _: &AppContext, _: CancellationToken) -> RoadsterResult<()> {
             todo!()
         }
@@ -337,6 +343,7 @@ mod tests {
     #[case(false, true)]
     #[case(false, false)]
     #[tokio::test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     async fn get(#[case] registered: bool, #[case] correct_type: bool) {
         // Arrange
         let context = AppContext::test(None, None, None).unwrap();
