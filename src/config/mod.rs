@@ -156,7 +156,7 @@ impl AppConfig {
 
         println!("Loading configuration from directory {config_root_dir:?}");
 
-        let config = Self::default_config(environment.clone());
+        let config = Self::default_config(environment.clone())?;
         let config = config_env_file("default", &config_root_dir, config);
         let config = config_env_dir("default", &config_root_dir, config)?;
         let config = config_env_file(environment_str, &config_root_dir, config);
@@ -178,7 +178,7 @@ impl AppConfig {
     #[cfg(test)]
     #[cfg_attr(coverage_nightly, coverage(off))]
     pub(crate) fn test(config_str: Option<&str>) -> RoadsterResult<Self> {
-        let config = Self::default_config(Environment::Test)
+        let config = Self::default_config(Environment::Test)?
             .add_source(config::File::from_str(
                 config_str.unwrap_or(
                     r#"
@@ -238,8 +238,9 @@ impl AppConfig {
     #[allow(clippy::let_and_return)]
     fn default_config(
         #[allow(unused_variables)] environment: Environment,
-    ) -> ConfigBuilder<DefaultState> {
+    ) -> RoadsterResult<ConfigBuilder<DefaultState>> {
         let config = Config::builder()
+            .set_default("environment", environment.clone().to_string())?
             .add_source(config::File::from_str(
                 include_str!("default.toml"),
                 FileFormat::Toml,
@@ -279,7 +280,7 @@ impl AppConfig {
             config
         };
 
-        config
+        Ok(config)
     }
 
     pub(crate) fn validate(&self, exit_on_error: bool) -> RoadsterResult<()> {

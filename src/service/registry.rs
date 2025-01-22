@@ -2,10 +2,33 @@ use crate::app::context::AppContext;
 use crate::app::App;
 use crate::error::RoadsterResult;
 use crate::service::{AppService, AppServiceBuilder};
-use anyhow::anyhow;
 use axum_core::extract::FromRef;
-use std::collections::BTreeMap;
+use std::any::{type_name, TypeId};
+use std::collections::{BTreeMap, HashSet};
+use thiserror::Error;
 use tracing::info;
+
+#[derive(Debug, Error)]
+#[non_exhaustive]
+pub enum ServiceRegistryError {
+    /// The provided [`AppService`] was already registered. Contains the [`AppService::name`]
+    /// of the provided service.
+    #[error("The provided `AppService` was already registered: `{0}`")]
+    AlreadyRegistered(String),
+
+    /// Unable to find an [`AppService`] instance of the requested type. Contains the [`type_name`]
+    /// of the requested type.
+    #[error("Unable to find an `AppService` instance of type `{0}`")]
+    NotRegistered(String),
+
+    /// Unable to downcast the registered instance to the requested type. Contains the [`type_name`]
+    /// of the requested type.
+    #[error("Unable to downcast the registered instance of `AppService` to type `{0}`")]
+    Downcast(String),
+
+    #[error(transparent)]
+    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+}
 
 /// Registry for [AppService]s that will be run in the app.
 pub struct ServiceRegistry<A, S>
@@ -15,7 +38,8 @@ where
     A: App<S> + ?Sized + 'static,
 {
     pub(crate) state: S,
-    pub(crate) services: BTreeMap<String, Box<dyn AppService<A, S>>>,
+    pub(crate) service_names: HashSet<String>,
+    pub(crate) services: BTreeMap<TypeId, Box<dyn AppService<A, S>>>,
 }
 
 impl<A, S> ServiceRegistry<A, S>
@@ -27,6 +51,7 @@ where
     pub(crate) fn new(state: &S) -> Self {
         Self {
             state: state.clone(),
+            service_names: Default::default(),
             services: Default::default(),
         }
     }
@@ -71,10 +96,127 @@ where
 
         info!(name=%name, "Registering service");
 
-        if self.services.insert(name.clone(), service).is_some() {
-            return Err(anyhow!("Service `{}` was already registered", name).into());
+        if !self.service_names.insert(name.clone())
+            || self
+                .services
+                .insert(service.as_any().type_id(), service)
+                .is_some()
+        {
+            return Err(ServiceRegistryError::AlreadyRegistered(name.clone()).into());
         }
         Ok(())
+    }
+
+    /// Get a reference to a previously registered [`AppService`] of the specified type.
+    ///
+    /// This is useful to call a method that only exists on a concrete [`AppService`]
+    /// implementor after the app was prepared. For example, to get the OpenAPI schema for an app,
+    /// setup and register the [`crate::service::http::service::HttpService`], get the service
+    /// from the registry with this method ([`ServiceRegistry::get`]), and call
+    /// [`crate::service::http::service::HttpService::print_open_api_schema`] to get the schema.
+    ///
+    /// # Examples
+    #[cfg_attr(
+        feature = "default",
+        doc = r##"
+ ```rust
+# tokio_test::block_on(async {
+# use roadster::service::AppServiceBuilder;
+# use roadster::service::http::service::{HttpService, OpenApiArgs};
+# use std::env::current_dir;
+# use std::path::PathBuf;
+# use std::sync::LazyLock;
+# use uuid::Uuid;
+# use roadster::app::PrepareOptions;
+# use roadster::config::environment::Environment;
+# use async_trait::async_trait;
+# use clap::Parser;
+# use sea_orm_migration::{MigrationTrait, MigratorTrait};
+# use tokio_util::sync::CancellationToken;
+# use roadster::api::cli::RunCommand;
+# use roadster::app::context::AppContext;
+# use roadster::error::RoadsterResult;
+# use roadster::service::function::service::FunctionService;
+# use roadster::service::registry::ServiceRegistry;
+# use roadster::app::{prepare, App as RoadsterApp};
+# use roadster::service::AppService;
+#
+# #[derive(Debug, Parser)]
+# #[command(version, about)]
+# pub struct AppCli {}
+#
+# #[async_trait]
+# impl RunCommand<App, AppContext> for AppCli {
+#     #[allow(clippy::disallowed_types)]
+#     async fn run(&self, _: &App, _: &AppCli, _: &AppContext) -> RoadsterResult<bool> {
+#         Ok(false)
+#     }
+# }
+#
+# pub struct Migrator;
+#
+# #[async_trait::async_trait]
+# impl MigratorTrait for Migrator {
+#     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
+#         Default::default()
+#     }
+# }
+#
+pub struct App;
+
+#[async_trait]
+impl RoadsterApp<AppContext> for App {
+#     type Cli = AppCli;
+#     type M = Migrator;
+#
+#     async fn provide_state(&self, context: AppContext) -> RoadsterResult<AppContext> {
+#         Ok(context)
+#     }
+#
+    async fn services(
+        &self,
+        registry: &mut ServiceRegistry<Self, AppContext>,
+        context: &AppContext,
+    ) -> RoadsterResult<()> {
+        // Register the `HttpService` -- this runs when `prepare` is called below
+        registry.register_builder(
+            HttpService::builder(Some("/api"), context)
+        ).await?;
+        Ok(())
+    }
+}
+
+// Prepare the app. This runs all initialization logic for the app but does not actually
+// start the app.
+let prepared = prepare(
+    App,
+    PrepareOptions::builder()
+        .env(Environment::Development)
+#       .config_dir(PathBuf::from("examples/full/config").canonicalize().unwrap())
+        .build()
+).await.unwrap();
+
+// Get the `HttpService` from the `ServiceRegistry`
+let http_service = prepared.service_registry.get::<HttpService>().unwrap();
+// Get the OpenAPI schema from the `HttpService`
+http_service.open_api_schema(&OpenApiArgs::builder().build()).unwrap();
+#
+# })
+```
+"##
+    )]
+    pub fn get<Service>(&self) -> RoadsterResult<&Service>
+    where
+        Service: AppService<A, S> + 'static,
+    {
+        let service = self
+            .services
+            .get(&TypeId::of::<Service>())
+            .ok_or_else(|| ServiceRegistryError::NotRegistered(type_name::<Service>().to_string()))?
+            .as_any()
+            .downcast_ref::<Service>()
+            .ok_or_else(|| ServiceRegistryError::Downcast(type_name::<Service>().to_string()))?;
+        Ok(service)
     }
 }
 
@@ -82,8 +224,12 @@ where
 mod tests {
     use super::*;
     use crate::app::MockApp;
+    use crate::error::Error;
     use crate::service::{MockAppService, MockAppServiceBuilder};
+    use async_trait::async_trait;
     use rstest::rstest;
+    use tokio_util::sync::CancellationToken;
+    use uuid::Uuid;
 
     #[rstest]
     #[case(true, 1)]
@@ -105,7 +251,13 @@ mod tests {
 
         // Assert
         assert_eq!(subject.services.len(), expected_count);
-        assert_eq!(subject.services.contains_key("test"), service_enabled);
+        assert_eq!(subject.services.len(), subject.service_names.len());
+        assert_eq!(
+            subject
+                .services
+                .contains_key(&TypeId::of::<MockAppService<MockApp<AppContext>, AppContext>>()),
+            service_enabled
+        );
     }
 
     #[rstest]
@@ -141,6 +293,97 @@ mod tests {
 
         // Assert
         assert_eq!(subject.services.len(), expected_count);
-        assert_eq!(subject.services.contains_key("test"), expected_count > 0);
+        assert_eq!(subject.services.len(), subject.service_names.len());
+        assert_eq!(
+            subject
+                .services
+                .contains_key(&TypeId::of::<MockAppService<MockApp<AppContext>, AppContext>>()),
+            expected_count > 0
+        );
+    }
+
+    struct FooService {
+        id: Uuid,
+    }
+    #[async_trait]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    impl AppService<MockApp<AppContext>, AppContext> for FooService {
+        fn name(&self) -> String {
+            "foo".to_string()
+        }
+        #[cfg_attr(coverage_nightly, coverage(off))]
+        fn enabled(&self, _: &AppContext) -> bool {
+            true
+        }
+        #[cfg_attr(coverage_nightly, coverage(off))]
+        async fn run(self: Box<Self>, _: &AppContext, _: CancellationToken) -> RoadsterResult<()> {
+            todo!()
+        }
+    }
+
+    struct BarService;
+    #[async_trait]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    impl AppService<MockApp<AppContext>, AppContext> for BarService {
+        fn name(&self) -> String {
+            "bar".to_string()
+        }
+        #[cfg_attr(coverage_nightly, coverage(off))]
+        fn enabled(&self, _: &AppContext) -> bool {
+            true
+        }
+        #[cfg_attr(coverage_nightly, coverage(off))]
+        async fn run(self: Box<Self>, _: &AppContext, _: CancellationToken) -> RoadsterResult<()> {
+            todo!()
+        }
+    }
+
+    #[rstest]
+    #[case(true, true)]
+    #[case(false, true)]
+    #[case(false, false)]
+    #[tokio::test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    async fn get(#[case] registered: bool, #[case] correct_type: bool) {
+        // Arrange
+        let context = AppContext::test(None, None, None).unwrap();
+
+        let id = Uuid::new_v4();
+        let service = FooService { id };
+
+        let mut subject: ServiceRegistry<MockApp<AppContext>, AppContext> =
+            ServiceRegistry::new(&context);
+        if registered && correct_type {
+            subject.register_service(service).unwrap();
+
+            let duplicate = subject.register_service(FooService { id: Uuid::new_v4() });
+            assert!(matches!(
+                duplicate,
+                Err(Error::ServiceRegistry(
+                    ServiceRegistryError::AlreadyRegistered(_)
+                ))
+            ));
+        } else if registered && !correct_type {
+            subject.register_service(BarService).unwrap();
+        }
+
+        // Act
+        let service = subject.get::<FooService>();
+
+        if !registered {
+            assert!(matches!(
+                service,
+                Err(Error::ServiceRegistry(ServiceRegistryError::NotRegistered(
+                    _
+                )))
+            ));
+        } else if !correct_type {
+            assert!(matches!(
+                service,
+                Err(Error::ServiceRegistry(ServiceRegistryError::Downcast(_)))
+            ));
+        } else {
+            assert_eq!(service.unwrap().id, id);
+        }
     }
 }

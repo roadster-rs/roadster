@@ -121,6 +121,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn deserialize_claims() {
         let claims = r#"
         iss = "http://example.com"

@@ -36,6 +36,7 @@ mod tests {
     use url::Url;
 
     #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn case() -> TestCase {
         Default::default()
     }
@@ -55,6 +56,7 @@ mod tests {
         port = 3000
         "#
     )]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn url_with_scheme(_case: TestCase, #[case] address: &str) {
         let addr: Address = toml::from_str(address).unwrap();
 

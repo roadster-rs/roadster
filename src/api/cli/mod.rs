@@ -161,6 +161,7 @@ mod tests {
     use rstest::{fixture, rstest};
 
     #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn case() -> TestCase {
         Default::default()
     }

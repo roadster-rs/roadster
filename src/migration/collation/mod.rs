@@ -142,6 +142,7 @@ mod tests {
     use sea_orm::DbBackend;
 
     #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn case() -> TestCase {
         Default::default()
     }

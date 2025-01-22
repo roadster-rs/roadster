@@ -36,6 +36,7 @@ use crate::error::tokio::TokioError;
 #[cfg(feature = "grpc")]
 use crate::error::tonic::TonicError;
 use crate::error::tracing::TracingError;
+use crate::service::registry::ServiceRegistryError;
 #[cfg(feature = "http")]
 use ::axum::http::StatusCode;
 #[cfg(feature = "http")]
@@ -106,6 +107,9 @@ pub enum Error {
     #[cfg(feature = "email")]
     #[error(transparent)]
     Email(#[from] EmailError),
+
+    #[error(transparent)]
+    ServiceRegistry(#[from] ServiceRegistryError),
 
     #[error(transparent)]
     Other(#[from] OtherError),

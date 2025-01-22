@@ -102,8 +102,13 @@ check-all-features:
     cargo check --all-features
     cargo clippy --all-targets --all-features -- -D warnings
 
-check-docs:
+doc:
     RUSTDOCFLAGS="-D rustdoc::all -A rustdoc::private_intra_doc_links" cargo doc --all-features --no-deps
+
+doc-open:
+    RUSTDOCFLAGS="-D rustdoc::all -A rustdoc::private_intra_doc_links" cargo doc --all-features --no-deps --open
+
+check-docs: doc
 
 check-msrv:
     cargo minimal-versions check --direct --all-features
