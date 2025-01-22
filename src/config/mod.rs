@@ -395,3 +395,26 @@ mod tests {
         assert_toml_snapshot!(config);
     }
 }
+
+#[cfg(test)]
+mod custom_config_tests {
+    use crate::config::CustomConfig;
+    use serde_json::Value;
+    use std::collections::BTreeMap;
+
+    #[test]
+    fn to_map() {
+        let config: CustomConfig = CustomConfig {
+            inner: BTreeMap::new(),
+        };
+        let _map: BTreeMap<String, Value> = config.into();
+    }
+
+    #[test]
+    fn deref() {
+        let mut inner = BTreeMap::new();
+        inner.insert("foo".to_string(), "bar".into());
+        let config: CustomConfig = CustomConfig { inner };
+        assert_eq!(config.get("foo").unwrap(), "bar");
+    }
+}

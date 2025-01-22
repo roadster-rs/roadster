@@ -1,10 +1,8 @@
 use std::fmt::Display;
 use std::str::FromStr;
 
-use serde::de::IntoDeserializer;
 use serde::{de, Deserializer, Serializer};
 use serde_derive::{Deserialize, Serialize};
-use serde_json::{Map, Value};
 use url::Url;
 
 /// Custom deserializer to allow deserializing a string field as the given type `T`, as long as
