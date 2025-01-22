@@ -403,6 +403,7 @@ mod custom_config_tests {
     use std::collections::BTreeMap;
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn to_map() {
         let config: CustomConfig = CustomConfig {
             inner: BTreeMap::new(),
@@ -411,6 +412,7 @@ mod custom_config_tests {
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn deref() {
         let mut inner = BTreeMap::new();
         inner.insert("foo".to_string(), "bar".into());
