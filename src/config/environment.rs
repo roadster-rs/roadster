@@ -181,6 +181,7 @@ mod tests {
     #[rstest]
     #[case(DEVELOPMENT.to_string())]
     #[case(DEVELOPMENT.to_uppercase())]
+    #[cfg(feature = "cli")]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn value_enum_from_str(_case: TestCase, #[case] env: String) {
         let env = <Environment as ValueEnum>::from_str(&env, false).unwrap();
