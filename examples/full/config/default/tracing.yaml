@@ -1,2 +1,2 @@
 tracing:
-  level: debug
+  trace-propagation: false

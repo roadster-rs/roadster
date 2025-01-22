@@ -3,13 +3,13 @@ use crate::api::cli::roadster::health::HealthArgs;
 use crate::api::cli::roadster::list_routes::ListRoutesArgs;
 #[cfg(feature = "db-sql")]
 use crate::api::cli::roadster::migrate::MigrateArgs;
-#[cfg(feature = "open-api")]
-use crate::api::cli::roadster::open_api_schema::OpenApiArgs;
 use crate::api::cli::roadster::print_config::PrintConfigArgs;
 use crate::app::context::AppContext;
 use crate::app::App;
 use crate::config::environment::Environment;
 use crate::error::RoadsterResult;
+#[cfg(feature = "open-api")]
+use crate::service::http::service::OpenApiArgs;
 use async_trait::async_trait;
 use std::path::PathBuf;
 
@@ -22,8 +22,6 @@ pub mod health;
 pub mod list_routes;
 #[cfg(feature = "db-sql")]
 pub mod migrate;
-#[cfg(feature = "open-api")]
-pub mod open_api_schema;
 pub mod print_config;
 
 /// Internal version of [RunCommand][crate::cli::RunCommand] that uses the [RoadsterCli] and

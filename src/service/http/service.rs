@@ -14,8 +14,10 @@ use aide::openapi::OpenApi;
 use async_trait::async_trait;
 use axum::Router;
 use axum_core::extract::FromRef;
+use clap::Parser;
 #[cfg(feature = "open-api")]
 use itertools::Itertools;
+use serde_derive::Serialize;
 #[cfg(feature = "open-api")]
 use std::fs::File;
 #[cfg(feature = "open-api")]
@@ -26,6 +28,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 use tracing::info;
+use typed_builder::TypedBuilder;
 
 pub(crate) const NAME: &str = "http";
 
@@ -74,7 +77,7 @@ where
                     }
                     #[cfg(feature = "open-api")]
                     RoadsterSubCommand::OpenApi(args) => {
-                        self.open_api_schema(args.pretty_print, args.output.as_ref())?;
+                        self.print_open_api_schema(args)?;
                         return Ok(true);
                     }
                     _ => {}
@@ -118,6 +121,9 @@ impl HttpService {
     }
 
     /// List the available HTTP API routes.
+    ///
+    /// Note that in order for a route to show up where, it needs to be registered with an
+    /// [`aide::axum::ApiRouter`] and provided when building the [`HttpService`].
     #[cfg(feature = "open-api")]
     pub fn list_routes(&self) -> Vec<(&str, &str)> {
         self.api
@@ -128,27 +134,55 @@ impl HttpService {
             .collect()
     }
 
-    /// Generate an OpenAPI schema for the HTTP API.
+    /// Generate an OpenAPI schema for the HTTP API and either print to stdout or to the path
+    /// provided in [`OpenApiArgs`].
     #[cfg(feature = "open-api")]
-    pub fn open_api_schema(
-        &self,
-        pretty_print: bool,
-        output: Option<&PathBuf>,
-    ) -> RoadsterResult<()> {
-        let schema_json = if pretty_print {
+    pub fn print_open_api_schema(&self, options: &OpenApiArgs) -> RoadsterResult<()> {
+        let schema = self.open_api_schema(options)?;
+        if let Some(path) = &options.output {
+            info!("Writing schema to {:?}", path);
+            write!(File::create(path)?, "{schema}")?;
+        } else {
+            info!("OpenAPI schema:");
+            info!("{schema}");
+        };
+        Ok(())
+    }
+
+    /// Generate an OpenAPI schema for the HTTP API and either return it as a JSON string.
+    ///
+    /// Note: This method ignores the `output` field of [`OpenApiArgs`].
+    #[cfg(feature = "open-api")]
+    pub fn open_api_schema(&self, options: &OpenApiArgs) -> RoadsterResult<String> {
+        let schema = if options.pretty_print {
             serde_json::to_string_pretty(self.api.as_ref())?
         } else {
             serde_json::to_string(self.api.as_ref())?
         };
-        if let Some(path) = output {
-            info!("Writing schema to {:?}", path);
-            write!(File::create(path)?, "{schema_json}")?;
-        } else {
-            info!("OpenAPI schema:");
-            info!("{schema_json}");
-        };
-        Ok(())
+        Ok(schema)
     }
+
+    /// Get the [`OpenApi`] for this [`HttpService`]. Useful to implement custom processing
+    /// of the schema that isn't provided by Roadster.
+    #[cfg(feature = "open-api")]
+    pub fn open_api(&self) -> Arc<OpenApi> {
+        self.api.clone()
+    }
+}
+
+#[cfg(feature = "open-api")]
+#[derive(Debug, Parser, Serialize, TypedBuilder)]
+#[non_exhaustive]
+pub struct OpenApiArgs {
+    /// The file to write the schema to. If not provided, will write to stdout.
+    #[builder(default, setter(strip_option))]
+    #[clap(short, long, value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
+    pub output: Option<PathBuf>,
+
+    /// Whether to pretty-print the schema. Default: false.
+    #[clap(short, long, default_value_t = false)]
+    #[builder(default)]
+    pub pretty_print: bool,
 }
 
 #[cfg(test)]

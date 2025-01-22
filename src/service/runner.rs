@@ -67,7 +67,8 @@ where
     AppContext: FromRef<S>,
     A: App<S>,
 {
-    for (name, service) in service_registry.services.iter() {
+    for (_, service) in service_registry.services.iter() {
+        let name = service.name();
         info!(%name, "Running service::before_run");
         service.before_run(state).await?;
     }
@@ -92,7 +93,8 @@ where
     let context = AppContext::from_ref(state);
 
     // Spawn tasks for the app's services
-    for (name, service) in service_registry.services {
+    for (_, service) in service_registry.services {
+        let name = service.name();
         let state = state.clone();
         let cancel_token = cancel_token.clone();
         join_set.spawn(Box::pin(async move {

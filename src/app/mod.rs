@@ -29,7 +29,6 @@ use crate::api::cli::MockTestCli;
 #[cfg(feature = "cli")]
 use crate::api::cli::RunCommand;
 use crate::app::metadata::AppMetadata;
-#[cfg(not(feature = "cli"))]
 use crate::config::environment::Environment;
 use crate::config::{AppConfig, AppConfigOptions};
 use crate::error::RoadsterResult;
@@ -49,8 +48,10 @@ use sea_orm_migration::MigratorTrait;
 #[cfg(feature = "cli")]
 use std::env;
 use std::future;
+use std::path::PathBuf;
 use std::sync::Arc;
 use tracing::{error, info, warn};
+use typed_builder::TypedBuilder;
 
 pub async fn run<A, S>(app: A) -> RoadsterResult<()>
 where
@@ -58,7 +59,7 @@ where
     AppContext: FromRef<S>,
     A: App<S> + Send + Sync + 'static,
 {
-    let cli_and_state = build_cli_and_state(app).await?;
+    let cli_and_state = build_cli_and_state(app, PrepareOptions::builder().build()).await?;
 
     #[cfg(feature = "cli")]
     {
@@ -100,7 +101,10 @@ where
     pub state: S,
 }
 
-async fn build_cli_and_state<A, S>(app: A) -> RoadsterResult<CliAndState<A, S>>
+async fn build_cli_and_state<A, S>(
+    app: A,
+    options: PrepareOptions,
+) -> RoadsterResult<CliAndState<A, S>>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
@@ -110,14 +114,14 @@ where
     let (roadster_cli, app_cli) = parse_cli::<A, S, _, _>(env::args_os())?;
 
     #[cfg(feature = "cli")]
-    let environment = roadster_cli.environment.clone();
+    let environment = roadster_cli.environment.clone().or(options.env);
     #[cfg(not(feature = "cli"))]
-    let environment: Option<Environment> = None;
+    let environment: Option<Environment> = options.env;
 
     #[cfg(feature = "cli")]
-    let config_dir = roadster_cli.config_dir.as_ref().cloned();
+    let config_dir = roadster_cli.config_dir.clone().or(options.config_dir);
     #[cfg(not(feature = "cli"))]
-    let config_dir: Option<std::path::PathBuf> = None;
+    let config_dir: Option<std::path::PathBuf> = options.config_dir;
 
     let config = AppConfig::new_with_options(
         AppConfigOptions::builder()
@@ -199,6 +203,19 @@ where
     lifecycle_handler_registry: LifecycleHandlerRegistry<A, S>,
 }
 
+/// Options to use when preparing the app. Normally these values can be provided via env vars
+/// or CLI arguments when running the [`run`] method. However, if [`prepare`] is called directly,
+/// especially from somewhere without an env or CLI, then this can be used to configure the
+/// prepared app.
+#[derive(Default, TypedBuilder)]
+#[non_exhaustive]
+pub struct PrepareOptions {
+    #[builder(default, setter(strip_option))]
+    pub env: Option<Environment>,
+    #[builder(default, setter(strip_option))]
+    pub config_dir: Option<PathBuf>,
+}
+
 /// Prepare the app. Sets up everything needed to start the app, but does not execute anything.
 /// Specifically, the following are skipped:
 ///
@@ -206,13 +223,13 @@ where
 /// 2. Health checks
 /// 3. Lifecycle Handlers
 /// 4. Starting any services
-pub async fn prepare<A, S>(app: A) -> RoadsterResult<PreparedApp<A, S>>
+pub async fn prepare<A, S>(app: A, options: PrepareOptions) -> RoadsterResult<PreparedApp<A, S>>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
     A: App<S> + Send + Sync + 'static,
 {
-    prepare_from_cli_and_state(build_cli_and_state(app).await?).await
+    prepare_from_cli_and_state(build_cli_and_state(app, options).await?).await
 }
 
 /// Initialize the app state. Does everything to initialize the app short of starting the app.

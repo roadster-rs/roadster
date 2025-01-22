@@ -115,8 +115,8 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
     A: App<S> + 'static,
-    F: Send + Sync + Fn(S, CancellationToken) -> Fut,
-    Fut: Send + Future<Output = RoadsterResult<()>>,
+    F: 'static + Send + Sync + Fn(S, CancellationToken) -> Fut,
+    Fut: 'static + Send + Future<Output = RoadsterResult<()>>,
 {
     fn name(&self) -> String {
         self.name.clone()
