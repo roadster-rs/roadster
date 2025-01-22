@@ -14,10 +14,8 @@ use aide::openapi::OpenApi;
 use async_trait::async_trait;
 use axum::Router;
 use axum_core::extract::FromRef;
-use clap::Parser;
 #[cfg(feature = "open-api")]
 use itertools::Itertools;
-use serde_derive::Serialize;
 #[cfg(feature = "open-api")]
 use std::fs::File;
 #[cfg(feature = "open-api")]
@@ -28,7 +26,6 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 use tracing::info;
-use typed_builder::TypedBuilder;
 
 pub(crate) const NAME: &str = "http";
 
@@ -171,7 +168,7 @@ impl HttpService {
 }
 
 #[cfg(feature = "open-api")]
-#[derive(Debug, Parser, Serialize, TypedBuilder)]
+#[derive(Debug, clap::Parser, serde_derive::Serialize, typed_builder::TypedBuilder)]
 #[non_exhaustive]
 pub struct OpenApiArgs {
     /// The file to write the schema to. If not provided, will write to stdout.
