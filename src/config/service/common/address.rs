@@ -44,6 +44,30 @@ mod tests {
     #[rstest]
     #[case(
         r#"
+        scheme = "https"
+        host = "example.com"
+        port = 3000
+        "#
+    )]
+    #[case(
+        r#"
+        scheme = "https"
+        host = "localhost"
+        port = 3000
+        "#
+    )]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn url_str(_case: TestCase, #[case] address: &str) {
+        let addr: Address = toml::from_str(address).unwrap();
+
+        let url_str = addr.url();
+
+        assert_debug_snapshot!(url_str);
+    }
+
+    #[rstest]
+    #[case(
+        r#"
         scheme = "http"
         host = "localhost"
         port = 1234
@@ -63,5 +87,29 @@ mod tests {
         let url: Result<Url, _> = addr.url_with_scheme().parse();
 
         assert_debug_snapshot!(url);
+    }
+
+    #[rstest]
+    #[case(
+        r#"
+        scheme = "http"
+        host = "localhost"
+        port = 1234
+        "#
+    )]
+    #[case(
+        r#"
+        scheme = "https"
+        host = "[::]"
+        port = 3000
+        "#
+    )]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn socket_addr(_case: TestCase, #[case] address: &str) {
+        let addr: Address = toml::from_str(address).unwrap();
+
+        let addr = addr.socket_addr();
+
+        assert_debug_snapshot!(addr);
     }
 }
