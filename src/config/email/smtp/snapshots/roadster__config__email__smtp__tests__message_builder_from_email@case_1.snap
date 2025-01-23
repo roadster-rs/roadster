@@ -1,0 +1,19 @@
+---
+source: src/config/email/smtp.rs
+expression: msg_builder
+---
+MessageBuilder {
+    headers: Headers {
+        headers: [
+            HeaderValue {
+                name: HeaderName(
+                    "From",
+                ),
+                raw_value: "foo@example.com",
+                encoded_value: "foo@example.com",
+            },
+        ],
+    },
+    envelope: None,
+    drop_bcc: true,
+}
