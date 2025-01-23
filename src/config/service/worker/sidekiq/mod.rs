@@ -188,7 +188,7 @@ mod deserialize_tests {
     use crate::testing::snapshot::TestCase;
     use ::sidekiq::BalanceStrategy as SidekiqBalanceStrategy;
     use ::sidekiq::QueueConfig as SidekiqQueueConfig;
-    use insta::{assert_snapshot, assert_toml_snapshot};
+    use insta::assert_toml_snapshot;
     use rstest::{fixture, rstest};
 
     #[fixture]
