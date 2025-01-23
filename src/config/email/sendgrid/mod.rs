@@ -81,8 +81,9 @@ impl TryFrom<&Sendgrid> for Sender {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::environment::Environment;
     use crate::testing::snapshot::TestCase;
-    use insta::assert_toml_snapshot;
+    use insta::{assert_debug_snapshot, assert_json_snapshot, assert_toml_snapshot};
     use rstest::{fixture, rstest};
 
     #[fixture]
@@ -120,5 +121,59 @@ mod tests {
         let sendgrid: Sendgrid = toml::from_str(config).unwrap();
 
         assert_toml_snapshot!(sendgrid);
+    }
+
+    #[rstest]
+    #[case(
+        r#"
+        from = "No Reply <no-reply@example.com>"
+
+        [smtp.connection]
+        uri = "smtps://username:password@smtp.example.com:425"
+
+        [sendgrid]
+        api-key = "api-key"
+        "#
+    )]
+    #[case(
+        r#"
+        from = "no-reply@example.com"
+        reply-to = "No Reply <no-reply@example.com>"
+
+        [smtp.connection]
+        uri = "smtps://username:password@smtp.example.com:425"
+
+        [sendgrid]
+        api-key = "api-key"
+        sandbox = false
+        "#
+    )]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn message_from_email(_case: TestCase, #[case] config: &str) {
+        let email: Email = toml::from_str(config).unwrap();
+        let message = Message::from(&email);
+
+        assert_json_snapshot!(message);
+    }
+
+    #[rstest]
+    #[case(
+        r#"
+        api-key = "api-key"
+        "#
+    )]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn sender_from_sendgrid_config(_case: TestCase, #[case] config: &str) {
+        let sendgrid_config: Sendgrid = toml::from_str(config).unwrap();
+        let _sender = Sender::try_from(&sendgrid_config).unwrap();
+    }
+
+    #[rstest]
+    #[case(Environment::Development)]
+    #[case(Environment::Production)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn default_config_per_env(_case: TestCase, #[case] env: Environment) {
+        let config = super::default_config_per_env(env);
+        assert_debug_snapshot!(config);
     }
 }

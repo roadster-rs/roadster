@@ -1,0 +1,20 @@
+---
+source: src/config/email/sendgrid/mod.rs
+expression: message
+---
+{
+  "from": {
+    "email": "no-reply@example.com"
+  },
+  "subject": "",
+  "personalizations": [],
+  "reply_to": {
+    "email": "no-reply@example.com",
+    "name": "No Reply"
+  },
+  "mail_settings": {
+    "sandbox_mode": {
+      "enable": false
+    }
+  }
+}
