@@ -118,22 +118,24 @@ impl TryFrom<&Smtp> for SmtpTransportBuilder {
 impl From<&SmtpPool> for PoolConfig {
     fn from(value: &SmtpPool) -> Self {
         let pool_config = PoolConfig::new();
+
         let pool_config = if let Some(min_connections) = value.min_connections {
             pool_config.min_idle(min_connections)
         } else {
             pool_config
         };
+
         let pool_config = if let Some(max_connections) = value.max_connections {
             pool_config.max_size(max_connections)
         } else {
             pool_config
         };
-        let pool_config = if let Some(idle_timeout) = value.idle_timeout {
+
+        if let Some(idle_timeout) = value.idle_timeout {
             pool_config.idle_timeout(idle_timeout)
         } else {
             pool_config
-        };
-        pool_config
+        }
     }
 }
 
