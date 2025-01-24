@@ -1,0 +1,12 @@
+---
+source: src/health/check/mod.rs
+expression: "super::missing_context_response()"
+---
+{
+  "status": {
+    "err": {
+      "msg": "AppContext missing; is the app shutting down?"
+    }
+  },
+  "latency": 0
+}

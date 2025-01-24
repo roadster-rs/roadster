@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use bb8::PooledConnection;
-use sidekiq::redis_rs::{cmd, FromRedisValue, ToRedisArgs};
+use sidekiq::redis_rs::ToRedisArgs;
 use sidekiq::{RedisConnection, RedisConnectionManager, RedisError};
 
 /// Trait to help with mocking responses from Redis.
@@ -17,10 +17,6 @@ pub(crate) trait RedisCommands {
     async fn zrem<V>(&mut self, key: String, value: V) -> Result<usize, RedisError>
     where
         V: ToRedisArgs + Send + Sync + 'static;
-
-    async fn ping<T>(&mut self, msg: T) -> Result<T, RedisError>
-    where
-        T: ToRedisArgs + FromRedisValue + Send + Sync + 'static;
 }
 
 #[async_trait]
@@ -39,15 +35,5 @@ impl RedisCommands for PooledConnection<'_, RedisConnectionManager> {
         V: ToRedisArgs + Send + Sync + 'static,
     {
         RedisConnection::zrem(self, key, value).await
-    }
-
-    async fn ping<T>(&mut self, msg: T) -> Result<T, RedisError>
-    where
-        T: ToRedisArgs + FromRedisValue + Send + Sync + 'static,
-    {
-        cmd("PING")
-            .arg(&msg)
-            .query_async(self.unnamespaced_borrow_mut())
-            .await
     }
 }
