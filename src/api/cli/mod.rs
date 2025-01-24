@@ -166,6 +166,7 @@ mod tests {
         Default::default()
     }
 
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn setup_cli(
         args: Vec<&str>,
         mock_handles_cli: bool,
