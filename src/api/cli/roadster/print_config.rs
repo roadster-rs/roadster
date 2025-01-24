@@ -96,6 +96,7 @@ mod tests {
     #[fixture]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn config() -> AppConfig {
+        #[allow(clippy::unwrap_used)]
         AppConfig::test(None).unwrap()
     }
 
