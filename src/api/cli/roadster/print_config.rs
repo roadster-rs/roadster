@@ -63,7 +63,23 @@ fn serialize_config(format: &Format, config: &AppConfig) -> RoadsterResult<Strin
     Ok(serialized)
 }
 
-#[cfg(test)]
+#[cfg(all(
+    test,
+    feature = "http",
+    feature = "open-api",
+    feature = "sidekiq",
+    feature = "db-sql",
+    feature = "email-smtp",
+    feature = "email-sendgrid",
+    feature = "jwt",
+    feature = "jwt-ietf",
+    feature = "otel",
+    feature = "grpc",
+    feature = "testing",
+    feature = "test-containers",
+    feature = "testing-mocks",
+    feature = "config-yml",
+))]
 mod tests {
     use crate::api::cli::roadster::print_config::Format;
     use crate::config::AppConfig;
