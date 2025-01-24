@@ -166,21 +166,10 @@ mod tests {
         Default::default()
     }
 
-    #[rstest]
-    #[case(None, None)]
-    #[case(Some("--environment test"), None)]
-    #[case(Some("--skip-validate-config"), None)]
-    #[case(Some("--allow-dangerous"), None)]
-    #[cfg_attr(
-        feature = "open-api",
-        case::list_routes(Some("roadster list-routes"), None)
-    )]
-    #[cfg_attr(feature = "open-api", case::list_routes(Some("r list-routes"), None))]
-    #[cfg_attr(feature = "open-api", case::open_api(Some("r open-api"), None))]
-    #[cfg_attr(feature = "db-sql", case::migrate(Some("r migrate up"), None))]
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    fn parse_cli(_case: TestCase, #[case] args: Option<&str>, #[case] arg_list: Option<Vec<&str>>) {
-        // Arrange
+    fn setup_cli(
+        args: Vec<&str>,
+        mock_handles_cli: bool,
+    ) -> (RoadsterCli, MockTestCli<AppContext>) {
         let augment_args_context = MockTestCli::<AppContext>::augment_args_context();
         augment_args_context.expect().returning(|c| c);
         let from_arg_matches_context = MockTestCli::<AppContext>::from_arg_matches_context();
@@ -188,21 +177,70 @@ mod tests {
             .expect()
             .returning(|_| Ok(MockTestCli::<AppContext>::default()));
 
-        let args = if let Some(args) = args {
-            args.split(' ').collect_vec()
-        } else {
-            arg_list.unwrap_or_default()
-        };
+        let mut app_cli = MockTestCli::<AppContext>::default();
+        app_cli
+            .expect_run()
+            .returning(move |_, _, _| Ok(mock_handles_cli));
+
         // The first word is interpreted as the binary name
-        let args = vec!["binary_name"]
-            .into_iter()
-            .chain(args.into_iter())
-            .collect_vec();
+        let args = vec!["binary_name"].into_iter().chain(args).collect_vec();
+
+        let (roadster_cli, _) = super::parse_cli::<MockApp<AppContext>, _, _, _>(args).unwrap();
+
+        (roadster_cli, app_cli)
+    }
+
+    #[rstest]
+    #[case(None)]
+    #[case(Some("--environment test"))]
+    #[case(Some("--skip-validate-config"))]
+    #[case(Some("--allow-dangerous"))]
+    #[cfg_attr(feature = "open-api", case::list_routes(Some("roadster list-routes")))]
+    #[cfg_attr(feature = "open-api", case::list_routes(Some("r list-routes")))]
+    #[cfg_attr(feature = "open-api", case::open_api(Some("r open-api")))]
+    #[cfg_attr(feature = "db-sql", case::migrate(Some("r migrate up")))]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn parse_cli(_case: TestCase, #[case] args: Option<&str>) {
+        // Arrange
+        let args = args
+            .map(|args| args.split(' ').collect_vec())
+            .unwrap_or_default();
 
         // Act
-        let (roadster_cli, _a) = super::parse_cli::<MockApp<AppContext>, _, _, _>(args).unwrap();
+        let (roadster_cli, _a) = setup_cli(args, false);
 
         // Assert
         assert_toml_snapshot!(roadster_cli);
+    }
+
+    #[rstest]
+    #[case(None, false, false)]
+    #[case(None, true, true)]
+    #[cfg_attr(
+        feature = "open-api",
+        case::list_routes(Some("roadster handle-cli"), false, true)
+    )]
+    #[tokio::test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    async fn handle_cli(
+        _case: TestCase,
+        #[case] args: Option<&str>,
+        #[case] mock_handles_cli: bool,
+        #[case] cli_handled: bool,
+    ) {
+        let context = AppContext::test(None, None, None).unwrap();
+        let app = MockApp::default();
+
+        let args = args
+            .map(|args| args.split(' ').collect_vec())
+            .unwrap_or_default();
+
+        let (roadster_cli, app_cli) = setup_cli(args, mock_handles_cli);
+
+        let result = super::handle_cli(&app, &roadster_cli, &app_cli, &context)
+            .await
+            .unwrap();
+
+        assert_eq!(result, cli_handled);
     }
 }

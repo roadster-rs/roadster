@@ -66,10 +66,12 @@ where
                 RoadsterCommand::Roadster(args) => match &args.command {
                     #[cfg(feature = "open-api")]
                     RoadsterSubCommand::ListRoutes(_) => {
-                        info!("API routes:");
-                        self.list_routes()
-                            .iter()
-                            .for_each(|(path, method)| info!("[{method}]\t{path}"));
+                        let routes = self
+                            .list_routes()
+                            .into_iter()
+                            .map(|(path, method)| format!("[{method}]\t{path}"))
+                            .join("\n\t");
+                        info!("API routes:\n\t{routes}");
                         return Ok(true);
                     }
                     #[cfg(feature = "open-api")]
