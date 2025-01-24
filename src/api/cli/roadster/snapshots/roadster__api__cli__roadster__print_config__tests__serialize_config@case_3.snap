@@ -1,0 +1,210 @@
+---
+source: src/api/cli/roadster/print_config.rs
+expression: serialized
+---
+{
+  "environment": "test",
+  "app": {
+    "name": "Test",
+    "shutdown-on-error": true
+  },
+  "lifecycle-handler": {
+    "default-enable": true,
+    "db-migration": {
+      "priority": 0
+    },
+    "db-graceful-shutdown": {
+      "priority": 10000
+    }
+  },
+  "health-check": {
+    "default-enable": true,
+    "max-duration": {
+      "startup": 60000,
+      "api": 1000,
+      "cli": 10000
+    },
+    "database": {},
+    "sidekiq": {},
+    "smtp": {}
+  },
+  "service": {
+    "default-enable": true,
+    "http": {
+      "url": null,
+      "scheme": "http",
+      "host": "127.0.0.1",
+      "port": 3000,
+      "middleware": {
+        "default-enable": true,
+        "sensitive-request-headers": {
+          "priority": -10000,
+          "header-names": [
+            "authorization",
+            "refresh-token",
+            "x-refresh-token",
+            "proxy-authorization",
+            "cookie",
+            "set-cookie"
+          ]
+        },
+        "sensitive-response-headers": {
+          "priority": 10000,
+          "header-names": [
+            "authorization",
+            "refresh-token",
+            "x-refresh-token",
+            "proxy-authorization",
+            "cookie",
+            "set-cookie"
+          ]
+        },
+        "set-request-id": {
+          "priority": -9990,
+          "header-name": "request-id"
+        },
+        "propagate-request-id": {
+          "priority": 9990,
+          "header-name": "request-id"
+        },
+        "tracing": {
+          "priority": -9980
+        },
+        "catch-panic": {
+          "priority": 0
+        },
+        "response-compression": {
+          "priority": 0
+        },
+        "request-decompression": {
+          "priority": -9960
+        },
+        "timeout": {
+          "priority": 0,
+          "timeout": 10000
+        },
+        "size-limit": {
+          "priority": -9970,
+          "limit": "5 MB"
+        },
+        "cors": {
+          "priority": -9950,
+          "preset": "restrictive",
+          "max-age": 3600000
+        },
+        "request-response-logging": {
+          "priority": 0,
+          "max-len": 1000
+        },
+        "cache-control": {
+          "priority": 0,
+          "max-age": 604800,
+          "content-types": {}
+        },
+        "etag": {
+          "priority": 0
+        }
+      },
+      "initializer": {
+        "default-enable": true,
+        "normalize-path": {
+          "priority": 10000
+        }
+      },
+      "default-routes": {
+        "default-enable": true,
+        "ping": {
+          "route": "_ping"
+        },
+        "health": {
+          "route": "_health"
+        },
+        "api-schema": {
+          "route": "_docs/api.json"
+        },
+        "scalar": {
+          "route": "_docs"
+        },
+        "redoc": {
+          "route": "_docs/redoc"
+        }
+      }
+    },
+    "grpc": {
+      "scheme": "http",
+      "host": "127.0.0.1",
+      "port": 3001
+    },
+    "sidekiq": {
+      "num-workers": 16,
+      "balance-strategy": "round-robin",
+      "queues": [],
+      "redis": {
+        "uri": "redis://[Sensitive]",
+        "enqueue-pool": {
+          "min-idle": null,
+          "max-connections": null
+        },
+        "fetch-pool": {
+          "min-idle": null,
+          "max-connections": null
+        },
+        "test-container": null
+      },
+      "periodic": {
+        "stale-cleanup": "auto-clean-stale"
+      },
+      "app-worker": {
+        "max-retries": 25,
+        "timeout": true,
+        "max-duration": 60
+      },
+      "queue-config": {}
+    }
+  },
+  "auth": {
+    "jwt": {
+      "cookie-name": null,
+      "secret": "secret-test",
+      "claims": {
+        "audience": [],
+        "required-claims": []
+      }
+    }
+  },
+  "tracing": {
+    "level": "debug",
+    "format": "compact",
+    "service-name": null,
+    "trace-propagation": true,
+    "otlp-endpoint": null,
+    "metrics-export-interval": null
+  },
+  "database": {
+    "uri": "postgres://[Sensitive]",
+    "auto-migrate": true,
+    "connect-timeout": 1000,
+    "connect-lazy": true,
+    "acquire-timeout": 1000,
+    "idle-timeout": null,
+    "max-lifetime": null,
+    "min-connections": 0,
+    "max-connections": 10,
+    "test-container": null
+  },
+  "email": {
+    "from": "no-reply@example.com",
+    "reply-to": null,
+    "smtp": {
+      "connection": {
+        "uri": "smtps://username:password@smtp.example.com:425"
+      },
+      "pool": null
+    },
+    "sendgrid": {
+      "api-key": "api-key",
+      "sandbox": true,
+      "https-only": true
+    }
+  }
+}

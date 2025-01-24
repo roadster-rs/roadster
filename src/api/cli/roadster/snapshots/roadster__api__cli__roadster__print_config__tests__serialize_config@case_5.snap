@@ -1,0 +1,194 @@
+---
+source: src/api/cli/roadster/print_config.rs
+expression: serialized
+---
+environment = "test"
+
+[app]
+name = "Test"
+shutdown-on-error = true
+
+[lifecycle-handler]
+default-enable = true
+
+[lifecycle-handler.db-migration]
+priority = 0
+
+[lifecycle-handler.db-graceful-shutdown]
+priority = 10000
+
+[health-check]
+default-enable = true
+
+[health-check.max-duration]
+startup = 60000
+api = 1000
+cli = 10000
+
+[health-check.database]
+
+[health-check.sidekiq]
+
+[health-check.smtp]
+
+[service]
+default-enable = true
+
+[service.http]
+scheme = "http"
+host = "127.0.0.1"
+port = 3000
+
+[service.http.middleware]
+default-enable = true
+
+[service.http.middleware.sensitive-request-headers]
+priority = -10000
+header-names = [
+    "authorization",
+    "refresh-token",
+    "x-refresh-token",
+    "proxy-authorization",
+    "cookie",
+    "set-cookie",
+]
+
+[service.http.middleware.sensitive-response-headers]
+priority = 10000
+header-names = [
+    "authorization",
+    "refresh-token",
+    "x-refresh-token",
+    "proxy-authorization",
+    "cookie",
+    "set-cookie",
+]
+
+[service.http.middleware.set-request-id]
+priority = -9990
+header-name = "request-id"
+
+[service.http.middleware.propagate-request-id]
+priority = 9990
+header-name = "request-id"
+
+[service.http.middleware.tracing]
+priority = -9980
+
+[service.http.middleware.catch-panic]
+priority = 0
+
+[service.http.middleware.response-compression]
+priority = 0
+
+[service.http.middleware.request-decompression]
+priority = -9960
+
+[service.http.middleware.timeout]
+priority = 0
+timeout = 10000
+
+[service.http.middleware.size-limit]
+priority = -9970
+limit = "5 MB"
+
+[service.http.middleware.cors]
+priority = -9950
+preset = "restrictive"
+max-age = 3600000
+
+[service.http.middleware.request-response-logging]
+priority = 0
+max-len = 1000
+
+[service.http.middleware.cache-control]
+priority = 0
+max-age = 604800
+
+[service.http.middleware.cache-control.content-types]
+
+[service.http.middleware.etag]
+priority = 0
+
+[service.http.initializer]
+default-enable = true
+
+[service.http.initializer.normalize-path]
+priority = 10000
+
+[service.http.default-routes]
+default-enable = true
+
+[service.http.default-routes.ping]
+route = "_ping"
+
+[service.http.default-routes.health]
+route = "_health"
+
+[service.http.default-routes.api-schema]
+route = "_docs/api.json"
+
+[service.http.default-routes.scalar]
+route = "_docs"
+
+[service.http.default-routes.redoc]
+route = "_docs/redoc"
+
+[service.grpc]
+scheme = "http"
+host = "127.0.0.1"
+port = 3001
+
+[service.sidekiq]
+num-workers = 16
+balance-strategy = "round-robin"
+queues = []
+
+[service.sidekiq.redis]
+uri = "redis://[Sensitive]"
+
+[service.sidekiq.redis.enqueue-pool]
+
+[service.sidekiq.redis.fetch-pool]
+
+[service.sidekiq.periodic]
+stale-cleanup = "auto-clean-stale"
+
+[service.sidekiq.app-worker]
+max-retries = 25
+timeout = true
+max-duration = 60
+
+[service.sidekiq.queue-config]
+
+[auth.jwt]
+secret = "secret-test"
+
+[auth.jwt.claims]
+audience = []
+required-claims = []
+
+[tracing]
+level = "debug"
+format = "compact"
+trace-propagation = true
+
+[database]
+uri = "postgres://[Sensitive]"
+auto-migrate = true
+connect-timeout = 1000
+connect-lazy = true
+acquire-timeout = 1000
+min-connections = 0
+max-connections = 10
+
+[email]
+from = "no-reply@example.com"
+
+[email.smtp.connection]
+uri = "smtps://username:password@smtp.example.com:425"
+
+[email.sendgrid]
+api-key = "api-key"
+sandbox = true
+https-only = true
