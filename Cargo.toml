@@ -216,7 +216,7 @@ byte-unit = { version = "5.0.0", features = ["serde"] }
 convert_case = "0.7.1"
 const_format = "0.2.32"
 num-traits = "0.2.18"
-validator = { version = "0.19.0", features = ["derive"] }
+validator = { version = "0.20.0", features = ["derive"] }
 cfg-if = "1.0.0"
 vergen = { version = "9.0.0" }
 vergen-gitcl = { version = "1.0.0" }
