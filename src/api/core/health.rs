@@ -278,14 +278,12 @@ mod tests {
         });
 
         // Act
-        let mut health_response = super::health_check_with_checks(vec![Arc::new(check)], None)
+        let health_response = super::health_check_with_checks(vec![Arc::new(check)], None)
             .await
             .unwrap();
 
-        health_response.latency = 1;
-
         // Assert
-        assert_json_snapshot!(health_response);
+        assert_json_snapshot!(health_response, {".latency" => 1});
     }
 
     #[tokio::test]
@@ -299,21 +297,11 @@ mod tests {
             .return_once(move || Err(anyhow!("Error").into()));
 
         // Act
-        let mut health_response = super::health_check_with_checks(vec![Arc::new(check)], None)
+        let health_response = super::health_check_with_checks(vec![Arc::new(check)], None)
             .await
             .unwrap();
 
-        health_response.latency = 1;
-        health_response.resources = health_response
-            .resources
-            .into_iter()
-            .map(|(key, mut response)| {
-                response.latency = 1;
-                (key, response)
-            })
-            .collect();
-
         // Assert
-        assert_json_snapshot!(health_response);
+        assert_json_snapshot!(health_response, {".latency" => 1, ".resources.example.latency" => 1});
     }
 }

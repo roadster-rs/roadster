@@ -125,7 +125,7 @@ reqwest = { workspace = true }
 
 [dev-dependencies]
 cargo-husky = { workspace = true }
-insta = { workspace = true, features = ["json"] }
+insta = { workspace = true, features = ["json", "redactions"] }
 mockall = { workspace = true }
 mockall_double = { workspace = true }
 rstest = { workspace = true }
