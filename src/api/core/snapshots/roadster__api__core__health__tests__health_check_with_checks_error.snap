@@ -1,0 +1,17 @@
+---
+source: src/api/core/health.rs
+expression: health_response
+---
+{
+  "latency": 1,
+  "resources": {
+    "example": {
+      "status": {
+        "err": {
+          "msg": "An error occurred while running health check `example`: Error"
+        }
+      },
+      "latency": 1
+    }
+  }
+}

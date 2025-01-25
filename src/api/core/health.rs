@@ -240,3 +240,80 @@ async fn ping_redis(
         Err(anyhow!("Ping response does not match input.").into())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::health::check::{CheckResponse, ErrorData, MockHealthCheck, Status};
+    use crate::testing::snapshot::TestCase;
+    use anyhow::anyhow;
+    use insta::assert_json_snapshot;
+    use rstest::{fixture, rstest};
+    use std::sync::Arc;
+    use std::time::Duration;
+
+    #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn case() -> TestCase {
+        Default::default()
+    }
+
+    #[rstest]
+    #[case(Status::Ok, 100)]
+    #[case(Status::Err(ErrorData::builder().msg("Error".to_string()).build()), 200)]
+    #[tokio::test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    async fn health_check_with_checks(
+        _case: TestCase,
+        #[case] status: Status,
+        #[case] latency: u64,
+    ) {
+        // Arrange
+        let mut check = MockHealthCheck::default();
+        check.expect_name().return_const("example".to_string());
+        check.expect_check().return_once(move || {
+            Ok(CheckResponse::builder()
+                .latency(Duration::from_millis(latency))
+                .status(status)
+                .build())
+        });
+
+        // Act
+        let mut health_response = super::health_check_with_checks(vec![Arc::new(check)], None)
+            .await
+            .unwrap();
+
+        health_response.latency = 1;
+
+        // Assert
+        assert_json_snapshot!(health_response);
+    }
+
+    #[tokio::test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    async fn health_check_with_checks_error() {
+        // Arrange
+        let mut check = MockHealthCheck::default();
+        check.expect_name().return_const("example".to_string());
+        check
+            .expect_check()
+            .return_once(move || Err(anyhow!("Error").into()));
+
+        // Act
+        let mut health_response = super::health_check_with_checks(vec![Arc::new(check)], None)
+            .await
+            .unwrap();
+
+        health_response.latency = 1;
+        health_response.resources = health_response
+            .resources
+            .into_iter()
+            .map(|(key, mut response)| {
+                response.latency = 1;
+                (key, response)
+            })
+            .collect();
+
+        // Assert
+        assert_json_snapshot!(health_response);
+    }
+}

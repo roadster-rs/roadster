@@ -1,0 +1,13 @@
+---
+source: src/api/core/health.rs
+expression: health_response
+---
+{
+  "latency": 1,
+  "resources": {
+    "example": {
+      "status": "ok",
+      "latency": 100
+    }
+  }
+}
