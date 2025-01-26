@@ -83,7 +83,7 @@ pub struct AppConfig {
 }
 
 // pub type CustomConfig = BTreeMap<String, Value>;
-#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Validate, Serialize, Deserialize)]
 pub struct CustomConfig {
     #[serde(flatten)]
     inner: BTreeMap<String, Value>,

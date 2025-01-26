@@ -35,11 +35,11 @@ where
 {
     #[builder(setter(into))]
     name: String,
-    #[builder(default, setter(strip_option))]
+    #[builder(default, setter(strip_option(fallback = enabled_opt)))]
     enabled: Option<bool>,
-    #[builder(default, setter(strip_option))]
+    #[builder(default, setter(strip_option(fallback = priority_opt)))]
     priority: Option<i32>,
-    #[builder(default, setter(strip_option))]
+    #[builder(default, setter(strip_option(fallback = stage_opt)))]
     stage: Option<Stage>,
     #[builder(setter(transform = |a: impl Fn(Router, &S) -> RoadsterResult<Router> + Send + 'static| to_box_fn(a) ))]
     apply: ApplyFn<S>,
