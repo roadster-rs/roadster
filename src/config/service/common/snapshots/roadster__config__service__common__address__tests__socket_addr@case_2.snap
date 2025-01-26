@@ -1,0 +1,7 @@
+---
+source: src/config/service/common/address.rs
+expression: addr
+---
+Ok(
+    [::]:3000,
+)

@@ -165,8 +165,8 @@ pub struct QueueConfig {
     pub num_workers: Option<u32>,
 }
 
-impl From<QueueConfig> for sidekiq::QueueConfig {
-    fn from(value: QueueConfig) -> Self {
+impl From<&QueueConfig> for sidekiq::QueueConfig {
+    fn from(value: &QueueConfig) -> Self {
         value
             .num_workers
             .iter()
@@ -176,9 +176,9 @@ impl From<QueueConfig> for sidekiq::QueueConfig {
     }
 }
 
-impl From<&QueueConfig> for sidekiq::QueueConfig {
-    fn from(value: &QueueConfig) -> Self {
-        value.clone().into()
+impl From<QueueConfig> for sidekiq::QueueConfig {
+    fn from(value: QueueConfig) -> Self {
+        sidekiq::QueueConfig::from(&value)
     }
 }
 
@@ -186,6 +186,8 @@ impl From<&QueueConfig> for sidekiq::QueueConfig {
 mod deserialize_tests {
     use super::*;
     use crate::testing::snapshot::TestCase;
+    use ::sidekiq::BalanceStrategy as SidekiqBalanceStrategy;
+    use ::sidekiq::QueueConfig as SidekiqQueueConfig;
     use insta::assert_toml_snapshot;
     use rstest::{fixture, rstest};
 
@@ -294,5 +296,42 @@ mod deserialize_tests {
         let sidekiq: SidekiqServiceConfig = toml::from_str(config).unwrap();
 
         assert_toml_snapshot!(sidekiq);
+    }
+
+    #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn default_num_workers() {
+        assert_eq!(
+            SidekiqServiceConfig::default_num_workers(),
+            num_cpus::get() as u32
+        );
+    }
+
+    #[rstest]
+    #[case(BalanceStrategy::RoundRobin)]
+    #[case(BalanceStrategy::None)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn balance_strat_to_sidekiq_balance_strat(#[case] strategy: BalanceStrategy) {
+        let sidekiq_strategy: SidekiqBalanceStrategy = strategy.clone().into();
+        match sidekiq_strategy {
+            SidekiqBalanceStrategy::RoundRobin => {
+                assert!(matches!(strategy, BalanceStrategy::RoundRobin))
+            }
+            SidekiqBalanceStrategy::None => {
+                assert!(matches!(strategy, BalanceStrategy::None))
+            }
+            _ => unimplemented!(),
+        }
+    }
+
+    #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn queue_config_to_sidekiq_queue_config() {
+        let num_workers = 10;
+        let config = QueueConfig {
+            num_workers: Some(num_workers),
+        };
+        let sidekiq_config: SidekiqQueueConfig = config.into();
+        assert_eq!(sidekiq_config.num_workers, num_workers as usize);
     }
 }

@@ -101,7 +101,7 @@ impl AppContext {
             };
 
             #[cfg(feature = "email-smtp")]
-            let smtp = lettre::SmtpTransport::try_from(&config.email.smtp.connection)?;
+            let smtp = lettre::SmtpTransport::try_from(&config.email.smtp)?;
 
             #[cfg(feature = "email-sendgrid")]
             let sendgrid = sendgrid::v3::Sender::try_from(&config.email.sendgrid)?;

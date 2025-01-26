@@ -1,0 +1,18 @@
+---
+source: src/middleware/http/auth/jwt/mod.rs
+expression: jwt
+---
+{
+  "header": {
+    "typ": "JWT",
+    "alg": "HS256"
+  },
+  "claims": {
+    "iss": null,
+    "sub": "[uuid]",
+    "exp": 1234,
+    "nbf": null,
+    "iat": null,
+    "jti": null
+  }
+}

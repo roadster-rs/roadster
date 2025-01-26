@@ -1,0 +1,13 @@
+---
+source: src/config/service/common/address.rs
+expression: addr
+---
+Err(
+    Parse(
+        Address(
+            AddrParseError(
+                Socket,
+            ),
+        ),
+    ),
+)

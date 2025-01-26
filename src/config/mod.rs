@@ -83,7 +83,7 @@ pub struct AppConfig {
 }
 
 // pub type CustomConfig = BTreeMap<String, Value>;
-#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Validate, Serialize, Deserialize)]
 pub struct CustomConfig {
     #[serde(flatten)]
     inner: BTreeMap<String, Value>,
@@ -393,5 +393,30 @@ mod tests {
         let config = AppConfig::test(None).unwrap();
 
         assert_toml_snapshot!(config);
+    }
+}
+
+#[cfg(test)]
+mod custom_config_tests {
+    use crate::config::CustomConfig;
+    use serde_json::Value;
+    use std::collections::BTreeMap;
+
+    #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn to_map() {
+        let config: CustomConfig = CustomConfig {
+            inner: BTreeMap::new(),
+        };
+        let _map: BTreeMap<String, Value> = config.into();
+    }
+
+    #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn deref() {
+        let mut inner = BTreeMap::new();
+        inner.insert("foo".to_string(), "bar".into());
+        let config: CustomConfig = CustomConfig { inner };
+        assert_eq!(config.get("foo").unwrap(), "bar");
     }
 }

@@ -1,10 +1,8 @@
 use std::fmt::Display;
 use std::str::FromStr;
 
-use serde::de::IntoDeserializer;
 use serde::{de, Deserializer, Serializer};
 use serde_derive::{Deserialize, Serialize};
-use serde_json::{Map, Value};
 use url::Url;
 
 /// Custom deserializer to allow deserializing a string field as the given type `T`, as long as
@@ -55,12 +53,6 @@ impl Display for UriOrString {
 /// Function to default a boolean field to `true`.
 pub const fn default_true() -> bool {
     true
-}
-
-// This method isn't used for some feature combinations
-#[allow(dead_code)]
-pub(crate) fn empty_json_object() -> impl for<'de> Deserializer<'de> {
-    Value::Object(Map::new()).into_deserializer()
 }
 
 #[cfg(test)]

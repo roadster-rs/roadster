@@ -4,12 +4,11 @@ use crate::config::service::worker::sidekiq::StaleCleanUpBehavior;
 use crate::error::RoadsterResult;
 use crate::service::worker::sidekiq::builder::{SidekiqWorkerServiceBuilder, PERIODIC_KEY};
 use crate::service::AppService;
+use crate::util::redis::RedisCommands;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
-use bb8::PooledConnection;
 use itertools::Itertools;
-use sidekiq::redis_rs::ToRedisArgs;
-use sidekiq::{Processor, RedisConnection, RedisConnectionManager, RedisError};
+use sidekiq::Processor;
 use std::collections::HashSet;
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
@@ -172,46 +171,12 @@ async fn remove_stale_periodic_jobs<C: RedisCommands>(
     Ok(())
 }
 
-/// Trait to help with mocking responses from Redis.
-#[cfg_attr(test, mockall::automock)]
-#[async_trait]
-trait RedisCommands {
-    async fn zrange(
-        &mut self,
-        key: String,
-        lower: isize,
-        upper: isize,
-    ) -> Result<Vec<String>, RedisError>;
-
-    async fn zrem<V>(&mut self, key: String, value: V) -> Result<usize, RedisError>
-    where
-        V: ToRedisArgs + Send + Sync + 'static;
-}
-
-#[async_trait]
-impl RedisCommands for PooledConnection<'_, RedisConnectionManager> {
-    async fn zrange(
-        &mut self,
-        key: String,
-        lower: isize,
-        upper: isize,
-    ) -> Result<Vec<String>, RedisError> {
-        RedisConnection::zrange(self, key, lower, upper).await
-    }
-
-    async fn zrem<V>(&mut self, key: String, value: V) -> Result<usize, RedisError>
-    where
-        V: ToRedisArgs + Send + Sync + 'static,
-    {
-        RedisConnection::zrem(self, key, value).await
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::app::context::AppContext;
     use crate::config::AppConfig;
+    use crate::util::redis::MockRedisCommands;
     use bb8::Pool;
     use rstest::rstest;
     use sidekiq::RedisConnectionManager;

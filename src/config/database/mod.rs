@@ -126,10 +126,10 @@ mod tests {
         assert_toml_snapshot!(database);
     }
 
-    #[test]
+    #[fixture]
     #[cfg_attr(coverage_nightly, coverage(off))]
-    fn db_config_to_connect_options() {
-        let db = Database {
+    fn db_config() -> Database {
+        Database {
             uri: Url::parse("postgres://example:example@example:1234/example_app").unwrap(),
             #[cfg(feature = "test-containers")]
             test_container: None,
@@ -141,9 +141,21 @@ mod tests {
             max_lifetime: Some(Duration::from_secs(4)),
             min_connections: 10,
             max_connections: 20,
-        };
+        }
+    }
 
-        let connect_options = ConnectOptions::from(&db);
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn db_config_to_connect_options(db_config: Database) {
+        let connect_options = ConnectOptions::from(db_config);
+
+        assert_debug_snapshot!(connect_options);
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn db_config_to_connect_options_ref(db_config: Database) {
+        let connect_options = ConnectOptions::from(&db_config);
 
         assert_debug_snapshot!(connect_options);
     }

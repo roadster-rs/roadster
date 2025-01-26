@@ -5,6 +5,7 @@ use crate::api::http::hello_world_middleware_fn;
 use crate::app_state::AppState;
 use crate::cli::AppCli;
 use crate::health::example::ExampleHealthCheck;
+use crate::lifecycle::example::ExampleLifecycleHandler;
 use crate::service::example::example_service;
 use crate::worker::example::ExampleWorker;
 use async_trait::async_trait;
@@ -15,6 +16,7 @@ use roadster::app::App as RoadsterApp;
 use roadster::config::AppConfig;
 use roadster::error::RoadsterResult;
 use roadster::health::check::registry::HealthCheckRegistry;
+use roadster::lifecycle::registry::LifecycleHandlerRegistry;
 use roadster::service::function::service::FunctionService;
 #[cfg(feature = "grpc")]
 use roadster::service::grpc::service::GrpcService;
@@ -51,6 +53,15 @@ impl RoadsterApp<AppState> for App {
         state: &AppState,
     ) -> RoadsterResult<()> {
         registry.register(ExampleHealthCheck::new(state))?;
+        Ok(())
+    }
+
+    async fn lifecycle_handlers(
+        &self,
+        registry: &mut LifecycleHandlerRegistry<Self, AppState>,
+        _state: &AppState,
+    ) -> RoadsterResult<()> {
+        registry.register(ExampleLifecycleHandler)?;
         Ok(())
     }
 

@@ -103,3 +103,13 @@ fn missing_context_response() -> CheckResponse {
         .latency(Duration::from_secs(0))
         .build()
 }
+
+#[cfg(test)]
+mod tests {
+    use insta::assert_json_snapshot;
+
+    #[test]
+    fn missing_context_response() {
+        assert_json_snapshot!(super::missing_context_response());
+    }
+}

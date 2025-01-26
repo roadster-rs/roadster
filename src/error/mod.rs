@@ -131,3 +131,58 @@ impl IntoResponse for Error {
 impl OperationOutput for Error {
     type Inner = api::http::HttpError;
 }
+
+#[cfg(test)]
+mod tests {
+    #[cfg(feature = "http")]
+    use axum_core::response::IntoResponse;
+
+    #[rstest::fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn case() -> crate::testing::snapshot::TestCase {
+        Default::default()
+    }
+
+    #[rstest::rstest]
+    #[case(
+        crate::error::api::http::HttpError::bad_request().to_err()
+    )]
+    #[case(
+        crate::error::api::http::HttpError::unauthorized().to_err()
+    )]
+    #[case(
+        crate::error::api::http::HttpError::forbidden().to_err()
+    )]
+    #[case(
+        crate::error::api::http::HttpError::not_found().to_err()
+    )]
+    #[case(
+        crate::error::api::http::HttpError::gone().to_err()
+    )]
+    #[case(
+        crate::error::api::http::HttpError::internal_server_error().to_err()
+    )]
+    #[case(
+        crate::error::api::http::HttpError::from(axum::http::StatusCode::BAD_REQUEST).into()
+    )]
+    #[case(
+        axum::http::StatusCode::BAD_REQUEST.into()
+    )]
+    #[case(
+        crate::error::api::ApiError::Other(Box::new(crate::error::Error::from(anyhow::anyhow!("error")))).into()
+    )]
+    #[case(
+        crate::error::auth::AuthError::Other(Box::new(crate::error::Error::from(anyhow::anyhow!("error")))).into()
+    )]
+    #[case(
+        anyhow::anyhow!("error").into()
+    )]
+    #[cfg(feature = "http")]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn into_response(
+        _case: crate::testing::snapshot::TestCase,
+        #[case] error: crate::error::Error,
+    ) {
+        insta::assert_debug_snapshot!(error.into_response().status());
+    }
+}

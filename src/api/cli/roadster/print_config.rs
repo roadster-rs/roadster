@@ -8,6 +8,7 @@ use tracing::info;
 use crate::api::cli::roadster::{RoadsterCli, RunRoadsterCommand};
 use crate::app::context::AppContext;
 use crate::app::App;
+use crate::config::AppConfig;
 use crate::error::RoadsterResult;
 
 #[derive(Debug, Parser, Serialize)]
@@ -41,24 +42,74 @@ where
 {
     async fn run(&self, _app: &A, _cli: &RoadsterCli, state: &S) -> RoadsterResult<bool> {
         let context = AppContext::from_ref(state);
-        match self.format {
-            Format::Debug => {
-                info!("\n{:?}", context.config())
-            }
-            Format::Json => {
-                info!("\n{}", serde_json::to_string(&context.config())?)
-            }
-            Format::JsonPretty => {
-                info!("\n{}", serde_json::to_string_pretty(&context.config())?)
-            }
-            Format::Toml => {
-                info!("\n{}", toml::to_string(&context.config())?)
-            }
-            Format::TomlPretty => {
-                info!("\n{}", toml::to_string_pretty(&context.config())?)
-            }
-        }
+        let serialized = serialize_config(&self.format, context.config())?;
+
+        info!("\n{}", serialized);
 
         Ok(true)
+    }
+}
+
+fn serialize_config(format: &Format, config: &AppConfig) -> RoadsterResult<String> {
+    let serialized = match format {
+        Format::Debug => {
+            format!("{:?}", config)
+        }
+        Format::Json => serde_json::to_string(config)?,
+        Format::JsonPretty => serde_json::to_string_pretty(config)?,
+        Format::Toml => toml::to_string(config)?,
+        Format::TomlPretty => toml::to_string_pretty(config)?,
+    };
+    Ok(serialized)
+}
+
+#[cfg(all(
+    test,
+    feature = "http",
+    feature = "open-api",
+    feature = "sidekiq",
+    feature = "db-sql",
+    feature = "email-smtp",
+    feature = "email-sendgrid",
+    feature = "jwt",
+    feature = "jwt-ietf",
+    feature = "otel",
+    feature = "grpc",
+    feature = "testing",
+    feature = "test-containers",
+    feature = "testing-mocks",
+    feature = "config-yml",
+))]
+mod tests {
+    use crate::api::cli::roadster::print_config::Format;
+    use crate::config::AppConfig;
+    use crate::testing::snapshot::TestCase;
+    use insta::assert_snapshot;
+    use rstest::{fixture, rstest};
+
+    #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn case() -> TestCase {
+        Default::default()
+    }
+
+    #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn config() -> AppConfig {
+        #[allow(clippy::unwrap_used)]
+        AppConfig::test(None).unwrap()
+    }
+
+    #[rstest]
+    #[case(Format::Debug)]
+    #[case(Format::Json)]
+    #[case(Format::JsonPretty)]
+    #[case(Format::Toml)]
+    #[case(Format::TomlPretty)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn serialize_config(_case: TestCase, config: AppConfig, #[case] format: Format) {
+        let serialized = super::serialize_config(&format, &config).unwrap();
+
+        assert_snapshot!(serialized);
     }
 }

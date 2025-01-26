@@ -1,0 +1,5 @@
+---
+source: src/config/service/common/address.rs
+expression: url_str
+---
+"localhost:3000"

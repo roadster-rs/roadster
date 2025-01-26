@@ -303,13 +303,18 @@ impl From<&str> for Subject {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::AppConfig;
     use crate::testing::snapshot::TestCase;
     use crate::util::serde::Wrapper;
-    use axum::http::header::AUTHORIZATION;
+    use axum::http::header::{AUTHORIZATION, COOKIE};
+    use axum::http::Request;
+    use axum_core::body::Body;
     use axum_extra::extract::cookie::Cookie;
-    use insta::assert_debug_snapshot;
+    use chrono::{Duration, Utc};
+    use insta::{assert_debug_snapshot, assert_json_snapshot};
     use rstest::{fixture, rstest};
     use serde_json::from_str;
+    use std::collections::BTreeMap;
     use std::str::FromStr;
     use url::Url;
 
@@ -441,5 +446,106 @@ mod tests {
 
         assert_eq!(subject, subject_from_str);
         assert_debug_snapshot!(subject);
+    }
+
+    #[fixture]
+    #[once]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn context() -> AppContext {
+        let mut config = AppConfig::test(None).unwrap();
+        config.auth.jwt.claims.required_claims = vec!["sub".to_string()];
+        AppContext::test(Some(config), None, None).unwrap()
+    }
+
+    #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn token(context: &AppContext) -> String {
+        let subject = Uuid::new_v4().to_string();
+
+        let claims = Claims::<BTreeMap<String, String>>::builder()
+            .subject(subject.into())
+            .expires_at(Utc::now() + Duration::days(1))
+            .custom(Default::default())
+            .build();
+        jsonwebtoken::encode(
+            &Header::default(),
+            &claims,
+            &jsonwebtoken::EncodingKey::from_secret(context.config().auth.jwt.secret.as_ref()),
+        )
+        .unwrap()
+    }
+
+    #[rstest]
+    #[tokio::test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    async fn jwt_from_request_parts(_case: TestCase, token: String, context: &AppContext) {
+        let request: Request<Body> = Request::builder()
+            .header(AUTHORIZATION, format!("Bearer {token}"))
+            .body(().into())
+            .unwrap();
+
+        let jwt = Jwt::<Claims>::from_request_parts(&mut request.into_parts().0, context)
+            .await
+            .unwrap();
+
+        assert_json_snapshot!(jwt, { ".claims.exp" => 1234 });
+    }
+
+    #[rstest]
+    #[tokio::test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    async fn jwt_from_request_parts_cookie(_case: TestCase, token: String, context: &AppContext) {
+        let mut config = context.config().clone();
+        config.auth.jwt.cookie_name = Some("authorization".to_string());
+        let context = AppContext::test(Some(config), None, None).unwrap();
+        let request: Request<Body> = Request::builder()
+            .header(COOKIE, format!("authorization={token}"))
+            .body(().into())
+            .unwrap();
+
+        let jwt = Jwt::<Claims>::from_request_parts(&mut request.into_parts().0, &context).await;
+
+        assert!(jwt.is_err());
+    }
+
+    #[rstest]
+    #[tokio::test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    async fn jwt_csrf_from_request_parts(_case: TestCase, token: String, context: &AppContext) {
+        let request: Request<Body> = Request::builder()
+            .header(AUTHORIZATION, format!("Bearer {token}"))
+            .body(().into())
+            .unwrap();
+
+        let jwt = JwtCsrf::<Claims>::from_request_parts(&mut request.into_parts().0, context)
+            .await
+            .unwrap();
+
+        assert_json_snapshot!(jwt, { ".token.claims.exp" => 1234 });
+    }
+
+    #[rstest]
+    #[case(None)]
+    #[case(Some("authorization".to_string()))]
+    #[tokio::test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    async fn jwt_csrf_from_request_parts_cookie(
+        _case: TestCase,
+        token: String,
+        context: &AppContext,
+        #[case] cookie_name: Option<String>,
+    ) {
+        let mut config = context.config().clone();
+        config.auth.jwt.cookie_name = cookie_name.clone();
+        let context = AppContext::test(Some(config), None, None).unwrap();
+        let request: Request<Body> = Request::builder()
+            .header(COOKIE, format!("authorization={token}"))
+            .body(().into())
+            .unwrap();
+
+        let jwt =
+            JwtCsrf::<Claims>::from_request_parts(&mut request.into_parts().0, &context).await;
+
+        assert_eq!(jwt.is_err(), cookie_name.is_none());
     }
 }

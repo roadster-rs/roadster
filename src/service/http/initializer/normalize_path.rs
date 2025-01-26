@@ -65,3 +65,65 @@ where
         Ok(router)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::AppConfig;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case(false, Some(true), true)]
+    #[case(false, Some(false), false)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn enabled(
+        #[case] default_enable: bool,
+        #[case] enable: Option<bool>,
+        #[case] expected_enabled: bool,
+    ) {
+        // Arrange
+        let mut config = AppConfig::test(None).unwrap();
+        config.service.http.custom.initializer.default_enable = default_enable;
+        config
+            .service
+            .http
+            .custom
+            .initializer
+            .normalize_path
+            .common
+            .enable = enable;
+
+        let context = AppContext::test(Some(config), None, None).unwrap();
+
+        let initializer = NormalizePathInitializer;
+
+        // Act/Assert
+        assert_eq!(initializer.enabled(&context), expected_enabled);
+    }
+
+    #[rstest]
+    #[case(None, 10000)]
+    #[case(Some(1234), 1234)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn priority(#[case] override_priority: Option<i32>, #[case] expected_priority: i32) {
+        // Arrange
+        let mut config = AppConfig::test(None).unwrap();
+        if let Some(priority) = override_priority {
+            config
+                .service
+                .http
+                .custom
+                .initializer
+                .normalize_path
+                .common
+                .priority = priority;
+        }
+
+        let context = AppContext::test(Some(config), None, None).unwrap();
+
+        let initializer = NormalizePathInitializer;
+
+        // Act/Assert
+        assert_eq!(initializer.priority(&context), expected_priority);
+    }
+}

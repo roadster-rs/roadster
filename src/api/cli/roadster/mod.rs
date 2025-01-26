@@ -158,6 +158,8 @@ where
             RoadsterSubCommand::Migrate(args) => args.run(app, cli, state).await,
             RoadsterSubCommand::PrintConfig(args) => args.run(app, cli, state).await,
             RoadsterSubCommand::Health(args) => args.run(app, cli, state).await,
+            #[cfg(test)]
+            RoadsterSubCommand::HandleCli => Ok(true),
         }
     }
 }
@@ -187,4 +189,8 @@ pub enum RoadsterSubCommand {
     /// Check the health of the app's resources. Note: This runs without starting the app's service(s)
     /// and only requires creating the [AppContext] that would normally be used by the app.
     Health(HealthArgs),
+
+    /// A test-only command to test handling the CLI.
+    #[cfg(test)]
+    HandleCli,
 }
