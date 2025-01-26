@@ -166,6 +166,12 @@ mod tests {
         crate::error::api::http::HttpError::internal_server_error().to_err()
     )]
     #[case(
+        crate::error::api::http::HttpError::from(axum::http::StatusCode::BAD_REQUEST).into()
+    )]
+    #[case(
+        axum::http::StatusCode::BAD_REQUEST.into()
+    )]
+    #[case(
         crate::error::auth::AuthError::Other(Box::new(Error::from(anyhow::anyhow!("error")))).into()
     )]
     #[case(
