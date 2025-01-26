@@ -25,7 +25,7 @@ type ApplyFn<S> = Box<dyn Fn(Router, &S) -> RoadsterResult<Router> + Send>;
 ///         info!("Running `hello-world` initializer");
 ///         Ok(router)
 ///     })
-///     .build(),
+///     .build();
 /// ```
 #[derive(TypedBuilder)]
 pub struct AnyInitializer<S>
