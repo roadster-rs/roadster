@@ -27,6 +27,8 @@ use tracing::info;
 # use roadster::service::function::service::FunctionService;
 # use roadster::service::registry::ServiceRegistry;
 # use roadster::app::App as RoadsterApp;
+# use roadster::lifecycle::AppLifecycleHandler;
+# use roadster::lifecycle::registry::LifecycleHandlerRegistry;
 #
 # #[derive(Debug, Parser)]
 # #[command(version, about)]
@@ -55,7 +57,7 @@ use tracing::info;
 #
 pub struct ExampleLifecycleHandler;
 
-impl AppLifecycleHandler<App, AppState> for ExampleLifecycleHandler {
+impl AppLifecycleHandler<App, AppContext> for ExampleLifecycleHandler {
     fn name(&self) -> String {
         "example".to_string()
     }
@@ -73,8 +75,8 @@ impl RoadsterApp<AppContext> for App {
 #     }
     async fn lifecycle_handlers(
         &self,
-        registry: &mut LifecycleHandlerRegistry<Self, AppState>,
-        _state: &AppState,
+        registry: &mut LifecycleHandlerRegistry<Self, AppContext>,
+        _state: &AppContext,
     ) -> RoadsterResult<()> {
         registry.register(ExampleLifecycleHandler)?;
         Ok(())

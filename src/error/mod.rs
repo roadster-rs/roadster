@@ -131,3 +131,48 @@ impl IntoResponse for Error {
 impl OperationOutput for Error {
     type Inner = api::http::HttpError;
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::error::Error;
+    use crate::testing::snapshot::TestCase;
+    use axum_core::response::IntoResponse;
+    use insta::assert_debug_snapshot;
+    use rstest::{fixture, rstest};
+
+    #[fixture]
+    fn case() -> TestCase {
+        Default::default()
+    }
+
+    #[rstest]
+    #[case(
+        crate::error::api::http::HttpError::bad_request().to_err()
+    )]
+    #[case(
+        crate::error::api::http::HttpError::unauthorized().to_err()
+    )]
+    #[case(
+        crate::error::api::http::HttpError::forbidden().to_err()
+    )]
+    #[case(
+        crate::error::api::http::HttpError::not_found().to_err()
+    )]
+    #[case(
+        crate::error::api::http::HttpError::gone().to_err()
+    )]
+    #[case(
+        crate::error::api::http::HttpError::internal_server_error().to_err()
+    )]
+    #[case(
+        crate::error::auth::AuthError::Other(Box::new(Error::from(anyhow::anyhow!("error")))).into()
+    )]
+    #[case(
+        anyhow::anyhow!("error").into()
+    )]
+    #[cfg(feature = "http")]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn into_response(_case: TestCase, #[case] error: Error) {
+        assert_debug_snapshot!(error.into_response().status());
+    }
+}
