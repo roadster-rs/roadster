@@ -7,6 +7,32 @@ use typed_builder::TypedBuilder;
 
 type ApplyFn<S> = Box<dyn Fn(Router, &S) -> RoadsterResult<Router> + Send>;
 
+/// A [`Middleware`] that can be applied without creating a separate `struct`. Useful to easily
+/// apply a middleware that's based on a function, for example.
+///
+/// # Examples
+/// ```rust
+/// # use axum::response::Response;
+/// # use axum::middleware::Next;
+/// # use axum_core::extract::Request;
+/// # use tracing::info;
+/// # use roadster::service::http::middleware::any::AnyMiddleware;
+/// #
+/// pub(crate) async fn hello_world_middleware_fn(request: Request, next: Next) -> Response {
+///     info!("Running `hello-world` middleware");
+///
+///     next.run(request).await
+/// }
+///
+/// let middleware = AnyMiddleware::builder()
+///     .name("hello-world")
+///     .enabled(true)
+///     .apply(|router, _state| {
+///         Ok(router
+///             .layer(axum::middleware::from_fn(hello_world_middleware_fn)))
+///     })
+///     .build();
+/// ```
 #[derive(TypedBuilder)]
 #[non_exhaustive]
 pub struct AnyMiddleware<S>

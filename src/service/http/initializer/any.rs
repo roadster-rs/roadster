@@ -7,6 +7,26 @@ use typed_builder::TypedBuilder;
 
 type ApplyFn<S> = Box<dyn Fn(Router, &S) -> RoadsterResult<Router> + Send>;
 
+/// An [`Initializer`] that can be applied without creating a separate `struct`.
+///
+/// # Examples
+/// ```rust
+/// # use axum::response::Response;
+/// # use axum::middleware::Next;
+/// # use axum_core::extract::Request;
+/// # use tracing::info;
+/// # use roadster::service::http::initializer::any::AnyInitializer;
+/// # use roadster::service::http::middleware::any::AnyMiddleware;
+/// #
+/// AnyInitializer::builder()
+///     .name("hello-world")
+///     .stage(roadster::service::http::initializer::any::Stage::BeforeServe)
+///     .apply(|router, _state| {
+///         info!("Running `hello-world` initializer");
+///         Ok(router)
+///     })
+///     .build(),
+/// ```
 #[derive(TypedBuilder)]
 pub struct AnyInitializer<S>
 where
