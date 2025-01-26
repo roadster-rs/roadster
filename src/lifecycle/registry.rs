@@ -11,6 +11,79 @@ use std::ops::Deref;
 use tracing::info;
 
 /// Registry for the app's [`AppLifecycleHandler`]s.
+///
+/// # Examples
+#[cfg_attr(
+    feature = "default",
+    doc = r##"
+```rust
+# use async_trait::async_trait;
+# use clap::Parser;
+# use sea_orm_migration::{MigrationTrait, MigratorTrait};
+# use tokio_util::sync::CancellationToken;
+# use roadster::api::cli::RunCommand;
+# use roadster::app::context::AppContext;
+# use roadster::error::RoadsterResult;
+# use roadster::service::function::service::FunctionService;
+# use roadster::service::registry::ServiceRegistry;
+# use roadster::app::App as RoadsterApp;
+#
+# #[derive(Debug, Parser)]
+# #[command(version, about)]
+# pub struct AppCli {}
+#
+# #[async_trait]
+# impl RunCommand<App, AppContext> for AppCli {
+#     #[allow(clippy::disallowed_types)]
+#     async fn run(
+#         &self,
+#         _app: &App,
+#         _cli: &AppCli,
+#         _context: &AppContext,
+#     ) -> RoadsterResult<bool> {
+#         Ok(false)
+#     }
+# }
+# pub struct Migrator;
+#
+# #[async_trait::async_trait]
+# impl MigratorTrait for Migrator {
+#     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
+#         Default::default()
+#     }
+# }
+#
+pub struct ExampleLifecycleHandler;
+
+impl AppLifecycleHandler<App, AppState> for ExampleLifecycleHandler {
+    fn name(&self) -> String {
+        "example".to_string()
+    }
+}
+
+pub struct App;
+
+#[async_trait]
+impl RoadsterApp<AppContext> for App {
+#     type Cli = AppCli;
+#     type M = Migrator;
+#
+#     async fn provide_state(&self, _context: AppContext) -> RoadsterResult<AppContext> {
+#         unimplemented!()
+#     }
+    async fn lifecycle_handlers(
+        &self,
+        registry: &mut LifecycleHandlerRegistry<Self, AppState>,
+        _state: &AppState,
+    ) -> RoadsterResult<()> {
+        registry.register(ExampleLifecycleHandler)?;
+        Ok(())
+    }
+}
+```
+"##
+)]
+
 pub struct LifecycleHandlerRegistry<A, S>
 where
     S: Clone + Send + Sync + 'static,
@@ -35,7 +108,7 @@ where
     }
 
     /// Register a new [`AppLifecycleHandler`]. If the [`AppLifecycleHandler`] is not enabled
-    /// (e.g., [[`AppLifecycleHandler::enabled`] returns `false`), the [`AppLifecycleHandler`]
+    /// (e.g., [`AppLifecycleHandler::enabled`] returns `false`), the [`AppLifecycleHandler`]
     /// will not be registered.
     pub fn register<H>(&mut self, handler: H) -> RoadsterResult<()>
     where
