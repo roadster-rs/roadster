@@ -8,6 +8,7 @@ use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use axum::{middleware, Router};
 use serde_derive::{Deserialize, Serialize};
+use std::future::Future;
 use validator::Validate;
 
 #[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
@@ -57,10 +58,20 @@ where
 }
 
 async fn etag_middleware(request: Request, next: Next) -> Response {
+    etag_middleware_helper(request, move |request| next.run(request)).await
+}
+
+/// A testable version of [`etag_middleware`] -- it takes a generic [`FnOnce`] instead of
+/// a [`Next`], so we can easily build a response in tests.
+async fn etag_middleware_helper<F, R>(request: Request, response: F) -> Response
+where
+    F: FnOnce(Request) -> R,
+    R: Future<Output = Response>,
+{
     let request_headers = request.headers();
     let request_etag = etag_value_from_headers(request_headers).map(|etag| etag.to_string());
 
-    let response = next.run(request).await;
+    let response = response(request).await;
 
     if request_etag.is_none() {
         return response;
@@ -86,7 +97,15 @@ fn etag_value_from_headers(headers: &HeaderMap) -> Option<&str> {
 mod tests {
     use super::*;
     use crate::config::AppConfig;
-    use rstest::rstest;
+    use crate::testing::snapshot::TestCase;
+    use axum::body::Body;
+    use rstest::{fixture, rstest};
+
+    #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn case() -> TestCase {
+        Default::default()
+    }
 
     #[rstest]
     #[case(false, Some(true), true)]
@@ -127,5 +146,42 @@ mod tests {
 
         // Act/Assert
         assert_eq!(middleware.priority(&context), expected_priority);
+    }
+
+    #[rstest]
+    #[case(None, None, false)]
+    #[case(None, Some("etag2"), false)]
+    #[case(Some("etag1"), None, false)]
+    #[case(Some("etag1"), Some("etag2"), false)]
+    #[case(Some("same-etag"), Some("same-etag"), true)]
+    #[tokio::test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    async fn etag_middleware_helper(
+        _case: TestCase,
+        #[case] req_etag: Option<&str>,
+        #[case] res_etag: Option<&str>,
+        #[case] not_modified: bool,
+    ) {
+        let builder = Request::builder();
+        let builder = if let Some(req_etag) = req_etag {
+            builder.header(ETAG, req_etag)
+        } else {
+            builder
+        };
+
+        let request: Request<Body> = builder.body(().into()).unwrap();
+
+        let builder = Response::builder();
+        let builder = if let Some(res_etag) = res_etag {
+            builder.header(ETAG, res_etag)
+        } else {
+            builder
+        };
+        let response: Response<Body> = builder.body(().into()).unwrap();
+
+        let response =
+            super::etag_middleware_helper(request, move |_request| async move { response }).await;
+
+        assert_eq!(response.status() == StatusCode::NOT_MODIFIED, not_modified);
     }
 }
