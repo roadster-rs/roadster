@@ -172,6 +172,9 @@ mod tests {
         axum::http::StatusCode::BAD_REQUEST.into()
     )]
     #[case(
+        crate::error::api::ApiError::Other(Box::new(Error::from(anyhow::anyhow!("error")))).into()
+    )]
+    #[case(
         crate::error::auth::AuthError::Other(Box::new(Error::from(anyhow::anyhow!("error")))).into()
     )]
     #[case(
