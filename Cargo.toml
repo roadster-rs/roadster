@@ -196,6 +196,7 @@ insta = { version = "1.39.0", features = ["toml", "filters"] }
 rstest = { version = "0.24.0", default-features = false }
 testcontainers-modules = { version = "0.11.3" }
 mockall = "0.13.0"
+tower-util = "0.3.1"
 
 # Others
 tokio = { version = "1.39.0" }
