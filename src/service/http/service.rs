@@ -119,6 +119,10 @@ impl HttpService {
         HttpServiceBuilder::new(path_root, state)
     }
 
+    pub fn router(&self) -> &Router {
+        &self.router
+    }
+
     /// List the available HTTP API routes.
     ///
     /// Note that in order for a route to show up where, it needs to be registered with an

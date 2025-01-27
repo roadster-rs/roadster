@@ -47,6 +47,8 @@ chrono = { workspace = true, features = ["serde"] }
 
 [dev-dependencies]
 roadster = { version = "0.7.0-alpha.3", path = "../..", features = ["testing-mocks"] }
+tokio = { workspace = true, features = ["test-util"] }
+tower-util = { workspace = true }
 
 [build-dependencies]
 tonic-build = { workspace = true }
