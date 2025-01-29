@@ -1,0 +1,53 @@
+/// A placeholder that implements various traits so it can be used as the default for various type
+/// parameters
+pub struct Empty;
+
+#[cfg(feature = "cli")]
+#[async_trait::async_trait]
+impl<
+        S,
+        #[cfg(feature = "db-sql")] M: 'static + sea_orm_migration::MigratorTrait + Send + Sync,
+        #[cfg(not(feature = "db-sql"))] M: 'static + Send + Sync,
+    > crate::api::cli::RunCommand<crate::app::RoadsterApp<S, Empty, M>, S> for Empty
+where
+    S: Clone + Send + Sync + 'static,
+    crate::app::context::AppContext: axum_core::extract::FromRef<S>,
+{
+    async fn run(
+        &self,
+        _app: &crate::app::RoadsterApp<S, Empty, M>,
+        _cli: &Empty,
+        _state: &S,
+    ) -> crate::error::RoadsterResult<bool> {
+        Ok(false)
+    }
+}
+
+#[cfg(feature = "cli")]
+impl clap::Args for Empty {
+    fn augment_args(cmd: clap::Command) -> clap::Command {
+        cmd
+    }
+
+    fn augment_args_for_update(cmd: clap::Command) -> clap::Command {
+        cmd
+    }
+}
+
+#[cfg(feature = "cli")]
+impl clap::FromArgMatches for Empty {
+    fn from_arg_matches(_matches: &clap::ArgMatches) -> Result<Self, clap::Error> {
+        Ok(Empty)
+    }
+
+    fn update_from_arg_matches(&mut self, _matches: &clap::ArgMatches) -> Result<(), clap::Error> {
+        Ok(())
+    }
+}
+
+#[cfg(feature = "db-sql")]
+impl sea_orm_migration::MigratorTrait for Empty {
+    fn migrations() -> Vec<Box<dyn sea_orm_migration::MigrationTrait>> {
+        Default::default()
+    }
+}

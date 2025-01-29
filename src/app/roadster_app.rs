@@ -12,10 +12,10 @@ use crate::lifecycle::registry::LifecycleHandlerRegistry;
 use crate::lifecycle::AppLifecycleHandler;
 use crate::service::registry::ServiceRegistry;
 use crate::service::AppService;
+use crate::util::empty::Empty;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
-use cfg_if::cfg_if;
 #[cfg(feature = "db-sql")]
 use sea_orm::ConnectOptions;
 #[cfg(feature = "db-sql")]
@@ -49,11 +49,15 @@ type ServiceProviders<A, S> = Vec<
 type GracefulShutdownSignalProvider<S> =
     Option<Box<dyn Send + Sync + Fn(&S) -> Pin<Box<dyn Send + Future<Output = ()>>>>>;
 
-/// Inner state shared between [`RoadsterApp`] and [`RoadsterAppBuilder`] that doesn't need
-/// to modify type parameters depending on which features are enabled.
-struct InnerCommon<S>
-where
-    S: Clone + Send + Sync + 'static,
+/// Inner state shared between both the [`RoadsterApp`] and [`RoadsterAppBuilder`].
+struct Inner<
+    S,
+    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync = Empty,
+    #[cfg(not(feature = "cli"))] Cli: 'static = Empty,
+    #[cfg(feature = "db-sql")] M: 'static + MigratorTrait + Send + Sync = Empty,
+    #[cfg(not(feature = "db-sql"))] M: 'static = Empty,
+> where
+    S: 'static + Clone + Send + Sync,
     AppContext: FromRef<S>,
 {
     state_provider: Option<Box<StateBuilder<S>>>,
@@ -67,11 +71,19 @@ where
     health_checks: Vec<Arc<dyn HealthCheck>>,
     health_check_providers: HealthCheckProviders<S>,
     graceful_shutdown_signal_provider: GracefulShutdownSignalProvider<S>,
+    lifecycle_handler_providers: LifecycleHandlerProviders<RoadsterApp<S, Cli, M>, S>,
+    service_providers: ServiceProviders<RoadsterApp<S, Cli, M>, S>,
 }
 
-impl<S> InnerCommon<S>
+impl<
+        S,
+        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
+        #[cfg(not(feature = "cli"))] Cli: 'static,
+        #[cfg(feature = "db-sql")] M: 'static + MigratorTrait + Send + Sync,
+        #[cfg(not(feature = "db-sql"))] M: 'static,
+    > Inner<S, Cli, M>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Clone + Send + Sync,
     AppContext: FromRef<S>,
 {
     fn new() -> Self {
@@ -87,6 +99,8 @@ where
             health_checks: Default::default(),
             health_check_providers: Default::default(),
             graceful_shutdown_signal_provider: None,
+            lifecycle_handler_providers: Default::default(),
+            service_providers: Default::default(),
         }
     }
 
@@ -216,33 +230,15 @@ where
     }
 }
 
-// This conditional compilation block is necessary because the type parameters for RoadsterApp
-// are different depending on whether the `cli` and `db-sql` features are enabled. I haven't
-// been able to find a better way to do this. We may need to refactor the `App` trait itself (and
-// a bunch of other stuff) in order to improve this.
-// todo: This conditional compilation block is gnarly. Is there a better way? Maybe a macro of some sort?
-cfg_if! {
-if #[cfg(all(feature = "cli", feature="db-sql"))] {
-
-/// Inner state shared between both the [`RoadsterApp`] and [`RoadsterAppBuilder`].
-struct Inner<S, Cli, M>
-where
+pub struct RoadsterApp<
+    S,
+    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync = Empty,
+    #[cfg(not(feature = "cli"))] Cli: 'static = Empty,
+    #[cfg(feature = "db-sql")] M: 'static + MigratorTrait + Send + Sync = Empty,
+    #[cfg(not(feature = "db-sql"))] M: 'static = Empty,
+> where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    Cli: clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync + 'static,
-    M: MigratorTrait + Send + Sync + 'static,
-{
-    common: InnerCommon<S>,
-    lifecycle_handler_providers: LifecycleHandlerProviders<RoadsterApp<S, Cli, M>, S>,
-    service_providers: ServiceProviders<RoadsterApp<S, Cli, M>, S>,
-}
-
-pub struct RoadsterApp<S, Cli, M>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-    Cli: clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync + 'static,
-    M: MigratorTrait + Send + Sync + 'static,
 {
     inner: Inner<S, Cli, M>,
     // Interior mutability pattern -- this allows us to keep the handler reference as a
@@ -253,39 +249,41 @@ where
     services: Mutex<Services<RoadsterApp<S, Cli, M>, S>>,
 }
 
-pub struct RoadsterAppBuilder<S, Cli, M>
-where
+pub struct RoadsterAppBuilder<
+    S,
+    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync = Empty,
+    #[cfg(not(feature = "cli"))] Cli: 'static = Empty,
+    #[cfg(feature = "db-sql")] M: 'static + MigratorTrait + Send + Sync = Empty,
+    #[cfg(not(feature = "db-sql"))] M: 'static = Empty,
+> where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    Cli: clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync + 'static,
-    M: MigratorTrait + Send + Sync + 'static,
 {
     inner: Inner<S, Cli, M>,
     lifecycle_handlers: LifecycleHandlers<RoadsterApp<S, Cli, M>, S>,
     services: Services<RoadsterApp<S, Cli, M>, S>,
 }
 
-impl<S, Cli, M> RoadsterApp<S, Cli, M>
+impl<
+        S,
+        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
+        #[cfg(not(feature = "cli"))] Cli: 'static,
+        #[cfg(feature = "db-sql")] M: 'static + MigratorTrait + Send + Sync,
+        #[cfg(not(feature = "db-sql"))] M: 'static,
+    > RoadsterApp<S, Cli, M>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
-    M: 'static + MigratorTrait + Send + Sync,
 {
     /// Create a new [`RoadsterAppBuilder`] to use to build the [`RoadsterApp`].
     pub fn builder() -> RoadsterAppBuilder<S, Cli, M> {
-        RoadsterAppBuilder {
-            inner: Inner {
-                common: InnerCommon::new(),
-                lifecycle_handler_providers: Default::default(),
-                service_providers: Default::default(),
-            },
-            lifecycle_handlers: Default::default(),
-            services: Default::default(),
-        }
+        RoadsterAppBuilder::new()
     }
 
     /// Utility method to run the [`RoadsterApp`].
+    ///
+    /// Note: RustRover doesn't seem to recognize this method in some cases. You can also run the
+    /// [`RoadsterApp`] using [`app::run`] directly instead.
     pub async fn run(self) -> RoadsterResult<()> {
         app::run(self).await?;
 
@@ -293,28 +291,53 @@ where
     }
 }
 
-impl<S, Cli, M> RoadsterAppBuilder<S, Cli, M>
+impl<
+        S,
+        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
+        #[cfg(not(feature = "cli"))] Cli: 'static,
+        #[cfg(feature = "db-sql")] M: 'static + MigratorTrait + Send + Sync,
+        #[cfg(not(feature = "db-sql"))] M: 'static,
+    > Default for RoadsterAppBuilder<S, Cli, M>
 where
     S: 'static + Clone + Send + Sync,
     AppContext: FromRef<S>,
-    Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
-    M: 'static + MigratorTrait + Send + Sync,
 {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<
+        S,
+        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
+        #[cfg(not(feature = "cli"))] Cli: 'static,
+        #[cfg(feature = "db-sql")] M: 'static + MigratorTrait + Send + Sync,
+        #[cfg(not(feature = "db-sql"))] M: 'static,
+    > RoadsterAppBuilder<S, Cli, M>
+where
+    S: 'static + Clone + Send + Sync,
+    AppContext: FromRef<S>,
+{
+    pub fn new() -> Self {
+        Self {
+            inner: Inner::new(),
+            lifecycle_handlers: Default::default(),
+            services: Default::default(),
+        }
+    }
+
     /// Provide the logic to initialize tracing for the [`RoadsterApp`].
     pub fn tracing_initializer(
         mut self,
         tracing_initializer: impl 'static + Send + Sync + Fn(&AppConfig) -> RoadsterResult<()>,
     ) -> Self {
-        self.inner.common.tracing_initializer(tracing_initializer);
+        self.inner.tracing_initializer(tracing_initializer);
         self
     }
 
     /// Provide the [`AppMetadata`] for the [`RoadsterApp`].
-    pub fn metadata(
-        mut self,
-        metadata: AppMetadata,
-    ) -> Self {
-        self.inner.common.set_metadata(metadata);
+    pub fn metadata(mut self, metadata: AppMetadata) -> Self {
+        self.inner.set_metadata(metadata);
         self
     }
 
@@ -323,22 +346,19 @@ where
         mut self,
         metadata_provider: impl 'static + Send + Sync + Fn(&AppConfig) -> RoadsterResult<AppMetadata>,
     ) -> Self {
-        self.inner.common.metadata_provider(metadata_provider);
+        self.inner.metadata_provider(metadata_provider);
         self
     }
 
     /// Provide the [`ConnectOptions`] for the [`RoadsterApp`].
-    pub fn db_conn_options(
-        mut self,
-        db_conn_options: ConnectOptions,
-    ) -> Self {
-        self.inner
-            .common
-            .db_conn_options(db_conn_options);
+    #[cfg(feature = "db-sql")]
+    pub fn db_conn_options(mut self, db_conn_options: ConnectOptions) -> Self {
+        self.inner.db_conn_options(db_conn_options);
         self
     }
 
     /// Provide the logic to build the [`ConnectOptions`] for the [`RoadsterApp`].
+    #[cfg(feature = "db-sql")]
     pub fn db_conn_options_provider(
         mut self,
         db_conn_options_provider: impl 'static
@@ -347,7 +367,6 @@ where
             + Fn(&AppConfig) -> RoadsterResult<ConnectOptions>,
     ) -> Self {
         self.inner
-            .common
             .db_conn_options_provider(db_conn_options_provider);
         self
     }
@@ -357,7 +376,7 @@ where
         mut self,
         builder: impl 'static + Send + Sync + Fn(AppContext) -> RoadsterResult<S>,
     ) -> Self {
-        self.inner.common.state_provider(builder);
+        self.inner.state_provider(builder);
         self
     }
 
@@ -392,13 +411,8 @@ where
     /// Add a [`HealthCheck`] for the [`RoadsterApp`].
     ///
     /// This method can be called multiple times to register multiple health checks.
-    pub fn add_health_check(
-        mut self,
-        health_check: impl 'static + HealthCheck,
-    ) -> Self {
-        self.inner
-            .common
-            .add_health_check(health_check);
+    pub fn add_health_check(mut self, health_check: impl 'static + HealthCheck) -> Self {
+        self.inner.add_health_check(health_check);
         self
     }
 
@@ -413,9 +427,7 @@ where
             + Sync
             + Fn(&mut HealthCheckRegistry, &S) -> RoadsterResult<()>,
     ) -> Self {
-        self.inner
-            .common
-            .add_health_check_provider(health_check_provider);
+        self.inner.add_health_check_provider(health_check_provider);
         self
     }
 
@@ -459,7 +471,6 @@ where
             + Fn(&S) -> Pin<Box<dyn Send + Future<Output = ()>>>,
     ) -> Self {
         self.inner
-            .common
             .provide_graceful_shutdown_signal(graceful_shutdown_signal_provider);
         self
     }
@@ -475,585 +486,35 @@ where
 }
 
 #[async_trait]
-impl<S, Cli, M> App<S> for RoadsterApp<S, Cli, M>
+impl<
+        S,
+        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
+        #[cfg(not(feature = "cli"))] Cli: 'static,
+        #[cfg(feature = "db-sql")] M: 'static + MigratorTrait + Send + Sync,
+        #[cfg(not(feature = "db-sql"))] M: 'static,
+    > App<S> for RoadsterApp<S, Cli, M>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    Cli: clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
-    M: MigratorTrait + Send + Sync,
 {
     type Cli = Cli;
     type M = M;
 
     fn init_tracing(&self, config: &AppConfig) -> RoadsterResult<()> {
-        self.inner.common.init_tracing(config)
+        self.inner.init_tracing(config)
     }
 
     fn metadata(&self, config: &AppConfig) -> RoadsterResult<AppMetadata> {
-        self.inner.common.get_metadata(config)
+        self.inner.get_metadata(config)
     }
 
-    fn db_connection_options(&self, config: &AppConfig) -> RoadsterResult<ConnectOptions> {
-        self.inner.common.db_connection_options(config)
-    }
-
-    async fn provide_state(&self, context: AppContext) -> RoadsterResult<S> {
-        self.inner.common.provide_state(context).await
-    }
-
-    async fn lifecycle_handlers(
-        &self,
-        registry: &mut LifecycleHandlerRegistry<Self, S>,
-        state: &S,
-    ) -> RoadsterResult<()> {
-        {
-            let mut lifecycle_handlers = self.lifecycle_handlers
-                .lock()
-                .map_err(|err| anyhow!("Unable to lock lifecycle_handlers mutex: {err}"))?;
-            for lifecycle_handler in lifecycle_handlers.drain(..) {
-                registry.register_boxed(lifecycle_handler)?;
-            }
-        }
-
-        for provider in self.inner.lifecycle_handler_providers.iter() {
-            provider(registry, state)?;
-        }
-        Ok(())
-    }
-
-    async fn health_checks(
-        &self,
-        registry: &mut HealthCheckRegistry,
-        state: &S,
-    ) -> RoadsterResult<()> {
-        self.inner.common.health_checks(registry, state).await
-    }
-
-    async fn services(
-        &self,
-        registry: &mut ServiceRegistry<Self, S>,
-        state: &S,
-    ) -> RoadsterResult<()> {
-        {
-            let mut services = self.services
-                .lock()
-                .map_err(|err| anyhow!("Unable to lock services mutex: {err}"))?;
-            for service in services.drain(..) {
-                registry.register_boxed(service)?;
-            }
-        }
-
-        for provider in self.inner.service_providers.iter() {
-            provider(registry, state).await?;
-        }
-        Ok(())
-    }
-
-    async fn graceful_shutdown_signal(self: Arc<Self>, state: &S) {
-        self.inner.common.graceful_shutdown_signal(state).await
-    }
-}
-
-} else if #[cfg(feature = "cli")] {
-
-struct Inner<S, Cli>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-    Cli: clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync + 'static,
-{
-    common: InnerCommon<S>,
-    lifecycle_handler_providers: LifecycleHandlerProviders<RoadsterApp<S, Cli>, S>,
-    service_providers: ServiceProviders<RoadsterApp<S, Cli>, S>,
-}
-
-pub struct RoadsterApp<S, Cli>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-    Cli: clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync + 'static,
-{
-    inner: Inner<S, Cli>,
-    lifecycle_handlers: Mutex<LifecycleHandlers<RoadsterApp<S, Cli>, S>>,
-    services: Mutex<Services<RoadsterApp<S, Cli>, S>>,
-}
-
-pub struct RoadsterAppBuilder<S, Cli>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-    Cli: clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync + 'static,
-{
-    inner: Inner<S, Cli>,
-    lifecycle_handlers: LifecycleHandlers<RoadsterApp<S, Cli>, S>,
-    services: Services<RoadsterApp<S, Cli>, S>,
-}
-
-impl<S, Cli> RoadsterApp<S, Cli>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-    Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
-{
-    pub fn builder() -> RoadsterAppBuilder<S, Cli> {
-        RoadsterAppBuilder {
-            inner: Inner {
-                common: InnerCommon::new(),
-                lifecycle_handler_providers: Default::default(),
-                service_providers: Default::default(),
-            },
-            lifecycle_handlers: Default::default(),
-            services: Default::default(),
-        }
-    }
-
-    pub async fn run(self) -> RoadsterResult<()> {
-        app::run(self).await?;
-
-        Ok(())
-    }
-}
-
-impl<S, Cli> RoadsterAppBuilder<S, Cli>
-where
-    S: 'static + Clone + Send + Sync,
-    AppContext: FromRef<S>,
-    Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
-{
-    pub fn tracing_initializer(
-        mut self,
-        tracing_initializer: impl 'static + Send + Sync + Fn(&AppConfig) -> RoadsterResult<()>,
-    ) -> Self {
-        self.inner.common.tracing_initializer(tracing_initializer);
-        self
-    }
-
-    pub fn metadata(
-        mut self,
-        metadata: AppMetadata,
-    ) -> Self {
-        self.inner.common.set_metadata(metadata);
-        self
-    }
-
-    pub fn metadata_provider(
-        mut self,
-        metadata_provider: impl 'static + Send + Sync + Fn(&AppConfig) -> RoadsterResult<AppMetadata>,
-    ) -> Self {
-        self.inner.common.metadata_provider(metadata_provider);
-        self
-    }
-
-    pub fn state_provider(
-        mut self,
-        builder: impl 'static + Send + Sync + Fn(AppContext) -> RoadsterResult<S>,
-    ) -> Self {
-        self.inner.common.state_provider(builder);
-        self
-    }
-
-    pub fn add_lifecycle_handler(
-        mut self,
-        lifecycle_handler: impl 'static + AppLifecycleHandler<RoadsterApp<S, Cli>, S>,
-    ) -> Self {
-        self.lifecycle_handlers.push(Box::new(lifecycle_handler));
-        self
-    }
-
-    pub fn add_lifecycle_handler_provider(
-        mut self,
-        lifecycle_handler_provider: impl 'static
-            + Send
-            + Sync
-            + Fn(&mut LifecycleHandlerRegistry<RoadsterApp<S, Cli>, S>, &S) -> RoadsterResult<()>,
-    ) -> Self {
-        self.inner
-            .lifecycle_handler_providers
-            .push(Box::new(lifecycle_handler_provider));
-        self
-    }
-
-    pub fn add_health_check(
-        mut self,
-        health_check: impl 'static + HealthCheck,
-    ) -> Self {
-        self.inner
-            .common
-            .add_health_check(health_check);
-        self
-    }
-
-    pub fn add_health_check_provider(
-        mut self,
-        health_check_provider: impl 'static
-            + Send
-            + Sync
-            + Fn(&mut HealthCheckRegistry, &S) -> RoadsterResult<()>,
-    ) -> Self {
-        self.inner
-            .common
-            .add_health_check_provider(health_check_provider);
-        self
-    }
-
-    pub fn add_service(
-        mut self,
-        service: impl 'static + AppService<RoadsterApp<S, Cli>, S>,
-    ) -> Self {
-        self.services.push(Box::new(service));
-        self
-    }
-
-    pub fn add_service_provider(
-        mut self,
-        service_provider: impl 'static
-            + Send
-            + Sync
-            + for<'a> Fn(
-                &'a mut ServiceRegistry<RoadsterApp<S, Cli>, S>,
-                &'a S,
-            ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>>,
-    ) -> Self {
-        self.inner
-            .service_providers
-            .push(Box::new(service_provider));
-        self
-    }
-
-    pub fn graceful_shutdown_signal_provider(
-        mut self,
-        graceful_shutdown_signal_provider: impl 'static
-            + Send
-            + Sync
-            + Fn(&S) -> Pin<Box<dyn Send + Future<Output = ()>>>,
-    ) -> Self {
-        self.inner
-            .common
-            .provide_graceful_shutdown_signal(graceful_shutdown_signal_provider);
-        self
-    }
-
-    pub fn build(self) -> RoadsterApp<S, Cli> {
-        RoadsterApp {
-            inner: self.inner,
-            lifecycle_handlers: Mutex::new(self.lifecycle_handlers),
-            services: Mutex::new(self.services),
-        }
-    }
-}
-
-#[async_trait]
-impl<S, Cli> App<S> for RoadsterApp<S, Cli>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-    Cli: clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
-{
-    type Cli = Cli;
-
-    fn init_tracing(&self, config: &AppConfig) -> RoadsterResult<()> {
-        self.inner.common.init_tracing(config)
-    }
-
-    fn metadata(&self, config: &AppConfig) -> RoadsterResult<AppMetadata> {
-        self.inner.common.get_metadata(config)
-    }
-
-    async fn provide_state(&self, context: AppContext) -> RoadsterResult<S> {
-        self.inner.common.provide_state(context).await
-    }
-
-    async fn lifecycle_handlers(
-        &self,
-        registry: &mut LifecycleHandlerRegistry<Self, S>,
-        state: &S,
-    ) -> RoadsterResult<()> {
-        {
-            let mut lifecycle_handlers = self.lifecycle_handlers
-                .lock()
-                .map_err(|err| anyhow!("Unable to lock lifecycle_handlers mutex: {err}"))?;
-            for lifecycle_handler in lifecycle_handlers.drain(..) {
-                registry.register_boxed(lifecycle_handler)?;
-            }
-        }
-
-        for provider in self.inner.lifecycle_handler_providers.iter() {
-            provider(registry, state)?;
-        }
-        Ok(())
-    }
-
-    async fn health_checks(
-        &self,
-        registry: &mut HealthCheckRegistry,
-        state: &S,
-    ) -> RoadsterResult<()> {
-        self.inner.common.health_checks(registry, state).await
-    }
-
-    async fn services(
-        &self,
-        registry: &mut ServiceRegistry<Self, S>,
-        state: &S,
-    ) -> RoadsterResult<()> {
-        {
-            let mut services = self.services
-                .lock()
-                .map_err(|err| anyhow!("Unable to lock services mutex: {err}"))?;
-            for service in services.drain(..) {
-                registry.register_boxed(service)?;
-            }
-        }
-
-        for provider in self.inner.service_providers.iter() {
-            provider(registry, state).await?;
-        }
-        Ok(())
-    }
-
-    async fn graceful_shutdown_signal(self: Arc<Self>, state: &S) {
-        self.inner.common.graceful_shutdown_signal(state).await
-    }
-}
-
-
-} else if #[cfg(feature = "db-sql")] {
-
-struct Inner<S, M>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-    M: MigratorTrait + Send + Sync + 'static,
-{
-    common: InnerCommon<S>,
-    lifecycle_handler_providers: LifecycleHandlerProviders<RoadsterApp<S, M>, S>,
-    service_providers: ServiceProviders<RoadsterApp<S, M>, S>,
-}
-
-pub struct RoadsterApp<S, M>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-    M: MigratorTrait + Send + Sync + 'static,
-{
-    inner: Inner<S, M>,
-    lifecycle_handlers: Mutex<LifecycleHandlers<RoadsterApp<S, M>, S>>,
-    services: Mutex<Services<RoadsterApp<S, M>, S>>,
-}
-
-pub struct RoadsterAppBuilder<S, M>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-    M: MigratorTrait + Send + Sync + 'static,
-{
-    inner: Inner<S, M>,
-    lifecycle_handlers: LifecycleHandlers<RoadsterApp<S, M>, S>,
-    services: Services<RoadsterApp<S, M>, S>,
-}
-
-impl<S, M> RoadsterApp<S, M>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-    M: 'static + MigratorTrait + Send + Sync,
-{
-    pub fn builder() -> RoadsterAppBuilder<S, M> {
-        RoadsterAppBuilder {
-            inner: Inner {
-                common: InnerCommon::new(),
-                lifecycle_handler_providers: Default::default(),
-                service_providers: Default::default(),
-            },
-            lifecycle_handlers: Default::default(),
-            services: Default::default(),
-        }
-    }
-
-    pub async fn run(self) -> RoadsterResult<()> {
-        app::run(self).await?;
-
-        Ok(())
-    }
-}
-
-impl<S, M> RoadsterAppBuilder<S, M>
-where
-    S: 'static + Clone + Send + Sync,
-    AppContext: FromRef<S>,
-    M: 'static + MigratorTrait + Send + Sync,
-{
-    pub fn tracing_initializer(
-        mut self,
-        tracing_initializer: impl 'static + Send + Sync + Fn(&AppConfig) -> RoadsterResult<()>,
-    ) -> Self {
-        self.inner.common.tracing_initializer(tracing_initializer);
-        self
-    }
-
-    pub fn metadata(
-        mut self,
-        metadata: AppMetadata,
-    ) -> Self {
-        self.inner.common.set_metadata(metadata);
-        self
-    }
-
-    pub fn metadata_provider(
-        mut self,
-        metadata_provider: impl 'static + Send + Sync + Fn(&AppConfig) -> RoadsterResult<AppMetadata>,
-    ) -> Self {
-        self.inner.common.metadata_provider(metadata_provider);
-        self
-    }
-
-    pub fn db_conn_options(
-        mut self,
-        db_conn_options: ConnectOptions,
-    ) -> Self {
-        self.inner
-            .common
-            .db_conn_options(db_conn_options);
-        self
-    }
-
-    pub fn db_conn_options_provider(
-        mut self,
-        db_conn_options_provider: impl 'static
-            + Send
-            + Sync
-            + Fn(&AppConfig) -> RoadsterResult<ConnectOptions>,
-    ) -> Self {
-        self.inner
-            .common
-            .db_conn_options_provider(db_conn_options_provider);
-        self
-    }
-
-    pub fn state_provider(
-        mut self,
-        builder: impl 'static + Send + Sync + Fn(AppContext) -> RoadsterResult<S>,
-    ) -> Self {
-        self.inner.common.state_provider(builder);
-        self
-    }
-
-    pub fn add_lifecycle_handler(
-        mut self,
-        lifecycle_handler: impl 'static + AppLifecycleHandler<RoadsterApp<S, M>, S>,
-    ) -> Self {
-        self.lifecycle_handlers.push(Box::new(lifecycle_handler));
-        self
-    }
-
-    pub fn add_lifecycle_handler_provider(
-        mut self,
-        lifecycle_handler_provider: impl 'static
-            + Send
-            + Sync
-            + Fn(&mut LifecycleHandlerRegistry<RoadsterApp<S, M>, S>, &S) -> RoadsterResult<()>,
-    ) -> Self {
-        self.inner
-            .lifecycle_handler_providers
-            .push(Box::new(lifecycle_handler_provider));
-        self
-    }
-
-    pub fn add_health_check(
-        mut self,
-        health_check: impl 'static + HealthCheck,
-    ) -> Self {
-        self.inner
-            .common
-            .add_health_check(health_check);
-        self
-    }
-
-    pub fn add_health_check_provider(
-        mut self,
-        health_check_provider: impl 'static
-            + Send
-            + Sync
-            + Fn(&mut HealthCheckRegistry, &S) -> RoadsterResult<()>,
-    ) -> Self {
-        self.inner
-            .common
-            .add_health_check_provider(health_check_provider);
-        self
-    }
-
-    pub fn add_service(
-        mut self,
-        service: impl 'static + AppService<RoadsterApp<S, M>, S>,
-    ) -> Self {
-        self.services.push(Box::new(service));
-        self
-    }
-
-    pub fn add_service_provider(
-        mut self,
-        service_provider: impl 'static
-            + Send
-            + Sync
-            + for<'a> Fn(
-                &'a mut ServiceRegistry<RoadsterApp<S, M>, S>,
-                &'a S,
-            ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>>,
-    ) -> Self {
-        self.inner
-            .service_providers
-            .push(Box::new(service_provider));
-        self
-    }
-
-    pub fn graceful_shutdown_signal_provider(
-        mut self,
-        graceful_shutdown_signal_provider: impl 'static
-            + Send
-            + Sync
-            + Fn(&S) -> Pin<Box<dyn Send + Future<Output = ()>>>,
-    ) -> Self {
-        self.inner
-            .common
-            .provide_graceful_shutdown_signal(graceful_shutdown_signal_provider);
-        self
-    }
-
-    pub fn build(self) -> RoadsterApp<S, M> {
-        RoadsterApp {
-            inner: self.inner,
-            lifecycle_handlers: Mutex::new(self.lifecycle_handlers),
-            services: Mutex::new(self.services),
-        }
-    }
-}
-
-#[async_trait]
-impl<S, M> App<S> for RoadsterApp<S, M>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-    M: MigratorTrait + Send + Sync,
-{
-    #[cfg(feature = "cli")]
-    type Cli = Cli;
     #[cfg(feature = "db-sql")]
-    type M = M;
-
-    fn init_tracing(&self, config: &AppConfig) -> RoadsterResult<()> {
-        self.inner.common.init_tracing(config)
-    }
-
-    fn metadata(&self, config: &AppConfig) -> RoadsterResult<AppMetadata> {
-        self.inner.common.get_metadata(config)
-    }
-
     fn db_connection_options(&self, config: &AppConfig) -> RoadsterResult<ConnectOptions> {
-        self.inner.common.db_connection_options(config)
+        self.inner.db_connection_options(config)
     }
 
     async fn provide_state(&self, context: AppContext) -> RoadsterResult<S> {
-        self.inner.common.provide_state(context).await
+        self.inner.provide_state(context).await
     }
 
     async fn lifecycle_handlers(
@@ -1062,7 +523,8 @@ where
         state: &S,
     ) -> RoadsterResult<()> {
         {
-            let mut lifecycle_handlers = self.lifecycle_handlers
+            let mut lifecycle_handlers = self
+                .lifecycle_handlers
                 .lock()
                 .map_err(|err| anyhow!("Unable to lock lifecycle_handlers mutex: {err}"))?;
             for lifecycle_handler in lifecycle_handlers.drain(..) {
@@ -1081,7 +543,7 @@ where
         registry: &mut HealthCheckRegistry,
         state: &S,
     ) -> RoadsterResult<()> {
-        self.inner.common.health_checks(registry, state).await
+        self.inner.health_checks(registry, state).await
     }
 
     async fn services(
@@ -1090,7 +552,8 @@ where
         state: &S,
     ) -> RoadsterResult<()> {
         {
-            let mut services = self.services
+            let mut services = self
+                .services
                 .lock()
                 .map_err(|err| anyhow!("Unable to lock services mutex: {err}"))?;
             for service in services.drain(..) {
@@ -1105,264 +568,6 @@ where
     }
 
     async fn graceful_shutdown_signal(self: Arc<Self>, state: &S) {
-        self.inner.common.graceful_shutdown_signal(state).await
+        self.inner.graceful_shutdown_signal(state).await
     }
-}
-
-} else {
-
-struct Inner<S>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-{
-    common: InnerCommon<S>,
-    lifecycle_handler_providers: LifecycleHandlerProviders<RoadsterApp<S>, S>,
-    service_providers: ServiceProviders<RoadsterApp<S>, S>,
-}
-
-pub struct RoadsterApp<S>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-{
-    inner: Inner<S>,
-    lifecycle_handlers: Mutex<LifecycleHandlers<RoadsterApp<S>, S>>,
-    services: Mutex<Services<RoadsterApp<S>, S>>,
-}
-
-pub struct RoadsterAppBuilder<S>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-{
-    inner: Inner<S>,
-    lifecycle_handlers: LifecycleHandlers<RoadsterApp<S>, S>,
-    services: Services<RoadsterApp<S>, S>,
-}
-
-impl<S> RoadsterApp<S>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-{
-    pub fn builder() -> RoadsterAppBuilder<S> {
-        RoadsterAppBuilder {
-            inner: Inner {
-                common: InnerCommon::new(),
-                lifecycle_handler_providers: Default::default(),
-                service_providers: Default::default(),
-            },
-            lifecycle_handlers: Default::default(),
-            services: Default::default(),
-        }
-    }
-
-    pub async fn run(self) -> RoadsterResult<()> {
-        app::run(self).await?;
-
-        Ok(())
-    }
-}
-
-impl<S> RoadsterAppBuilder<S>
-where
-    S: 'static + Clone + Send + Sync,
-    AppContext: FromRef<S>,
-{
-    pub fn tracing_initializer(
-        mut self,
-        tracing_initializer: impl 'static + Send + Sync + Fn(&AppConfig) -> RoadsterResult<()>,
-    ) -> Self {
-        self.inner.common.tracing_initializer(tracing_initializer);
-        self
-    }
-
-    pub fn metadata(
-        mut self,
-        metadata: AppMetadata,
-    ) -> Self {
-        self.inner.common.set_metadata(metadata);
-        self
-    }
-
-    pub fn metadata_provider(
-        mut self,
-        metadata_provider: impl 'static + Send + Sync + Fn(&AppConfig) -> RoadsterResult<AppMetadata>,
-    ) -> Self {
-        self.inner.common.metadata_provider(metadata_provider);
-        self
-    }
-
-    pub fn state_provider(
-        mut self,
-        builder: impl 'static + Send + Sync + Fn(AppContext) -> RoadsterResult<S>,
-    ) -> Self {
-        self.inner.common.state_provider(builder);
-        self
-    }
-
-    pub fn add_lifecycle_handler(
-        mut self,
-        lifecycle_handler: impl 'static + AppLifecycleHandler<RoadsterApp<S>, S>,
-    ) -> Self {
-        self.lifecycle_handlers.push(Box::new(lifecycle_handler));
-        self
-    }
-
-    pub fn add_lifecycle_handler_provider(
-        mut self,
-        lifecycle_handler_provider: impl 'static
-            + Send
-            + Sync
-            + Fn(&mut LifecycleHandlerRegistry<RoadsterApp<S>, S>, &S) -> RoadsterResult<()>,
-    ) -> Self {
-        self.inner
-            .lifecycle_handler_providers
-            .push(Box::new(lifecycle_handler_provider));
-        self
-    }
-
-    pub fn add_health_check(
-        mut self,
-        health_check: impl 'static + HealthCheck,
-    ) -> Self {
-        self.inner
-            .common
-            .add_health_check(health_check);
-        self
-    }
-
-    pub fn add_health_check_provider(
-        mut self,
-        health_check_provider: impl 'static
-            + Send
-            + Sync
-            + Fn(&mut HealthCheckRegistry, &S) -> RoadsterResult<()>,
-    ) -> Self {
-        self.inner
-            .common
-            .add_health_check_provider(health_check_provider);
-        self
-    }
-
-    pub fn add_service(
-        mut self,
-        service: impl 'static + AppService<RoadsterApp<S>, S>,
-    ) -> Self {
-        self.services.push(Box::new(service));
-        self
-    }
-
-    pub fn add_service_provider(
-        mut self,
-        service_provider: impl 'static
-            + Send
-            + Sync
-            + for<'a> Fn(
-                &'a mut ServiceRegistry<RoadsterApp<S>, S>,
-                &'a S,
-            ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>>,
-    ) -> Self {
-        self.inner
-            .service_providers
-            .push(Box::new(service_provider));
-        self
-    }
-
-    pub fn graceful_shutdown_signal_provider(
-        mut self,
-        graceful_shutdown_signal_provider: impl 'static
-            + Send
-            + Sync
-            + Fn(&S) -> Pin<Box<dyn Send + Future<Output = ()>>>,
-    ) -> Self {
-        self.inner
-            .common
-            .provide_graceful_shutdown_signal(graceful_shutdown_signal_provider);
-        self
-    }
-
-    pub fn build(self) -> RoadsterApp<S> {
-        RoadsterApp {
-            inner: self.inner,
-            lifecycle_handlers: Mutex::new(self.lifecycle_handlers),
-            services: Mutex::new(self.services),
-        }
-    }
-}
-
-#[async_trait]
-impl<S> App<S> for RoadsterApp<S>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-{
-
-    fn init_tracing(&self, config: &AppConfig) -> RoadsterResult<()> {
-        self.inner.common.init_tracing(config)
-    }
-
-    fn metadata(&self, config: &AppConfig) -> RoadsterResult<AppMetadata> {
-        self.inner.common.get_metadata(config)
-    }
-
-    async fn provide_state(&self, context: AppContext) -> RoadsterResult<S> {
-        self.inner.common.provide_state(context).await
-    }
-
-    async fn lifecycle_handlers(
-        &self,
-        registry: &mut LifecycleHandlerRegistry<Self, S>,
-        state: &S,
-    ) -> RoadsterResult<()> {
-        {
-            let mut lifecycle_handlers = self.lifecycle_handlers
-                .lock()
-                .map_err(|err| anyhow!("Unable to lock lifecycle_handlers mutex: {err}"))?;
-            for lifecycle_handler in lifecycle_handlers.drain(..) {
-                registry.register_boxed(lifecycle_handler)?;
-            }
-        }
-
-        for provider in self.inner.lifecycle_handler_providers.iter() {
-            provider(registry, state)?;
-        }
-        Ok(())
-    }
-
-    async fn health_checks(
-        &self,
-        registry: &mut HealthCheckRegistry,
-        state: &S,
-    ) -> RoadsterResult<()> {
-        self.inner.common.health_checks(registry, state).await
-    }
-
-    async fn services(
-        &self,
-        registry: &mut ServiceRegistry<Self, S>,
-        state: &S,
-    ) -> RoadsterResult<()> {
-        {
-            let mut services = self.services
-                .lock()
-                .map_err(|err| anyhow!("Unable to lock services mutex: {err}"))?;
-            for service in services.drain(..) {
-                registry.register_boxed(service)?;
-            }
-        }
-
-        for provider in self.inner.service_providers.iter() {
-            provider(registry, state).await?;
-        }
-        Ok(())
-    }
-
-    async fn graceful_shutdown_signal(self: Arc<Self>, state: &S) {
-        self.inner.common.graceful_shutdown_signal(state).await
-    }
-}
-
-}
 }
