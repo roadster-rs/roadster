@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-alpha.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.3...roadster-v0.7.0-alpha.4) - 2025-01-29
+
+### Other
+
+- Add example of using tower/axum `oneshot` to test APIs (#587)
+- Improve test coverage (#582)
+- Update the validator trait (#585)
+
 ## [0.7.0-alpha.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.2...roadster-v0.7.0-alpha.3) - 2025-01-22
 
 ### Added
