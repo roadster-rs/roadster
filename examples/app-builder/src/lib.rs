@@ -16,10 +16,10 @@ cfg_if! {
 if #[cfg(all(feature = "cli", feature = "db-sql"))] {
     pub type App = RoadsterApp<AppState, cli::AppCli, migration::Migrator>;
 } else if #[cfg(feature = "cli")] {
-    pub type App = RoadsterApp<AppState, crate::cli::AppCli>;
+    pub type App = RoadsterApp<AppState, crate::cli::AppCli, roadster::util::empty::Empty>;
 } else if #[cfg(feature = "db-sql")] {
-    pub type App = RoadsterApp<AppState, migration::Migrator>;
+    pub type App = RoadsterApp<AppState, roadster::util::empty::Empty, migration::Migrator>;
 } else {
-    pub type App = RoadsterApp<AppState>;
+    pub type App = RoadsterApp<AppState, roadster::util::empty::Empty, roadster::util::empty::Empty>;
 }
 }

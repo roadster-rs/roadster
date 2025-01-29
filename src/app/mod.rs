@@ -492,7 +492,10 @@ where
     Ok(())
 }
 
-#[cfg_attr(test, mockall::automock(type Cli = MockTestCli<S>; type M = MockMigrator;))]
+#[cfg_attr(all(test, feature = "cli", feature = "db-sql"), mockall::automock(type Cli = MockTestCli<S>; type M = MockMigrator;))]
+#[cfg_attr(all(test, feature = "cli", not(feature = "db-sql")), mockall::automock(type Cli = MockTestCli<S>; type M = crate::util::empty::Empty;))]
+#[cfg_attr(all(test, not(feature = "cli"), feature = "db-sql"), mockall::automock(type Cli = crate::util::empty::Empty; type M = MockMigrator;))]
+#[cfg_attr(all(test, not(feature = "cli"), not(feature = "db-sql")), mockall::automock(type Cli = crate::util::empty::Empty; type M = crate::util::empty::Empty;))]
 #[async_trait]
 pub trait App<S>: Send + Sync
 where
@@ -501,8 +504,12 @@ where
 {
     #[cfg(feature = "cli")]
     type Cli: clap::Args + RunCommand<Self, S> + Send + Sync;
+    #[cfg(not(feature = "cli"))]
+    type Cli;
     #[cfg(feature = "db-sql")]
     type M: MigratorTrait;
+    #[cfg(not(feature = "db-sql"))]
+    type M;
 
     fn init_tracing(&self, config: &AppConfig) -> RoadsterResult<()> {
         init_tracing(config, &self.metadata(config)?)?;

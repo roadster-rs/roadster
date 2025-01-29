@@ -4,8 +4,9 @@ use app_builder::health::check::example::ExampleHealthCheck;
 use app_builder::lifecycle::example::ExampleLifecycleHandler;
 use app_builder::worker::example::ExampleWorker;
 use app_builder::App;
+use roadster::app;
 use roadster::app::metadata::AppMetadata;
-use roadster::app::RoadsterApp;
+use roadster::app::{RoadsterApp, RoadsterAppBuilder};
 use roadster::error::RoadsterResult;
 use roadster::service::function::service::FunctionService;
 use roadster::service::http::service::HttpService;
@@ -19,7 +20,7 @@ const BASE: &str = "/api";
 async fn main() -> RoadsterResult<()> {
     let custom_state = "custom".to_string();
 
-    let builder = RoadsterApp::builder()
+    let builder: RoadsterAppBuilder<AppState, _, _> = RoadsterApp::builder()
         .tracing_initializer(|config| roadster::tracing::init_tracing(config, &metadata()));
 
     // Metadata can either be provided directly or via a provider callback. Note that the two
@@ -95,7 +96,7 @@ async fn main() -> RoadsterResult<()> {
                     .register_builder(
                         SidekiqWorkerService::builder(state)
                             .await?
-                            .register_worker(ExampleWorker::default())?,
+                            .register_worker(ExampleWorker)?,
                     )
                     .await?;
                 Ok(())
@@ -110,7 +111,9 @@ async fn main() -> RoadsterResult<()> {
 
     let app: App = builder.build();
 
-    app.run().await
+    app::run(app).await?;
+
+    Ok(())
 }
 
 fn metadata() -> AppMetadata {
