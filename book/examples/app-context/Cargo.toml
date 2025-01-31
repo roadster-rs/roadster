@@ -1,0 +1,11 @@
+[package]
+name = "app-context"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+roadster = { path = "../../.." }
+axum = { workspace = true }
+async-trait = { workspace = true }
+anyhow = { workspace = true }
