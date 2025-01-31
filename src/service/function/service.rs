@@ -12,84 +12,36 @@ use typed_builder::TypedBuilder;
 /// A generic [AppService] to allow creating a service from an async function.
 ///
 /// # Examples
-#[cfg_attr(
-    feature = "default",
-    doc = r##"
-```rust
-# use async_trait::async_trait;
-# use clap::Parser;
-# use sea_orm_migration::{MigrationTrait, MigratorTrait};
-use tokio_util::sync::CancellationToken;
-# use roadster::api::cli::RunCommand;
-use roadster::app::context::AppContext;
-use roadster::error::RoadsterResult;
-use roadster::service::function::service::FunctionService;
-use roadster::service::registry::ServiceRegistry;
-use roadster::app::App as RoadsterApp;
-#
-# #[derive(Debug, Parser)]
-# #[command(version, about)]
-# pub struct AppCli {}
-#
-#
-# #[async_trait]
-# impl RunCommand<App, AppContext> for AppCli {
-#     #[allow(clippy::disallowed_types)]
-#     async fn run(
-#         &self,
-#         _app: &App,
-#         _cli: &AppCli,
-#         _context: &AppContext,
-#     ) -> RoadsterResult<bool> {
-#         Ok(false)
-#     }
-# }
-# pub struct Migrator;
-#
-# #[async_trait::async_trait]
-# impl MigratorTrait for Migrator {
-#     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
-#         Default::default()
-#     }
-# }
-
-async fn example_service(
-    _state: AppContext,
-    _cancel_token: CancellationToken,
-) -> RoadsterResult<()> {
-    // Service logic here
-    todo!()
-}
-
-pub struct App;
-
-#[async_trait]
-impl RoadsterApp<AppContext> for App {
-#     type Cli = AppCli;
-#     type M = Migrator;
-#
-#     async fn provide_state(&self, _context: AppContext) -> RoadsterResult<AppContext> {
-#         todo!()
-#     }
-    async fn services(
-        &self,
-        registry: &mut ServiceRegistry<Self, AppContext>,
-        context: &AppContext,
-    ) -> RoadsterResult<()> {
-        let service = FunctionService::builder()
-            .name("example".to_string())
-            .enabled(true)
-            .function(example_service)
-            .build();
-
-        registry.register_service(service)?;
-
-        Ok(())
-    }
-}
-```
-"##
-)]
+/// ```rust
+/// # use async_trait::async_trait;
+/// # use tokio_util::sync::CancellationToken;
+/// # use roadster::app::context::AppContext;
+/// # use roadster::error::RoadsterResult;
+/// # use roadster::service::function::service::FunctionService;
+/// # use roadster::service::registry::ServiceRegistry;
+/// # use roadster::app::RoadsterApp;
+/// # use roadster::util::empty::Empty;
+///
+/// async fn example_service(
+///     _state: AppContext,
+///     _cancel_token: CancellationToken,
+/// ) -> RoadsterResult<()> {
+///     // Service logic here
+/// #    unimplemented!()
+/// }
+///
+/// type App = RoadsterApp<AppContext, Empty, Empty>;
+///
+/// let service = FunctionService::builder()
+///             .name("example".to_string())
+///             .enabled(true)
+///             .function(example_service)
+///             .build();
+///
+/// let app: App = RoadsterApp::builder()
+///     .add_service(service)
+///     .build();
+/// ```
 #[derive(TypedBuilder)]
 pub struct FunctionService<A, S, F, Fut>
 where
