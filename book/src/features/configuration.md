@@ -26,8 +26,8 @@ my-app/
     │   └── db.toml
     ├── test/
     │   └── db.toml
-    ├── production/
-    │   └── db.toml
+    └── production/
+        └── db.toml
 ```
 
 If there are multiple files in an environment's directory, they are loaded into the config in lexicographical order, and
