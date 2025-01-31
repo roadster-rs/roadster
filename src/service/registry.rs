@@ -117,10 +117,12 @@ where
     ///
     /// # Examples
     #[cfg_attr(
-        feature = "default",
+        feature = "http",
         doc = r##"
- ```rust
+  ```rust
 # tokio_test::block_on(async {
+# use roadster::app::RoadsterApp;
+# use roadster::util::empty::Empty;
 # use roadster::service::AppServiceBuilder;
 # use roadster::service::http::service::{HttpService, OpenApiArgs};
 # use std::env::current_dir;
@@ -138,69 +140,34 @@ where
 # use roadster::error::RoadsterResult;
 # use roadster::service::function::service::FunctionService;
 # use roadster::service::registry::ServiceRegistry;
-# use roadster::app::{prepare, App as RoadsterApp};
+# use roadster::app::{prepare};
 # use roadster::service::AppService;
 #
-# #[derive(Debug, Parser)]
-# #[command(version, about)]
-# pub struct AppCli {}
-#
-# #[async_trait]
-# impl RunCommand<App, AppContext> for AppCli {
-#     #[allow(clippy::disallowed_types)]
-#     async fn run(&self, _: &App, _: &AppCli, _: &AppContext) -> RoadsterResult<bool> {
-#         Ok(false)
-#     }
-# }
-#
-# pub struct Migrator;
-#
-# #[async_trait::async_trait]
-# impl MigratorTrait for Migrator {
-#     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
-#         Default::default()
-#     }
-# }
-#
-pub struct App;
+type App = RoadsterApp<AppContext, Empty, Empty>;
 
-#[async_trait]
-impl RoadsterApp<AppContext> for App {
-#     type Cli = AppCli;
-#     type M = Migrator;
-#
-#     async fn provide_state(&self, context: AppContext) -> RoadsterResult<AppContext> {
-#         Ok(context)
-#     }
-#
-    async fn services(
-        &self,
-        registry: &mut ServiceRegistry<Self, AppContext>,
-        context: &AppContext,
-    ) -> RoadsterResult<()> {
-        // Register the `HttpService` -- this runs when `prepare` is called below
+let app: App = RoadsterApp::builder()
+    .state_provider(|state| Ok(state))
+    .add_service_provider(|registry, state| Box::pin(async  {
         registry.register_builder(
-            HttpService::builder(Some("/api"), context)
+            HttpService::builder(Some("/api"), state)
         ).await?;
         Ok(())
-    }
-}
+    }))
+    .build();
 
 // Prepare the app. This runs all initialization logic for the app but does not actually
 // start the app.
 let prepared = prepare(
-    App,
+    app,
     PrepareOptions::builder()
         .env(Environment::Development)
 #       .config_dir(PathBuf::from("examples/full/config").canonicalize().unwrap())
         .build()
 ).await.unwrap();
-
 // Get the `HttpService` from the `ServiceRegistry`
 let http_service = prepared.service_registry.get::<HttpService>().unwrap();
 // Get the OpenAPI schema from the `HttpService`
 http_service.open_api_schema(&OpenApiArgs::builder().build()).unwrap();
-#
 # })
 ```
 "##
