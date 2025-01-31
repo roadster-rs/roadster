@@ -9,12 +9,35 @@ implementing [FromRef](https://docs.rs/axum-core/latest/axum_core/extract/trait.
 {{#include ../../examples/app-context/src/state.rs}}
 ```
 
-## `Provide` and `ProvideRef`
+## `Provide` and `ProvideRef` traits
 
-🛠️ todo 🛠️
+The [Provide](https://docs.rs/roadster/latest/roadster/app/context/trait.Provide.html)
+and [ProvideRef](https://docs.rs/roadster/latest/roadster/app/context/trait.ProvideRef.html) traits allow getting
+an instance of `T` from the implementing
+type. [AppContext](https://docs.rs/roadster/latest/roadster/app/context/struct.AppContext.html) implements this for
+various
+types it contains. This allows
+a method to specify the type it requires, then the caller of the method can determine how to provide the type. This is a
+similar concept to dependency injection (DI) in frameworks like Java Spring, though this is far from a full DI system.
 
-- <https://docs.rs/roadster/latest/roadster/app/context/trait.Provide.html>
-- <https://docs.rs/roadster/latest/roadster/app/context/trait.ProvideRef.html>
+This is useful, for example, to allow mocking the DB connection in tests. Your DB operation method would declare a
+parameter of type `ProvideRef<DataBaseConnection>`, then your application code would provide
+the [AppContext](https://docs.rs/roadster/latest/roadster/app/context/struct.AppContext.html) to the
+method, and your tests could provide a
+mocked [ProvideRef](https://docs.rs/roadster/latest/roadster/app/context/trait.ProvideRef.html) instance that returns a
+mock DB connection. Note that mocking
+the DB comes with its own set of trade-offs, for example, it may not exactly match the behavior of an actual DB that's
+used in production. Consider testing against an actual DB instead of mocking, e.g., by using test containers.
+
+Mocked implementations of the traits are provided if the `testing-mocks` feature is enabled.
+
+<!--todo: add code example-->
+
+See also:
+
+- [SeaORM Mock Interface](https://www.sea-ql.org/SeaORM/docs/write-test/mock/)
+- [Test Containers](https://testcontainers.com/)
+- [Roadster Testing docs](https://roadster.dev/features/testing.html/)
 
 ## Weak reference
 
