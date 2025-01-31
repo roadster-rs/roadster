@@ -117,7 +117,7 @@ where
     ///
     /// # Examples
     #[cfg_attr(
-        feature = "http",
+        feature = "open-api",
         doc = r##"
   ```rust
 # tokio_test::block_on(async {
@@ -132,15 +132,12 @@ where
 # use roadster::app::PrepareOptions;
 # use roadster::config::environment::Environment;
 # use async_trait::async_trait;
-# use clap::Parser;
-# use sea_orm_migration::{MigrationTrait, MigratorTrait};
 # use tokio_util::sync::CancellationToken;
-# use roadster::api::cli::RunCommand;
 # use roadster::app::context::AppContext;
 # use roadster::error::RoadsterResult;
 # use roadster::service::function::service::FunctionService;
 # use roadster::service::registry::ServiceRegistry;
-# use roadster::app::{prepare};
+# use roadster::app::prepare;
 # use roadster::service::AppService;
 #
 type App = RoadsterApp<AppContext, Empty, Empty>;
