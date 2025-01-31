@@ -224,11 +224,53 @@ impl AppContext {
     }
 }
 
+/// Trait to allow getting a reference to the `T` from the implementing type. [`AppContext`]
+/// implements this for various types it contains. This allows a method to specify the type it
+/// requires, then the caller of the method can determine how to provide the type. This is a
+/// similar concept to dependency injection (DI) in frameworks like Java Spring, though this
+/// is far from a full DI system.
+///
+/// This is useful, for example, to allow mocking the DB connection in tests. Your DB operation
+/// method would declare a parameter of type `ProvideRef<DataBaseConnection>`, then your application
+/// code would provide the [`AppContext`] to the method, and your tests could provide a mocked
+/// [`ProvideRef`] instance that returns a mock DB connection. Note that mocking the DB comes with
+/// its own set of trade-offs, for example, it may not exactly match the behavior of an actual DB
+/// that's used in production. Consider testing against an actual DB instead of mocking, e.g.,
+/// by using test containers.
+///
+/// A mocked implementation of the trait is provided if the `testing-mocks` feature is enabled.
+///
+/// See also:
+/// - [SeaORM Mock Interface](https://www.sea-ql.org/SeaORM/docs/write-test/mock/)
+/// - [Test Containers](https://testcontainers.com/)
+/// - [Roadster Testing docs](https://roadster.dev/features/testing.html/)
+// Todo: add code example
 #[cfg_attr(any(test, feature = "testing-mocks"), mockall::automock)]
 pub trait ProvideRef<T> {
     fn provide(&self) -> &T;
 }
 
+/// Trait to allow getting an instance of `T` from the implementing type. [`AppContext`]
+/// implements this for various types it contains. This allows a method to specify the type it
+/// requires, then the caller of the method can determine how to provide the type. This is a
+/// similar concept to dependency injection (DI) in frameworks like Java Spring, though this
+/// is far from a full DI system.
+///
+/// This is useful, for example, to allow mocking the DB connection in tests. Your DB operation
+/// method would declare a parameter of type `Provide<DataBaseConnection>`, then your application
+/// code would provide the [`AppContext`] to the method, and your tests could provide a mocked
+/// [`Provide`] instance that returns a mock DB connection. Note that mocking the DB comes with
+/// its own set of trade-offs, for example, it may not exactly match the behavior of an actual DB
+/// that's used in production. Consider testing against an actual DB instead of mocking, e.g.,
+/// by using test containers.
+///
+/// A mocked implementation of the trait is provided if the `testing-mocks` feature is enabled.
+///
+/// See also:
+/// - [SeaORM Mock Interface](https://www.sea-ql.org/SeaORM/docs/write-test/mock/)
+/// - [Test Containers](https://testcontainers.com/)
+/// - [Roadster Testing docs](https://roadster.dev/features/testing.html/)
+// Todo: add code example
 #[cfg_attr(any(test, feature = "testing-mocks"), mockall::automock)]
 pub trait Provide<T> {
     fn provide(&self) -> T;
