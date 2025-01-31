@@ -1,0 +1,9 @@
+---
+source: src/config/mod.rs
+expression: "super::FILE_EXTENSIONS"
+---
+[
+    "yml",
+    "yaml",
+    "toml",
+]

@@ -116,9 +116,12 @@ pub const ENV_VAR_SEPARATOR: &str = "__";
 
 const DEFAULT_CONFIG_DIR: &str = "config/";
 
+// Note that config files are loaded in the provided order, and files loaded later will override
+// any duplicate values from files loaded earlier. So, basically, the last extension has a higher
+// priority than the first extension.
 cfg_if! {
     if #[cfg(feature = "config-yml")] {
-        pub const FILE_EXTENSIONS: [&str; 3] = ["toml", "yaml", "yml"];
+        pub const FILE_EXTENSIONS: [&str; 3] = ["yml", "yaml", "toml"];
     } else {
         pub const FILE_EXTENSIONS: [&str; 1] = ["toml"];
     }
@@ -418,5 +421,24 @@ mod custom_config_tests {
         inner.insert("foo".to_string(), "bar".into());
         let config: CustomConfig = CustomConfig { inner };
         assert_eq!(config.get("foo").unwrap(), "bar");
+    }
+}
+
+#[cfg(test)]
+mod file_extensions_tests {
+    use insta::assert_debug_snapshot;
+
+    #[test]
+    #[cfg(not(feature = "config-yml"))]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn file_extensions_no_yml() {
+        assert_debug_snapshot!(super::FILE_EXTENSIONS);
+    }
+
+    #[test]
+    #[cfg(feature = "config-yml")]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn file_extensions_yml() {
+        assert_debug_snapshot!(super::FILE_EXTENSIONS);
     }
 }
