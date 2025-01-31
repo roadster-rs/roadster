@@ -180,6 +180,8 @@ impl AppContext {
         self.inner.metadata()
     }
 
+    /// Returns the [`HealthCheck`]s that were registered in the [`HealthCheckRegistry`], or
+    /// an empty [`Vec`] if no [`HealthCheck`]s were registered.
     pub fn health_checks(&self) -> Vec<Arc<dyn HealthCheck>> {
         self.inner.health_checks()
     }

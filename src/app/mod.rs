@@ -259,13 +259,10 @@ where
         service_registry,
         lifecycle_handler_registry,
     } = prepare_without_cli(app, &state).await?;
-    before_app(
-        &state,
-        Some(health_check_registry),
-        &service_registry,
-        &lifecycle_handler_registry,
-    )
-    .await?;
+
+    let context = AppContext::from_ref(&state);
+    context.set_health_checks(health_check_registry)?;
+    before_app(&state, &service_registry, &lifecycle_handler_registry).await?;
 
     Ok(state)
 }
@@ -409,7 +406,6 @@ where
 /// Run the app's initialization logic (lifecycle handlers, health checks, etc).
 async fn before_app<A, S>(
     state: &S,
-    health_check_registry: Option<HealthCheckRegistry>,
     service_registry: &ServiceRegistry<A, S>,
     lifecycle_handler_registry: &LifecycleHandlerRegistry<A, S>,
 ) -> RoadsterResult<()>
@@ -429,13 +425,9 @@ where
         info!(name=%handler.name(), "Running AppLifecycleHandler::before_health_checks");
         handler.before_health_checks(state).await?;
     }
-    let checks = if let Some(health_check_registry) = health_check_registry {
-        health_check_registry.checks()
-    } else {
-        let context = AppContext::from_ref(state);
-        context.health_checks()
-    };
-    crate::service::runner::health_checks(checks).await?;
+
+    let context = AppContext::from_ref(state);
+    crate::service::runner::health_checks(context.health_checks()).await?;
 
     info!("Running AppLifecycleHandler::before_services");
     for handler in lifecycle_handlers.iter() {
@@ -467,7 +459,7 @@ where
     let context = AppContext::from_ref(&state);
     context.set_health_checks(health_check_registry)?;
 
-    before_app(&state, None, &service_registry, &lifecycle_handler_registry).await?;
+    before_app(&state, &service_registry, &lifecycle_handler_registry).await?;
 
     let result = crate::service::runner::run(app, service_registry, &state).await;
     if let Err(err) = result {
