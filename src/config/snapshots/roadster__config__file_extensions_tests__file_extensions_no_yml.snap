@@ -1,0 +1,7 @@
+---
+source: src/config/mod.rs
+expression: "super::FILE_EXTENSIONS"
+---
+[
+    "toml",
+]

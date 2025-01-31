@@ -1,9 +1,5 @@
 # Configuration
 
-<!--Todo: Mention Environment::Custom variant-->
-<!--Todo: Mention multiple file formats-->
-<!--Todo: Mention overriding via env vars-->
-
 Roadster provides sensible defaults, but is highly customizable via configuration files and environment variables.
 
 ## Configuration files
@@ -18,19 +14,26 @@ be in a file named `default` or the environment name, or in a directory matching
 file structure:
 
 ```text
-- ./Cargo.toml
-- ./config/default.toml
-- ./config/default/db.toml
-- ./config/development.toml
-- ./config/development/db.toml
-- ./config/test.toml
-- ./config/test/db.toml
-- ./config/prod.toml
-- ./config/prod/db.toml
+my-app/
+└── config/
+    ├── default.toml
+    ├── development.toml
+    ├── test.toml
+    ├── production.toml
+    ├── default/
+    │   └── db.toml
+    ├── development/
+    │   └── db.toml
+    ├── test/
+    │   └── db.toml
+    ├── production/
+    │   └── db.toml
 ```
 
-If there are multiple files in an environment's directory, they are loaded into the config in order, and the last
-file loaded takes precedence if there are duplicate fields in the files.
+If there are multiple files in an environment's directory, they are loaded into the config in lexicographical order, and
+the last file loaded takes precedence if there are duplicate fields in the files. For example, if an environment
+directory contains the files `a.toml` and `b.toml`, `a.toml` is loaded first and `b.toml` is loaded second, and any
+duplicate fields in `b.toml` will override the values from `a.toml`.
 
 ## Environment variables
 
@@ -41,22 +44,41 @@ control.
 
 Env vars can either be set on the command line, or in a `.env` file. Environment variables should be prefixed with
 `ROADSTER__` named according to the [AppConfig](https://docs.rs/roadster/latest/roadster/config/struct.AppConfig.html)
-structure, where each level of the structure is separated by a double underscore (`__`). For example, to set
-`AppConfig#environment`, you would use an environment variable named `ROADSTER__ENVIRONMENT`. E.g.:
+structure, where each level of the structure is separated by a double underscore (`__`). For example, to override the
+`AppConfig#environment`, you would use an environment variable named `ROADSTER__ENVIRONMENT`, and to override
+`AppConfig#app#name`, you would use `ROADSTER__APP__NAME`. E.g.:
 
 ```shell
 export ROADSTER__ENVIRONMENT=dev
+export ROADSTER__APP__NAME='My App'
 ```
 
 ## Config mechanism precedence
 
-<!--Todo: Double check-->
-
-- `default.toml` (lowest )
+- `default.yml` (lowest)
+- `default.toml` (lowest)
 - `default/<filename>.toml`
 - `<env>.toml`
 - `<env>/<filename>.toml`
 - Environment variables (highest -- overrides lower precedence values)
+
+If the `config-yml` feature is enabled, the precedence of file extensions is the following:
+
+- `.yml`
+- `.yaml`
+- `.toml`
+
+## Environment names
+
+Roadster provides some pre-defined environment names in
+the [Environment](https://docs.rs/roadster/latest/roadster/config/environment/enum.Environment.html) enum.
+
+- `development` (alias: `dev`)
+- `test`
+- `production` (alias: `prod`)
+
+In addition, apps can define a custom environment name, which is mapped to the `Environment::Custom` enum variant. This
+is useful for special app-specific environments, such as additional pre-prod or canary environments.
 
 ## Docs.rs links
 
