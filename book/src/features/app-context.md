@@ -13,8 +13,8 @@ implementing [FromRef](https://docs.rs/axum-core/latest/axum_core/extract/trait.
 
 🛠️ todo 🛠️
 
-- https://docs.rs/roadster/latest/roadster/app/context/trait.Provide.html
-- https://docs.rs/roadster/latest/roadster/app/context/trait.ProvideRef.html
+- <https://docs.rs/roadster/latest/roadster/app/context/trait.Provide.html>
+- <https://docs.rs/roadster/latest/roadster/app/context/trait.ProvideRef.html>
 
 ## Weak reference
 
