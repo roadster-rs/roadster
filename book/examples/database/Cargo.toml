@@ -1,0 +1,19 @@
+[package]
+name = "database"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+roadster = { path = "../../.." }
+#axum = { workspace = true }
+#async-trait = { workspace = true }
+#anyhow = { workspace = true }
+sea-orm = { workspace = true }
+sea-orm-migration = { workspace = true }
+clap = { workspace = true }
+
+[dev-dependencies]
+#roadster = { path = "../../..", features = ["testing-mocks"] }
+#sea-orm = { workspace = true, features = ["mock"] }
+#tokio = { workspace = true, features = ["test-util"] }
