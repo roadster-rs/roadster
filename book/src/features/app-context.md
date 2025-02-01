@@ -31,7 +31,9 @@ used in production. Consider testing against an actual DB instead of mocking, e.
 
 Mocked implementations of the traits are provided if the `testing-mocks` feature is enabled.
 
-<!--todo: add code example-->
+```rust,ignore
+{{#include ../../examples/app-context/src/provide.rs:5:}}
+```
 
 See also:
 
