@@ -1,4 +1,4 @@
 pub mod app;
-mod cli;
+pub mod cli;
 pub mod migrator;
-mod roadster_app;
+pub mod roadster_app;
