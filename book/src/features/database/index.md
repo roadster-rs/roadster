@@ -24,14 +24,13 @@ your [RoadsterApp](https://docs.rs/roadster/latest/roadster/app/struct.RoadsterA
 
 ### Run automatically
 
-Roadster can automatically run your SeaORM migrations when your app is starting. This is enabled by default but can be
-disabled via the
+Roadster can automatically run your SeaORM migrations when your app is starting. This behavior is configured by the
 [database.auto-migrate](https://docs.rs/roadster/latest/roadster/config/database/struct.Database.html#structfield.auto_migrate)
 config field.
 
 ```toml
 [database]
-auto-migrate = false
+auto-migrate = true # change to `false` to disable
 ```
 
 ### Run via CLI
