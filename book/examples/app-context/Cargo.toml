@@ -9,3 +9,9 @@ roadster = { path = "../../.." }
 axum = { workspace = true }
 async-trait = { workspace = true }
 anyhow = { workspace = true }
+sea-orm = { workspace = true }
+
+[dev-dependencies]
+roadster = { path = "../../..", features = ["testing-mocks"] }
+sea-orm = { workspace = true, features = ["mock"] }
+tokio = { workspace = true, features = ["test-util"] }
