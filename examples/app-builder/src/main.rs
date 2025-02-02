@@ -6,7 +6,7 @@ use app_builder::worker::example::ExampleWorker;
 use app_builder::App;
 use roadster::app;
 use roadster::app::metadata::AppMetadata;
-use roadster::app::{RoadsterApp, RoadsterAppBuilder};
+use roadster::app::{prepare, PrepareOptions, RoadsterApp, RoadsterAppBuilder};
 use roadster::error::RoadsterResult;
 use roadster::service::function::service::FunctionService;
 use roadster::service::http::service::HttpService;
@@ -110,8 +110,9 @@ async fn main() -> RoadsterResult<()> {
     });
 
     let app: App = builder.build();
+    let prepared = prepare(app, PrepareOptions::builder().build()).await?;
 
-    app::run(app).await?;
+    app::run_prepared(prepared).await?;
 
     Ok(())
 }
