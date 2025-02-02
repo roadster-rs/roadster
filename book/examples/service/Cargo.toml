@@ -6,3 +6,8 @@ publish = false
 
 [dependencies]
 roadster = { path = "../../.." }
+aide = { workspace = true }
+tracing = { workspace = true }
+serde = { workspace = true }
+schemars = { workspace = true }
+axum = { workspace = true }

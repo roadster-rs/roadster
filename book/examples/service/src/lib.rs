@@ -1,3 +1,5 @@
+mod http;
+
 use roadster::app::context::AppContext;
 use roadster::app::RoadsterApp;
 use roadster::service::http::service::HttpService;
