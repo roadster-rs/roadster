@@ -1,6 +1,15 @@
 # Configuration
 
 Roadster provides sensible defaults, but is highly customizable via configuration files and environment variables.
+Virtually all behavior of Roadster can be configured; to see the available configuration keys, see
+the [AppConfig](https://docs.rs/roadster/latest/roadster/config/struct.AppConfig.html) struct.
+
+To see the full app config that's loaded for your app, use the `print-config` CLI command. This will print the app
+config after all the config sources (files, env vars, cli args) have been loaded and merged.
+
+```shell
+cargo run -- roadster print-config -f toml
+```
 
 ## Configuration files
 
@@ -46,11 +55,11 @@ Env vars can either be set on the command line, or in a `.env` file. Environment
 `ROADSTER__` named according to the [AppConfig](https://docs.rs/roadster/latest/roadster/config/struct.AppConfig.html)
 structure, where each level of the structure is separated by a double underscore (`__`). For example, to override the
 `AppConfig#environment`, you would use an environment variable named `ROADSTER__ENVIRONMENT`, and to override
-`AppConfig#app#name`, you would use `ROADSTER__APP__NAME`. E.g.:
+`AppConfig#app#shutdown_on_error`, you would use `ROADSTER__APP__SHUTDOWN_ON_ERROR`. E.g.:
 
 ```shell
 export ROADSTER__ENVIRONMENT=dev
-export ROADSTER__APP__NAME='My App'
+export ROADSTER__APP__SHUTDOWN_ON_ERROR=true
 ```
 
 ## Config mechanism precedence
