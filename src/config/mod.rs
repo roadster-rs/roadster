@@ -82,7 +82,6 @@ pub struct AppConfig {
     pub custom: CustomConfig,
 }
 
-// pub type CustomConfig = BTreeMap<String, Value>;
 #[derive(Debug, Default, Clone, Validate, Serialize, Deserialize)]
 pub struct CustomConfig {
     #[serde(flatten)]
@@ -171,7 +170,7 @@ impl AppConfig {
                     .convert_case(Case::Kebab)
                     .separator(ENV_VAR_SEPARATOR),
             )
-            .set_override(ENVIRONMENT_ENV_VAR_NAME, environment_str)?
+            .set_override(ENVIRONMENT_ENV_VAR_NAME.to_lowercase(), environment_str)?
             .build()?;
         let config: AppConfig = config.try_deserialize()?;
 
