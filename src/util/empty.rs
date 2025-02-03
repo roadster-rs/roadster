@@ -2,6 +2,10 @@
 /// parameters
 pub struct Empty;
 
+// Note: Unfortunately, this can't be implemented for any `impl App` because of a loop in the
+// type resolution logic. So, just implement for the concrete `RoadsterApp` for now. If Rust's
+// logic is ever updated to allow this type resolution loop, then we can add an `A: App` type
+// parameter to implement for any `impl App`.
 #[cfg(feature = "cli")]
 #[async_trait::async_trait]
 impl<
