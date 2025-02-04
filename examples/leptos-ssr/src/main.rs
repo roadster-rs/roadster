@@ -4,7 +4,7 @@ use roadster::error::RoadsterResult;
 #[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() -> RoadsterResult<()> {
-    use leptos_ssr_example::server::Server;
+    use leptos_7_ssr_example::server::Server;
     use roadster::app;
 
     app::run(Server).await?;

@@ -5,9 +5,9 @@ use clap::{Parser, Subcommand};
 use roadster::api::cli::RunCommand;
 use roadster::error::RoadsterResult;
 
-/// Leptos SSR Example: Commands specific to managing the `leptos-ssr-example` app are provided in
+/// Leptos SSR Example: Commands specific to managing the `leptos-7-ssr-example` app are provided in
 /// the CLI as well. Subcommands not listed under the `roadster` subcommand are specific to
-/// `leptos-ssr-example`.
+/// `leptos-7-ssr-example`.
 #[derive(Debug, Parser)]
 #[command(version, about)]
 #[non_exhaustive]

@@ -1,5 +1,28 @@
-use leptos::*;
-use leptos_meta::*;
+use leptos::prelude::*;
+use leptos_meta::{provide_meta_context, MetaTags};
+
+/// The static HTML shell of the app.
+pub fn shell(options: LeptosOptions) -> impl IntoView {
+    view! {
+        <!DOCTYPE html>
+        <html lang="en">
+            <head>
+                <meta charset="utf-8" />
+                <link rel="stylesheet" id="leptos" href="/pkg/leptos-7-ssr-example.css" />
+
+                <meta name="viewport" content="width=device-width, initial-scale=1" />
+                <title>"Leptos 0.7 Example"</title>
+
+                <AutoReload options=options.clone() />
+                <HydrationScripts options islands=true />
+                <MetaTags />
+            </head>
+            <body>
+                <App />
+            </body>
+        </html>
+    }
+}
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -8,23 +31,11 @@ pub fn App() -> impl IntoView {
 
     // Use the `view!` macro to build you UI using JSX-like syntax.
     view! {
-        // injects a stylesheet into the document <head>
-        // id=leptos means cargo-leptos will hot-reload this stylesheet
-        <Stylesheet id="leptos" href="/pkg/leptos-ssr-example.css" />
-
-        // sets the document title
-        <Title text="Welcome to Leptos" />
-
         <HomePage/>
     }
 
     // Alternatively, you can use the builder syntax.
     // (
-    //     StylesheetProps::builder()
-    //         .id("leptos")
-    //         .href("/pkg/leptos-ssr-example.css")
-    //         .build(),
-    //     TitleProps::builder().text("Welcome to Leptos").build(),
     //     HomePage(),
     // )
 }
@@ -33,7 +44,7 @@ pub fn App() -> impl IntoView {
 #[component]
 fn HomePage() -> impl IntoView {
     // Creates a reactive value to update the button
-    let (count, set_count) = create_signal(0);
+    let (count, set_count) = signal(0);
     let on_click = move |_| set_count.update(|count| *count += 1);
 
     view! {

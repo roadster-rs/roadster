@@ -8,7 +8,6 @@ See also, our examples:
 - [full](https://github.com/roadster-rs/roadster/tree/main/examples/full) - Demo of all features
 - [app-builder](https://github.com/roadster-rs/roadster/tree/main/examples/app-builder) - Demo of the builder-style API
   to configure the app
-- [leptos-0.7-ssr](https://github.com/roadster-rs/roadster/tree/main/examples/leptos-0.7-ssr) - Demo of using Leptos 0.7
   with Roadster
-- [leptos-ssr](https://github.com/roadster-rs/roadster/tree/main/examples/leptos-ssr) - Demo of using Leptos 0.6 with
+- [leptos-ssr](https://github.com/roadster-rs/roadster/tree/main/examples/leptos-ssr) - Demo of using Leptos with
   Roadster
