@@ -56,6 +56,10 @@ of [AppContextWeak](https://docs.rs/roadster/latest/roadster/app/context/struct.
 {{#include ../../examples/app-context/src/app.rs:12:}}
 ```
 
+## See also
+
+- [Axum State chapter](/features/services/http/state.html)
+
 ## Docs.rs links
 
 - [AppContext](https://docs.rs/roadster/latest/roadster/app/context/struct.AppContext.html)
