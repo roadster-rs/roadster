@@ -9,6 +9,8 @@ type App = RoadsterApp<AppContext, Empty, Empty>;
 
 fn build_app() -> App {
     RoadsterApp::builder()
+        // Use the default `AppContext` for this example
+        .state_provider(|context| Ok(context))
         .add_service_provider(move |registry, state| {
             Box::pin(async move {
                 registry

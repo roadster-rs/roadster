@@ -10,7 +10,7 @@ and the general [FunctionService](https://docs.rs/roadster/latest/roadster/servi
 In order to run a service in your app, it needs to be registered with the service registry.
 
 ```rust,ignore
-{{#include ../../../examples/service/src/lib.rs:6:}}
+{{#include ../../../examples/service/src/lib.rs:8:}}
 ```
 
 ## Docs.rs links

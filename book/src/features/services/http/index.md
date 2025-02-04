@@ -1,7 +1,10 @@
 # HTTP Service with [Axum](https://crates.io/crates/axum)
 
 The [HttpService](https://docs.rs/roadster/latest/roadster/service/http/service/struct.HttpService.html) provides
-support for serving an HTTP API using [axum](https://docs.rs/axum/latest/axum/).
+support for serving an HTTP API using [axum](https://docs.rs/axum/latest/axum/). The `HttpService` automatically applies
+all the configured middleware and initializers automatically, so all that's needed in most cases to serve a production
+ready API service is to define your routes, provide them to the `HttpService`, and register the `HttpService` with
+the [ServiceRegistry](https://docs.rs/roadster/latest/roadster/service/registry/struct.ServiceRegistry.html).
 
 ```rust,ignore
 {{#include ../../../../examples/service/src/http/mod.rs:14:}}
