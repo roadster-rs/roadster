@@ -1,12 +1,10 @@
-use crate::app::App;
+use crate::app::{shell, App};
 use crate::app_state::AppState;
-use crate::server::fileserv::file_and_error_handler;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use axum::Router;
-use leptos::get_configuration;
+use leptos::prelude::*;
 use leptos_axum::{generate_route_list, LeptosRoutes};
-use leptos_config::{ConfFile, Env};
 use roadster::app::context::AppContext;
 use roadster::app::metadata::AppMetadata;
 use roadster::app::App as RoadsterApp;
@@ -15,9 +13,6 @@ use roadster::config::AppConfig;
 use roadster::error::RoadsterResult;
 use roadster::service::http::service::HttpService;
 use roadster::service::registry::ServiceRegistry;
-
-#[cfg(feature = "ssr")]
-pub mod fileserv;
 
 const BASE: &str = "/api";
 
@@ -35,8 +30,9 @@ impl RoadsterApp<AppState> for Server {
     }
 
     async fn provide_state(&self, app_context: AppContext) -> RoadsterResult<AppState> {
-        let leptos_config = leptos_config(&app_context).await?;
+        let leptos_config = leptos_config(&app_context)?;
         let leptos_options = leptos_config.leptos_options.clone();
+
         let state = AppState {
             app_context,
             leptos_config,
@@ -74,12 +70,9 @@ impl RoadsterApp<AppState> for Server {
     }
 }
 
-async fn leptos_config(context: &AppContext) -> anyhow::Result<ConfFile> {
-    // `cargo leptos` runs from the workspace root, so we need to specify this example's
-    // `Cargo.toml` even when we run `cargo leptos` form the example's root.
-    let mut config = get_configuration(Some("./examples/leptos-ssr/Cargo.toml"))
-        .await
-        .map_err(|e| anyhow!(e))?;
+fn leptos_config(context: &AppContext) -> anyhow::Result<ConfFile> {
+    let mut config =
+        get_configuration(Some("./examples/leptos-ssr/Cargo.toml")).map_err(|e| anyhow!(e))?;
     config.leptos_options.site_addr = context.config().service.http.custom.address.socket_addr()?;
     config.leptos_options.env = match context.config().environment {
         Environment::Production => Env::PROD,
@@ -91,6 +84,8 @@ async fn leptos_config(context: &AppContext) -> anyhow::Result<ConfFile> {
 pub fn leptos_routes(state: &AppState) -> Router<AppState> {
     let state = state.clone();
     Router::<AppState>::new()
-        .leptos_routes(&state, generate_route_list(App), App)
-        .fallback(file_and_error_handler)
+        .leptos_routes(&state.clone(), generate_route_list(App), move || {
+            shell(state.leptos_options.clone())
+        })
+        .fallback(leptos_axum::file_and_error_handler::<AppState, _>(shell))
 }

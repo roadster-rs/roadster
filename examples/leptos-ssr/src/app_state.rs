@@ -1,6 +1,5 @@
 use axum::extract::FromRef;
-use leptos::LeptosOptions;
-use leptos_config::ConfFile;
+use leptos::prelude::*;
 use roadster::app::context::AppContext;
 
 #[derive(Clone, FromRef)]
