@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-alpha.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.3...roadster-v0.7.0-alpha.4) - 2025-02-04
+
+### Other
+
+- Rounded favicon for book site (#607)
+- Update config book chapter (#606)
+- Add note to `Empty` for why it can't impl RunCommand for any App (#605)
+- Add `build_path` doc and http service book chapter (#604)
+- Improve service chapter of book (#603)
+- Minor update to db book chapter (#602)
+- Add to database book chapter and add examples (#601)
+- Add example of `ProvideRef` in book (#600)
+- Add doc comments for `Provide` and `ProvideRef` and add to book (#598)
+- Small change to config dir structure in book chapter (#597)
+- Add to `AppContext` book docs (#596)
+- More improvements to config chapter (#595)
+- Use `RoadsterApp` and `Empty` placeholder to simplify doc tests (#594)
+- Minor improvement to initializing health checks in state (#593)
+- Add docs for config files (#591)
+- Refactor `RoadsterApp` to reduce duplication (#589)
+- Add example of using tower/axum `oneshot` to test APIs (#587)
+- Improve test coverage (#582)
+- Update the validator trait (#585)
+
 ## [0.7.0-alpha.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.2...roadster-v0.7.0-alpha.3) - 2025-01-22
 
 ### Added
