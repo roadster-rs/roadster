@@ -36,7 +36,7 @@ and [Poem](https://github.com/poem-web/poem).
 - Provides sample JWT extractor for Axum (requires the `jwt-ietf` and/or `jwt-openid` features). Also provides a general
   JWT extractor for Axum that simply puts all claims into a map (available with the `jwt` feature)
 - Built-in support for [SeaORM](https://crates.io/crates/sea-orm), including creating DB connections (requires
-  the `db-sql` feature)
+  the `db-sea-orm` feature)
 - Built-in support for [Sidekiq.rs](https://crates.io/crates/rusty-sidekiq) for running async/background jobs (requires
   the `sidekiq` feature)
 - Built-in support for sending emails via SMTP (requires the `email-smtp` feature)
@@ -45,9 +45,9 @@ and [Poem](https://github.com/poem-web/poem).
 - Structured logs/traces using tokio's [tracing](https://docs.rs/tracing/latest/tracing/) crate. Export traces/metrics
   using OpenTelemetry (requires the `otel` feature).
 - Health checks to ensure the app's external dependencies are healthy
-- Pre-built migrations for common DB tables, e.g. `user` (requires the `db-sql` feature)
+- Pre-built migrations for common DB tables, e.g. `user` (requires the `db-sea-orm` feature)
 - Support for auto-updating timestamp columns, e.g. `updated_at`, when updating DB rows (Postgres only currently) (
-  requires the `db-sql` feature)
+  requires the `db-sea-orm` feature)
 
 # Getting started
 

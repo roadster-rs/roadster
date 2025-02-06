@@ -14,11 +14,12 @@ rust-version = "1.81"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["sidekiq", "db-sql", "open-api", "jwt-ietf", "cli", "otel"]
+default = ["sidekiq", "db-sea-orm", "open-api", "jwt-ietf", "cli", "otel"]
 http = ["dep:axum", "dep:axum-extra", "dep:tower", "dep:tower-http", "dep:http-body-util", "dep:mime"]
 open-api = ["http", "dep:aide", "dep:schemars"]
 sidekiq = ["dep:rusty-sidekiq", "dep:bb8", "dep:num_cpus"]
-db-sql = ["dep:sea-orm", "dep:sea-orm-migration"]
+db-sql = []
+db-sea-orm = ["dep:sea-orm", "dep:sea-orm-migration", "db-sql"]
 email = ["dep:lettre"]
 email-smtp = ["email"]
 email-sendgrid = ["email", "dep:sendgrid"]

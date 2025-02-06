@@ -1,4 +1,4 @@
-#[cfg(feature = "db-sql")]
+#[cfg(feature = "db-sea-orm")]
 pub mod db;
 pub mod default;
 pub mod registry;

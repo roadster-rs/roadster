@@ -16,9 +16,9 @@ use crate::util::empty::Empty;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
-#[cfg(feature = "db-sql")]
+#[cfg(feature = "db-sea-orm")]
 use sea_orm::ConnectOptions;
-#[cfg(feature = "db-sql")]
+#[cfg(feature = "db-sea-orm")]
 use sea_orm_migration::MigratorTrait;
 use std::future;
 use std::future::Future;
@@ -28,7 +28,7 @@ use std::sync::{Arc, Mutex};
 type StateBuilder<S> = dyn Send + Sync + Fn(AppContext) -> RoadsterResult<S>;
 type TracingInitializer = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<()>;
 type MetadataProvider = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<AppMetadata>;
-#[cfg(feature = "db-sql")]
+#[cfg(feature = "db-sea-orm")]
 type DbConnOptionsProvider = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<ConnectOptions>;
 type LifecycleHandlers<A, S> = Vec<Box<dyn AppLifecycleHandler<A, S>>>;
 type LifecycleHandlerProviders<A, S> =
@@ -54,8 +54,8 @@ struct Inner<
     S,
     #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync = Empty,
     #[cfg(not(feature = "cli"))] Cli: 'static = Empty,
-    #[cfg(feature = "db-sql")] M: 'static + MigratorTrait + Send + Sync = Empty,
-    #[cfg(not(feature = "db-sql"))] M: 'static = Empty,
+    #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync = Empty,
+    #[cfg(not(feature = "db-sea-orm"))] M: 'static = Empty,
 > where
     S: 'static + Clone + Send + Sync,
     AppContext: FromRef<S>,
@@ -64,9 +64,9 @@ struct Inner<
     tracing_initializer: Option<Box<TracingInitializer>>,
     metadata: Option<AppMetadata>,
     metadata_provider: Option<Box<MetadataProvider>>,
-    #[cfg(feature = "db-sql")]
+    #[cfg(feature = "db-sea-orm")]
     db_conn_options: Option<ConnectOptions>,
-    #[cfg(feature = "db-sql")]
+    #[cfg(feature = "db-sea-orm")]
     db_conn_options_provider: Option<Box<DbConnOptionsProvider>>,
     health_checks: Vec<Arc<dyn HealthCheck>>,
     health_check_providers: HealthCheckProviders<S>,
@@ -79,8 +79,8 @@ impl<
         S,
         #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
         #[cfg(not(feature = "cli"))] Cli: 'static,
-        #[cfg(feature = "db-sql")] M: 'static + MigratorTrait + Send + Sync,
-        #[cfg(not(feature = "db-sql"))] M: 'static,
+        #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync,
+        #[cfg(not(feature = "db-sea-orm"))] M: 'static,
     > Inner<S, Cli, M>
 where
     S: 'static + Clone + Send + Sync,
@@ -92,9 +92,9 @@ where
             tracing_initializer: None,
             metadata: None,
             metadata_provider: None,
-            #[cfg(feature = "db-sql")]
+            #[cfg(feature = "db-sea-orm")]
             db_conn_options: None,
-            #[cfg(feature = "db-sql")]
+            #[cfg(feature = "db-sea-orm")]
             db_conn_options_provider: None,
             health_checks: Default::default(),
             health_check_providers: Default::default(),
@@ -122,12 +122,12 @@ where
         self.metadata_provider = Some(Box::new(metadata_provider));
     }
 
-    #[cfg(feature = "db-sql")]
+    #[cfg(feature = "db-sea-orm")]
     fn db_conn_options(&mut self, db_conn_options: ConnectOptions) {
         self.db_conn_options = Some(db_conn_options);
     }
 
-    #[cfg(feature = "db-sql")]
+    #[cfg(feature = "db-sea-orm")]
     fn db_conn_options_provider(
         &mut self,
         db_conn_options_provider: impl 'static
@@ -188,7 +188,7 @@ where
         }
     }
 
-    #[cfg(feature = "db-sql")]
+    #[cfg(feature = "db-sea-orm")]
     fn db_connection_options(&self, config: &AppConfig) -> RoadsterResult<ConnectOptions> {
         if let Some(db_conn_options) = self.db_conn_options.as_ref() {
             Ok(db_conn_options.clone())
@@ -234,8 +234,8 @@ pub struct RoadsterApp<
     S,
     #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync = Empty,
     #[cfg(not(feature = "cli"))] Cli: 'static = Empty,
-    #[cfg(feature = "db-sql")] M: 'static + MigratorTrait + Send + Sync = Empty,
-    #[cfg(not(feature = "db-sql"))] M: 'static = Empty,
+    #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync = Empty,
+    #[cfg(not(feature = "db-sea-orm"))] M: 'static = Empty,
 > where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
@@ -253,8 +253,8 @@ pub struct RoadsterAppBuilder<
     S,
     #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync = Empty,
     #[cfg(not(feature = "cli"))] Cli: 'static = Empty,
-    #[cfg(feature = "db-sql")] M: 'static + MigratorTrait + Send + Sync = Empty,
-    #[cfg(not(feature = "db-sql"))] M: 'static = Empty,
+    #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync = Empty,
+    #[cfg(not(feature = "db-sea-orm"))] M: 'static = Empty,
 > where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
@@ -268,8 +268,8 @@ impl<
         S,
         #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
         #[cfg(not(feature = "cli"))] Cli: 'static,
-        #[cfg(feature = "db-sql")] M: 'static + MigratorTrait + Send + Sync,
-        #[cfg(not(feature = "db-sql"))] M: 'static,
+        #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync,
+        #[cfg(not(feature = "db-sea-orm"))] M: 'static,
     > RoadsterApp<S, Cli, M>
 where
     S: Clone + Send + Sync + 'static,
@@ -295,8 +295,8 @@ impl<
         S,
         #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
         #[cfg(not(feature = "cli"))] Cli: 'static,
-        #[cfg(feature = "db-sql")] M: 'static + MigratorTrait + Send + Sync,
-        #[cfg(not(feature = "db-sql"))] M: 'static,
+        #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync,
+        #[cfg(not(feature = "db-sea-orm"))] M: 'static,
     > Default for RoadsterAppBuilder<S, Cli, M>
 where
     S: 'static + Clone + Send + Sync,
@@ -311,8 +311,8 @@ impl<
         S,
         #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
         #[cfg(not(feature = "cli"))] Cli: 'static,
-        #[cfg(feature = "db-sql")] M: 'static + MigratorTrait + Send + Sync,
-        #[cfg(not(feature = "db-sql"))] M: 'static,
+        #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync,
+        #[cfg(not(feature = "db-sea-orm"))] M: 'static,
     > RoadsterAppBuilder<S, Cli, M>
 where
     S: 'static + Clone + Send + Sync,
@@ -351,14 +351,14 @@ where
     }
 
     /// Provide the [`ConnectOptions`] for the [`RoadsterApp`].
-    #[cfg(feature = "db-sql")]
+    #[cfg(feature = "db-sea-orm")]
     pub fn db_conn_options(mut self, db_conn_options: ConnectOptions) -> Self {
         self.inner.db_conn_options(db_conn_options);
         self
     }
 
     /// Provide the logic to build the [`ConnectOptions`] for the [`RoadsterApp`].
-    #[cfg(feature = "db-sql")]
+    #[cfg(feature = "db-sea-orm")]
     pub fn db_conn_options_provider(
         mut self,
         db_conn_options_provider: impl 'static
@@ -490,8 +490,8 @@ impl<
         S,
         #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
         #[cfg(not(feature = "cli"))] Cli: 'static,
-        #[cfg(feature = "db-sql")] M: 'static + MigratorTrait + Send + Sync,
-        #[cfg(not(feature = "db-sql"))] M: 'static,
+        #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync,
+        #[cfg(not(feature = "db-sea-orm"))] M: 'static,
     > App<S> for RoadsterApp<S, Cli, M>
 where
     S: Clone + Send + Sync + 'static,
@@ -508,7 +508,7 @@ where
         self.inner.get_metadata(config)
     }
 
-    #[cfg(feature = "db-sql")]
+    #[cfg(feature = "db-sea-orm")]
     fn db_connection_options(&self, config: &AppConfig) -> RoadsterResult<ConnectOptions> {
         self.inner.db_connection_options(config)
     }

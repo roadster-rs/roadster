@@ -59,7 +59,7 @@ pub enum Error {
     #[error(transparent)]
     Serde(#[from] SerdeError),
 
-    #[cfg(feature = "db-sql")]
+    #[cfg(feature = "db-sea-orm")]
     #[error(transparent)]
     Db(#[from] sea_orm::DbErr),
 

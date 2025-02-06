@@ -6,7 +6,7 @@ use crate::health::check::registry::HealthCheckRegistry;
 use crate::health::check::HealthCheck;
 use anyhow::anyhow;
 use axum_core::extract::FromRef;
-#[cfg(feature = "db-sql")]
+#[cfg(feature = "db-sea-orm")]
 use sea_orm::DatabaseConnection;
 use std::sync::{Arc, OnceLock, Weak};
 
@@ -58,12 +58,12 @@ impl AppContext {
 
         #[cfg(not(test))]
         let context = {
-            #[cfg(all(feature = "db-sql", feature = "test-containers"))]
+            #[cfg(all(feature = "db-sea-orm", feature = "test-containers"))]
             let db_test_container = db_test_container(&mut config).await?;
             #[cfg(all(feature = "sidekiq", feature = "test-containers"))]
             let sidekiq_redis_test_container = sidekiq_redis_test_container(&mut config).await?;
 
-            #[cfg(feature = "db-sql")]
+            #[cfg(feature = "db-sea-orm")]
             let db = sea_orm::Database::connect(app.db_connection_options(&config)?).await?;
 
             #[cfg(feature = "sidekiq")]
@@ -110,9 +110,9 @@ impl AppContext {
                 config,
                 metadata,
                 health_checks: OnceLock::new(),
-                #[cfg(feature = "db-sql")]
+                #[cfg(feature = "db-sea-orm")]
                 db,
-                #[cfg(all(feature = "db-sql", feature = "test-containers"))]
+                #[cfg(all(feature = "db-sea-orm", feature = "test-containers"))]
                 db_test_container,
                 #[cfg(feature = "sidekiq")]
                 redis_enqueue,
@@ -193,7 +193,7 @@ impl AppContext {
         self.inner.set_health_checks(health_checks)
     }
 
-    #[cfg(feature = "db-sql")]
+    #[cfg(feature = "db-sea-orm")]
     pub fn db(&self) -> &DatabaseConnection {
         self.inner.db()
     }
@@ -306,7 +306,7 @@ impl Provide<Vec<Arc<dyn HealthCheck>>> for AppContext {
     }
 }
 
-#[cfg(feature = "db-sql")]
+#[cfg(feature = "db-sea-orm")]
 impl ProvideRef<DatabaseConnection> for AppContext {
     fn provide(&self) -> &DatabaseConnection {
         self.db()
@@ -315,7 +315,7 @@ impl ProvideRef<DatabaseConnection> for AppContext {
 
 /// Unfortunately, [`Provide<DatabaseConnection>`] can not be implemented when the `sea-orm/mock`
 /// feature is enabled because `MockDatabase` is not [`Clone`]
-#[cfg(all(feature = "db-sql", not(feature = "testing-mocks")))]
+#[cfg(all(feature = "db-sea-orm", not(feature = "testing-mocks")))]
 impl Provide<DatabaseConnection> for AppContext {
     fn provide(&self) -> DatabaseConnection {
         self.db().clone()
@@ -417,7 +417,7 @@ impl Provide<Option<RedisFetch>> for AppContext {
     }
 }
 
-#[cfg(all(feature = "db-sql", feature = "test-containers"))]
+#[cfg(all(feature = "db-sea-orm", feature = "test-containers"))]
 #[cfg_attr(test, allow(dead_code))]
 async fn db_test_container(
     config: &mut AppConfig,
@@ -500,9 +500,9 @@ struct AppContextInner {
     config: AppConfig,
     metadata: AppMetadata,
     health_checks: OnceLock<HealthCheckRegistry>,
-    #[cfg(feature = "db-sql")]
+    #[cfg(feature = "db-sea-orm")]
     db: DatabaseConnection,
-    #[cfg(all(feature = "db-sql", feature = "test-containers"))]
+    #[cfg(all(feature = "db-sea-orm", feature = "test-containers"))]
     #[allow(dead_code)]
     db_test_container: Option<
         testcontainers_modules::testcontainers::ContainerAsync<
@@ -555,7 +555,7 @@ impl AppContextInner {
         Ok(())
     }
 
-    #[cfg(feature = "db-sql")]
+    #[cfg(feature = "db-sea-orm")]
     fn db(&self) -> &DatabaseConnection {
         &self.db
     }

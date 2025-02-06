@@ -1,6 +1,6 @@
 # Database
 
-When the `db-sql` feature is enabled, Roadster provides support for various SQL databases
+When the `db-sea-orm` feature is enabled, Roadster provides support for various SQL databases
 via [SeaORM](https://docs.rs/sea-orm/1.1.4/sea_orm/), an ORM built on top of [sqlx](https://docs.rs/sqlx/latest/sqlx/).
 See the SeaORM docs for more details.
 

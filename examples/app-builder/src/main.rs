@@ -31,7 +31,7 @@ async fn main() -> RoadsterResult<()> {
 
     // Db connection options can either be provided directly or via a provider callback. Note that
     // the two approaches are mutually exclusive, with the `db_conn_options` method taking priority.
-    #[cfg(feature = "db-sql")]
+    #[cfg(feature = "db-sea-orm")]
     let builder = {
         let mut db_conn_options =
             sea_orm::ConnectOptions::new("postgres://roadster:roadster@localhost:5432/example_dev");
