@@ -13,7 +13,7 @@ pub mod error;
 pub mod health;
 pub mod lifecycle;
 pub mod middleware;
-#[cfg(feature = "db-sql")]
+#[cfg(feature = "db-sea-orm")]
 pub mod migration;
 pub mod service;
 #[cfg(any(test, feature = "testing"))]

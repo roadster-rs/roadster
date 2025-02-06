@@ -68,7 +68,7 @@ fn serialize_config(format: &Format, config: &AppConfig) -> RoadsterResult<Strin
     feature = "http",
     feature = "open-api",
     feature = "sidekiq",
-    feature = "db-sql",
+    feature = "db-sea-orm",
     feature = "email-smtp",
     feature = "email-sendgrid",
     feature = "jwt",

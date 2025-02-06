@@ -1,5 +1,5 @@
 use crate::config::auth::Auth;
-#[cfg(feature = "db-sql")]
+#[cfg(feature = "db-sea-orm")]
 use crate::config::database::Database;
 #[cfg(feature = "email")]
 use crate::config::email::Email;
@@ -26,7 +26,7 @@ use typed_builder::TypedBuilder;
 use validator::{Validate, ValidationErrors};
 
 pub mod auth;
-#[cfg(feature = "db-sql")]
+#[cfg(feature = "db-sea-orm")]
 pub mod database;
 #[cfg(feature = "email")]
 pub mod email;
@@ -53,7 +53,7 @@ pub struct AppConfig {
     pub auth: Auth,
     #[validate(nested)]
     pub tracing: Tracing,
-    #[cfg(feature = "db-sql")]
+    #[cfg(feature = "db-sea-orm")]
     #[validate(nested)]
     pub database: Database,
     #[cfg(feature = "email")]
@@ -373,7 +373,7 @@ pub struct TestContainer {
     feature = "http",
     feature = "open-api",
     feature = "sidekiq",
-    feature = "db-sql",
+    feature = "db-sea-orm",
     feature = "email-smtp",
     feature = "email-sendgrid",
     feature = "jwt",

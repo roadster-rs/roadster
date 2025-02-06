@@ -10,8 +10,8 @@ pub struct Empty;
 #[async_trait::async_trait]
 impl<
         S,
-        #[cfg(feature = "db-sql")] M: 'static + sea_orm_migration::MigratorTrait + Send + Sync,
-        #[cfg(not(feature = "db-sql"))] M: 'static + Send + Sync,
+        #[cfg(feature = "db-sea-orm")] M: 'static + sea_orm_migration::MigratorTrait + Send + Sync,
+        #[cfg(not(feature = "db-sea-orm"))] M: 'static + Send + Sync,
     > crate::api::cli::RunCommand<crate::app::RoadsterApp<S, Empty, M>, S> for Empty
 where
     S: Clone + Send + Sync + 'static,
@@ -49,7 +49,7 @@ impl clap::FromArgMatches for Empty {
     }
 }
 
-#[cfg(feature = "db-sql")]
+#[cfg(feature = "db-sea-orm")]
 impl sea_orm_migration::MigratorTrait for Empty {
     fn migrations() -> Vec<Box<dyn sea_orm_migration::MigrationTrait>> {
         Default::default()

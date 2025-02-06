@@ -7,7 +7,7 @@ mod roadster_app;
 /// See <https://github.com/roadster-rs/roadster/tree/main/examples/app-builder/src/main.rs> for
 /// an example of how to use the [`RoadsterApp`].
 ///
-/// The `Cli` and `M` type parameters are only required when the `cli` and `db-sql` features are
+/// The `Cli` and `M` type parameters are only required when the `cli` and `db-sea-orm` features are
 /// enabled, respectively.
 pub use roadster_app::RoadsterApp;
 
@@ -16,7 +16,7 @@ pub use roadster_app::RoadsterApp;
 /// See <https://github.com/roadster-rs/roadster/tree/main/examples/app-builder/src/main.rs> for
 /// an example of how to use the [`RoadsterAppBuilder`].
 ///
-/// The `Cli` and `M` type parameters are only required when the `cli` and `db-sql` features are
+/// The `Cli` and `M` type parameters are only required when the `cli` and `db-sea-orm` features are
 /// enabled, respectively.
 pub use roadster_app::RoadsterAppBuilder;
 
@@ -39,11 +39,11 @@ use crate::tracing::init_tracing;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use context::AppContext;
-#[cfg(feature = "db-sql")]
+#[cfg(feature = "db-sea-orm")]
 use sea_orm::ConnectOptions;
-#[cfg(all(test, feature = "db-sql"))]
+#[cfg(all(test, feature = "db-sea-orm"))]
 use sea_orm_migration::MigrationTrait;
-#[cfg(feature = "db-sql")]
+#[cfg(feature = "db-sea-orm")]
 use sea_orm_migration::MigratorTrait;
 #[cfg(feature = "cli")]
 use std::env;
@@ -484,10 +484,10 @@ where
     Ok(())
 }
 
-#[cfg_attr(all(test, feature = "cli", feature = "db-sql"), mockall::automock(type Cli = MockTestCli<S>; type M = MockMigrator;))]
-#[cfg_attr(all(test, feature = "cli", not(feature = "db-sql")), mockall::automock(type Cli = MockTestCli<S>; type M = crate::util::empty::Empty;))]
-#[cfg_attr(all(test, not(feature = "cli"), feature = "db-sql"), mockall::automock(type Cli = crate::util::empty::Empty; type M = MockMigrator;))]
-#[cfg_attr(all(test, not(feature = "cli"), not(feature = "db-sql")), mockall::automock(type Cli = crate::util::empty::Empty; type M = crate::util::empty::Empty;))]
+#[cfg_attr(all(test, feature = "cli", feature = "db-sea-orm"), mockall::automock(type Cli = MockTestCli<S>; type M = MockMigrator;))]
+#[cfg_attr(all(test, feature = "cli", not(feature = "db-sea-orm")), mockall::automock(type Cli = MockTestCli<S>; type M = crate::util::empty::Empty;))]
+#[cfg_attr(all(test, not(feature = "cli"), feature = "db-sea-orm"), mockall::automock(type Cli = crate::util::empty::Empty; type M = MockMigrator;))]
+#[cfg_attr(all(test, not(feature = "cli"), not(feature = "db-sea-orm")), mockall::automock(type Cli = crate::util::empty::Empty; type M = crate::util::empty::Empty;))]
 #[async_trait]
 pub trait App<S>: Send + Sync
 where
@@ -498,9 +498,9 @@ where
     type Cli: clap::Args + RunCommand<Self, S> + Send + Sync;
     #[cfg(not(feature = "cli"))]
     type Cli;
-    #[cfg(feature = "db-sql")]
+    #[cfg(feature = "db-sea-orm")]
     type M: MigratorTrait;
-    #[cfg(not(feature = "db-sql"))]
+    #[cfg(not(feature = "db-sea-orm"))]
     type M;
 
     fn init_tracing(&self, config: &AppConfig) -> RoadsterResult<()> {
@@ -513,7 +513,7 @@ where
         Ok(Default::default())
     }
 
-    #[cfg(feature = "db-sql")]
+    #[cfg(feature = "db-sea-orm")]
     fn db_connection_options(&self, config: &AppConfig) -> RoadsterResult<ConnectOptions> {
         Ok(ConnectOptions::from(&config.database))
     }
@@ -559,7 +559,7 @@ where
     }
 }
 
-#[cfg(all(test, feature = "db-sql"))]
+#[cfg(all(test, feature = "db-sea-orm"))]
 mockall::mock! {
     pub Migrator {}
     #[async_trait]

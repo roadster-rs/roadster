@@ -9,7 +9,7 @@ use axum_core::extract::FromRef;
 use futures::future::join_all;
 #[cfg(feature = "open-api")]
 use schemars::JsonSchema;
-#[cfg(feature = "db-sql")]
+#[cfg(feature = "db-sea-orm")]
 use sea_orm::DatabaseConnection;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
@@ -129,7 +129,7 @@ pub struct Latency {
     pub ping_latency: Option<u128>,
 }
 
-#[cfg(feature = "db-sql")]
+#[cfg(feature = "db-sea-orm")]
 pub(crate) async fn db_health(context: &AppContext, duration: Option<Duration>) -> CheckResponse {
     let db_timer = Instant::now();
     let db_status = match ping_db(context.db(), duration).await {
@@ -143,7 +143,7 @@ pub(crate) async fn db_health(context: &AppContext, duration: Option<Duration>) 
         .build()
 }
 
-#[cfg(feature = "db-sql")]
+#[cfg(feature = "db-sea-orm")]
 #[instrument(skip_all)]
 async fn ping_db(db: &DatabaseConnection, duration: Option<Duration>) -> RoadsterResult<()> {
     if let Some(duration) = duration {

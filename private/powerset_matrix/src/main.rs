@@ -33,6 +33,7 @@ fn main() -> anyhow::Result<()> {
         vec!["jwt", "jwt-ietf"],
         vec!["jwt", "jwt-openid"],
         vec!["open-api", "http"],
+        vec!["db-sea-orm", "db-sql"],
     ]
     .into_iter()
     .map(|v| v.into_iter().map(|s| s.to_string()).collect())

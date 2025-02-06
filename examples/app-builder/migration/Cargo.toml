@@ -10,7 +10,7 @@ path = "src/lib.rs"
 
 [dependencies]
 tokio = { workspace = true }
-roadster = { path = "../../..", default-features = false, features = ["db-sql"] }
+roadster = { path = "../../..", default-features = false, features = ["db-sea-orm"] }
 
 [dependencies.sea-orm-migration]
 workspace = true

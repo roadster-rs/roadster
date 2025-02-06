@@ -1,7 +1,7 @@
 use crate::api::cli::roadster::health::HealthArgs;
 #[cfg(feature = "open-api")]
 use crate::api::cli::roadster::list_routes::ListRoutesArgs;
-#[cfg(feature = "db-sql")]
+#[cfg(feature = "db-sea-orm")]
 use crate::api::cli::roadster::migrate::MigrateArgs;
 use crate::api::cli::roadster::print_config::PrintConfigArgs;
 use crate::app::context::AppContext;
@@ -20,7 +20,7 @@ use serde_derive::Serialize;
 pub mod health;
 #[cfg(feature = "open-api")]
 pub mod list_routes;
-#[cfg(feature = "db-sql")]
+#[cfg(feature = "db-sea-orm")]
 pub mod migrate;
 pub mod print_config;
 
@@ -154,7 +154,7 @@ where
                 /// Implemented by [crate::service::http::service::HttpService]
                 Ok(false)
             }
-            #[cfg(feature = "db-sql")]
+            #[cfg(feature = "db-sea-orm")]
             RoadsterSubCommand::Migrate(args) => args.run(app, cli, state).await,
             RoadsterSubCommand::PrintConfig(args) => args.run(app, cli, state).await,
             RoadsterSubCommand::Health(args) => args.run(app, cli, state).await,
@@ -179,7 +179,7 @@ pub enum RoadsterSubCommand {
     OpenApi(OpenApiArgs),
 
     /// Perform DB operations using SeaORM migrations.
-    #[cfg(feature = "db-sql")]
+    #[cfg(feature = "db-sea-orm")]
     #[clap(visible_aliases = ["m", "migration"])]
     Migrate(MigrateArgs),
 
