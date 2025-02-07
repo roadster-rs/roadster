@@ -172,10 +172,12 @@ impl AppContext {
         })
     }
 
+    /// Get the app's [`AppContext`].
     pub fn config(&self) -> &AppConfig {
         self.inner.config()
     }
 
+    /// Get the app's [`AppMetadata`]
     pub fn metadata(&self) -> &AppMetadata {
         self.inner.metadata()
     }
@@ -193,31 +195,32 @@ impl AppContext {
         self.inner.set_health_checks(health_checks)
     }
 
+    /// Get the sea-orm DB connection pool.
     #[cfg(feature = "db-sea-orm")]
     pub fn db(&self) -> &DatabaseConnection {
         self.inner.db()
     }
 
+    /// Get the Redis connection pool used to enqueue Sidekiq jobs.
     #[cfg(feature = "sidekiq")]
     pub fn redis_enqueue(&self) -> &RedisEnqueue {
         self.inner.redis_enqueue()
     }
 
+    /// Get the Redis connection pool used to fetch Sidekiq jobs. This shouldn't be needed by most
+    /// applications but is provided as a convenience in case it is.
     #[cfg(feature = "sidekiq")]
     pub fn redis_fetch(&self) -> &Option<RedisFetch> {
         self.inner.redis_fetch()
     }
 
-    #[cfg(feature = "email-smtp")]
-    pub fn mailer(&self) -> &lettre::SmtpTransport {
-        self.inner.smtp()
-    }
-
+    /// Get the SMTP client. Used to send emails via the SMTP protocol
     #[cfg(feature = "email-smtp")]
     pub fn smtp(&self) -> &lettre::SmtpTransport {
         self.inner.smtp()
     }
 
+    /// Get the Sendgrid client. Used to send emails via Sendgrid's Mail Send API.
     #[cfg(feature = "email-sendgrid")]
     pub fn sendgrid(&self) -> &sendgrid::v3::Sender {
         self.inner.sendgrid()

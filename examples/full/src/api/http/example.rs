@@ -41,7 +41,7 @@ async fn example_get(State(state): State<AppState>) -> RoadsterResult<Json<Examp
         .subject("Greetings")
         .header(ContentType::TEXT_PLAIN)
         .body("Hello, World!".to_string())?;
-    state.app_context.mailer().send(&email)?;
+    state.app_context.smtp().send(&email)?;
 
     // Emails can also be sent using Sendgrid
     let email: sendgrid::v3::Message = (&state.app_context.config().email).into();
