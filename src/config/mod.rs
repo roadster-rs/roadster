@@ -12,7 +12,8 @@ use crate::util::serde::default_true;
 use ::tracing::warn;
 use cfg_if::cfg_if;
 use config::builder::DefaultState;
-use config::{Case, Config, ConfigBuilder, FileFormat};
+use config::{Config, ConfigBuilder, FileFormat};
+use convert_case::Casing;
 use dotenvy::dotenv;
 use health::check;
 use health::check::HealthCheck;
@@ -167,10 +168,13 @@ impl AppConfig {
             .add_source(
                 config::Environment::default()
                     .prefix(ENV_VAR_PREFIX)
-                    .convert_case(Case::Kebab)
+                    .convert_case(config::Case::Kebab)
                     .separator(ENV_VAR_SEPARATOR),
             )
-            .set_override(ENVIRONMENT_ENV_VAR_NAME.to_lowercase(), environment_str)?
+            .set_override(
+                ENVIRONMENT_ENV_VAR_NAME.to_case(convert_case::Case::Kebab),
+                environment_str,
+            )?
             .build()?;
         let config: AppConfig = config.try_deserialize()?;
 
