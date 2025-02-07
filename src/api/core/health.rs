@@ -157,7 +157,7 @@ async fn ping_db(db: &DatabaseConnection, duration: Option<Duration>) -> Roadste
 #[cfg(feature = "email-smtp")]
 pub(crate) async fn smtp_health(context: &AppContext, duration: Option<Duration>) -> CheckResponse {
     let timer = Instant::now();
-    let status = match ping_smtp(context.mailer(), duration).await {
+    let status = match ping_smtp(context.smtp(), duration).await {
         Ok(_) => Status::Ok,
         Err(err) => Status::Err(ErrorData::builder().msg(err.to_string()).build()),
     };
