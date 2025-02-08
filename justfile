@@ -120,6 +120,12 @@ check: check-fmt check-no-features check-default-features check-all-features che
 validate-codecov-config:
     curl -X POST --data-binary @codecov.yml https://codecov.io/validate
 
+# Start docker dependencies used by examples for local development
+docker:
+    docker run -d -p 6379:6379 redis:7.2-alpine
+    docker run -d -p 8025:8025 -p 1025:1025 axllent/mailpit:v1.21
+    docker run -d -p 5432:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=example_dev -e POSTGRES_PASSWORD=roadster postgres:15.3-alpine
+
 # Initialize a new installation of the repo (e.g., install deps)
 init:
     cargo binstall cargo-nextest cargo-llvm-cov sea-orm-cli cargo-insta cargo-minimal-versions cargo-hack mdbook cargo-deny

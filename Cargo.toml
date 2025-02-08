@@ -14,12 +14,17 @@ rust-version = "1.81"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["sidekiq", "db-sea-orm", "open-api", "jwt-ietf", "cli", "otel"]
+default = ["default-common", "db-sea-orm"]
+default-common = ["sidekiq", "open-api", "jwt-ietf", "cli", "otel"]
+# The same as `default`, except using `diesel` as the SQL ORM instead of `sea-orm`
+default-diesel = ["default-common", "db-diesel"]
 http = ["dep:axum", "dep:axum-extra", "dep:tower", "dep:tower-http", "dep:http-body-util", "dep:mime"]
 open-api = ["http", "dep:aide", "dep:schemars"]
 sidekiq = ["dep:rusty-sidekiq", "dep:bb8", "dep:num_cpus"]
 db-sql = []
-db-sea-orm = ["dep:sea-orm", "dep:sea-orm-migration", "db-sql"]
+db-sea-orm = ["db-sql", "dep:sea-orm", "dep:sea-orm-migration"]
+db-diesel = ["db-sql", "dep:diesel", "diesel?/postgres", "diesel?/extras"]
+db-diesel-minimal = ["db-sql", "dep:diesel"]
 email = ["dep:lettre"]
 email-smtp = ["email"]
 email-sendgrid = ["email", "dep:sendgrid"]
@@ -67,9 +72,12 @@ schemars = { workspace = true, optional = true }
 http-body-util = { workspace = true, optional = true }
 mime = { workspace = true, optional = true }
 
-# DB
+# DB - SeaORM
 sea-orm = { workspace = true, features = ["debug-print", "runtime-tokio-rustls", "sqlx-postgres", "macros"], optional = true }
 sea-orm-migration = { workspace = true, features = ["runtime-tokio-rustls", "sqlx-postgres"], optional = true }
+
+# DB - Diesel
+diesel = { workspace = true, optional = true }
 
 # Email
 lettre = { workspace = true, features = ["serde"], optional = true }
@@ -167,9 +175,12 @@ schemars = "0.8.16"
 mime = "0.3.17"
 http-body-util = { version = "0.1.2" }
 
-# DB
+# DB - SeaORM
 sea-orm = { version = "1.1.2" }
 sea-orm-migration = { version = "1.1.2" }
+
+# DB - Diesel
+diesel = { version = "2.2.0" }
 
 # Email
 lettre = "0.11.0"
