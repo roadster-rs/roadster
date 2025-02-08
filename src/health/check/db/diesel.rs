@@ -1,18 +1,18 @@
-use crate::api::core::health::db_health;
+use crate::api::core::health::{db_diesel_health, db_sea_orm_health};
 use crate::app::context::{AppContext, AppContextWeak};
 use crate::error::RoadsterResult;
 use crate::health::check::{missing_context_response, CheckResponse, HealthCheck};
 use async_trait::async_trait;
 use tracing::instrument;
 
-pub struct DatabaseHealthCheck {
+pub struct DbDieselHealthCheck {
     pub(crate) context: AppContextWeak,
 }
 
 #[async_trait]
-impl HealthCheck for DatabaseHealthCheck {
+impl HealthCheck for DbDieselHealthCheck {
     fn name(&self) -> String {
-        "db".to_string()
+        "db-diesel".to_string()
     }
 
     fn enabled(&self) -> bool {
@@ -26,7 +26,7 @@ impl HealthCheck for DatabaseHealthCheck {
     async fn check(&self) -> RoadsterResult<CheckResponse> {
         let context = self.context.upgrade();
         let response = match context {
-            Some(context) => db_health(&context, None).await,
+            Some(context) => db_diesel_health(&context, None).await,
             None => missing_context_response(),
         };
         Ok(response)

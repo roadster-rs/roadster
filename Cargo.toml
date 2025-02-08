@@ -24,7 +24,7 @@ sidekiq = ["dep:rusty-sidekiq", "dep:bb8", "dep:num_cpus"]
 db-sql = []
 db-sea-orm = ["db-sql", "dep:sea-orm", "dep:sea-orm-migration"]
 # Todo: how to support mysql and sqlite too?
-db-diesel = ["db-sql", "dep:diesel", "diesel?/postgres", "diesel?/extras"]
+db-diesel = ["db-sql", "dep:diesel", "diesel?/postgres", "diesel?/extras", "dep:diesel-async", "diesel-async?/postgres", "diesel-async?/bb8"]
 email = ["dep:lettre"]
 email-smtp = ["email"]
 email-sendgrid = ["email", "dep:sendgrid"]
@@ -78,7 +78,7 @@ sea-orm-migration = { workspace = true, features = ["runtime-tokio-rustls", "sql
 
 # DB - Diesel
 diesel = { workspace = true, optional = true }
-
+diesel-async = { workspace = true, optional = true }
 # Email
 lettre = { workspace = true, features = ["serde"], optional = true }
 sendgrid = { workspace = true, optional = true }
@@ -183,6 +183,7 @@ sea-orm-migration = { version = "1.1.2" }
 
 # DB - Diesel
 diesel = { version = "2.2.0" }
+diesel-async = { version = "0.5.2" }
 
 # Email
 lettre = "0.11.0"

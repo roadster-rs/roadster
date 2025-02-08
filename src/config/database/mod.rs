@@ -41,6 +41,9 @@ pub struct Database {
 
     pub max_connections: u32,
 
+    #[serde(default = "default_true")]
+    pub test_on_checkout: bool,
+
     /// Options for creating a Test Container instance for the DB. If enabled, the `Database#uri`
     /// field will be overridden to be the URI for the Test Container instance that's created when
     /// building the app's [`crate::app::context::AppContext`].
@@ -142,6 +145,7 @@ mod tests {
             max_lifetime: Some(Duration::from_secs(4)),
             min_connections: 10,
             max_connections: 20,
+            test_on_checkout: true,
         }
     }
 

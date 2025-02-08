@@ -21,6 +21,7 @@ schemars = { workspace = true }
 
 # DB
 diesel = { workspace = true }
+diesel-async = { workspace = true }
 
 # CLI
 clap = { workspace = true, features = ["derive"] }

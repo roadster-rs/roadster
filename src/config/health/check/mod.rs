@@ -23,7 +23,7 @@ pub struct HealthCheck {
     #[validate(nested)]
     pub max_duration: MaxDuration,
 
-    #[cfg(feature = "db-sea-orm")]
+    #[cfg(feature = "db-sql")]
     #[validate(nested)]
     pub database: HealthCheckConfig<crate::config::EmptyConfig>,
 

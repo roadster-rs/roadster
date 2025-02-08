@@ -1,7 +1,6 @@
 use std::time::Duration;
 
-#[cfg(feature = "db-sea-orm")]
-pub mod database;
+pub mod db;
 pub mod default;
 #[cfg(feature = "email")]
 pub mod email;

@@ -190,6 +190,7 @@ expression: serialized
     "max-lifetime": null,
     "min-connections": 0,
     "max-connections": 10,
+    "test-on-checkout": true,
     "test-container": null
   },
   "email": {

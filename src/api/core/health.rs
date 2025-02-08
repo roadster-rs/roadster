@@ -1,4 +1,4 @@
-use crate::app::context::AppContext;
+use crate::app::context::{AppContext, DieselDb};
 use crate::error::RoadsterResult;
 use crate::health::check::{CheckResponse, ErrorData, HealthCheck, Status};
 #[cfg(feature = "open-api")]
@@ -6,6 +6,8 @@ use aide::OperationIo;
 #[cfg(any(feature = "sidekiq", feature = "email-smtp"))]
 use anyhow::anyhow;
 use axum_core::extract::FromRef;
+#[cfg(feature = "db-diesel")]
+use diesel_async::pooled_connection::PoolableConnection;
 use futures::future::join_all;
 #[cfg(feature = "open-api")]
 use schemars::JsonSchema;
@@ -130,9 +132,12 @@ pub struct Latency {
 }
 
 #[cfg(feature = "db-sea-orm")]
-pub(crate) async fn db_health(context: &AppContext, duration: Option<Duration>) -> CheckResponse {
+pub(crate) async fn db_sea_orm_health(
+    context: &AppContext,
+    duration: Option<Duration>,
+) -> CheckResponse {
     let db_timer = Instant::now();
-    let db_status = match ping_db(context.db(), duration).await {
+    let db_status = match ping_db_sea_orm(context.db(), duration).await {
         Ok(_) => Status::Ok,
         Err(err) => Status::Err(ErrorData::builder().msg(err.to_string()).build()),
     };
@@ -145,13 +150,68 @@ pub(crate) async fn db_health(context: &AppContext, duration: Option<Duration>) 
 
 #[cfg(feature = "db-sea-orm")]
 #[instrument(skip_all)]
-async fn ping_db(db: &DatabaseConnection, duration: Option<Duration>) -> RoadsterResult<()> {
+async fn ping_db_sea_orm(
+    db: &DatabaseConnection,
+    duration: Option<Duration>,
+) -> RoadsterResult<()> {
     if let Some(duration) = duration {
         timeout(duration, db.ping()).await??;
     } else {
         db.ping().await?;
     }
     Ok(())
+}
+
+#[cfg(feature = "db-diesel")]
+pub(crate) async fn db_diesel_health(
+    context: &AppContext,
+    duration: Option<Duration>,
+) -> CheckResponse {
+    let db_timer = Instant::now();
+    let (db_status, acquire_conn_latency, ping_latency) =
+        match ping_diesel_db(context, duration).await {
+            Ok((acquire_latency, ping_latency)) => (
+                Status::Ok,
+                Some(acquire_latency.as_millis()),
+                Some(ping_latency.as_millis()),
+            ),
+            Err(err) => (
+                Status::Err(ErrorData::builder().msg(err.to_string()).build()),
+                None,
+                None,
+            ),
+        };
+    let db_timer = db_timer.elapsed();
+    CheckResponse::builder()
+        .status(db_status)
+        .latency(db_timer)
+        .custom(Latency {
+            acquire_conn_latency,
+            ping_latency,
+        })
+        .build()
+}
+
+#[cfg(feature = "db-diesel")]
+#[instrument(skip_all)]
+async fn ping_diesel_db(
+    context: &AppContext,
+    duration: Option<Duration>,
+) -> RoadsterResult<(Duration, Duration)> {
+    let timer = Instant::now();
+    let mut conn = if let Some(duration) = duration {
+        timeout(duration, context.diesel().get()).await??
+    } else {
+        context.diesel().get().await?
+    };
+    let acquire_conn_latency = timer.elapsed();
+
+    let timer = Instant::now();
+    conn.ping(&diesel_async::pooled_connection::RecyclingMethod::Fast)
+        .await?;
+    let ping_latency = timer.elapsed();
+
+    Ok((acquire_conn_latency, ping_latency))
 }
 
 #[cfg(feature = "email-smtp")]

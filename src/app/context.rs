@@ -11,7 +11,10 @@ use sea_orm::DatabaseConnection;
 use std::sync::{Arc, OnceLock, Weak};
 
 #[cfg(feature = "db-diesel")]
-pub type DieselDb = diesel::r2d2::Pool<diesel::r2d2::ConnectionManager<diesel::PgConnection>>;
+pub type DieselDb = diesel_async::pooled_connection::bb8::Pool<diesel_async::AsyncPgConnection>;
+// pub type DieselDb = diesel_async::pooled_connection::bb8::Pool<
+//     diesel_async::pooled_connection::AsyncDieselConnectionManager<diesel_async::AsyncPgConnection>,
+// >;
 
 #[cfg(not(test))]
 type Inner = AppContextInner;
@@ -72,9 +75,22 @@ impl AppContext {
             #[cfg(feature = "db-diesel")]
             let diesel = {
                 let url = config.database.uri.clone();
-                let manager = diesel::r2d2::ConnectionManager::<diesel::PgConnection>::new(url);
+                let manager = diesel_async::pooled_connection::AsyncDieselConnectionManager::<
+                    diesel_async::AsyncPgConnection,
+                >::new(url);
                 // todo: set other pool fields
-                diesel::r2d2::Pool::builder().build(manager)?
+                let pool: diesel_async::pooled_connection::bb8::Pool<
+                    diesel_async::AsyncPgConnection,
+                > = diesel_async::pooled_connection::bb8::Pool::builder()
+                    .test_on_check_out(true)
+                    .min_idle(Some(config.database.min_connections))
+                    .max_size(config.database.max_connections)
+                    .idle_timeout(config.database.idle_timeout)
+                    .connection_timeout(config.database.connect_timeout)
+                    .max_lifetime(config.database.max_lifetime)
+                    .build(manager)
+                    .await?;
+                pool
             };
 
             #[cfg(feature = "sidekiq")]

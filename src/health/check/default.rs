@@ -1,6 +1,7 @@
 use crate::app::context::AppContext;
+use crate::health::check::db::diesel::DbDieselHealthCheck;
 #[cfg(feature = "db-sea-orm")]
-use crate::health::check::database::DatabaseHealthCheck;
+use crate::health::check::db::sea_orm::DbSeaOrmHealthCheck;
 #[cfg(feature = "email-smtp")]
 use crate::health::check::email::smtp::SmtpHealthCheck;
 #[cfg(feature = "sidekiq")]
@@ -16,7 +17,11 @@ pub fn default_health_checks(
 ) -> BTreeMap<String, Arc<dyn HealthCheck>> {
     let health_checks: Vec<Arc<dyn HealthCheck>> = vec![
         #[cfg(feature = "db-sea-orm")]
-        Arc::new(DatabaseHealthCheck {
+        Arc::new(DbSeaOrmHealthCheck {
+            context: context.downgrade(),
+        }),
+        #[cfg(feature = "db-diesel")]
+        Arc::new(DbDieselHealthCheck {
             context: context.downgrade(),
         }),
         #[cfg(feature = "sidekiq")]
