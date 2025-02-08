@@ -1,4 +1,4 @@
-use crate::api::core::health::{db_diesel_health, db_sea_orm_health};
+use crate::api::core::health::db_diesel_health;
 use crate::app::context::{AppContext, AppContextWeak};
 use crate::error::RoadsterResult;
 use crate::health::check::{missing_context_response, CheckResponse, HealthCheck};

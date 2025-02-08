@@ -3,7 +3,8 @@ source: src/health/check/default.rs
 expression: health_checks
 ---
 [
-    'db',
+    'db-diesel',
+    'db-sea-orm',
     'sidekiq-enqueue',
     'sidekiq-fetch',
     'smtp',
