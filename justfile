@@ -1,6 +1,6 @@
 # List the available commands.
 help:
-  @just --list --justfile {{justfile()}}
+    @just --list --justfile {{ justfile() }}
 
 # Run all of our unit tests.
 test:
@@ -69,6 +69,7 @@ coverage-open: coverage
     {{ open_cmd }} target/llvm-cov-target/debug/coverage/index.html
 
 alias fmt := format
+
 # Format the project
 format:
     cargo fmt
@@ -77,6 +78,7 @@ check-fmt:
     cargo fmt --all --check
 
 pre-commit: check-fmt
+
 pre-push: check-fmt
 
 check-no-features:
@@ -126,6 +128,9 @@ docker:
     docker run -d -p 8025:8025 -p 1025:1025 axllent/mailpit:v1.21
     docker run -d -p 5432:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=example_dev -e POSTGRES_PASSWORD=roadster postgres:15.3-alpine
 
+install_libpq := if os() == "macos" { "brew install libpq && brew link --force libpq" } else { "" }
+
 # Initialize a new installation of the repo (e.g., install deps)
 init:
-    cargo binstall cargo-nextest cargo-llvm-cov sea-orm-cli cargo-insta cargo-minimal-versions cargo-hack mdbook cargo-deny
+    cargo binstall cargo-nextest cargo-llvm-cov sea-orm-cli cargo-insta cargo-minimal-versions cargo-hack mdbook cargo-deny diesel_cli
+    {{ install_libpq }}

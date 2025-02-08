@@ -10,6 +10,9 @@ use axum_core::extract::FromRef;
 use sea_orm::DatabaseConnection;
 use std::sync::{Arc, OnceLock, Weak};
 
+#[cfg(feature = "db-diesel")]
+pub type DieselDb = diesel::r2d2::Pool<diesel::r2d2::ConnectionManager<diesel::PgConnection>>;
+
 #[cfg(not(test))]
 type Inner = AppContextInner;
 #[cfg(test)]
@@ -66,6 +69,14 @@ impl AppContext {
             #[cfg(feature = "db-sea-orm")]
             let db = sea_orm::Database::connect(app.db_connection_options(&config)?).await?;
 
+            #[cfg(feature = "db-diesel")]
+            let diesel = {
+                let url = config.database.uri.clone();
+                let manager = diesel::r2d2::ConnectionManager::<diesel::PgConnection>::new(url);
+                // todo: set other pool fields
+                diesel::r2d2::Pool::builder().build(manager)?
+            };
+
             #[cfg(feature = "sidekiq")]
             let (redis_enqueue, redis_fetch) = {
                 let sidekiq_config = &config.service.sidekiq;
@@ -112,7 +123,9 @@ impl AppContext {
                 health_checks: OnceLock::new(),
                 #[cfg(feature = "db-sea-orm")]
                 db,
-                #[cfg(all(feature = "db-sea-orm", feature = "test-containers"))]
+                #[cfg(feature = "db-diesel")]
+                diesel,
+                #[cfg(all(feature = "db-sql", feature = "test-containers"))]
                 db_test_container,
                 #[cfg(feature = "sidekiq")]
                 redis_enqueue,
@@ -199,6 +212,11 @@ impl AppContext {
     #[cfg(feature = "db-sea-orm")]
     pub fn db(&self) -> &DatabaseConnection {
         self.inner.db()
+    }
+
+    #[cfg(feature = "db-diesel")]
+    pub fn diesel(&self) -> &DieselDb {
+        self.inner.diesel()
     }
 
     /// Get the Redis connection pool used to enqueue Sidekiq jobs.
@@ -505,7 +523,9 @@ struct AppContextInner {
     health_checks: OnceLock<HealthCheckRegistry>,
     #[cfg(feature = "db-sea-orm")]
     db: DatabaseConnection,
-    #[cfg(all(feature = "db-sea-orm", feature = "test-containers"))]
+    #[cfg(feature = "db-diesel")]
+    diesel: DieselDb,
+    #[cfg(all(feature = "db-sql", feature = "test-containers"))]
     #[allow(dead_code)]
     db_test_container: Option<
         testcontainers_modules::testcontainers::ContainerAsync<
@@ -561,6 +581,11 @@ impl AppContextInner {
     #[cfg(feature = "db-sea-orm")]
     fn db(&self) -> &DatabaseConnection {
         &self.db
+    }
+
+    #[cfg(feature = "db-diesel")]
+    fn diesel(&self) -> &DieselDb {
+        &self.diesel
     }
 
     #[cfg(feature = "sidekiq")]

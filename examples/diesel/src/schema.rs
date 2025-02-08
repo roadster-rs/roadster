@@ -3,7 +3,6 @@
 diesel::table! {
     user (id) {
         created_at -> Timestamptz,
-        updated_at -> Timestamptz,
         id -> Uuid,
         name -> Varchar,
         username -> Varchar,

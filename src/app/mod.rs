@@ -517,6 +517,7 @@ where
         Ok(Default::default())
     }
 
+    // todo: how to support sea-orm and diesel
     #[cfg(feature = "db-sea-orm")]
     fn db_connection_options(&self, config: &AppConfig) -> RoadsterResult<ConnectOptions> {
         Ok(ConnectOptions::from(&config.database))

@@ -36,6 +36,7 @@ sendgrid = { workspace = true }
 # Other
 uuid = { workspace = true, features = ["v7"] }
 chrono = { workspace = true, features = ["serde"] }
+fake = { workspace = true }
 
 [dev-dependencies]
 roadster = { version = "0.7.0-alpha.3", path = "../..", features = ["testing-mocks"] }

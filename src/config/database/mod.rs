@@ -1,5 +1,4 @@
 use crate::util::serde::default_true;
-use sea_orm::ConnectOptions;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::serde_as;
 use std::time::Duration;
@@ -61,15 +60,17 @@ impl Database {
     }
 }
 
-impl From<Database> for ConnectOptions {
+#[cfg(feature = "db-sea-orm")]
+impl From<Database> for sea_orm::ConnectOptions {
     fn from(database: Database) -> Self {
-        ConnectOptions::from(&database)
+        sea_orm::ConnectOptions::from(&database)
     }
 }
 
-impl From<&Database> for ConnectOptions {
+#[cfg(feature = "db-sea-orm")]
+impl From<&Database> for sea_orm::ConnectOptions {
     fn from(database: &Database) -> Self {
-        let mut options = ConnectOptions::new(database.uri.to_string());
+        let mut options = sea_orm::ConnectOptions::new(database.uri.to_string());
         options
             .connect_timeout(database.connect_timeout)
             .connect_lazy(database.connect_lazy)
@@ -145,17 +146,19 @@ mod tests {
     }
 
     #[rstest]
+    #[cfg(feature = "db-sea-orm")]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn db_config_to_connect_options(db_config: Database) {
-        let connect_options = ConnectOptions::from(db_config);
+        let connect_options = sea_orm::ConnectOptions::from(db_config);
 
         assert_debug_snapshot!(connect_options);
     }
 
     #[rstest]
+    #[cfg(feature = "db-sea-orm")]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn db_config_to_connect_options_ref(db_config: Database) {
-        let connect_options = ConnectOptions::from(&db_config);
+        let connect_options = sea_orm::ConnectOptions::from(&db_config);
 
         assert_debug_snapshot!(connect_options);
     }

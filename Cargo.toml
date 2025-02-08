@@ -23,8 +23,8 @@ open-api = ["http", "dep:aide", "dep:schemars"]
 sidekiq = ["dep:rusty-sidekiq", "dep:bb8", "dep:num_cpus"]
 db-sql = []
 db-sea-orm = ["db-sql", "dep:sea-orm", "dep:sea-orm-migration"]
+# Todo: how to support mysql and sqlite too?
 db-diesel = ["db-sql", "dep:diesel", "diesel?/postgres", "diesel?/extras"]
-db-diesel-minimal = ["db-sql", "dep:diesel"]
 email = ["dep:lettre"]
 email-smtp = ["email"]
 email-sendgrid = ["email", "dep:sendgrid"]
@@ -131,6 +131,7 @@ validator = { workspace = true }
 thiserror = { workspace = true }
 cfg-if = { workspace = true }
 reqwest = { workspace = true }
+r2d2 = { workspace = true }
 
 [dev-dependencies]
 cargo-husky = { workspace = true }
@@ -144,7 +145,8 @@ tokio-test = { workspace = true }
 rustc_version = { workspace = true }
 
 [workspace]
-members = [".", "examples/*", "book/examples/*", "private/*"]
+members = [".", "examples/diesel", "examples/app-builder", "book/examples/*", "private/*"]
+#members = [".", "examples/*", "book/examples/*", "private/*"]
 
 [workspace.dependencies]
 # Config
@@ -242,6 +244,7 @@ thiserror = "2.0.9"
 uuid = { version = "1.10.0", features = ["v4", "serde"] }
 chrono = { version = "0.4.34", features = ["serde"] }
 async-trait = "0.1.74"
+r2d2 = { version = "0.8.10" }
 
 # Build dependencies
 rustc_version = "0.4.1"
@@ -250,6 +253,7 @@ rustc_version = "0.4.1"
 cargo-husky = { version = "1.5.0", default-features = false, features = ["user-hooks"] }
 mockall_double = "0.3.1"
 tokio-test = "0.4.4"
+fake = { version = "3.1.0" }
 
 [package.metadata.docs.rs]
 # Have docs.rs pass `--all-features` to ensure all features have their documentation built.

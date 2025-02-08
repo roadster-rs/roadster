@@ -1,5 +1,5 @@
 use crate::config::auth::Auth;
-#[cfg(feature = "db-sea-orm")]
+#[cfg(feature = "db-sql")]
 use crate::config::database::Database;
 #[cfg(feature = "email")]
 use crate::config::email::Email;
@@ -27,7 +27,7 @@ use typed_builder::TypedBuilder;
 use validator::{Validate, ValidationErrors};
 
 pub mod auth;
-#[cfg(feature = "db-sea-orm")]
+#[cfg(feature = "db-sql")]
 pub mod database;
 #[cfg(feature = "email")]
 pub mod email;
@@ -54,7 +54,7 @@ pub struct AppConfig {
     pub auth: Auth,
     #[validate(nested)]
     pub tracing: Tracing,
-    #[cfg(feature = "db-sea-orm")]
+    #[cfg(feature = "db-sql")]
     #[validate(nested)]
     pub database: Database,
     #[cfg(feature = "email")]
