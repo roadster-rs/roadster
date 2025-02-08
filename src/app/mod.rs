@@ -498,6 +498,10 @@ where
     type Cli: clap::Args + RunCommand<Self, S> + Send + Sync;
     #[cfg(not(feature = "cli"))]
     type Cli;
+    // todo: Make our own "migrator" trait so consumers can use either sea-orm or diesel with
+    //  a single type parameter
+    // todo: can we get rid of this type parameter and use a boxed value? Hmm, I'm not sure
+    //  we can because the trait doesn't take `self` anywhere but let's double check
     #[cfg(feature = "db-sea-orm")]
     type M: MigratorTrait;
     #[cfg(not(feature = "db-sea-orm"))]
