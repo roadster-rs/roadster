@@ -19,12 +19,10 @@ aide = { workspace = true }
 axum = { workspace = true }
 schemars = { workspace = true }
 
-# gRPC API
-tonic = { workspace = true, optional = true }
-tonic-reflection = { workspace = true, optional = true }
-prost = { workspace = true, optional = true }
-
 # DB
+diesel = { workspace = true }
+
+# CLI
 clap = { workspace = true, features = ["derive"] }
 
 # The default `rss-stats` feature has a dependency that currently can't be satisfied (memchr: ~2.3)
