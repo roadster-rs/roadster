@@ -501,7 +501,8 @@ where
     // todo: Make our own "migrator" trait so consumers can use either sea-orm or diesel with
     //  a single type parameter
     // todo: can we get rid of this type parameter and use a boxed value? Hmm, I'm not sure
-    //  we can because the trait doesn't take `self` anywhere but let's double check
+    //  we can because the trait doesn't take `self` anywhere but let's double check.
+    //. Maybe if we have our own trait we can box it?
     #[cfg(feature = "db-sea-orm")]
     type M: MigratorTrait;
     #[cfg(not(feature = "db-sea-orm"))]
