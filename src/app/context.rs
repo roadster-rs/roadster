@@ -88,6 +88,7 @@ impl AppContext {
                     .idle_timeout(config.database.idle_timeout)
                     .connection_timeout(config.database.connect_timeout)
                     .max_lifetime(config.database.max_lifetime)
+                    // todo: `build_unchecked` to support `connect_lazy`
                     .build(manager)
                     .await?;
                 pool
