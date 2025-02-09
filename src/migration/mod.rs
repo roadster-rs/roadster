@@ -5,18 +5,11 @@
 
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
-use anyhow::anyhow;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
-// use diesel::Connection;
-// use diesel_migrations::MigrationHarness;
-use std::error::Error;
-use std::sync::Mutex;
 
 #[cfg(feature = "db-sea-orm")]
 pub mod sea_orm;
-
-pub type BoxedMigrator<S> = Box<dyn Migrator<S> + Send + Sync>;
 
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
@@ -35,13 +28,23 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
+    #[tracing::instrument(skip_all)]
     async fn up(&self, state: &S) -> RoadsterResult<()> {
+        use diesel::Connection;
+        use diesel_migrations::MigrationHarness;
+
+        tracing::info!("Starting migration");
+
         let migration_wrapper = EmbeddedMigrationsWrapper::try_from(self)?;
 
-        // todo: How to use a pooled connection?
+        // todo: Is there a way to use a pooled connection instead? It seems like the trait bounds
+        //  aren't satisfied by the pooled connections currently, at least not for async
+        //  connection pools.
         let context = AppContext::from_ref(state);
         let mut conn = diesel::PgConnection::establish(context.config().database.uri.as_ref())?;
         conn.run_pending_migrations(migration_wrapper)?;
+
+        tracing::info!("Migrations completed");
 
         Ok(())
     }
@@ -55,17 +58,17 @@ where
 /// wrapper's impl.
 #[cfg(feature = "db-diesel")]
 struct EmbeddedMigrationsWrapper<DB: diesel::backend::Backend> {
-    migrations: Mutex<Option<Vec<Box<dyn diesel::migration::Migration<DB>>>>>,
+    migrations: std::sync::Mutex<Option<Vec<Box<dyn diesel::migration::Migration<DB>>>>>,
 }
 
 #[cfg(feature = "db-diesel")]
 impl<DB: diesel::backend::Backend> TryFrom<&diesel_migrations::EmbeddedMigrations>
     for EmbeddedMigrationsWrapper<DB>
 {
-    type Error = Box<dyn Error + Send + Sync>;
+    type Error = Box<dyn std::error::Error + Send + Sync>;
     fn try_from(value: &diesel_migrations::EmbeddedMigrations) -> Result<Self, Self::Error> {
         Ok(Self {
-            migrations: Mutex::new(Some(
+            migrations: std::sync::Mutex::new(Some(
                 <diesel_migrations::EmbeddedMigrations as diesel::migration::MigrationSource<
                     DB,
                 >>::migrations(value)?,
@@ -89,7 +92,7 @@ impl<DB: diesel::backend::Backend> diesel::migration::MigrationSource<DB>
             .migrations
             .lock()
             // todo: poison error enum variant
-            .map_err(|err| crate::error::Error::from(anyhow!("{err}")))?;
+            .map_err(|err| crate::error::Error::from(anyhow::anyhow!("{err}")))?;
 
         match migrations.take() {
             Some(migrations) => Ok(migrations),

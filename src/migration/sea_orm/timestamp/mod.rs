@@ -34,8 +34,8 @@ pub enum Timestamps {
 ///
 /// # Examples
 /// ```rust
-/// use roadster::migration::sea_orm::::Timestamps;
-/// use roadster::migration::sea_orm::::exec_create_update_timestamp_function;
+/// use roadster::migration::sea_orm::timestamp::Timestamps;
+/// use roadster::migration::sea_orm::timestamp::exec_create_update_timestamp_function;
 /// use sea_orm_migration::prelude::*;
 ///
 /// #[derive(DeriveMigrationName)]
@@ -71,8 +71,8 @@ pub async fn exec_create_update_timestamp_function<C: IntoIden>(
 ///
 /// # Examples
 /// ```rust
-/// use roadster::migration::sea_orm::::Timestamps;
-/// use roadster::migration::sea_orm::::{exec_create_update_timestamp_function_dep_column};
+/// use roadster::migration::sea_orm::timestamp::Timestamps;
+/// use roadster::migration::sea_orm::timestamp::{exec_create_update_timestamp_function_dep_column};
 /// use sea_orm_migration::prelude::*;
 ///
 /// #[derive(DeriveMigrationName)]
@@ -228,8 +228,8 @@ $$ language 'plpgsql';
 ///
 /// # Examples
 /// ```rust
-/// use roadster::migration::sea_orm::::Timestamps;
-/// use roadster::migration::sea_orm::::exec_drop_update_timestamp_function;
+/// use roadster::migration::sea_orm::timestamp::Timestamps;
+/// use roadster::migration::sea_orm::timestamp::exec_drop_update_timestamp_function;
 /// use sea_orm_migration::prelude::*;
 ///
 /// #[derive(DeriveMigrationName)]
@@ -293,8 +293,8 @@ fn drop_update_timestamp_function_for_db_backend<C: IntoIden>(
 ///
 /// # Examples
 /// ```rust
-/// use roadster::migration::sea_orm::::Timestamps;
-/// use roadster::migration::sea_orm::::exec_create_update_timestamp_trigger;
+/// use roadster::migration::sea_orm::timestamp::Timestamps;
+/// use roadster::migration::sea_orm::timestamp::exec_create_update_timestamp_trigger;
 /// use sea_orm_migration::prelude::*;
 ///
 /// #[derive(DeriveMigrationName)]
@@ -383,8 +383,8 @@ EXECUTE PROCEDURE {fn_call};
 ///
 /// # Examples
 /// ```rust
-/// use roadster::migration::sea_orm::::Timestamps;
-/// use roadster::migration::sea_orm::::exec_drop_update_timestamp_trigger;
+/// use roadster::migration::sea_orm::timestamp::Timestamps;
+/// use roadster::migration::sea_orm::timestamp::exec_drop_update_timestamp_trigger;
 /// use sea_orm_migration::prelude::*;
 ///
 /// #[derive(DeriveMigrationName)]

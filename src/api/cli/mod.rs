@@ -84,7 +84,7 @@ where
     AppContext: FromRef<S>,
     A: App<S>,
 {
-    if prepared_app.roadster_cli.run(&prepared_app).await? {
+    if prepared_app.roadster_cli.run(prepared_app).await? {
         return Ok(true);
     }
     if prepared_app.app_cli.run(prepared_app).await? {

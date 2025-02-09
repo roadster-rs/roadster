@@ -140,7 +140,7 @@ where
 # use roadster::app::prepare;
 # use roadster::service::AppService;
 #
-type App = RoadsterApp<AppContext, Empty, Empty>;
+type App = RoadsterApp<AppContext, Empty>;
 
 let app: App = RoadsterApp::builder()
     .state_provider(|state| Ok(state))

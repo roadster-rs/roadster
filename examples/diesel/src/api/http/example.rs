@@ -3,11 +3,9 @@ use crate::models::user::NewUser;
 use aide::axum::routing::get_with;
 use aide::axum::ApiRouter;
 use aide::transform::TransformOperation;
-use anyhow::anyhow;
 use axum::extract::State;
 use axum::Json;
 use diesel::SelectableHelper;
-use diesel_async::pooled_connection::RecyclingMethod;
 use diesel_async::RunQueryDsl;
 use roadster::api::http::build_path;
 use roadster::error::RoadsterResult;
@@ -47,32 +45,6 @@ async fn example_get(State(state): State<AppState>) -> RoadsterResult<Json<Examp
     let user = NewUser::new(&name, &username, &email, &password);
 
     let mut conn = state.app_context.diesel().get().await?;
-
-    // let url = state.app_context.config().database.uri.clone();
-    // let manager = diesel_async::pooled_connection::AsyncDieselConnectionManager::<
-    //     diesel_async::AsyncPgConnection,
-    // >::new(url);
-    // pub type DieselDb = diesel_async::pooled_connection::bb8::Pool<
-    //     diesel_async::pooled_connection::AsyncDieselConnectionManager<diesel_async::AsyncPgConnection>,
-    // >;
-
-    // todo: set other pool fields
-    // let pool: diesel_async::pooled_connection::bb8::Pool<diesel_async::AsyncPgConnection> =
-    //     diesel_async::pooled_connection::bb8::Pool::builder()
-    //         .test_on_check_out(true)
-    //         .min_idle(Some(state.app_context.config().database.min_connections))
-    //         .max_size(state.app_context.config().database.max_connections)
-    //         .idle_timeout(state.app_context.config().database.idle_timeout)
-    //         .connection_timeout(state.app_context.config().database.connect_timeout)
-    //         .max_lifetime(state.app_context.config().database.max_lifetime)
-    //         .build(manager)
-    //         .await?;
-    //
-    // pool.get()?.ping()
-    //
-
-    // let mut conn = pool.get().await?;
-    // conn.ping(&RecyclingMethod::Fast).await?;
 
     let user = diesel::insert_into(crate::schema::user::table)
         .values(&user)

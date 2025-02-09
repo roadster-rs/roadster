@@ -35,7 +35,7 @@ use crate::error::RoadsterResult;
 use crate::health::check::registry::HealthCheckRegistry;
 use crate::lifecycle::registry::LifecycleHandlerRegistry;
 #[cfg(feature = "db-sql")]
-use crate::migration::BoxedMigrator;
+use crate::migration::Migrator;
 use crate::service::registry::ServiceRegistry;
 use crate::tracing::init_tracing;
 use async_trait::async_trait;
@@ -190,7 +190,7 @@ where
     pub app: A,
     pub state: S,
     #[cfg(feature = "db-sql")]
-    pub migrator: BoxedMigrator<S>,
+    pub migrator: Box<dyn Migrator<S>>,
     pub health_check_registry: HealthCheckRegistry,
     pub service_registry: ServiceRegistry<A, S>,
     pub lifecycle_handler_registry: LifecycleHandlerRegistry<A, S>,
@@ -206,7 +206,7 @@ where
     pub app: A,
     pub state: S,
     #[cfg(feature = "db-sql")]
-    pub migrator: BoxedMigrator<S>,
+    pub migrator: Box<dyn Migrator<S>>,
     pub service_registry: ServiceRegistry<A, S>,
     pub lifecycle_handler_registry: LifecycleHandlerRegistry<A, S>,
 }
@@ -400,7 +400,7 @@ where
         info!("Running AppLifecycleHandler::before_service_cli");
         for handler in lifecycle_handlers.iter() {
             info!(name=%handler.name(), "Running AppLifecycleHandler::before_service_cli");
-            handler.before_service_cli(&prepared_app).await?;
+            handler.before_service_cli(prepared_app).await?;
         }
 
         let PreparedApp {
@@ -584,7 +584,7 @@ where
     async fn provide_state(&self, context: AppContext) -> RoadsterResult<S>;
 
     #[cfg(feature = "db-sql")]
-    fn migrator(&self, _state: &S) -> RoadsterResult<BoxedMigrator<S>> {
+    fn migrator(&self, _state: &S) -> RoadsterResult<Box<dyn Migrator<S>>> {
         Ok(Box::new(crate::util::empty::Empty))
     }
 

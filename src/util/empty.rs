@@ -67,15 +67,15 @@ where
     }
 }
 
-// #[cfg(all(not(feature = "db-sea-orm"), feature = "db-sql"))]
-// #[async_trait::async_trait]
-// impl<S> crate::migration::Migrator<S> for Empty
-// where
-//     S: Clone + Send + Sync + 'static,
-//     crate::app::context::AppContext: axum_core::extract::FromRef<S>,
-// {
-//     async fn up(&self, _state: &S) -> crate::error::RoadsterResult<()> {
-//         tracing::info!("Running empty migrator");
-//         Ok(())
-//     }
-// }
+#[cfg(all(not(feature = "db-sea-orm"), feature = "db-sql"))]
+#[async_trait::async_trait]
+impl<S> crate::migration::Migrator<S> for Empty
+where
+    S: Clone + Send + Sync + 'static,
+    crate::app::context::AppContext: axum_core::extract::FromRef<S>,
+{
+    async fn up(&self, _state: &S) -> crate::error::RoadsterResult<()> {
+        tracing::info!("Running empty migrator");
+        Ok(())
+    }
+}

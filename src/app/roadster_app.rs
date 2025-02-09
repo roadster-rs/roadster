@@ -11,7 +11,7 @@ use crate::health::check::HealthCheck;
 use crate::lifecycle::registry::LifecycleHandlerRegistry;
 use crate::lifecycle::AppLifecycleHandler;
 #[cfg(feature = "db-sql")]
-use crate::migration::{BoxedMigrator, Migrator};
+use crate::migration::Migrator;
 use crate::service::registry::ServiceRegistry;
 use crate::service::AppService;
 use crate::util::empty::Empty;
@@ -236,7 +236,7 @@ pub struct RoadsterApp<
 {
     inner: Inner<S, Cli>,
     #[cfg(feature = "db-sql")]
-    migrator: Mutex<Option<BoxedMigrator<S>>>,
+    migrator: Mutex<Option<Box<dyn Migrator<S>>>>,
     // Interior mutability pattern -- this allows us to keep the handler reference as a
     // Box, which helps with single ownership and ensuring we only register a handler once.
     lifecycle_handlers: Mutex<LifecycleHandlers<RoadsterApp<S, Cli>, S>>,
@@ -255,7 +255,7 @@ pub struct RoadsterAppBuilder<
 {
     inner: Inner<S, Cli>,
     #[cfg(feature = "db-sql")]
-    migrator: Option<BoxedMigrator<S>>,
+    migrator: Option<Box<dyn Migrator<S>>>,
     lifecycle_handlers: LifecycleHandlers<RoadsterApp<S, Cli>, S>,
     services: Services<RoadsterApp<S, Cli>, S>,
 }
@@ -373,7 +373,7 @@ where
     }
 
     #[cfg(feature = "db-sql")]
-    pub fn migrator(mut self, migrator: impl Migrator<S> + Send + Sync + 'static) -> Self {
+    pub fn migrator(mut self, migrator: impl Migrator<S> + 'static) -> Self {
         self.migrator = Some(Box::new(migrator));
         self
     }
@@ -515,7 +515,7 @@ where
     }
 
     #[cfg(feature = "db-sql")]
-    fn migrator(&self, _state: &S) -> RoadsterResult<Box<dyn Migrator<S> + Send + Sync>> {
+    fn migrator(&self, _state: &S) -> RoadsterResult<Box<dyn Migrator<S>>> {
         let mut migrator = self
             .migrator
             .lock()
