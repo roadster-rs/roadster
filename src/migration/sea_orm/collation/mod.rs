@@ -22,7 +22,7 @@ pub enum Collation {
 ///
 /// # Examples
 /// ```rust
-/// use roadster::migration::sea_orm::::exec_create_case_insensitive_collation;
+/// use roadster::migration::sea_orm::collation::exec_create_case_insensitive_collation;
 /// use sea_orm_migration::prelude::*;
 ///
 /// #[derive(DeriveMigrationName)]
@@ -84,7 +84,7 @@ deterministic = false
 ///
 /// # Examples
 /// ```rust
-/// use roadster::migration::sea_orm::::exec_drop_case_insensitive_collation;
+/// use roadster::migration::sea_orm::collation::exec_drop_case_insensitive_collation;
 /// use sea_orm_migration::prelude::*;
 ///
 /// #[derive(DeriveMigrationName)]

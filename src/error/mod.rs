@@ -24,6 +24,7 @@ use crate::error::api::ApiError;
 use crate::error::auth::AuthError;
 #[cfg(feature = "http")]
 use crate::error::axum::AxumError;
+#[cfg(feature = "db-sql")]
 use crate::error::db::DbError;
 #[cfg(feature = "email")]
 use crate::error::email::EmailError;

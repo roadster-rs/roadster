@@ -38,7 +38,6 @@ use crate::lifecycle::registry::LifecycleHandlerRegistry;
 use crate::migration::BoxedMigrator;
 use crate::service::registry::ServiceRegistry;
 use crate::tracing::init_tracing;
-use crate::util::empty::Empty;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use context::AppContext;
@@ -586,7 +585,7 @@ where
 
     #[cfg(feature = "db-sql")]
     fn migrator(&self, _state: &S) -> RoadsterResult<BoxedMigrator<S>> {
-        Ok(Box::new(Empty))
+        Ok(Box::new(crate::util::empty::Empty))
     }
 
     async fn lifecycle_handlers(

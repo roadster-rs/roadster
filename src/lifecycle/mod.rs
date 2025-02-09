@@ -4,7 +4,7 @@ pub mod default;
 pub mod registry;
 
 use crate::app::context::AppContext;
-use crate::app::{App, PreRunAppState, PreparedApp};
+use crate::app::{App, PreRunAppState};
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
@@ -63,7 +63,10 @@ where
     /// This method is run right before running any CLI commands implemented by
     /// [`crate::service::AppService::handle_cli`].
     #[cfg(feature = "cli")]
-    async fn before_service_cli(&self, _prepared_app: &PreparedApp<A, S>) -> RoadsterResult<()> {
+    async fn before_service_cli(
+        &self,
+        _prepared_app: &crate::app::PreparedApp<A, S>,
+    ) -> RoadsterResult<()> {
         Ok(())
     }
 

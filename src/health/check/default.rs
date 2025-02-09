@@ -1,4 +1,5 @@
 use crate::app::context::AppContext;
+#[cfg(feature = "db-diesel")]
 use crate::health::check::db::diesel::DbDieselHealthCheck;
 #[cfg(feature = "db-sea-orm")]
 use crate::health::check::db::sea_orm::DbSeaOrmHealthCheck;

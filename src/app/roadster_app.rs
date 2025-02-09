@@ -10,6 +10,7 @@ use crate::health::check::registry::HealthCheckRegistry;
 use crate::health::check::HealthCheck;
 use crate::lifecycle::registry::LifecycleHandlerRegistry;
 use crate::lifecycle::AppLifecycleHandler;
+#[cfg(feature = "db-sql")]
 use crate::migration::{BoxedMigrator, Migrator};
 use crate::service::registry::ServiceRegistry;
 use crate::service::AppService;
@@ -92,8 +93,6 @@ where
             #[cfg(feature = "db-sea-orm")]
             db_conn_options_provider: None,
             health_checks: Default::default(),
-            #[cfg(feature = "db-sql")]
-            migrator: None,
             health_check_providers: Default::default(),
             graceful_shutdown_signal_provider: None,
             lifecycle_handler_providers: Default::default(),
@@ -312,6 +311,7 @@ where
     pub fn new() -> Self {
         Self {
             inner: Inner::new(),
+            #[cfg(feature = "db-sql")]
             migrator: None,
             lifecycle_handlers: Default::default(),
             services: Default::default(),
@@ -372,6 +372,7 @@ where
         self
     }
 
+    #[cfg(feature = "db-sql")]
     pub fn migrator(mut self, migrator: impl Migrator<S> + Send + Sync + 'static) -> Self {
         self.migrator = Some(Box::new(migrator));
         self
@@ -476,6 +477,7 @@ where
     pub fn build(self) -> RoadsterApp<S, Cli> {
         RoadsterApp {
             inner: self.inner,
+            #[cfg(feature = "db-sql")]
             migrator: Mutex::new(self.migrator),
             lifecycle_handlers: Mutex::new(self.lifecycle_handlers),
             services: Mutex::new(self.services),
@@ -512,6 +514,7 @@ where
         self.inner.provide_state(context).await
     }
 
+    #[cfg(feature = "db-sql")]
     fn migrator(&self, _state: &S) -> RoadsterResult<Box<dyn Migrator<S> + Send + Sync>> {
         let mut migrator = self
             .migrator

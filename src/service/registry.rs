@@ -35,7 +35,7 @@ pub struct ServiceRegistry<A, S>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + ?Sized + 'static,
+    A: App<S> + 'static,
 {
     pub(crate) state: S,
     pub(crate) service_names: HashSet<String>,

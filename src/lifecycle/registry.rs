@@ -27,7 +27,7 @@ use tracing::info;
 /// #
 /// struct ExampleLifecycleHandler;
 ///
-/// type App = RoadsterApp<AppContext, Empty, Empty>;
+/// type App = RoadsterApp<AppContext, Empty>;
 ///
 /// impl AppLifecycleHandler<App, AppContext> for ExampleLifecycleHandler {
 ///     fn name(&self) -> String {
@@ -44,7 +44,7 @@ pub struct LifecycleHandlerRegistry<A, S>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + ?Sized + 'static,
+    A: App<S> + 'static,
 {
     state: S,
     handlers: BTreeMap<String, Box<dyn AppLifecycleHandler<A, S>>>,

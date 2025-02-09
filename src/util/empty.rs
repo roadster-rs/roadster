@@ -50,15 +50,32 @@ impl sea_orm_migration::MigratorTrait for Empty {
     }
 }
 
-// #[cfg(all(not(feature = "db-sea-orm"), feature = "db-sql"))]
+#[cfg(feature = "db-sea-orm")]
 #[async_trait::async_trait]
-impl<S> crate::migration::Migrator<S> for Empty
+impl<T, S> crate::migration::Migrator<S> for T
 where
+    T: sea_orm_migration::MigratorTrait + Send + Sync,
     S: Clone + Send + Sync + 'static,
     crate::app::context::AppContext: axum_core::extract::FromRef<S>,
 {
-    async fn up(&self, _state: &S) -> crate::error::RoadsterResult<()> {
-        tracing::info!("Running empty migrator");
+    async fn up(&self, state: &S) -> crate::error::RoadsterResult<()> {
+        use axum_core::extract::FromRef;
+
+        let context = crate::app::context::AppContext::from_ref(state);
+        T::up(context.db(), None).await?;
         Ok(())
     }
 }
+
+// #[cfg(all(not(feature = "db-sea-orm"), feature = "db-sql"))]
+// #[async_trait::async_trait]
+// impl<S> crate::migration::Migrator<S> for Empty
+// where
+//     S: Clone + Send + Sync + 'static,
+//     crate::app::context::AppContext: axum_core::extract::FromRef<S>,
+// {
+//     async fn up(&self, _state: &S) -> crate::error::RoadsterResult<()> {
+//         tracing::info!("Running empty migrator");
+//         Ok(())
+//     }
+// }

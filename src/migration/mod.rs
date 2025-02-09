@@ -8,8 +8,8 @@ use crate::error::RoadsterResult;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
-use diesel::Connection;
-use diesel_migrations::MigrationHarness;
+// use diesel::Connection;
+// use diesel_migrations::MigrationHarness;
 use std::error::Error;
 use std::sync::Mutex;
 
@@ -53,10 +53,12 @@ where
 /// it in our [`Migrator`]. However, [`diesel::migration::MigrationSource#migrations`] does take a
 /// reference, so we can wrap it, pre-fetch the list of migrations, and then return them from the
 /// wrapper's impl.
+#[cfg(feature = "db-diesel")]
 struct EmbeddedMigrationsWrapper<DB: diesel::backend::Backend> {
     migrations: Mutex<Option<Vec<Box<dyn diesel::migration::Migration<DB>>>>>,
 }
 
+#[cfg(feature = "db-diesel")]
 impl<DB: diesel::backend::Backend> TryFrom<&diesel_migrations::EmbeddedMigrations>
     for EmbeddedMigrationsWrapper<DB>
 {
@@ -72,6 +74,7 @@ impl<DB: diesel::backend::Backend> TryFrom<&diesel_migrations::EmbeddedMigration
     }
 }
 
+#[cfg(feature = "db-diesel")]
 impl<DB: diesel::backend::Backend> diesel::migration::MigrationSource<DB>
     for EmbeddedMigrationsWrapper<DB>
 {
