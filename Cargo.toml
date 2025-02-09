@@ -24,7 +24,7 @@ sidekiq = ["dep:rusty-sidekiq", "dep:bb8", "dep:num_cpus"]
 db-sql = []
 db-sea-orm = ["db-sql", "dep:sea-orm", "dep:sea-orm-migration"]
 # Todo: how to support mysql and sqlite too?
-db-diesel = ["db-sql", "dep:diesel", "dep:diesel-async"]
+db-diesel = ["db-sql", "dep:diesel", "dep:diesel-async", "dep:diesel_migrations"]
 email = ["dep:lettre"]
 email-smtp = ["email"]
 email-sendgrid = ["email", "dep:sendgrid"]
