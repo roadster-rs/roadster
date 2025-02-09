@@ -1,5 +1,5 @@
 [app]
-name = "App Builder Example"
+name = "Diesell ORM Example"
 
 [tracing]
 level = "debug"
