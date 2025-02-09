@@ -122,6 +122,8 @@ where
         let context = AppContext::from_ref(state);
         // let mut conn = context.diesel().get().await?;
         // todo: how to use a pooled connection instead of a dedicated connection?
+        //  However, since this only happens once when the app is starting, this isn't a huge deal
+        //  on the scale of things if we can't figure it out.
         let mut conn = context.diesel().dedicated_connection().await?;
         // todo: how to get this to work without an async connection wrapper?
         // todo: other db backend types?
@@ -131,6 +133,8 @@ where
 
         let migration_wrapper = EmbeddedMigrationsWrapper::try_from(self)?;
 
+        // todo: Do we need to spawn a task?
+        //  https://github.com/weiznich/diesel_async/blob/1c36b653af7d33959721f3959af76bbaa11e83d4/examples/sync-wrapper/src/main.rs#L43C1-L46C11
         conn.run_pending_migrations(migration_wrapper)?;
         Ok(())
     }
