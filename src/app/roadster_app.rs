@@ -65,8 +65,6 @@ struct Inner<
     db_conn_options: Option<ConnectOptions>,
     #[cfg(feature = "db-sea-orm")]
     db_conn_options_provider: Option<Box<DbConnOptionsProvider>>,
-    #[cfg(feature = "db-sql")]
-    migrator: Option<BoxedMigrator<S>>,
     health_checks: Vec<Arc<dyn HealthCheck>>,
     health_check_providers: HealthCheckProviders<S>,
     graceful_shutdown_signal_provider: GracefulShutdownSignalProvider<S>,

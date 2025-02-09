@@ -2,13 +2,11 @@
 //! in [`AppLifecycleHandler::before_services`].
 
 use crate::app::context::AppContext;
-use crate::app::{App, PreRunAppState, PreparedApp};
+use crate::app::{App, PreRunAppState};
 use crate::error::RoadsterResult;
 use crate::lifecycle::AppLifecycleHandler;
-use crate::migration::Migrator;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
-use sea_orm_migration::MigratorTrait;
 use tracing::instrument;
 
 pub struct DbMigrationLifecycleHandler;

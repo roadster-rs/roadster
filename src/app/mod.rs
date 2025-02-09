@@ -44,10 +44,6 @@ use axum_core::extract::FromRef;
 use context::AppContext;
 #[cfg(feature = "db-sea-orm")]
 use sea_orm::ConnectOptions;
-#[cfg(all(test, feature = "db-sea-orm"))]
-use sea_orm_migration::MigrationTrait;
-#[cfg(feature = "db-sea-orm")]
-use sea_orm_migration::MigratorTrait;
 #[cfg(feature = "cli")]
 use std::env;
 use std::future;

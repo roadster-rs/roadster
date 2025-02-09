@@ -1,17 +1,13 @@
-use anyhow::anyhow;
-use async_trait::async_trait;
-
-use axum_core::extract::FromRef;
-use clap::{Parser, Subcommand};
-use sea_orm_migration::MigratorTrait;
-use serde_derive::Serialize;
-use tracing::warn;
-
-use crate::api::cli::roadster::{RoadsterCli, RunRoadsterCommand};
+use crate::api::cli::roadster::RunRoadsterCommand;
 use crate::app::context::AppContext;
 use crate::app::{App, PreparedApp};
 use crate::error::RoadsterResult;
-use crate::migration::Migrator;
+use anyhow::anyhow;
+use async_trait::async_trait;
+use axum_core::extract::FromRef;
+use clap::{Parser, Subcommand};
+use serde_derive::Serialize;
+use tracing::warn;
 
 #[derive(Debug, Parser, Serialize)]
 #[non_exhaustive]

@@ -76,19 +76,18 @@ impl AppContext {
                     diesel_async::AsyncPgConnection,
                 >::new(url);
                 // todo: set other pool fields
-                let pool: diesel_async::pooled_connection::bb8::Pool<
-                    diesel_async::AsyncPgConnection,
-                > = diesel_async::pooled_connection::bb8::Pool::builder()
+                let builder = diesel_async::pooled_connection::bb8::Pool::builder()
                     .test_on_check_out(true)
                     .min_idle(Some(config.database.min_connections))
                     .max_size(config.database.max_connections)
                     .idle_timeout(config.database.idle_timeout)
                     .connection_timeout(config.database.connect_timeout)
-                    .max_lifetime(config.database.max_lifetime)
-                    // todo: `build_unchecked` to support `connect_lazy`
-                    .build(manager)
-                    .await?;
-                pool
+                    .max_lifetime(config.database.max_lifetime);
+                if config.database.connect_lazy {
+                    builder.build_unchecked(manager)
+                } else {
+                    builder.build(manager).await?
+                }
             };
 
             #[cfg(feature = "sidekiq")]

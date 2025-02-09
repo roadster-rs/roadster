@@ -1,10 +1,3 @@
-use crate::app::context::AppContext;
-use crate::app::{PreparedApp, RoadsterApp};
-use crate::error::RoadsterResult;
-use crate::migration::Migrator;
-use async_trait::async_trait;
-use axum_core::extract::FromRef;
-
 /// A placeholder that implements various traits so it can be used as the default for various type
 /// parameters
 pub struct Empty;
@@ -22,7 +15,7 @@ where
 {
     async fn run(
         &self,
-        prepared_app: &PreparedApp<RoadsterApp<S, Empty>, S>,
+        _prepared_app: &crate::app::PreparedApp<crate::app::RoadsterApp<S, Empty>, S>,
     ) -> crate::error::RoadsterResult<bool> {
         Ok(false)
     }
@@ -58,13 +51,14 @@ impl sea_orm_migration::MigratorTrait for Empty {
 }
 
 // #[cfg(all(not(feature = "db-sea-orm"), feature = "db-sql"))]
-#[async_trait]
-impl<S> Migrator<S> for Empty
+#[async_trait::async_trait]
+impl<S> crate::migration::Migrator<S> for Empty
 where
     S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
+    crate::app::context::AppContext: axum_core::extract::FromRef<S>,
 {
-    async fn up(&self, _state: &S) -> RoadsterResult<()> {
+    async fn up(&self, _state: &S) -> crate::error::RoadsterResult<()> {
+        tracing::info!("Running empty migrator");
         Ok(())
     }
 }

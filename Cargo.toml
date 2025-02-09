@@ -78,7 +78,7 @@ sea-orm-migration = { workspace = true, features = ["runtime-tokio-rustls", "sql
 
 # DB - Diesel
 diesel = { workspace = true, features = ["postgres", "extras"], optional = true }
-diesel-async = { workspace = true, features = ["postgres", "bb8", "async-connection-wrapper", "tokio"], optional = true }
+diesel-async = { workspace = true, features = ["postgres", "bb8", "async-connection-wrapper", "sync-connection-wrapper", "tokio"], optional = true }
 diesel_migrations = { workspace = true, optional = true }
 
 # Email

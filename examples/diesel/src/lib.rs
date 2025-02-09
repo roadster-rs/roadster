@@ -7,4 +7,4 @@ pub mod cli;
 pub mod models;
 pub mod schema;
 
-pub type App = RoadsterApp<AppState, cli::AppCli, roadster::util::empty::Empty>;
+pub type App = RoadsterApp<AppState, cli::AppCli>;

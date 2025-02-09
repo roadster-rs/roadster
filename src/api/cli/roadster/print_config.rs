@@ -1,15 +1,14 @@
+use crate::api::cli::roadster::RunRoadsterCommand;
+use crate::app::context::AppContext;
+use crate::app::{App, PreparedApp};
+use crate::config::AppConfig;
+use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use clap::Parser;
 use serde_derive::{Deserialize, Serialize};
 use strum_macros::{EnumString, IntoStaticStr};
 use tracing::info;
-
-use crate::api::cli::roadster::{RoadsterCli, RunRoadsterCommand};
-use crate::app::context::AppContext;
-use crate::app::{App, PreparedApp};
-use crate::config::AppConfig;
-use crate::error::RoadsterResult;
 
 #[derive(Debug, Parser, Serialize)]
 #[non_exhaustive]

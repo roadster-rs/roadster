@@ -1,4 +1,4 @@
-use crate::app::context::{AppContext, DieselDb};
+use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::health::check::{CheckResponse, ErrorData, HealthCheck, Status};
 #[cfg(feature = "open-api")]

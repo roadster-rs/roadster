@@ -1,4 +1,4 @@
-use crate::api::cli::roadster::{RoadsterCli, RunRoadsterCommand};
+use crate::api::cli::roadster::RunRoadsterCommand;
 use crate::api::core::health::health_check;
 use crate::app::context::AppContext;
 use crate::app::{App, PreparedApp};
