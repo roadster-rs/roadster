@@ -9,7 +9,7 @@ use tracing::warn;
 
 use crate::api::cli::roadster::{RoadsterCli, RunRoadsterCommand};
 use crate::app::context::AppContext;
-use crate::app::App;
+use crate::app::{App, PreparedApp};
 use crate::error::RoadsterResult;
 use crate::migration::Migrator;
 
@@ -27,8 +27,8 @@ where
     AppContext: FromRef<S>,
     A: App<S>,
 {
-    async fn run(&self, app: &A, cli: &RoadsterCli, state: &S) -> RoadsterResult<bool> {
-        self.command.run(app, cli, state).await
+    async fn run(&self, prepared_app: &PreparedApp<A, S>) -> RoadsterResult<bool> {
+        self.command.run(prepared_app).await
     }
 }
 
@@ -57,9 +57,9 @@ where
     AppContext: FromRef<S>,
     A: App<S>,
 {
-    async fn run(&self, _app: &A, cli: &RoadsterCli, state: &S) -> RoadsterResult<bool> {
-        let context = AppContext::from_ref(state);
-        if is_destructive(self) && !cli.allow_dangerous(&context) {
+    async fn run(&self, prepared_app: &PreparedApp<A, S>) -> RoadsterResult<bool> {
+        let context = AppContext::from_ref(&prepared_app.state);
+        if is_destructive(self) && !prepared_app.roadster_cli.allow_dangerous(&context) {
             return Err(anyhow!("Running destructive command `{:?}` is not allowed in environment `{:?}`. To override, provide the `--allow-dangerous` CLI arg.", self, context.config().environment).into());
         } else if is_destructive(self) {
             warn!(
@@ -69,7 +69,8 @@ where
             );
         }
         match self {
-            MigrateCommand::Up(args) => A::M::up(state).await?,
+            MigrateCommand::Up(args) => prepared_app.migrator.up(&prepared_app.state).await?,
+            // MigrateCommand::Up(args) => A::M::up(state).await?,
             // MigrateCommand::Down(args) => A::M::down(context.db(), args.steps).await?,
             // MigrateCommand::Refresh => A::M::refresh(context.db()).await?,
             // MigrateCommand::Reset => A::M::reset(context.db()).await?,

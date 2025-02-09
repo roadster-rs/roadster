@@ -34,9 +34,11 @@ use crate::config::{AppConfig, AppConfigOptions};
 use crate::error::RoadsterResult;
 use crate::health::check::registry::HealthCheckRegistry;
 use crate::lifecycle::registry::LifecycleHandlerRegistry;
-use crate::migration::Migrator;
+#[cfg(feature = "db-sql")]
+use crate::migration::BoxedMigrator;
 use crate::service::registry::ServiceRegistry;
 use crate::tracing::init_tracing;
+use crate::util::empty::Empty;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use context::AppContext;
@@ -62,23 +64,28 @@ where
 {
     let cli_and_state = build_cli_and_state(app, PrepareOptions::builder().build()).await?;
 
-    #[cfg(feature = "cli")]
-    {
-        let CliAndState {
-            app,
-            #[cfg(feature = "cli")]
-            roadster_cli,
-            #[cfg(feature = "cli")]
-            app_cli,
-            state,
-        } = &cli_and_state;
-
-        if crate::api::cli::handle_cli(app, roadster_cli, app_cli, state).await? {
-            return Ok(());
-        }
-    }
+    // #[cfg(feature = "cli")]
+    // {
+    //     let CliAndState {
+    //         app,
+    //         #[cfg(feature = "cli")]
+    //         roadster_cli,
+    //         #[cfg(feature = "cli")]
+    //         app_cli,
+    //         state,
+    //     } = &cli_and_state;
+    //
+    //     if crate::api::cli::handle_cli(app, roadster_cli, app_cli, state).await? {
+    //         return Ok(());
+    //     }
+    // }
 
     let prepared = prepare_from_cli_and_state(cli_and_state).await?;
+
+    #[cfg(feature = "cli")]
+    if crate::api::cli::handle_cli(&prepared).await? {
+        return Ok(());
+    }
 
     if run_prepared_service_cli(&prepared).await? {
         return Ok(());
@@ -181,27 +188,32 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    pub app: A,
     #[cfg(feature = "cli")]
     pub roadster_cli: RoadsterCli,
     #[cfg(feature = "cli")]
     pub app_cli: A::Cli,
+    pub app: A,
     pub state: S,
+    #[cfg(feature = "db-sql")]
+    pub migrator: BoxedMigrator<S>,
     pub health_check_registry: HealthCheckRegistry,
     pub service_registry: ServiceRegistry<A, S>,
     pub lifecycle_handler_registry: LifecycleHandlerRegistry<A, S>,
 }
 
 #[non_exhaustive]
-struct PreparedAppWithoutCli<A, S>
+pub struct PreRunAppState<A, S>
 where
     A: App<S> + 'static,
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    health_check_registry: HealthCheckRegistry,
-    service_registry: ServiceRegistry<A, S>,
-    lifecycle_handler_registry: LifecycleHandlerRegistry<A, S>,
+    pub app: A,
+    pub state: S,
+    #[cfg(feature = "db-sql")]
+    pub migrator: BoxedMigrator<S>,
+    pub service_registry: ServiceRegistry<A, S>,
+    pub lifecycle_handler_registry: LifecycleHandlerRegistry<A, S>,
 }
 
 /// Options to use when preparing the app. Normally these values can be provided via env vars
@@ -247,25 +259,21 @@ where
 ///
 /// This is intended to only be used to get access to the app's fully set up state in tests.
 #[cfg(feature = "testing")]
-pub async fn init_state<A, S>(app: &A, config: AppConfig) -> RoadsterResult<S>
+pub async fn init_state<A, S>(app: A, config: AppConfig) -> RoadsterResult<S>
 where
     A: App<S> + 'static,
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    let state = build_state(app, config).await?;
+    let state = build_state(&app, config).await?;
 
-    let PreparedAppWithoutCli {
-        health_check_registry,
-        service_registry,
-        lifecycle_handler_registry,
-    } = prepare_without_cli(app, &state).await?;
+    let (pre_run_app_state, health_check_registry) = prepare_without_cli(app, state).await?;
 
-    let context = AppContext::from_ref(&state);
+    let context = AppContext::from_ref(&pre_run_app_state.state);
     context.set_health_checks(health_check_registry)?;
-    before_app(&state, &service_registry, &lifecycle_handler_registry).await?;
+    before_app(&pre_run_app_state).await?;
 
-    Ok(state)
+    Ok(pre_run_app_state.state)
 }
 
 async fn prepare_from_cli_and_state<A, S>(
@@ -285,11 +293,17 @@ where
         state,
     } = cli_and_state;
 
-    let PreparedAppWithoutCli {
+    let (
+        PreRunAppState {
+            app,
+            state,
+            #[cfg(feature = "db-sql")]
+            migrator,
+            service_registry,
+            lifecycle_handler_registry,
+        },
         health_check_registry,
-        service_registry,
-        lifecycle_handler_registry,
-    } = prepare_without_cli(&app, &state).await?;
+    ) = prepare_without_cli(app, state).await?;
 
     Ok(PreparedApp {
         app,
@@ -297,6 +311,8 @@ where
         roadster_cli,
         #[cfg(feature = "cli")]
         app_cli,
+        #[cfg(feature = "db-sql")]
+        migrator,
         state,
         health_check_registry,
         service_registry,
@@ -305,36 +321,46 @@ where
 }
 
 async fn prepare_without_cli<A, S>(
-    app: &A,
-    state: &S,
-) -> RoadsterResult<PreparedAppWithoutCli<A, S>>
+    app: A,
+    state: S,
+) -> RoadsterResult<(PreRunAppState<A, S>, HealthCheckRegistry)>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
     A: App<S> + Send + Sync + 'static,
 {
-    let context = AppContext::from_ref(state);
+    let context = AppContext::from_ref(&state);
 
-    let mut lifecycle_handler_registry = LifecycleHandlerRegistry::new(state);
-    app.lifecycle_handlers(&mut lifecycle_handler_registry, state)
+    #[cfg(feature = "db-sql")]
+    let migrator = app.migrator(&state)?;
+
+    let mut lifecycle_handler_registry = LifecycleHandlerRegistry::new(&state);
+    app.lifecycle_handlers(&mut lifecycle_handler_registry, &state)
         .await?;
 
     let mut health_check_registry = HealthCheckRegistry::new(&context);
-    app.health_checks(&mut health_check_registry, state).await?;
+    app.health_checks(&mut health_check_registry, &state)
+        .await?;
     // Note that we used to set the health check registry on the `AppContext` here. However, we
     // don't do that anymore because it causes a reference cycle between the `AppContext` and the
     // `HealthChecks` (at least the ones that contain an `AppContext`). This shouldn't normally
     // be a problem, but it causes TestContainers containers to not be cleaned up in tests.
     // We may want to re-think some designs to avoid this reference cycle.
 
-    let mut service_registry = ServiceRegistry::new(state);
-    app.services(&mut service_registry, state).await?;
+    let mut service_registry = ServiceRegistry::new(&state);
+    app.services(&mut service_registry, &state).await?;
 
-    Ok(PreparedAppWithoutCli {
+    Ok((
+        PreRunAppState {
+            app,
+            state,
+            #[cfg(feature = "db-sql")]
+            migrator,
+            service_registry,
+            lifecycle_handler_registry,
+        },
         health_check_registry,
-        service_registry,
-        lifecycle_handler_registry,
-    })
+    ))
 }
 
 /// Run a [PreparedApp] that was previously crated by [prepare]
@@ -346,14 +372,7 @@ where
 {
     #[cfg(feature = "cli")]
     {
-        let PreparedApp {
-            app,
-            roadster_cli,
-            app_cli,
-            state,
-            ..
-        } = &prepared_app;
-        if crate::api::cli::handle_cli(app, roadster_cli, app_cli, state).await? {
+        if crate::api::cli::handle_cli(&prepared_app).await? {
             return Ok(());
         }
     }
@@ -386,7 +405,7 @@ where
         info!("Running AppLifecycleHandler::before_service_cli");
         for handler in lifecycle_handlers.iter() {
             info!(name=%handler.name(), "Running AppLifecycleHandler::before_service_cli");
-            handler.before_service_cli(state).await?;
+            handler.before_service_cli(&prepared_app).await?;
         }
 
         let PreparedApp {
@@ -405,16 +424,19 @@ where
 }
 
 /// Run the app's initialization logic (lifecycle handlers, health checks, etc).
-async fn before_app<A, S>(
-    state: &S,
-    service_registry: &ServiceRegistry<A, S>,
-    lifecycle_handler_registry: &LifecycleHandlerRegistry<A, S>,
-) -> RoadsterResult<()>
+async fn before_app<A, S>(pre_run_app_state: &PreRunAppState<A, S>) -> RoadsterResult<()>
 where
     A: App<S> + 'static,
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
+    let PreRunAppState {
+        service_registry,
+        lifecycle_handler_registry,
+        state,
+        ..
+    } = pre_run_app_state;
+
     if service_registry.services.is_empty() {
         warn!("No enabled services were registered.");
     }
@@ -424,7 +446,7 @@ where
     info!("Running AppLifecycleHandler::before_health_checks");
     for handler in lifecycle_handlers.iter() {
         info!(name=%handler.name(), "Running AppLifecycleHandler::before_health_checks");
-        handler.before_health_checks(state).await?;
+        handler.before_health_checks(pre_run_app_state).await?;
     }
 
     let context = AppContext::from_ref(state);
@@ -433,7 +455,7 @@ where
     info!("Running AppLifecycleHandler::before_services");
     for handler in lifecycle_handlers.iter() {
         info!(name=%handler.name(), "Running AppLifecycleHandler::before_services");
-        handler.before_services(state).await?
+        handler.before_services(pre_run_app_state).await?
     }
     crate::service::runner::before_run(service_registry, state).await?;
 
@@ -448,19 +470,53 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    let PreparedApp {
+    // let PreparedApp {
+    //     //     app,
+    //     //     state,
+    //     health_check_registry,
+    //     //     service_registry,
+    //     //     lifecycle_handler_registry,
+    //     ..
+    // } = prepared_app;
+
+    // let pre_run_app_state = PreRunAppState {
+    //     app: prepared_app.app,
+    //     state: prepared_app.state,
+    //     #[cfg(feature = "db-sql")]
+    //     migrator: prepared_app.migrator,
+    //     service_registry: prepared_app.service_registry,
+    //     lifecycle_handler_registry: prepared_app.lifecycle_handler_registry,
+    // };
+
+    // let PreRunAppState {
+    //     app,
+    //     state,
+    //     service_registry,
+    //     lifecycle_handler_registry,
+    //     ..
+    // } = &pre_run_app_state;
+
+    let context = AppContext::from_ref(&prepared_app.state);
+    context.set_health_checks(prepared_app.health_check_registry)?;
+
+    let pre_run_app_state = PreRunAppState {
+        app: prepared_app.app,
+        state: prepared_app.state,
+        #[cfg(feature = "db-sql")]
+        migrator: prepared_app.migrator,
+        service_registry: prepared_app.service_registry,
+        lifecycle_handler_registry: prepared_app.lifecycle_handler_registry,
+    };
+
+    before_app(&pre_run_app_state).await?;
+
+    let PreRunAppState {
         app,
         state,
-        health_check_registry,
         service_registry,
         lifecycle_handler_registry,
         ..
-    } = prepared_app;
-
-    let context = AppContext::from_ref(&state);
-    context.set_health_checks(health_check_registry)?;
-
-    before_app(&state, &service_registry, &lifecycle_handler_registry).await?;
+    } = pre_run_app_state;
 
     let result = crate::service::runner::run(app, service_registry, &state).await;
     if let Err(err) = result {
@@ -490,7 +546,7 @@ where
 #[cfg_attr(all(test, not(feature = "cli"), feature = "db-sea-orm"), mockall::automock(type Cli = crate::util::empty::Empty; type M = MockMigrator;))]
 #[cfg_attr(all(test, not(feature = "cli"), not(feature = "db-sea-orm")), mockall::automock(type Cli = crate::util::empty::Empty; type M = crate::util::empty::Empty;))]
 #[async_trait]
-pub trait App<S>: Send + Sync
+pub trait App<S>: Send + Sync + Sized
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
@@ -504,10 +560,10 @@ where
     // todo: can we get rid of this type parameter and use a boxed value? Hmm, I'm not sure
     //  we can because the trait doesn't take `self` anywhere but let's double check.
     //. Maybe if we have our own trait we can box it?
-    #[cfg(feature = "db-sql")]
-    type M: Migrator;
-    #[cfg(not(feature = "db-sql"))]
-    type M;
+    // #[cfg(feature = "db-sql")]
+    // type M: Migrator;
+    // #[cfg(not(feature = "db-sql"))]
+    // type M;
 
     fn init_tracing(&self, config: &AppConfig) -> RoadsterResult<()> {
         init_tracing(config, &self.metadata(config)?)?;
@@ -531,6 +587,11 @@ where
     ///
     /// See the following for more details regarding [`FromRef`]: <https://docs.rs/axum/0.7.5/axum/extract/trait.FromRef.html>
     async fn provide_state(&self, context: AppContext) -> RoadsterResult<S>;
+
+    #[cfg(feature = "db-sql")]
+    fn migrator(&self, _state: &S) -> RoadsterResult<BoxedMigrator<S>> {
+        Ok(Box::new(Empty))
+    }
 
     async fn lifecycle_handlers(
         &self,

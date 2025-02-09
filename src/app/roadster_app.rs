@@ -10,7 +10,7 @@ use crate::health::check::registry::HealthCheckRegistry;
 use crate::health::check::HealthCheck;
 use crate::lifecycle::registry::LifecycleHandlerRegistry;
 use crate::lifecycle::AppLifecycleHandler;
-use crate::migration::Migrator;
+use crate::migration::{BoxedMigrator, Migrator};
 use crate::service::registry::ServiceRegistry;
 use crate::service::AppService;
 use crate::util::empty::Empty;
@@ -51,10 +51,8 @@ type GracefulShutdownSignalProvider<S> =
 /// Inner state shared between both the [`RoadsterApp`] and [`RoadsterAppBuilder`].
 struct Inner<
     S,
-    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync = Empty,
+    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync = Empty,
     #[cfg(not(feature = "cli"))] Cli: 'static = Empty,
-    #[cfg(feature = "db-sql")] M: 'static + Migrator + Send + Sync = Empty,
-    #[cfg(not(feature = "db-sql"))] M: 'static = Empty,
 > where
     S: 'static + Clone + Send + Sync,
     AppContext: FromRef<S>,
@@ -67,20 +65,20 @@ struct Inner<
     db_conn_options: Option<ConnectOptions>,
     #[cfg(feature = "db-sea-orm")]
     db_conn_options_provider: Option<Box<DbConnOptionsProvider>>,
+    #[cfg(feature = "db-sql")]
+    migrator: Option<BoxedMigrator<S>>,
     health_checks: Vec<Arc<dyn HealthCheck>>,
     health_check_providers: HealthCheckProviders<S>,
     graceful_shutdown_signal_provider: GracefulShutdownSignalProvider<S>,
-    lifecycle_handler_providers: LifecycleHandlerProviders<RoadsterApp<S, Cli, M>, S>,
-    service_providers: ServiceProviders<RoadsterApp<S, Cli, M>, S>,
+    lifecycle_handler_providers: LifecycleHandlerProviders<RoadsterApp<S, Cli>, S>,
+    service_providers: ServiceProviders<RoadsterApp<S, Cli>, S>,
 }
 
 impl<
         S,
-        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
+        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
         #[cfg(not(feature = "cli"))] Cli: 'static,
-        #[cfg(feature = "db-sql")] M: 'static + Migrator + Send + Sync,
-        #[cfg(not(feature = "db-sql"))] M: 'static,
-    > Inner<S, Cli, M>
+    > Inner<S, Cli>
 where
     S: 'static + Clone + Send + Sync,
     AppContext: FromRef<S>,
@@ -96,6 +94,8 @@ where
             #[cfg(feature = "db-sea-orm")]
             db_conn_options_provider: None,
             health_checks: Default::default(),
+            #[cfg(feature = "db-sql")]
+            migrator: None,
             health_check_providers: Default::default(),
             graceful_shutdown_signal_provider: None,
             lifecycle_handler_providers: Default::default(),
@@ -231,51 +231,49 @@ where
 
 pub struct RoadsterApp<
     S,
-    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync = Empty,
+    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync = Empty,
     #[cfg(not(feature = "cli"))] Cli: 'static = Empty,
-    #[cfg(feature = "db-sql")] M: 'static + Migrator + Send + Sync = Empty,
-    #[cfg(not(feature = "db-sql"))] M: 'static = Empty,
 > where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    inner: Inner<S, Cli, M>,
+    inner: Inner<S, Cli>,
+    #[cfg(feature = "db-sql")]
+    migrator: Mutex<Option<BoxedMigrator<S>>>,
     // Interior mutability pattern -- this allows us to keep the handler reference as a
     // Box, which helps with single ownership and ensuring we only register a handler once.
-    lifecycle_handlers: Mutex<LifecycleHandlers<RoadsterApp<S, Cli, M>, S>>,
+    lifecycle_handlers: Mutex<LifecycleHandlers<RoadsterApp<S, Cli>, S>>,
     // Interior mutability pattern -- this allows us to keep the service reference as a
     // Box, which helps with single ownership and ensuring we only register a service once.
-    services: Mutex<Services<RoadsterApp<S, Cli, M>, S>>,
+    services: Mutex<Services<RoadsterApp<S, Cli>, S>>,
 }
 
 pub struct RoadsterAppBuilder<
     S,
-    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync = Empty,
+    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync = Empty,
     #[cfg(not(feature = "cli"))] Cli: 'static = Empty,
-    #[cfg(feature = "db-sql")] M: 'static + Migrator + Send + Sync = Empty,
-    #[cfg(not(feature = "db-sql"))] M: 'static = Empty,
 > where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    inner: Inner<S, Cli, M>,
-    lifecycle_handlers: LifecycleHandlers<RoadsterApp<S, Cli, M>, S>,
-    services: Services<RoadsterApp<S, Cli, M>, S>,
+    inner: Inner<S, Cli>,
+    #[cfg(feature = "db-sql")]
+    migrator: Option<BoxedMigrator<S>>,
+    lifecycle_handlers: LifecycleHandlers<RoadsterApp<S, Cli>, S>,
+    services: Services<RoadsterApp<S, Cli>, S>,
 }
 
 impl<
         S,
-        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
+        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
         #[cfg(not(feature = "cli"))] Cli: 'static,
-        #[cfg(feature = "db-sql")] M: 'static + Migrator + Send + Sync,
-        #[cfg(not(feature = "db-sql"))] M: 'static,
-    > RoadsterApp<S, Cli, M>
+    > RoadsterApp<S, Cli>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
     /// Create a new [`RoadsterAppBuilder`] to use to build the [`RoadsterApp`].
-    pub fn builder() -> RoadsterAppBuilder<S, Cli, M> {
+    pub fn builder() -> RoadsterAppBuilder<S, Cli> {
         RoadsterAppBuilder::new()
     }
 
@@ -292,11 +290,9 @@ where
 
 impl<
         S,
-        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
+        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
         #[cfg(not(feature = "cli"))] Cli: 'static,
-        #[cfg(feature = "db-sql")] M: 'static + Migrator + Send + Sync,
-        #[cfg(not(feature = "db-sql"))] M: 'static,
-    > Default for RoadsterAppBuilder<S, Cli, M>
+    > Default for RoadsterAppBuilder<S, Cli>
 where
     S: 'static + Clone + Send + Sync,
     AppContext: FromRef<S>,
@@ -308,11 +304,9 @@ where
 
 impl<
         S,
-        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
+        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
         #[cfg(not(feature = "cli"))] Cli: 'static,
-        #[cfg(feature = "db-sql")] M: 'static + Migrator + Send + Sync,
-        #[cfg(not(feature = "db-sql"))] M: 'static,
-    > RoadsterAppBuilder<S, Cli, M>
+    > RoadsterAppBuilder<S, Cli>
 where
     S: 'static + Clone + Send + Sync,
     AppContext: FromRef<S>,
@@ -320,6 +314,7 @@ where
     pub fn new() -> Self {
         Self {
             inner: Inner::new(),
+            migrator: None,
             lifecycle_handlers: Default::default(),
             services: Default::default(),
         }
@@ -379,12 +374,17 @@ where
         self
     }
 
+    pub fn migrator(mut self, migrator: impl Migrator<S> + Send + Sync + 'static) -> Self {
+        self.migrator = Some(Box::new(migrator));
+        self
+    }
+
     /// Add a [`AppLifecycleHandler`] for the [`RoadsterApp`].
     ///
     /// This method can be called multiple times to register multiple handlers.
     pub fn add_lifecycle_handler(
         mut self,
-        lifecycle_handler: impl 'static + AppLifecycleHandler<RoadsterApp<S, Cli, M>, S>,
+        lifecycle_handler: impl 'static + AppLifecycleHandler<RoadsterApp<S, Cli>, S>,
     ) -> Self {
         self.lifecycle_handlers.push(Box::new(lifecycle_handler));
         self
@@ -399,7 +399,7 @@ where
         lifecycle_handler_provider: impl 'static
             + Send
             + Sync
-            + Fn(&mut LifecycleHandlerRegistry<RoadsterApp<S, Cli, M>, S>, &S) -> RoadsterResult<()>,
+            + Fn(&mut LifecycleHandlerRegistry<RoadsterApp<S, Cli>, S>, &S) -> RoadsterResult<()>,
     ) -> Self {
         self.inner
             .lifecycle_handler_providers
@@ -435,7 +435,7 @@ where
     /// This method can be called multiple times to register multiple services.
     pub fn add_service(
         mut self,
-        service: impl 'static + AppService<RoadsterApp<S, Cli, M>, S>,
+        service: impl 'static + AppService<RoadsterApp<S, Cli>, S>,
     ) -> Self {
         self.services.push(Box::new(service));
         self
@@ -451,7 +451,7 @@ where
             + Send
             + Sync
             + for<'a> Fn(
-                &'a mut ServiceRegistry<RoadsterApp<S, Cli, M>, S>,
+                &'a mut ServiceRegistry<RoadsterApp<S, Cli>, S>,
                 &'a S,
             ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>>,
     ) -> Self {
@@ -475,9 +475,10 @@ where
     }
 
     /// Build the [`RoadsterApp`] from this [`RoadsterAppBuilder`].
-    pub fn build(self) -> RoadsterApp<S, Cli, M> {
+    pub fn build(self) -> RoadsterApp<S, Cli> {
         RoadsterApp {
             inner: self.inner,
+            migrator: Mutex::new(self.migrator),
             lifecycle_handlers: Mutex::new(self.lifecycle_handlers),
             services: Mutex::new(self.services),
         }
@@ -487,17 +488,14 @@ where
 #[async_trait]
 impl<
         S,
-        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
+        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
         #[cfg(not(feature = "cli"))] Cli: 'static,
-        #[cfg(feature = "db-sql")] M: 'static + Migrator + Send + Sync,
-        #[cfg(not(feature = "db-sql"))] M: 'static,
-    > App<S> for RoadsterApp<S, Cli, M>
+    > App<S> for RoadsterApp<S, Cli>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
     type Cli = Cli;
-    type M = M;
 
     fn init_tracing(&self, config: &AppConfig) -> RoadsterResult<()> {
         self.inner.init_tracing(config)
@@ -514,6 +512,18 @@ where
 
     async fn provide_state(&self, context: AppContext) -> RoadsterResult<S> {
         self.inner.provide_state(context).await
+    }
+
+    fn migrator(&self, _state: &S) -> RoadsterResult<Box<dyn Migrator<S> + Send + Sync>> {
+        let mut migrator = self
+            .migrator
+            .lock()
+            .map_err(|err| anyhow!("Unable to lock lifecycle_handlers mutex: {err}"))?;
+
+        match migrator.take() {
+            Some(migrator) => Ok(migrator),
+            None => Ok(Box::new(Empty)),
+        }
     }
 
     async fn lifecycle_handlers(

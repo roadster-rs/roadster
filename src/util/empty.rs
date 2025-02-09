@@ -1,4 +1,5 @@
 use crate::app::context::AppContext;
+use crate::app::{PreparedApp, RoadsterApp};
 use crate::error::RoadsterResult;
 use crate::migration::Migrator;
 use async_trait::async_trait;
@@ -14,20 +15,14 @@ pub struct Empty;
 // parameter to implement for any `impl App`.
 #[cfg(feature = "cli")]
 #[async_trait::async_trait]
-impl<
-        S,
-        #[cfg(feature = "db-sea-orm")] M: 'static + Migrator + Send + Sync,
-        #[cfg(not(feature = "db-sea-orm"))] M: 'static + Send + Sync,
-    > crate::api::cli::RunCommand<crate::app::RoadsterApp<S, Empty, M>, S> for Empty
+impl<S> crate::api::cli::RunCommand<crate::app::RoadsterApp<S, Empty>, S> for Empty
 where
     S: Clone + Send + Sync + 'static,
     crate::app::context::AppContext: axum_core::extract::FromRef<S>,
 {
     async fn run(
         &self,
-        _app: &crate::app::RoadsterApp<S, Empty, M>,
-        _cli: &Empty,
-        _state: &S,
+        prepared_app: &PreparedApp<RoadsterApp<S, Empty>, S>,
     ) -> crate::error::RoadsterResult<bool> {
         Ok(false)
     }
@@ -64,12 +59,12 @@ impl sea_orm_migration::MigratorTrait for Empty {
 
 // #[cfg(all(not(feature = "db-sea-orm"), feature = "db-sql"))]
 #[async_trait]
-impl Migrator for Empty {
-    async fn up<S>(state: &S) -> RoadsterResult<()>
-    where
-        S: Clone + Send + Sync + 'static,
-        AppContext: FromRef<S>,
-    {
+impl<S> Migrator<S> for Empty
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    async fn up(&self, _state: &S) -> RoadsterResult<()> {
         Ok(())
     }
 }

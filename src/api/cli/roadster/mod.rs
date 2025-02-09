@@ -5,7 +5,7 @@ use crate::api::cli::roadster::list_routes::ListRoutesArgs;
 use crate::api::cli::roadster::migrate::MigrateArgs;
 use crate::api::cli::roadster::print_config::PrintConfigArgs;
 use crate::app::context::AppContext;
-use crate::app::App;
+use crate::app::{App, PreparedApp};
 use crate::config::environment::Environment;
 use crate::error::RoadsterResult;
 #[cfg(feature = "open-api")]
@@ -34,7 +34,7 @@ where
     AppContext: FromRef<S>,
     A: App<S>,
 {
-    async fn run(&self, app: &A, cli: &RoadsterCli, state: &S) -> RoadsterResult<bool>;
+    async fn run(&self, prepared_app: &PreparedApp<A, S>) -> RoadsterResult<bool>;
 }
 
 /// Roadster: The Roadster CLI provides various utilities for managing your application. If no subcommand
@@ -81,9 +81,9 @@ where
     AppContext: FromRef<S>,
     A: App<S>,
 {
-    async fn run(&self, app: &A, cli: &RoadsterCli, state: &S) -> RoadsterResult<bool> {
+    async fn run(&self, prepared_app: &PreparedApp<A, S>) -> RoadsterResult<bool> {
         if let Some(command) = self.command.as_ref() {
-            command.run(app, cli, state).await
+            command.run(prepared_app).await
         } else {
             Ok(false)
         }
@@ -107,9 +107,9 @@ where
     AppContext: FromRef<S>,
     A: App<S>,
 {
-    async fn run(&self, app: &A, cli: &RoadsterCli, state: &S) -> RoadsterResult<bool> {
+    async fn run(&self, prepared_app: &PreparedApp<A, S>) -> RoadsterResult<bool> {
         match self {
-            RoadsterCommand::Roadster(args) => args.run(app, cli, state).await,
+            RoadsterCommand::Roadster(args) => args.run(prepared_app).await,
         }
     }
 }
@@ -128,8 +128,8 @@ where
     AppContext: FromRef<S>,
     A: App<S>,
 {
-    async fn run(&self, app: &A, cli: &RoadsterCli, state: &S) -> RoadsterResult<bool> {
-        self.command.run(app, cli, state).await
+    async fn run(&self, prepared_app: &PreparedApp<A, S>) -> RoadsterResult<bool> {
+        self.command.run(prepared_app).await
     }
 }
 
@@ -140,7 +140,7 @@ where
     AppContext: FromRef<S>,
     A: App<S>,
 {
-    async fn run(&self, app: &A, cli: &RoadsterCli, state: &S) -> RoadsterResult<bool> {
+    async fn run(&self, prepared_app: &PreparedApp<A, S>) -> RoadsterResult<bool> {
         match self {
             #[cfg(feature = "open-api")]
             RoadsterSubCommand::ListRoutes(_) => {
@@ -155,9 +155,9 @@ where
                 Ok(false)
             }
             #[cfg(feature = "db-sea-orm")]
-            RoadsterSubCommand::Migrate(args) => args.run(app, cli, state).await,
-            RoadsterSubCommand::PrintConfig(args) => args.run(app, cli, state).await,
-            RoadsterSubCommand::Health(args) => args.run(app, cli, state).await,
+            RoadsterSubCommand::Migrate(args) => args.run(prepared_app).await,
+            RoadsterSubCommand::PrintConfig(args) => args.run(prepared_app).await,
+            RoadsterSubCommand::Health(args) => args.run(prepared_app).await,
             #[cfg(test)]
             RoadsterSubCommand::HandleCli => Ok(true),
         }
