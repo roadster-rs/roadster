@@ -1,3 +1,9 @@
+use crate::app::context::AppContext;
+use crate::error::RoadsterResult;
+use crate::migration::Migrator;
+use async_trait::async_trait;
+use axum_core::extract::FromRef;
+
 /// A placeholder that implements various traits so it can be used as the default for various type
 /// parameters
 pub struct Empty;
@@ -10,7 +16,7 @@ pub struct Empty;
 #[async_trait::async_trait]
 impl<
         S,
-        #[cfg(feature = "db-sea-orm")] M: 'static + sea_orm_migration::MigratorTrait + Send + Sync,
+        #[cfg(feature = "db-sea-orm")] M: 'static + Migrator + Send + Sync,
         #[cfg(not(feature = "db-sea-orm"))] M: 'static + Send + Sync,
     > crate::api::cli::RunCommand<crate::app::RoadsterApp<S, Empty, M>, S> for Empty
 where
@@ -53,5 +59,17 @@ impl clap::FromArgMatches for Empty {
 impl sea_orm_migration::MigratorTrait for Empty {
     fn migrations() -> Vec<Box<dyn sea_orm_migration::MigrationTrait>> {
         Default::default()
+    }
+}
+
+// #[cfg(all(not(feature = "db-sea-orm"), feature = "db-sql"))]
+#[async_trait]
+impl Migrator for Empty {
+    async fn up<S>(state: &S) -> RoadsterResult<()>
+    where
+        S: Clone + Send + Sync + 'static,
+        AppContext: FromRef<S>,
+    {
+        Ok(())
     }
 }

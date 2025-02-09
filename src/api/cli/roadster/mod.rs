@@ -20,7 +20,7 @@ use serde_derive::Serialize;
 pub mod health;
 #[cfg(feature = "open-api")]
 pub mod list_routes;
-#[cfg(feature = "db-sea-orm")]
+#[cfg(feature = "db-sql")]
 pub mod migrate;
 pub mod print_config;
 

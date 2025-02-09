@@ -34,6 +34,7 @@ use crate::config::{AppConfig, AppConfigOptions};
 use crate::error::RoadsterResult;
 use crate::health::check::registry::HealthCheckRegistry;
 use crate::lifecycle::registry::LifecycleHandlerRegistry;
+use crate::migration::Migrator;
 use crate::service::registry::ServiceRegistry;
 use crate::tracing::init_tracing;
 use async_trait::async_trait;
@@ -484,7 +485,7 @@ where
     Ok(())
 }
 
-#[cfg_attr(all(test, feature = "cli", feature = "db-sea-orm"), mockall::automock(type Cli = MockTestCli<S>; type M = MockMigrator;))]
+#[cfg_attr(all(test, feature = "cli", feature = "db-sea-orm"), mockall::automock(type Cli = MockTestCli<S>; type M = crate::migration::MockMigrator;))]
 #[cfg_attr(all(test, feature = "cli", not(feature = "db-sea-orm")), mockall::automock(type Cli = MockTestCli<S>; type M = crate::util::empty::Empty;))]
 #[cfg_attr(all(test, not(feature = "cli"), feature = "db-sea-orm"), mockall::automock(type Cli = crate::util::empty::Empty; type M = MockMigrator;))]
 #[cfg_attr(all(test, not(feature = "cli"), not(feature = "db-sea-orm")), mockall::automock(type Cli = crate::util::empty::Empty; type M = crate::util::empty::Empty;))]
@@ -503,9 +504,9 @@ where
     // todo: can we get rid of this type parameter and use a boxed value? Hmm, I'm not sure
     //  we can because the trait doesn't take `self` anywhere but let's double check.
     //. Maybe if we have our own trait we can box it?
-    #[cfg(feature = "db-sea-orm")]
-    type M: MigratorTrait;
-    #[cfg(not(feature = "db-sea-orm"))]
+    #[cfg(feature = "db-sql")]
+    type M: Migrator;
+    #[cfg(not(feature = "db-sql"))]
     type M;
 
     fn init_tracing(&self, config: &AppConfig) -> RoadsterResult<()> {
@@ -562,14 +563,5 @@ where
     /// server when a particular API is called.
     async fn graceful_shutdown_signal(self: Arc<Self>, _state: &S) {
         let _output: () = future::pending().await;
-    }
-}
-
-#[cfg(all(test, feature = "db-sea-orm"))]
-mockall::mock! {
-    pub Migrator {}
-    #[async_trait]
-    impl MigratorTrait for Migrator {
-        fn migrations() -> Vec<Box<dyn MigrationTrait>>;
     }
 }

@@ -89,6 +89,7 @@ pub trait HealthCheck: Send + Sync {
     fn enabled(&self) -> bool;
 
     /// Run the [`HealthCheck`].
+    // Todo: can this take a state/appcontext param and still be able to store the health check in the app context?
     async fn check(&self) -> RoadsterResult<CheckResponse>;
 }
 

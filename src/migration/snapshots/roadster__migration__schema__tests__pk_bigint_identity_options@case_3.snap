@@ -1,5 +1,0 @@
----
-source: src/migration/schema.rs
-expression: table_stmt.to_string(PostgresQueryBuilder)
----
-CREATE TABLE "foo" ( "bar" bigint NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH -100 INCREMENT BY 1) )

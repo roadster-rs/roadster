@@ -5,6 +5,7 @@ use crate::app::context::AppContext;
 use crate::app::App;
 use crate::error::RoadsterResult;
 use crate::lifecycle::AppLifecycleHandler;
+use crate::migration::Migrator;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use sea_orm_migration::MigratorTrait;
@@ -46,9 +47,7 @@ where
 
     #[instrument(skip_all)]
     async fn before_services(&self, state: &S) -> RoadsterResult<()> {
-        let context = AppContext::from_ref(state);
-
-        A::M::up(context.db(), None).await?;
+        A::M::up(state).await?;
 
         Ok(())
     }

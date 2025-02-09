@@ -1,5 +1,0 @@
----
-source: src/migration/schema.rs
-expression: table_stmt.to_string(PostgresQueryBuilder)
----
-CREATE TABLE "foo" ( "bar" bigserial NOT NULL PRIMARY KEY )

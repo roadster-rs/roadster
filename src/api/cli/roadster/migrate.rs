@@ -11,6 +11,7 @@ use crate::api::cli::roadster::{RoadsterCli, RunRoadsterCommand};
 use crate::app::context::AppContext;
 use crate::app::App;
 use crate::error::RoadsterResult;
+use crate::migration::Migrator;
 
 #[derive(Debug, Parser, Serialize)]
 #[non_exhaustive]
@@ -68,12 +69,13 @@ where
             );
         }
         match self {
-            MigrateCommand::Up(args) => A::M::up(context.db(), args.steps).await?,
-            MigrateCommand::Down(args) => A::M::down(context.db(), args.steps).await?,
-            MigrateCommand::Refresh => A::M::refresh(context.db()).await?,
-            MigrateCommand::Reset => A::M::reset(context.db()).await?,
-            MigrateCommand::Fresh => A::M::fresh(context.db()).await?,
-            MigrateCommand::Status => A::M::status(context.db()).await?,
+            MigrateCommand::Up(args) => A::M::up(state).await?,
+            // MigrateCommand::Down(args) => A::M::down(context.db(), args.steps).await?,
+            // MigrateCommand::Refresh => A::M::refresh(context.db()).await?,
+            // MigrateCommand::Reset => A::M::reset(context.db()).await?,
+            // MigrateCommand::Fresh => A::M::fresh(context.db()).await?,
+            // MigrateCommand::Status => A::M::status(context.db()).await?,
+            _ => unimplemented!(),
         };
         Ok(true)
     }

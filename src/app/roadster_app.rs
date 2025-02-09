@@ -10,6 +10,7 @@ use crate::health::check::registry::HealthCheckRegistry;
 use crate::health::check::HealthCheck;
 use crate::lifecycle::registry::LifecycleHandlerRegistry;
 use crate::lifecycle::AppLifecycleHandler;
+use crate::migration::Migrator;
 use crate::service::registry::ServiceRegistry;
 use crate::service::AppService;
 use crate::util::empty::Empty;
@@ -18,8 +19,6 @@ use async_trait::async_trait;
 use axum_core::extract::FromRef;
 #[cfg(feature = "db-sea-orm")]
 use sea_orm::ConnectOptions;
-#[cfg(feature = "db-sea-orm")]
-use sea_orm_migration::MigratorTrait;
 use std::future;
 use std::future::Future;
 use std::pin::Pin;
@@ -54,8 +53,8 @@ struct Inner<
     S,
     #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync = Empty,
     #[cfg(not(feature = "cli"))] Cli: 'static = Empty,
-    #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync = Empty,
-    #[cfg(not(feature = "db-sea-orm"))] M: 'static = Empty,
+    #[cfg(feature = "db-sql")] M: 'static + Migrator + Send + Sync = Empty,
+    #[cfg(not(feature = "db-sql"))] M: 'static = Empty,
 > where
     S: 'static + Clone + Send + Sync,
     AppContext: FromRef<S>,
@@ -79,8 +78,8 @@ impl<
         S,
         #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
         #[cfg(not(feature = "cli"))] Cli: 'static,
-        #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync,
-        #[cfg(not(feature = "db-sea-orm"))] M: 'static,
+        #[cfg(feature = "db-sql")] M: 'static + Migrator + Send + Sync,
+        #[cfg(not(feature = "db-sql"))] M: 'static,
     > Inner<S, Cli, M>
 where
     S: 'static + Clone + Send + Sync,
@@ -234,8 +233,8 @@ pub struct RoadsterApp<
     S,
     #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync = Empty,
     #[cfg(not(feature = "cli"))] Cli: 'static = Empty,
-    #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync = Empty,
-    #[cfg(not(feature = "db-sea-orm"))] M: 'static = Empty,
+    #[cfg(feature = "db-sql")] M: 'static + Migrator + Send + Sync = Empty,
+    #[cfg(not(feature = "db-sql"))] M: 'static = Empty,
 > where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
@@ -253,8 +252,8 @@ pub struct RoadsterAppBuilder<
     S,
     #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync = Empty,
     #[cfg(not(feature = "cli"))] Cli: 'static = Empty,
-    #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync = Empty,
-    #[cfg(not(feature = "db-sea-orm"))] M: 'static = Empty,
+    #[cfg(feature = "db-sql")] M: 'static + Migrator + Send + Sync = Empty,
+    #[cfg(not(feature = "db-sql"))] M: 'static = Empty,
 > where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
@@ -268,8 +267,8 @@ impl<
         S,
         #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
         #[cfg(not(feature = "cli"))] Cli: 'static,
-        #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync,
-        #[cfg(not(feature = "db-sea-orm"))] M: 'static,
+        #[cfg(feature = "db-sql")] M: 'static + Migrator + Send + Sync,
+        #[cfg(not(feature = "db-sql"))] M: 'static,
     > RoadsterApp<S, Cli, M>
 where
     S: Clone + Send + Sync + 'static,
@@ -295,8 +294,8 @@ impl<
         S,
         #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
         #[cfg(not(feature = "cli"))] Cli: 'static,
-        #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync,
-        #[cfg(not(feature = "db-sea-orm"))] M: 'static,
+        #[cfg(feature = "db-sql")] M: 'static + Migrator + Send + Sync,
+        #[cfg(not(feature = "db-sql"))] M: 'static,
     > Default for RoadsterAppBuilder<S, Cli, M>
 where
     S: 'static + Clone + Send + Sync,
@@ -311,8 +310,8 @@ impl<
         S,
         #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
         #[cfg(not(feature = "cli"))] Cli: 'static,
-        #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync,
-        #[cfg(not(feature = "db-sea-orm"))] M: 'static,
+        #[cfg(feature = "db-sql")] M: 'static + Migrator + Send + Sync,
+        #[cfg(not(feature = "db-sql"))] M: 'static,
     > RoadsterAppBuilder<S, Cli, M>
 where
     S: 'static + Clone + Send + Sync,
@@ -490,8 +489,8 @@ impl<
         S,
         #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
         #[cfg(not(feature = "cli"))] Cli: 'static,
-        #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync,
-        #[cfg(not(feature = "db-sea-orm"))] M: 'static,
+        #[cfg(feature = "db-sql")] M: 'static + Migrator + Send + Sync,
+        #[cfg(not(feature = "db-sql"))] M: 'static,
     > App<S> for RoadsterApp<S, Cli, M>
 where
     S: Clone + Send + Sync + 'static,
