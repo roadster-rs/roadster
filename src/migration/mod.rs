@@ -7,8 +7,7 @@ use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
-use diesel_async_migrations::EmbeddedMigrations;
-use diesel_migrations::MigrationHarness;
+use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 
 #[cfg(feature = "db-sea-orm")]
 pub mod sea_orm;
@@ -38,18 +37,20 @@ pub trait Migrator {
 //         Ok(())
 //     }
 // }
+// const m: EmbeddedMigrations = embed_migrations!("");
 
-#[cfg(feature = "db-diesel")]
-#[async_trait]
-impl Migrator for EmbeddedMigrations {
-    async fn up<S>(state: &S) -> RoadsterResult<()>
-    where
-        S: Clone + Send + Sync + 'static,
-        AppContext: FromRef<S>,
-    {
-        let context = AppContext::from_ref(state);
-        let conn = context.diesel().get().await?;
-        // conn.run_pending_migrations(self);
-        Ok(())
-    }
-}
+// #[cfg(feature = "db-diesel")]
+// #[async_trait]
+// impl Migrator for EmbeddedMigrations {
+//     async fn up<S>(state: &S) -> RoadsterResult<()>
+//     where
+//         S: Clone + Send + Sync + 'static,
+//         AppContext: FromRef<S>,
+//     {
+//         let context = AppContext::from_ref(state);
+//         let conn = context.diesel().get().await?;
+//         conn.run_pending_migrations(m)?;
+//         // conn.run_pending_migrations(self);
+//         Ok(())
+//     }
+// }
