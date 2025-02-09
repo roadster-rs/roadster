@@ -6,10 +6,8 @@ use aide::transform::TransformOperation;
 use anyhow::anyhow;
 use axum::extract::State;
 use axum::Json;
-use diesel::r2d2::R2D2Connection;
-use diesel::row::NamedRow;
 use diesel::SelectableHelper;
-use diesel_async::pooled_connection::{PoolableConnection, RecyclingMethod};
+use diesel_async::pooled_connection::RecyclingMethod;
 use diesel_async::RunQueryDsl;
 use roadster::api::http::build_path;
 use roadster::error::RoadsterResult;
@@ -36,8 +34,6 @@ pub struct ExampleResponse {
 
 #[instrument(skip_all)]
 async fn example_get(State(state): State<AppState>) -> RoadsterResult<Json<ExampleResponse>> {
-    // use crate::models::user;
-    // use crate::schema::user::dsl::user;
     use fake::faker::internet::raw::{Password, SafeEmail, Username};
     use fake::faker::name::raw::*;
     use fake::locales::*;
@@ -50,13 +46,7 @@ async fn example_get(State(state): State<AppState>) -> RoadsterResult<Json<Examp
 
     let user = NewUser::new(&name, &username, &email, &password);
 
-    let mut conn = state
-        .app_context
-        .diesel()
-        .get()
-        .await
-        // Todo: don't use anyhow here
-        .map_err(|err| anyhow!("{err}"))?;
+    let mut conn = state.app_context.diesel().get().await?;
 
     // let url = state.app_context.config().database.uri.clone();
     // let manager = diesel_async::pooled_connection::AsyncDieselConnectionManager::<
@@ -101,7 +91,7 @@ fn example_get_docs(op: TransformOperation) -> TransformOperation {
     op.description("Example API.")
         .tag(TAG)
         .response_with::<200, Json<ExampleResponse>, _>(|res| {
-            use fake::faker::internet::raw::{Password, SafeEmail, Username};
+            use fake::faker::internet::raw::{SafeEmail, Username};
             use fake::faker::name::raw::*;
             use fake::locales::*;
             use fake::Fake;

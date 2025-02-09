@@ -200,25 +200,15 @@ async fn ping_diesel_db(
 ) -> RoadsterResult<(Duration, Duration)> {
     let timer = Instant::now();
     let mut conn = if let Some(duration) = duration {
-        timeout(duration, context.diesel().get())
-            .await?
-            // Todo: don't use anyhow here
-            .map_err(|err| anyhow!("{err}"))?
+        timeout(duration, context.diesel().get()).await??
     } else {
-        context
-            .diesel()
-            .get()
-            .await
-            // Todo: don't use anyhow here
-            .map_err(|err| anyhow!("{err}"))?
+        context.diesel().get().await?
     };
     let acquire_conn_latency = timer.elapsed();
 
     let timer = Instant::now();
     conn.ping(&diesel_async::pooled_connection::RecyclingMethod::Fast)
-        .await
-        // Todo: don't use anyhow here
-        .map_err(|err| anyhow!("{err}"))?;
+        .await?;
     let ping_latency = timer.elapsed();
 
     Ok((acquire_conn_latency, ping_latency))

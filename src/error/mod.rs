@@ -11,7 +11,6 @@ pub mod email;
 pub mod mime;
 pub mod other;
 pub mod parse;
-mod pool;
 pub mod reqwest;
 pub mod serde;
 #[cfg(feature = "sidekiq")]
@@ -32,7 +31,6 @@ use crate::error::email::EmailError;
 use crate::error::mime::MimeError;
 use crate::error::other::OtherError;
 use crate::error::parse::ParseError;
-use crate::error::pool::PoolError;
 use crate::error::reqwest::ReqwestError;
 use crate::error::serde::SerdeError;
 #[cfg(feature = "sidekiq")]
@@ -115,9 +113,6 @@ pub enum Error {
 
     #[error(transparent)]
     ServiceRegistry(#[from] ServiceRegistryError),
-
-    #[error(transparent)]
-    Pool(#[from] PoolError),
 
     #[error(transparent)]
     Other(#[from] OtherError),

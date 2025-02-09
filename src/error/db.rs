@@ -17,11 +17,8 @@ pub enum DbError {
 
     #[cfg(feature = "db-diesel")]
     #[error(transparent)]
-    DieselBb8Pool(#[from] bb8::RunError<diesel_async::pooled_connection::PoolError>),
+    DieselBb8Pool(#[from] diesel_async::pooled_connection::bb8::RunError),
 
-    // #[cfg(feature = "db-diesel")]
-    // #[error(transparent)]
-    // DieselPool(#[from] diesel_async::pooled_connection::PoolError),
     #[error(transparent)]
     Other(#[from] Box<dyn std::error::Error + Send + Sync>),
 }
@@ -48,8 +45,8 @@ impl From<diesel_async::pooled_connection::PoolError> for Error {
 }
 
 #[cfg(feature = "db-diesel")]
-impl From<bb8::RunError<diesel_async::pooled_connection::PoolError>> for Error {
-    fn from(value: bb8::RunError<diesel_async::pooled_connection::PoolError>) -> Self {
+impl From<diesel_async::pooled_connection::bb8::RunError> for Error {
+    fn from(value: diesel_async::pooled_connection::bb8::RunError) -> Self {
         Self::Db(DbError::from(value))
     }
 }

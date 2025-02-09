@@ -12,9 +12,6 @@ use std::sync::{Arc, OnceLock, Weak};
 
 #[cfg(feature = "db-diesel")]
 pub type DieselDb = diesel_async::pooled_connection::bb8::Pool<diesel_async::AsyncPgConnection>;
-// pub type DieselDb = diesel_async::pooled_connection::bb8::Pool<
-//     diesel_async::pooled_connection::AsyncDieselConnectionManager<diesel_async::AsyncPgConnection>,
-// >;
 
 #[cfg(not(test))]
 type Inner = AppContextInner;
