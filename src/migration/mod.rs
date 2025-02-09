@@ -21,6 +21,31 @@ where
     async fn up(&self, state: &S) -> RoadsterResult<()>;
 }
 
+// todo: conflicting def for `diesel_migrations::EmbeddedMigrations` because of using
+//  `sea_orm_migration::MigratorTrait` trait instead of a concrete type. For now, use `cfg` flags
+//  to disable the default impl diesel is enabled. This is not ideal because enabling
+//  diesel when sea-orm is also disabled causes the impl to be removed which is a semver
+//  breaking change. However, most consumers should not have both diesel and sea-orm enabled
+//  at the same time, so we'll accept this trade-off for now. I think there's a Rust feature in
+//  nightly that would improve this that we could use in the future.
+#[cfg(all(not(feature = "db-diesel"), feature = "db-sea-orm"))]
+#[async_trait::async_trait]
+impl<T, S> crate::migration::Migrator<S> for T
+where
+    T: sea_orm_migration::MigratorTrait + Send + Sync,
+    S: Clone + Send + Sync + 'static,
+    crate::app::context::AppContext: axum_core::extract::FromRef<S>,
+{
+    #[tracing::instrument(skip_all)]
+    async fn up(&self, state: &S) -> crate::error::RoadsterResult<()> {
+        use axum_core::extract::FromRef;
+
+        let context = crate::app::context::AppContext::from_ref(state);
+        T::up(context.db(), None).await?;
+        Ok(())
+    }
+}
+
 #[cfg(feature = "db-diesel")]
 #[async_trait]
 impl<S> Migrator<S> for diesel_migrations::EmbeddedMigrations
