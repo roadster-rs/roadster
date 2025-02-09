@@ -46,6 +46,7 @@ where
     }
 }
 
+// todo: implement for file based migrations too
 #[cfg(feature = "db-diesel")]
 #[async_trait]
 impl<S> Migrator<S> for diesel_migrations::EmbeddedMigrations

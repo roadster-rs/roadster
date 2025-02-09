@@ -50,7 +50,14 @@ impl sea_orm_migration::MigratorTrait for Empty {
     }
 }
 
-#[cfg(all(not(feature = "db-sea-orm"), feature = "db-sql"))]
+#[cfg(any(
+    feature = "db-diesel",
+    all(
+        feature = "db-sql",
+        not(feature = "db-diesel"),
+        not(feature = "db-sea-orm")
+    )
+))]
 #[async_trait::async_trait]
 impl<S> crate::migration::Migrator<S> for Empty
 where
