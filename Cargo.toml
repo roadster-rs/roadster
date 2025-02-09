@@ -131,7 +131,6 @@ validator = { workspace = true }
 thiserror = { workspace = true }
 cfg-if = { workspace = true }
 reqwest = { workspace = true }
-r2d2 = { workspace = true }
 
 [dev-dependencies]
 cargo-husky = { workspace = true }
@@ -222,8 +221,8 @@ serde = { version = "1.0.185", features = ["derive"] }
 serde_derive = "1.0.185"
 serde_json = "1.0.96"
 serde_with = { version = "3.7.0", features = ["macros", "chrono_0_4"] }
-strum = "0.26.0"
-strum_macros = "0.26.0"
+strum = "0.27.0"
+strum_macros = "0.27.0"
 toml = "0.8.0"
 url = { version = "2.5.0", features = ["serde"] }
 futures = "0.3.30"
@@ -238,14 +237,13 @@ vergen = { version = "9.0.0" }
 vergen-gitcl = { version = "1.0.0" }
 reqwest = "0.12.8"
 itertools = "0.14.0"
-cargo-manifest = "0.18.0"
+cargo-manifest = "0.19.1"
 typed-builder = "0.20.0"
-rand = "0.8.5"
+rand = "0.9.0"
 thiserror = "2.0.9"
 uuid = { version = "1.10.0", features = ["v4", "serde"] }
 chrono = { version = "0.4.34", features = ["serde"] }
 async-trait = "0.1.74"
-r2d2 = { version = "0.8.10" }
 
 # Build dependencies
 rustc_version = "0.4.1"
