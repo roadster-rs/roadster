@@ -14,9 +14,17 @@ where
 {
     let lifecycle_handlers: Vec<Box<dyn AppLifecycleHandler<A, S>>> = vec![
         #[cfg(feature = "db-sea-orm")]
-        Box::new(crate::lifecycle::db::migration::DbMigrationLifecycleHandler),
+        Box::new(crate::lifecycle::db::sea_orm::migration::DbSeaOrmMigrationLifecycleHandler),
         #[cfg(feature = "db-sea-orm")]
-        Box::new(crate::lifecycle::db::graceful_shutdown::DbGracefulShutdownLifecycleHandler),
+        Box::new(
+            crate::lifecycle::db::sea_orm::graceful_shutdown::DbSeaOrmGracefulShutdownLifecycleHandler,
+        ),
+        #[cfg(feature = "db-diesel")]
+        Box::new(crate::lifecycle::db::diesel::migration::DbDieselMigrationLifecycleHandler),
+        #[cfg(feature = "db-diesel")]
+        Box::new(
+            crate::lifecycle::db::diesel::graceful_shutdown::DbDieselGracefulShutdownLifecycleHandler,
+        ),
     ];
 
     lifecycle_handlers

@@ -11,17 +11,17 @@ use axum_core::extract::FromRef;
 use sea_orm_migration::MigratorTrait;
 use tracing::instrument;
 
-pub struct DbMigrationLifecycleHandler;
+pub struct DbDieselMigrationLifecycleHandler;
 
 #[async_trait]
-impl<A, S> AppLifecycleHandler<A, S> for DbMigrationLifecycleHandler
+impl<A, S> AppLifecycleHandler<A, S> for DbDieselMigrationLifecycleHandler
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
     A: App<S> + 'static,
 {
     fn name(&self) -> String {
-        "db-migration".to_string()
+        "db-diesel-migration".to_string()
     }
 
     fn enabled(&self, state: &S) -> bool {
@@ -76,7 +76,7 @@ mod tests {
 
         let context = AppContext::test(Some(config), None, None).unwrap();
 
-        let handler = DbMigrationLifecycleHandler;
+        let handler = DbDieselMigrationLifecycleHandler;
 
         // Act/Assert
         assert_eq!(
@@ -98,7 +98,7 @@ mod tests {
 
         let context = AppContext::test(Some(config), None, None).unwrap();
 
-        let handler = DbMigrationLifecycleHandler;
+        let handler = DbDieselMigrationLifecycleHandler;
 
         // Act/Assert
         assert_eq!(

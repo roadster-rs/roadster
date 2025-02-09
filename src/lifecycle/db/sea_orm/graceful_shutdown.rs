@@ -8,17 +8,17 @@ use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use tracing::instrument;
 
-pub struct DbGracefulShutdownLifecycleHandler;
+pub struct DbSeaOrmGracefulShutdownLifecycleHandler;
 
 #[async_trait]
-impl<A, S> AppLifecycleHandler<A, S> for DbGracefulShutdownLifecycleHandler
+impl<A, S> AppLifecycleHandler<A, S> for DbSeaOrmGracefulShutdownLifecycleHandler
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
     A: App<S> + 'static,
 {
     fn name(&self) -> String {
-        "db-graceful-shutdown".to_string()
+        "db-sea-orm-graceful-shutdown".to_string()
     }
 
     fn enabled(&self, state: &S) -> bool {
@@ -81,7 +81,7 @@ mod tests {
 
         let context = AppContext::test(Some(config), None, None).unwrap();
 
-        let handler = DbGracefulShutdownLifecycleHandler;
+        let handler = DbSeaOrmGracefulShutdownLifecycleHandler;
 
         // Act/Assert
         assert_eq!(
@@ -107,7 +107,7 @@ mod tests {
 
         let context = AppContext::test(Some(config), None, None).unwrap();
 
-        let handler = DbGracefulShutdownLifecycleHandler;
+        let handler = DbSeaOrmGracefulShutdownLifecycleHandler;
 
         // Act/Assert
         assert_eq!(
