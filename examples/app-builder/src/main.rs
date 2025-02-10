@@ -20,7 +20,7 @@ const BASE: &str = "/api";
 async fn main() -> RoadsterResult<()> {
     let custom_state = "custom".to_string();
 
-    let builder: RoadsterAppBuilder<AppState, _, _> = RoadsterApp::builder()
+    let builder: RoadsterAppBuilder<AppState, _> = RoadsterApp::builder()
         .tracing_initializer(|config| roadster::tracing::init_tracing(config, &metadata()));
 
     // Metadata can either be provided directly or via a provider callback. Note that the two
@@ -40,6 +40,13 @@ async fn main() -> RoadsterResult<()> {
             .db_conn_options(db_conn_options)
             .db_conn_options_provider(|config| Ok(sea_orm::ConnectOptions::from(&config.database)))
     };
+
+    // Roadster can automatically run the app's DB migrations on start up. Simply provide
+    // the app's migrator instance (something that implements sea-orm's `MigratorTrait`).
+    // Alternatively, manually implement Roadster's `Migrator` trait (Roadster provides an
+    // auto-impl for any type that implements sea-orm's `MigratorTrait`).
+    #[cfg(feature = "db-sea-orm")]
+    let builder = { builder.migrator(migration::Migrator) };
 
     // Provide your custom state via the `state_provider` method.
     let builder = builder.state_provider(move |app_context| {
