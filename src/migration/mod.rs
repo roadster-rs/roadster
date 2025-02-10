@@ -21,6 +21,10 @@ where
     async fn up(&self, state: &S) -> RoadsterResult<()>;
 }
 
+// todo: Maybe instead of implementing for any `T: sea_orm_migration::MigratorTrait`, create
+//  wrapper structs (e.g. `SeaOrmMigrator<T: sea_orm_migration::MigratorTrait>(T)`
+//  and `DieselMigrator<T: MigrationHarness>(T)`) and implement `Migrator` for the wrapper structs.
+//
 // todo: conflicting def for `diesel_migrations::EmbeddedMigrations` because of using
 //  `sea_orm_migration::MigratorTrait` trait instead of a concrete type. For now, use `cfg` flags
 //  to disable the default impl diesel is enabled. This is not ideal because enabling
