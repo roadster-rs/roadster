@@ -136,7 +136,7 @@ where
             app_config_options.add_async_source_boxed(source)
         })
         .build();
-    let config = AppConfig::new_with_options(app_config_options)?;
+    let config = AppConfig::new_with_options(app_config_options).await?;
 
     app.init_tracing(&config)?;
 
@@ -565,7 +565,9 @@ where
     // #[cfg(not(feature = "db-sql"))]
     // type M;
 
-    fn async_config_sources(&self) -> RoadsterResult<Vec<Box<dyn config::AsyncSource>>> {
+    fn async_config_sources(
+        &self,
+    ) -> RoadsterResult<Vec<Box<dyn config::AsyncSource + Send + Sync>>> {
         Ok(vec![])
     }
 

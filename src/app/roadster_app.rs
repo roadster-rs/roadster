@@ -236,6 +236,7 @@ pub struct RoadsterApp<
     AppContext: FromRef<S>,
 {
     inner: Inner<S, Cli>,
+    async_config_sources: Mutex<Vec<Box<dyn AsyncSource + Send + Sync>>>,
     #[cfg(feature = "db-sql")]
     migrator: Mutex<Option<Box<dyn Migrator<S>>>>,
     // Interior mutability pattern -- this allows us to keep the handler reference as a
@@ -255,6 +256,7 @@ pub struct RoadsterAppBuilder<
     AppContext: FromRef<S>,
 {
     inner: Inner<S, Cli>,
+    async_config_sources: Vec<Box<dyn AsyncSource + Send + Sync>>,
     #[cfg(feature = "db-sql")]
     migrator: Option<Box<dyn Migrator<S>>>,
     lifecycle_handlers: LifecycleHandlers<RoadsterApp<S, Cli>, S>,
@@ -312,11 +314,19 @@ where
     pub fn new() -> Self {
         Self {
             inner: Inner::new(),
+            async_config_sources: Default::default(),
             #[cfg(feature = "db-sql")]
             migrator: None,
             lifecycle_handlers: Default::default(),
             services: Default::default(),
         }
+    }
+
+    /// Add an async config source ([`AsyncSource`]). Useful to load configs/secrets from an
+    /// external service, e.g., AWS or GCS secrets manager services.
+    pub fn async_config_source(mut self, source: impl AsyncSource + Send + Sync + 'static) -> Self {
+        self.async_config_sources.push(Box::new(source));
+        self
     }
 
     /// Provide the logic to initialize tracing for the [`RoadsterApp`].
@@ -478,6 +488,7 @@ where
     pub fn build(self) -> RoadsterApp<S, Cli> {
         RoadsterApp {
             inner: self.inner,
+            async_config_sources: Mutex::new(self.async_config_sources),
             #[cfg(feature = "db-sql")]
             migrator: Mutex::new(self.migrator),
             lifecycle_handlers: Mutex::new(self.lifecycle_handlers),
@@ -498,8 +509,18 @@ where
 {
     type Cli = Cli;
 
-    fn async_config_sources(&self) -> RoadsterResult<Vec<Box<dyn AsyncSource>>> {
-        todo!()
+    fn async_config_sources(&self) -> RoadsterResult<Vec<Box<dyn AsyncSource + Send + Sync>>> {
+        let mut async_config_sources = self
+            .async_config_sources
+            .lock()
+            .map_err(|err| anyhow!("Unable to lock async_config_sources mutex: {err}"))?;
+
+        let mut sources: Vec<Box<dyn AsyncSource + Send + Sync>> = Default::default();
+        for source in async_config_sources.drain(..) {
+            sources.push(source);
+        }
+
+        Ok(sources)
     }
 
     fn init_tracing(&self, config: &AppConfig) -> RoadsterResult<()> {

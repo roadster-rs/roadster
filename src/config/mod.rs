@@ -12,7 +12,7 @@ use crate::util::serde::default_true;
 use ::tracing::warn;
 use cfg_if::cfg_if;
 use config::builder::DefaultState;
-use config::{Config, ConfigBuilder, FileFormat};
+use config::{AsyncSource, Config, ConfigBuilder, FileFormat, Map};
 use convert_case::Casing;
 use dotenvy::dotenv;
 use health::check;
@@ -129,15 +129,15 @@ cfg_if! {
 
 #[derive(TypedBuilder)]
 #[builder(mutators(
-    fn async_config_sources(&mut self, async_config_sources: Vec<Box<dyn config::AsyncSource>>) -> &mut Self{
+    fn async_config_sources(&mut self, async_config_sources: Vec<Box<dyn config::AsyncSource + Send + Sync>>) -> &mut Self{
         self.async_config_sources = async_config_sources;
     self
     }
-    pub fn add_async_source(&mut self, source: impl config::AsyncSource + 'static) -> &mut Self{
+    pub fn add_async_source(&mut self, source: impl config::AsyncSource + Send + Sync + 'static) -> &mut Self{
         self.async_config_sources.push(Box::new(source));
     self
     }
-    pub fn add_async_source_boxed(&mut self, source: Box<dyn config::AsyncSource>) -> &mut Self{
+    pub fn add_async_source_boxed(&mut self, source: Box<dyn config::AsyncSource + Send + Sync>) -> &mut Self{
         self.async_config_sources.push(source);
     self
     }
@@ -149,14 +149,14 @@ pub struct AppConfigOptions {
     #[builder(default, setter(into, strip_option(fallback = config_dir_opt)))]
     pub config_dir: Option<PathBuf>,
     #[builder(via_mutators)]
-    pub async_config_sources: Vec<Box<dyn config::AsyncSource>>,
+    pub async_config_sources: Vec<Box<dyn AsyncSource + Send + Sync>>,
 }
 
 impl AppConfig {
     // This runs before tracing is initialized, so we need to use `println` in order to
     // log from this method.
     #[allow(clippy::disallowed_macros)]
-    pub fn new_with_options(options: AppConfigOptions) -> RoadsterResult<Self> {
+    pub async fn new_with_options(options: AppConfigOptions) -> RoadsterResult<Self> {
         dotenv().ok();
 
         let environment = if let Some(environment) = options.environment {
@@ -180,18 +180,31 @@ impl AppConfig {
         let config = config_env_dir("default", &config_root_dir, config)?;
         let config = config_env_file(environment_str, &config_root_dir, config);
         let config = config_env_dir(environment_str, &config_root_dir, config)?;
+        let config = config.add_source(
+            config::Environment::default()
+                .prefix(ENV_VAR_PREFIX)
+                .convert_case(config::Case::Kebab)
+                .separator(ENV_VAR_SEPARATOR),
+        );
+
+        // Convert builder state to `AsyncState`
+        let config = config.add_async_source(BoxedAsyncSource(None));
+
+        // Add all of the provided async sources
+        let config = options
+            .async_config_sources
+            .into_iter()
+            .fold(config, |config, source| {
+                config.add_async_source(BoxedAsyncSource(Some(source)))
+            });
+
         let config = config
-            .add_source(
-                config::Environment::default()
-                    .prefix(ENV_VAR_PREFIX)
-                    .convert_case(config::Case::Kebab)
-                    .separator(ENV_VAR_SEPARATOR),
-            )
             .set_override(
                 ENVIRONMENT_ENV_VAR_NAME.to_case(convert_case::Case::Kebab),
                 environment_str,
             )?
-            .build()?;
+            .build()
+            .await?;
         let config: AppConfig = config.try_deserialize()?;
 
         Ok(config)
@@ -367,6 +380,20 @@ fn config_env_dir_recursive(
             Ok(config)
         }
     })
+}
+
+#[derive(Debug)]
+struct BoxedAsyncSource(Option<Box<dyn AsyncSource + Send + Sync>>);
+
+#[async_trait::async_trait]
+impl AsyncSource for BoxedAsyncSource {
+    async fn collect(&self) -> Result<Map<String, config::Value>, config::ConfigError> {
+        if let Some(source) = self.0.as_ref() {
+            source.collect().await
+        } else {
+            Ok(Default::default())
+        }
+    }
 }
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
