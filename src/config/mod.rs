@@ -128,12 +128,25 @@ cfg_if! {
 }
 
 #[derive(TypedBuilder)]
+#[builder(mutators(
+    pub fn add_source_boxed(self, source: Box<dyn config::AsyncSource>) -> Self{
+        self.async_config_sources.push(source);
+    self
+    }
+))]
 #[non_exhaustive]
 pub struct AppConfigOptions {
     #[builder(default, setter(strip_option(fallback = environment_opt)))]
     pub environment: Option<Environment>,
     #[builder(default, setter(strip_option(fallback = config_dir_opt)))]
     pub config_dir: Option<PathBuf>,
+    // #[builder(default, setter(strip_option(fallback = config_dir_opt)))]
+    // #[builder(mutators(pub fn add_source(self, source: impl config::AsyncSource + 'static) {
+    //     self.async_config_sources.push(Box::new(source));
+    //     self
+    // }))]
+    #[builder(via_mutators)]
+    pub async_config_sources: Vec<Box<dyn config::AsyncSource>>,
 }
 
 impl AppConfig {

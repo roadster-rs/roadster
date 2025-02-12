@@ -126,12 +126,22 @@ where
     #[cfg(not(feature = "cli"))]
     let config_dir: Option<std::path::PathBuf> = options.config_dir;
 
-    let config = AppConfig::new_with_options(
-        AppConfigOptions::builder()
-            .environment_opt(environment)
-            .config_dir_opt(config_dir)
-            .build(),
-    )?;
+    let app_config_options = AppConfigOptions::builder()
+        .environment_opt(environment)
+        .config_dir_opt(config_dir);
+    let app_config_options = app
+        .async_config_sources()?
+        .into_iter()
+        .fold(app_config_options, |app_config_options, source| {
+            app_config_options.add_source_boxed(source)
+        });
+    // .add_source_boxed()
+
+    // .async_config_sources(app.async_config_sources()?)
+    // .add_source(app.async_config_sources()?)
+    // .async_config_sources(app.async_config_sources()?)
+    // .build();
+    let config = AppConfig::new_with_options(app_config_options)?;
 
     app.init_tracing(&config)?;
 
@@ -559,6 +569,10 @@ where
     // type M: Migrator;
     // #[cfg(not(feature = "db-sql"))]
     // type M;
+
+    fn async_config_sources(&self) -> RoadsterResult<Vec<Box<dyn config::AsyncSource>>> {
+        Ok(vec![])
+    }
 
     fn init_tracing(&self, config: &AppConfig) -> RoadsterResult<()> {
         init_tracing(config, &self.metadata(config)?)?;
