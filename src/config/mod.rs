@@ -128,6 +128,8 @@ cfg_if! {
 }
 
 #[derive(TypedBuilder)]
+// Hmm, defining these methods in this macro is not the best experience; at what point to we just
+// implement our own builder type?
 #[builder(mutators(
     fn async_config_sources(&mut self, async_config_sources: Vec<Box<dyn config::AsyncSource + Send + Sync>>) -> &mut Self{
         self.async_config_sources = async_config_sources;
