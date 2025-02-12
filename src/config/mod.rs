@@ -129,7 +129,15 @@ cfg_if! {
 
 #[derive(TypedBuilder)]
 #[builder(mutators(
-    pub fn add_source_boxed(self, source: Box<dyn config::AsyncSource>) -> Self{
+    fn async_config_sources(&mut self, async_config_sources: Vec<Box<dyn config::AsyncSource>>) -> &mut Self{
+        self.async_config_sources = async_config_sources;
+    self
+    }
+    pub fn add_async_source(&mut self, source: impl config::AsyncSource + 'static) -> &mut Self{
+        self.async_config_sources.push(Box::new(source));
+    self
+    }
+    pub fn add_async_source_boxed(&mut self, source: Box<dyn config::AsyncSource>) -> &mut Self{
         self.async_config_sources.push(source);
     self
     }
@@ -138,13 +146,8 @@ cfg_if! {
 pub struct AppConfigOptions {
     #[builder(default, setter(strip_option(fallback = environment_opt)))]
     pub environment: Option<Environment>,
-    #[builder(default, setter(strip_option(fallback = config_dir_opt)))]
+    #[builder(default, setter(into, strip_option(fallback = config_dir_opt)))]
     pub config_dir: Option<PathBuf>,
-    // #[builder(default, setter(strip_option(fallback = config_dir_opt)))]
-    // #[builder(mutators(pub fn add_source(self, source: impl config::AsyncSource + 'static) {
-    //     self.async_config_sources.push(Box::new(source));
-    //     self
-    // }))]
     #[builder(via_mutators)]
     pub async_config_sources: Vec<Box<dyn config::AsyncSource>>,
 }
@@ -456,5 +459,36 @@ mod file_extensions_tests {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn file_extensions_yml() {
         assert_debug_snapshot!(super::FILE_EXTENSIONS);
+    }
+}
+
+#[cfg(test)]
+mod app_config_options_tests {
+    use crate::config::environment::Environment;
+    use crate::config::AppConfigOptions;
+    use config::{AsyncSource, Map, Value};
+
+    #[derive(Debug)]
+    struct TestAsyncSource;
+
+    #[async_trait::async_trait]
+    impl AsyncSource for TestAsyncSource {
+        async fn collect(&self) -> Result<Map<String, Value>, config::ConfigError> {
+            Ok(Default::default())
+        }
+    }
+
+    #[test]
+    fn app_config_options_builder() {
+        let builder = AppConfigOptions::builder()
+            .environment(Environment::Test)
+            .config_dir("./")
+            .async_config_sources(vec![Box::new(TestAsyncSource)])
+            .add_async_source(TestAsyncSource)
+            .add_async_source_boxed(Box::new(TestAsyncSource));
+
+        let options = builder.build();
+
+        assert_eq!(options.async_config_sources.len(), 3);
     }
 }

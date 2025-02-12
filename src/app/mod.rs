@@ -133,14 +133,9 @@ where
         .async_config_sources()?
         .into_iter()
         .fold(app_config_options, |app_config_options, source| {
-            app_config_options.add_source_boxed(source)
-        });
-    // .add_source_boxed()
-
-    // .async_config_sources(app.async_config_sources()?)
-    // .add_source(app.async_config_sources()?)
-    // .async_config_sources(app.async_config_sources()?)
-    // .build();
+            app_config_options.add_async_source_boxed(source)
+        })
+        .build();
     let config = AppConfig::new_with_options(app_config_options)?;
 
     app.init_tracing(&config)?;

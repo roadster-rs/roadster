@@ -18,6 +18,7 @@ use crate::util::empty::Empty;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
+use config::AsyncSource;
 #[cfg(feature = "db-sea-orm")]
 use sea_orm::ConnectOptions;
 use std::future;
@@ -496,6 +497,10 @@ where
     AppContext: FromRef<S>,
 {
     type Cli = Cli;
+
+    fn async_config_sources(&self) -> RoadsterResult<Vec<Box<dyn AsyncSource>>> {
+        todo!()
+    }
 
     fn init_tracing(&self, config: &AppConfig) -> RoadsterResult<()> {
         self.inner.init_tracing(config)
