@@ -82,10 +82,6 @@ where
         return Ok(());
     }
 
-    if run_prepared_service_cli(&prepared).await? {
-        return Ok(());
-    }
-
     run_prepared_without_cli(prepared).await
 }
 
@@ -377,50 +373,7 @@ where
         }
     }
 
-    if run_prepared_service_cli(&prepared_app).await? {
-        return Ok(());
-    }
-
     run_prepared_without_cli(prepared_app).await
-}
-
-/// Run a [PreparedApp] that was previously crated by [prepare]
-async fn run_prepared_service_cli<A, S>(prepared_app: &PreparedApp<A, S>) -> RoadsterResult<bool>
-where
-    A: App<S> + 'static,
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-{
-    let service_registry = &prepared_app.service_registry;
-
-    if service_registry.services.is_empty() {
-        warn!("No enabled services were registered.");
-        return Ok(false);
-    }
-
-    #[cfg(feature = "cli")]
-    {
-        let state = &prepared_app.state;
-        let lifecycle_handlers = prepared_app.lifecycle_handler_registry.handlers(state);
-        info!("Running AppLifecycleHandler::before_service_cli");
-        for handler in lifecycle_handlers.iter() {
-            info!(name=%handler.name(), "Running AppLifecycleHandler::before_service_cli");
-            handler.before_service_cli(prepared_app).await?;
-        }
-
-        let PreparedApp {
-            roadster_cli,
-            app_cli,
-            ..
-        } = &prepared_app;
-        if crate::service::runner::handle_cli(roadster_cli, app_cli, service_registry, state)
-            .await?
-        {
-            return Ok(true);
-        }
-    }
-
-    Ok(false)
 }
 
 /// Run the app's initialization logic (lifecycle handlers, health checks, etc).

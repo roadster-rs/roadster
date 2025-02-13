@@ -17,27 +17,6 @@ use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, instrument, warn};
 
-#[cfg(feature = "cli")]
-#[instrument(skip_all)]
-pub(crate) async fn handle_cli<A, S>(
-    roadster_cli: &RoadsterCli,
-    app_cli: &A::Cli,
-    service_registry: &ServiceRegistry<A, S>,
-    state: &S,
-) -> RoadsterResult<bool>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-    A: App<S>,
-{
-    for (_name, service) in service_registry.services.iter() {
-        if service.handle_cli(roadster_cli, app_cli, state).await? {
-            return Ok(true);
-        }
-    }
-    Ok(false)
-}
-
 #[instrument(skip_all)]
 pub(crate) async fn health_checks(checks: Vec<Arc<dyn HealthCheck>>) -> RoadsterResult<()> {
     let duration = Duration::from_secs(60);

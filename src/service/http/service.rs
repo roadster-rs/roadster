@@ -1,3 +1,4 @@
+use crate::api::cli::roadster::open_api::OpenApiArgs;
 #[cfg(feature = "cli")]
 use crate::api::cli::roadster::RoadsterCli;
 #[cfg(feature = "cli")]
@@ -52,38 +53,6 @@ where
 
     fn enabled(&self, state: &S) -> bool {
         enabled(&AppContext::from_ref(state))
-    }
-
-    #[cfg(feature = "cli")]
-    async fn handle_cli(
-        &self,
-        roadster_cli: &RoadsterCli,
-        _app_cli: &A::Cli,
-        _state: &S,
-    ) -> RoadsterResult<bool> {
-        if let Some(command) = roadster_cli.command.as_ref() {
-            match command {
-                RoadsterCommand::Roadster(args) => match &args.command {
-                    #[cfg(feature = "open-api")]
-                    RoadsterSubCommand::ListRoutes(_) => {
-                        let routes = self
-                            .list_routes()
-                            .into_iter()
-                            .map(|(path, method)| format!("[{method}]\t{path}"))
-                            .join("\n\t");
-                        info!("API routes:\n\t{routes}");
-                        return Ok(true);
-                    }
-                    #[cfg(feature = "open-api")]
-                    RoadsterSubCommand::OpenApi(args) => {
-                        self.print_open_api_schema(args)?;
-                        return Ok(true);
-                    }
-                    _ => {}
-                },
-            }
-        }
-        Ok(false)
     }
 
     async fn run(
@@ -171,22 +140,6 @@ impl HttpService {
     pub fn open_api(&self) -> Arc<OpenApi> {
         self.api.clone()
     }
-}
-
-#[cfg(feature = "open-api")]
-#[derive(Debug, serde_derive::Serialize, typed_builder::TypedBuilder)]
-#[cfg_attr(feature = "cli", derive(clap::Parser))]
-#[non_exhaustive]
-pub struct OpenApiArgs {
-    /// The file to write the schema to. If not provided, will write to stdout.
-    #[builder(default, setter(strip_option))]
-    #[cfg_attr(feature = "cli", clap(short, long, value_name = "FILE", value_hint = clap::ValueHint::FilePath))]
-    pub output: Option<PathBuf>,
-
-    /// Whether to pretty-print the schema. Default: false.
-    #[cfg_attr(feature = "cli", clap(short, long, default_value_t = false))]
-    #[builder(default)]
-    pub pretty_print: bool,
 }
 
 #[cfg(test)]

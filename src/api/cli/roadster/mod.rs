@@ -3,25 +3,26 @@ use crate::api::cli::roadster::health::HealthArgs;
 use crate::api::cli::roadster::list_routes::ListRoutesArgs;
 #[cfg(feature = "db-sea-orm")]
 use crate::api::cli::roadster::migrate::MigrateArgs;
+#[cfg(feature = "open-api")]
+use crate::api::cli::roadster::open_api::OpenApiArgs;
 use crate::api::cli::roadster::print_config::PrintConfigArgs;
 use crate::app::context::AppContext;
 use crate::app::{App, PreparedApp};
 use crate::config::environment::Environment;
 use crate::error::RoadsterResult;
-#[cfg(feature = "open-api")]
-use crate::service::http::service::OpenApiArgs;
 use async_trait::async_trait;
-use std::path::PathBuf;
-
 use axum_core::extract::FromRef;
 use clap::{Parser, Subcommand};
 use serde_derive::Serialize;
+use std::path::PathBuf;
 
 pub mod health;
 #[cfg(feature = "open-api")]
 pub mod list_routes;
 #[cfg(feature = "db-sql")]
 pub mod migrate;
+#[cfg(feature = "open-api")]
+pub mod open_api;
 pub mod print_config;
 
 /// Internal version of [RunCommand][crate::cli::RunCommand] that uses the [RoadsterCli] and
@@ -143,17 +144,9 @@ where
     async fn run(&self, prepared_app: &PreparedApp<A, S>) -> RoadsterResult<bool> {
         match self {
             #[cfg(feature = "open-api")]
-            RoadsterSubCommand::ListRoutes(_) => {
-                #[allow(unused_doc_comments)]
-                /// Implemented by [crate::service::http::service::HttpService]
-                Ok(false)
-            }
+            RoadsterSubCommand::ListRoutes(args) => args.run(prepared_app).await,
             #[cfg(feature = "open-api")]
-            RoadsterSubCommand::OpenApi(_) => {
-                #[allow(unused_doc_comments)]
-                /// Implemented by [crate::service::http::service::HttpService]
-                Ok(false)
-            }
+            RoadsterSubCommand::OpenApi(args) => args.run(prepared_app).await,
             #[cfg(feature = "db-sea-orm")]
             RoadsterSubCommand::Migrate(args) => args.run(prepared_app).await,
             RoadsterSubCommand::PrintConfig(args) => args.run(prepared_app).await,

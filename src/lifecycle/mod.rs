@@ -60,16 +60,6 @@ where
         0
     }
 
-    /// This method is run right before running any CLI commands implemented by
-    /// [`crate::service::AppService::handle_cli`].
-    #[cfg(feature = "cli")]
-    async fn before_service_cli(
-        &self,
-        _prepared_app: &crate::app::PreparedApp<A, S>,
-    ) -> RoadsterResult<()> {
-        Ok(())
-    }
-
     /// This method is run right before the app's [`crate::health::check::HealthCheck`]s during
     /// app startup.
     async fn before_health_checks(

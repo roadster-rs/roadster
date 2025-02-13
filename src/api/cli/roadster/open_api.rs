@@ -6,17 +6,25 @@ use crate::service::http::service::HttpService;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
-use clap::Parser;
-use itertools::Itertools;
-use serde_derive::Serialize;
-use tracing::info;
+use std::path::PathBuf;
 
-#[derive(Debug, Parser, Serialize)]
+#[derive(Debug, serde_derive::Serialize, typed_builder::TypedBuilder)]
+#[cfg_attr(feature = "cli", derive(clap::Parser))]
 #[non_exhaustive]
-pub struct ListRoutesArgs {}
+pub struct OpenApiArgs {
+    /// The file to write the schema to. If not provided, will write to stdout.
+    #[builder(default, setter(strip_option))]
+    #[cfg_attr(feature = "cli", clap(short, long, value_name = "FILE", value_hint = clap::ValueHint::FilePath))]
+    pub output: Option<PathBuf>,
+
+    /// Whether to pretty-print the schema. Default: false.
+    #[cfg_attr(feature = "cli", clap(short, long, default_value_t = false))]
+    #[builder(default)]
+    pub pretty_print: bool,
+}
 
 #[async_trait]
-impl<A, S> RunRoadsterCommand<A, S> for ListRoutesArgs
+impl<A, S> RunRoadsterCommand<A, S> for OpenApiArgs
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
@@ -30,13 +38,7 @@ where
                 anyhow!("Unable to get HttpService from registry. Was it registered?")
             })?;
 
-        let routes = http_service
-            .list_routes()
-            .into_iter()
-            .map(|(path, method)| format!("[{method}]\t{path}"))
-            .join("\n\t");
-
-        info!("API routes:\n\t{routes}");
+        http_service.print_open_api_schema(self)?;
 
         Ok(true)
     }
