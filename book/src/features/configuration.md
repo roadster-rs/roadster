@@ -1,5 +1,7 @@
 # Configuration
 
+<!--todo: Document `AsyncSource` support (for external secrets management services)-->
+
 Roadster provides sensible defaults, but is highly customizable via configuration files and environment variables.
 Virtually all behavior of Roadster can be configured; to see the available configuration keys, see
 the [AppConfig](https://docs.rs/roadster/latest/roadster/config/struct.AppConfig.html) struct.
