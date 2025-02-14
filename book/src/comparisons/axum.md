@@ -8,7 +8,8 @@ However, using Roadster has some benefits compared to configuring Axum yourself:
   information.
 - Roadster creates an `AppContext` to use as the Axum State that contains all the dependency objects created by
   Roadster, such as the DB connection, app config, etc. This can also be extended using
-  Axum's [FromRef](https://docs.rs/axum/latest/axum/extract/derive.FromRef.html) if you need to provide additional state
+  Axum's [`FromRef`](https://docs.rs/axum/latest/axum/extract/derive.FromRef.html) if you need to provide additional
+  state
   to your Axum routes.
   See [Axum state](../features/services/http/state.md) for more
   information.
