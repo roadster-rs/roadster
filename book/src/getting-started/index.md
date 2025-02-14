@@ -11,6 +11,6 @@ See also, our examples:
 - [app-builder](https://github.com/roadster-rs/roadster/tree/main/examples/app-builder) - Demo of the builder-style API
   to configure the app with Roadster
 - [diesel](https://github.com/roadster-rs/roadster/tree/main/examples/diesel) - Demo of using Diesel as the DB ORM
-  instead of the default SeaORM.
+  instead of SeaORM (the default).
 - [leptos-ssr](https://github.com/roadster-rs/roadster/tree/main/examples/leptos-ssr) - Demo of using Leptos with
   Roadster
