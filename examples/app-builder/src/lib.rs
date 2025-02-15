@@ -4,6 +4,7 @@ use roadster::app::RoadsterApp;
 
 pub mod api;
 pub mod app_state;
+pub mod config;
 pub mod health;
 pub mod lifecycle;
 #[cfg(feature = "db-sea-orm")]

@@ -1,5 +1,6 @@
 use app_builder::api::http;
 use app_builder::app_state::AppState;
+use app_builder::config::example_async_source::ExampleAsyncSource;
 use app_builder::health::check::example::ExampleHealthCheck;
 use app_builder::lifecycle::example::ExampleLifecycleHandler;
 use app_builder::worker::example::ExampleWorker;
@@ -22,6 +23,8 @@ async fn main() -> RoadsterResult<()> {
 
     let builder: RoadsterAppBuilder<AppState, _> = RoadsterApp::builder()
         .tracing_initializer(|config| roadster::tracing::init_tracing(config, &metadata()));
+
+    let builder = builder.async_config_source(ExampleAsyncSource);
 
     // Metadata can either be provided directly or via a provider callback. Note that the two
     // approaches are mutually exclusive, with the `metadata` method taking priority.
