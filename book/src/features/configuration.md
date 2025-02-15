@@ -71,7 +71,9 @@ such as AWS or GCS secrets manager services.
 `AsyncSource`s are loaded into the configuration after all the other sources, so they have the highest precedence (they
 will override any duplicate fields from other sources).
 
-<!--todo: Provide an example-->
+```rust,ignore
+{{#include ../../examples/app-config/src/example_async_source.rs:4:}}
+```
 
 ## Config mechanism precedence
 

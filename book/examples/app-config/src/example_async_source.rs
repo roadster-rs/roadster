@@ -10,7 +10,10 @@ impl AsyncSource for ExampleAsyncSource {
         let mut config = Map::new();
 
         /*
-        And `service.sidekiq.redis.uri` overrides the `AppConfig#service#sidekiq#redis#uri` field.
+        Config fields can be set using the name of the field, where each level in the config
+        is separated by a `.`
+
+        For example, `service.sidekiq.redis.uri` overrides the `AppConfig#service#sidekiq#redis#uri` field.
         See: <https://docs.rs/roadster/latest/roadster/config/service/worker/sidekiq/struct.Redis.html#structfield.uri>
 
         Note: a hard-coded value is used here for demonstration purposes only. In a real application,
