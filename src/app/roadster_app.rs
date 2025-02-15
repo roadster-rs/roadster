@@ -4,6 +4,7 @@ use crate::app;
 use crate::app::context::AppContext;
 use crate::app::metadata::AppMetadata;
 use crate::app::App;
+use crate::config::environment::Environment;
 use crate::config::AppConfig;
 use crate::error::RoadsterResult;
 use crate::health::check::registry::HealthCheckRegistry;
@@ -28,6 +29,8 @@ use std::sync::{Arc, Mutex};
 
 type StateBuilder<S> = dyn Send + Sync + Fn(AppContext) -> RoadsterResult<S>;
 type TracingInitializer = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<()>;
+type AsyncConfigSourceProvider =
+    dyn Send + Sync + Fn(&Environment) -> RoadsterResult<Box<dyn AsyncSource + Send + Sync>>;
 type MetadataProvider = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<AppMetadata>;
 #[cfg(feature = "db-sea-orm")]
 type DbConnOptionsProvider = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<ConnectOptions>;
@@ -61,6 +64,7 @@ struct Inner<
 {
     state_provider: Option<Box<StateBuilder<S>>>,
     tracing_initializer: Option<Box<TracingInitializer>>,
+    async_config_source_providers: Vec<Box<AsyncConfigSourceProvider>>,
     metadata: Option<AppMetadata>,
     metadata_provider: Option<Box<MetadataProvider>>,
     #[cfg(feature = "db-sea-orm")]
@@ -87,6 +91,7 @@ where
         Self {
             state_provider: None,
             tracing_initializer: None,
+            async_config_source_providers: Default::default(),
             metadata: None,
             metadata_provider: None,
             #[cfg(feature = "db-sea-orm")]
@@ -106,6 +111,17 @@ where
         tracing_initializer: impl 'static + Send + Sync + Fn(&AppConfig) -> RoadsterResult<()>,
     ) {
         self.tracing_initializer = Some(Box::new(tracing_initializer));
+    }
+
+    fn async_config_source_provider(
+        &mut self,
+        async_config_source_provider: impl 'static
+            + Send
+            + Sync
+            + Fn(&Environment) -> RoadsterResult<Box<dyn AsyncSource + Send + Sync>>,
+    ) {
+        self.async_config_source_providers
+            .push(Box::new(async_config_source_provider));
     }
 
     fn set_metadata(&mut self, metadata: AppMetadata) {
@@ -329,6 +345,19 @@ where
         self
     }
 
+    /// Add an async config source ([`AsyncSource`]). Useful to load configs/secrets from an
+    /// external service, e.g., AWS or GCS secrets manager services.
+    pub fn async_config_source_provider(
+        mut self,
+        source_provider: impl 'static
+            + Send
+            + Sync
+            + Fn(&Environment) -> RoadsterResult<Box<dyn AsyncSource + Send + Sync>>,
+    ) -> Self {
+        self.inner.async_config_source_provider(source_provider);
+        self
+    }
+
     /// Provide the logic to initialize tracing for the [`RoadsterApp`].
     pub fn tracing_initializer(
         mut self,
@@ -509,7 +538,10 @@ where
 {
     type Cli = Cli;
 
-    fn async_config_sources(&self) -> RoadsterResult<Vec<Box<dyn AsyncSource + Send + Sync>>> {
+    fn async_config_sources(
+        &self,
+        environment: &Environment,
+    ) -> RoadsterResult<Vec<Box<dyn AsyncSource + Send + Sync>>> {
         let mut async_config_sources = self
             .async_config_sources
             .lock()
@@ -517,6 +549,11 @@ where
 
         let mut sources: Vec<Box<dyn AsyncSource + Send + Sync>> = Default::default();
         for source in async_config_sources.drain(..) {
+            sources.push(source);
+        }
+
+        for provider in self.inner.async_config_source_providers.iter() {
+            let source = provider(environment)?;
             sources.push(source);
         }
 

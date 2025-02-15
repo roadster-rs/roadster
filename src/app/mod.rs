@@ -100,6 +100,9 @@ where
     pub state: S,
 }
 
+// This runs before tracing is initialized, so we need to use `println` in order to
+// log from this method.
+#[allow(clippy::disallowed_macros)]
 async fn build_cli_and_state<A, S>(
     app: A,
     options: PrepareOptions,
@@ -117,16 +120,24 @@ where
     #[cfg(not(feature = "cli"))]
     let environment: Option<Environment> = options.env;
 
+    let environment = if let Some(environment) = environment {
+        println!("Using environment: {environment:?}");
+        environment
+    } else {
+        Environment::new()?
+    };
+
     #[cfg(feature = "cli")]
     let config_dir = roadster_cli.config_dir.clone().or(options.config_dir);
     #[cfg(not(feature = "cli"))]
     let config_dir: Option<std::path::PathBuf> = options.config_dir;
 
+    let async_config_sources = app.async_config_sources(&environment)?;
+
     let app_config_options = AppConfigOptions::builder()
-        .environment_opt(environment)
+        .environment(environment)
         .config_dir_opt(config_dir);
-    let app_config_options = app
-        .async_config_sources()?
+    let app_config_options = async_config_sources
         .into_iter()
         .fold(app_config_options, |app_config_options, source| {
             app_config_options.add_async_source_boxed(source)
@@ -520,6 +531,7 @@ where
 
     fn async_config_sources(
         &self,
+        _environment: &Environment,
     ) -> RoadsterResult<Vec<Box<dyn config::AsyncSource + Send + Sync>>> {
         Ok(vec![])
     }

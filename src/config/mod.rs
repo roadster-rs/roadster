@@ -146,8 +146,8 @@ cfg_if! {
 ))]
 #[non_exhaustive]
 pub struct AppConfigOptions {
-    #[builder(default, setter(strip_option(fallback = environment_opt)))]
-    pub environment: Option<Environment>,
+    #[builder]
+    pub environment: Environment,
     #[builder(default, setter(into, strip_option(fallback = config_dir_opt)))]
     pub config_dir: Option<PathBuf>,
     #[builder(via_mutators)]
@@ -161,13 +161,7 @@ impl AppConfig {
     pub async fn new_with_options(options: AppConfigOptions) -> RoadsterResult<Self> {
         dotenv().ok();
 
-        let environment = if let Some(environment) = options.environment {
-            println!("Using environment from options: {environment:?}");
-            environment
-        } else {
-            Environment::new()?
-        };
-        let environment_string = environment.clone().to_string();
+        let environment_string = options.environment.clone().to_string();
         let environment_str = environment_string.as_str();
 
         let config_root_dir = options
@@ -177,7 +171,7 @@ impl AppConfig {
 
         println!("Loading configuration from directory {config_root_dir:?}");
 
-        let config = Self::default_config(environment.clone())?;
+        let config = Self::default_config(options.environment.clone())?;
         let config = config_env_file("default", &config_root_dir, config);
         let config = config_env_dir("default", &config_root_dir, config)?;
         let config = config_env_file(environment_str, &config_root_dir, config);
