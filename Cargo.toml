@@ -200,7 +200,8 @@ jsonwebtoken = { version = "9.0.0" }
 # gRPC
 tonic = { version = "0.12.3" }
 tonic-build = { version = "0.12.3" }
-tonic-reflection = { version = "0.12.0" }
+# Todo: is this needed?
+#tonic-reflection = { version = "0.12.0" }
 
 # Sidekiq
 # The default `rss-stats` feature has a dependency that currently can't be satisfied on macos (memchr: ~2.3)

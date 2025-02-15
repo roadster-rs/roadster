@@ -68,6 +68,9 @@ open_cmd := if os() == "macos" { "open" } else { "xdg-open" }
 coverage-open: coverage
     {{ open_cmd }} target/llvm-cov-target/debug/coverage/index.html
 
+update-interactive:
+    cargo interactive-update --no-check
+
 alias fmt := format
 
 # Format the project
@@ -132,5 +135,5 @@ install_libpq := if os() == "macos" { "brew install libpq && brew link --force l
 
 # Initialize a new installation of the repo (e.g., install deps)
 init:
-    cargo binstall cargo-nextest cargo-llvm-cov sea-orm-cli cargo-insta cargo-minimal-versions cargo-hack mdbook cargo-deny diesel_cli
+    cargo binstall cargo-nextest cargo-llvm-cov sea-orm-cli cargo-insta cargo-minimal-versions cargo-hack mdbook cargo-deny diesel_cli cargo-interactive-update
     {{ install_libpq }}
