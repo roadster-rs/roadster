@@ -1,3 +1,6 @@
+use crate::error::RoadsterResult;
+use crate::migration::Migration;
+
 /// A placeholder that implements various traits so it can be used as the default for various type
 /// parameters
 pub struct Empty;
@@ -82,5 +85,10 @@ where
     ) -> crate::error::RoadsterResult<usize> {
         tracing::info!("Running empty migrator");
         Ok(0)
+    }
+
+    #[tracing::instrument(skip_all)]
+    async fn status(&self, _state: &S) -> RoadsterResult<Vec<Migration>> {
+        Ok(Default::default())
     }
 }

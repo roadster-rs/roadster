@@ -255,8 +255,10 @@ where
 
     #[tracing::instrument(skip_all)]
     async fn status(&self, state: &S) -> RoadsterResult<Vec<Migration>> {
+        use diesel::migration::MigrationSource;
         use diesel::Connection;
         use diesel_migrations::MigrationHarness;
+        use std::collections::HashMap;
 
         tracing::info!("Started applying migrations");
 
@@ -268,12 +270,26 @@ where
         let context = AppContext::from_ref(state);
         let mut conn = diesel::PgConnection::establish(context.config().database.uri.as_ref())?;
 
-        let applied = conn.applied_migrations()?.into_iter().map(|version| {
-            Migration::builder()
-                .name(version.to_string())
-                .status(MigrationStatus::Applied)
-                .build()
-        });
+        let migrations: HashMap<_, _> = migration_wrapper
+            .migrations()?
+            .into_iter()
+            .map(|m| (m.name().version().as_owned(), m))
+            .collect();
+
+        let applied = conn
+            .applied_migrations()?
+            .into_iter()
+            .map(|version| {
+                let name = migrations
+                    .get(&version)
+                    .map(|migration| migration.name().to_string())
+                    .unwrap_or(version.to_string());
+                Migration::builder()
+                    .name(name)
+                    .status(MigrationStatus::Applied)
+                    .build()
+            })
+            .rev();
 
         let pending = conn
             .pending_migrations(migration_wrapper)?

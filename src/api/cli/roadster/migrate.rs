@@ -2,13 +2,14 @@ use crate::api::cli::roadster::RunRoadsterCommand;
 use crate::app::context::AppContext;
 use crate::app::{App, PreparedApp};
 use crate::error::RoadsterResult;
-use crate::migration::{DownArgs, UpArgs};
+use crate::migration::{DownArgs, Migration, UpArgs};
 use anyhow::anyhow;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use clap::{Parser, Subcommand};
+use itertools::Itertools;
 use serde_derive::Serialize;
-use tracing::warn;
+use tracing::{info, warn};
 
 #[derive(Debug, Parser, Serialize)]
 #[non_exhaustive]
@@ -106,8 +107,20 @@ where
             // MigrateCommand::Refresh => A::M::refresh(context.db()).await?,
             // MigrateCommand::Reset => A::M::reset(context.db()).await?,
             // MigrateCommand::Fresh => A::M::fresh(context.db()).await?,
-            // MigrateCommand::Status => A::M::status(context.db()).await?,
-            _ => unimplemented!(),
+            MigrateCommand::Status => {
+                let mut migrations: Vec<Migration> = Vec::new();
+                for migrator in prepared_app.migrators.iter() {
+                    migrations.extend(migrator.status(&prepared_app.state).await?);
+                }
+                let migrations = migrations
+                    .into_iter()
+                    .map(|migration| {
+                        let status: &'static str = migration.status.into();
+                        format!("{}\t{}", status, migration.name)
+                    })
+                    .join("\n");
+                info!("Migration status:\n{migrations}");
+            }
         };
         Ok(true)
     }
