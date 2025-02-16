@@ -29,11 +29,11 @@ async fn main() -> RoadsterResult<()> {
     // external service, such as AWS or GCS secrets manager services, you can load them via
     // an `AsyncSource`.
     let builder = builder
-        .async_config_source(ExampleAsyncSource)
+        .add_async_config_source(ExampleAsyncSource)
         // If the `AsyncSource` needs to know which environment it's running in, e.g. in order
         // to use a different secrets manager endpoint per-environment, you can use the
         // `async_config_source_provider` hook to build the source.
-        .async_config_source_provider(|environment| {
+        .add_async_config_source_provider(|environment| {
             Ok(Box::new(ExampleAsyncSourceWithEnv::new(environment)))
         });
 

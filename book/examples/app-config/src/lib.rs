@@ -10,7 +10,7 @@ pub type App = RoadsterApp<AppContext, Empty>;
 pub fn build_app() -> App {
     let builder = RoadsterApp::builder();
 
-    let builder = builder.async_config_source(ExampleAsyncSource);
+    let builder = builder.add_async_config_source(ExampleAsyncSource);
 
     let builder = builder.state_provider(|context| Ok(context));
     builder.build()

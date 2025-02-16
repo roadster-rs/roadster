@@ -113,7 +113,7 @@ where
         self.tracing_initializer = Some(Box::new(tracing_initializer));
     }
 
-    fn async_config_source_provider(
+    fn add_async_config_source_provider(
         &mut self,
         async_config_source_provider: impl 'static
             + Send
@@ -340,21 +340,24 @@ where
 
     /// Add an async config source ([`AsyncSource`]). Useful to load configs/secrets from an
     /// external service, e.g., AWS or GCS secrets manager services.
-    pub fn async_config_source(mut self, source: impl AsyncSource + Send + Sync + 'static) -> Self {
+    pub fn add_async_config_source(
+        mut self,
+        source: impl AsyncSource + Send + Sync + 'static,
+    ) -> Self {
         self.async_config_sources.push(Box::new(source));
         self
     }
 
     /// Add an async config source ([`AsyncSource`]). Useful to load configs/secrets from an
     /// external service, e.g., AWS or GCS secrets manager services.
-    pub fn async_config_source_provider(
+    pub fn add_async_config_source_provider(
         mut self,
         source_provider: impl 'static
             + Send
             + Sync
             + Fn(&Environment) -> RoadsterResult<Box<dyn AsyncSource + Send + Sync>>,
     ) -> Self {
-        self.inner.async_config_source_provider(source_provider);
+        self.inner.add_async_config_source_provider(source_provider);
         self
     }
 
