@@ -35,7 +35,6 @@ pub struct App;
 #[async_trait]
 impl RoadsterApp<AppState> for App {
     type Cli = AppCli;
-    type M = Migrator;
 
     fn metadata(&self, _config: &AppConfig) -> RoadsterResult<AppMetadata> {
         Ok(AppMetadata::builder()
@@ -45,6 +44,13 @@ impl RoadsterApp<AppState> for App {
 
     async fn provide_state(&self, app_context: AppContext) -> RoadsterResult<AppState> {
         Ok(AppState::new(app_context))
+    }
+
+    fn migrators(
+        &self,
+        _state: &AppState,
+    ) -> RoadsterResult<Vec<Box<dyn roadster::migration::Migrator<AppState>>>> {
+        Ok(vec![Box::new(Migrator)])
     }
 
     async fn health_checks(
