@@ -153,7 +153,7 @@ where
         let migrations = T::get_migration_with_status(context.db())
             .await?
             .into_iter()
-            .map(|migration| migration.instrument())
+            .map(|migration| migration.into())
             .collect();
 
         Ok(migrations)
