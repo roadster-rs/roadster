@@ -121,10 +121,11 @@ where
         doc = r##"
   ```rust
 # tokio_test::block_on(async {
+# use roadster::api::cli::roadster::open_api::OpenApiArgs;
 # use roadster::app::RoadsterApp;
 # use roadster::util::empty::Empty;
 # use roadster::service::AppServiceBuilder;
-# use roadster::service::http::service::{HttpService, OpenApiArgs};
+# use roadster::service::http::service::HttpService;
 # use std::env::current_dir;
 # use std::path::PathBuf;
 # use std::sync::LazyLock;

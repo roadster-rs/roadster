@@ -1,13 +1,13 @@
 use async_trait::async_trait;
-use config::{AsyncSource, ConfigError, Map, Value};
+use config::{AsyncSource, ConfigError, Value};
 
 #[derive(Debug)]
 pub struct ExampleAsyncSource;
 
 #[async_trait]
 impl AsyncSource for ExampleAsyncSource {
-    async fn collect(&self) -> Result<Map<String, Value>, ConfigError> {
-        let mut config = Map::new();
+    async fn collect(&self) -> Result<config::Map<String, Value>, ConfigError> {
+        let mut config = config::Map::new();
 
         /*
         Config fields can be set using the name of the field, where each level in the config

@@ -2,6 +2,7 @@ use crate::api::cli::roadster::RunRoadsterCommand;
 use crate::app::context::AppContext;
 use crate::app::{App, PreparedApp};
 use crate::error::RoadsterResult;
+use crate::migration::{DownArgs, UpArgs};
 use anyhow::anyhow;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
@@ -32,16 +33,12 @@ where
 #[serde(tag = "type")]
 #[non_exhaustive]
 pub enum MigrateCommand {
-    /// Apply pending migrations
+    /// Apply pending migrations. If no `steps` argument is provided, will apply all pending
+    /// migrations.
     Up(UpArgs),
-    /// Rollback applied migrations
+    /// Roll back applied migrations. If no `steps` argument is provided, will roll back all
+    /// applied migrations.
     Down(DownArgs),
-    /// Rollback all applied migrations, then reapply all migrations
-    Refresh,
-    /// Rollback all applied migrations
-    Reset,
-    /// Drop all tables from the database, then reapply all migrations
-    Fresh,
     /// Check the status of all migrations
     Status,
 }
@@ -65,13 +62,47 @@ where
             );
         }
         match self {
+            // Todo: reduce duplication
             MigrateCommand::Up(args) => {
+                let mut total_steps_run = 0;
                 for migrator in prepared_app.migrators.iter() {
-                    migrator.up(&prepared_app.state).await?
+                    let remaining_steps = args
+                        .steps
+                        .map(|steps| steps.saturating_sub(total_steps_run));
+                    if let Some(remaining) = remaining_steps {
+                        if remaining == 0 {
+                            return Ok(true);
+                        }
+                    }
+                    let steps_run = migrator
+                        .up(
+                            &prepared_app.state,
+                            &UpArgs::builder().steps_opt(remaining_steps).build(),
+                        )
+                        .await?;
+                    total_steps_run += steps_run;
                 }
             }
-            // MigrateCommand::Up(args) => A::M::up(state).await?,
-            // MigrateCommand::Down(args) => A::M::down(context.db(), args.steps).await?,
+            MigrateCommand::Down(args) => {
+                let mut total_steps_run = 0;
+                for migrator in prepared_app.migrators.iter().rev() {
+                    let remaining_steps = args
+                        .steps
+                        .map(|steps| steps.saturating_sub(total_steps_run));
+                    if let Some(remaining) = remaining_steps {
+                        if remaining == 0 {
+                            return Ok(true);
+                        }
+                    }
+                    let steps_run = migrator
+                        .down(
+                            &prepared_app.state,
+                            &DownArgs::builder().steps_opt(remaining_steps).build(),
+                        )
+                        .await?;
+                    total_steps_run += steps_run;
+                }
+            }
             // MigrateCommand::Refresh => A::M::refresh(context.db()).await?,
             // MigrateCommand::Reset => A::M::reset(context.db()).await?,
             // MigrateCommand::Fresh => A::M::fresh(context.db()).await?,
@@ -80,22 +111,6 @@ where
         };
         Ok(true)
     }
-}
-
-#[derive(Debug, Parser, Serialize)]
-#[non_exhaustive]
-pub struct UpArgs {
-    /// The number of pending migration steps to apply.
-    #[clap(short = 'n', long)]
-    pub steps: Option<u32>,
-}
-
-#[derive(Debug, Parser, Serialize)]
-#[non_exhaustive]
-pub struct DownArgs {
-    /// The number of applied migration steps to rollback.
-    #[clap(short = 'n', long)]
-    pub steps: Option<u32>,
 }
 
 fn is_destructive(command: &MigrateCommand) -> bool {

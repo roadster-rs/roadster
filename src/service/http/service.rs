@@ -1,10 +1,4 @@
 use crate::api::cli::roadster::open_api::OpenApiArgs;
-#[cfg(feature = "cli")]
-use crate::api::cli::roadster::RoadsterCli;
-#[cfg(feature = "cli")]
-use crate::api::cli::roadster::RoadsterCommand;
-#[cfg(all(feature = "cli", feature = "open-api"))]
-use crate::api::cli::roadster::RoadsterSubCommand;
 use crate::app::context::AppContext;
 use crate::app::App;
 use crate::error::RoadsterResult;
@@ -21,8 +15,6 @@ use itertools::Itertools;
 use std::fs::File;
 #[cfg(feature = "open-api")]
 use std::io::Write;
-#[cfg(feature = "open-api")]
-use std::path::PathBuf;
 #[cfg(feature = "open-api")]
 use std::sync::Arc;
 use tokio_util::sync::CancellationToken;

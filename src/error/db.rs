@@ -17,6 +17,10 @@ pub enum DbError {
 
     #[cfg(feature = "db-diesel")]
     #[error(transparent)]
+    DieselMigration(#[from] diesel_migrations::MigrationError),
+
+    #[cfg(feature = "db-diesel")]
+    #[error(transparent)]
     DieselPool(#[from] diesel_async::pooled_connection::PoolError),
 
     #[cfg(feature = "db-diesel")]
@@ -44,6 +48,13 @@ impl From<diesel::result::Error> for Error {
 #[cfg(feature = "db-diesel")]
 impl From<diesel::ConnectionError> for Error {
     fn from(value: diesel::ConnectionError) -> Self {
+        Self::Db(DbError::from(value))
+    }
+}
+
+#[cfg(feature = "db-diesel")]
+impl From<diesel_migrations::MigrationError> for Error {
+    fn from(value: diesel_migrations::MigrationError) -> Self {
         Self::Db(DbError::from(value))
     }
 }

@@ -65,8 +65,22 @@ where
     crate::app::context::AppContext: axum_core::extract::FromRef<S>,
 {
     #[tracing::instrument(skip_all)]
-    async fn up(&self, _state: &S) -> crate::error::RoadsterResult<()> {
+    async fn up(
+        &self,
+        _state: &S,
+        _args: &crate::migration::UpArgs,
+    ) -> crate::error::RoadsterResult<usize> {
         tracing::info!("Running empty migrator");
-        Ok(())
+        Ok(0)
+    }
+
+    #[tracing::instrument(skip_all)]
+    async fn down(
+        &self,
+        _state: &S,
+        _args: &crate::migration::DownArgs,
+    ) -> crate::error::RoadsterResult<usize> {
+        tracing::info!("Running empty migrator");
+        Ok(0)
     }
 }

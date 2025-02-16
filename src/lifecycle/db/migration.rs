@@ -5,6 +5,7 @@ use crate::app::context::AppContext;
 use crate::app::{App, PreRunAppState};
 use crate::error::RoadsterResult;
 use crate::lifecycle::AppLifecycleHandler;
+use crate::migration::UpArgs;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use tracing::instrument;
@@ -46,7 +47,9 @@ where
     #[instrument(skip_all)]
     async fn before_services(&self, prepared_app: &PreRunAppState<A, S>) -> RoadsterResult<()> {
         for migrator in prepared_app.migrators.iter() {
-            migrator.up(&prepared_app.state).await?;
+            migrator
+                .up(&prepared_app.state, &UpArgs::builder().build())
+                .await?;
         }
 
         Ok(())

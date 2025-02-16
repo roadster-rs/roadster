@@ -1,5 +1,3 @@
-#[cfg(feature = "cli")]
-use crate::api::cli::roadster::RoadsterCli;
 use crate::app::context::AppContext;
 use crate::app::App;
 use crate::error::RoadsterResult;

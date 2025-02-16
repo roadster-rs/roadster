@@ -7,9 +7,64 @@ use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
+use serde_derive::Serialize;
+use strum_macros::{EnumString, IntoStaticStr};
+use typed_builder::TypedBuilder;
 
 #[cfg(feature = "db-sea-orm")]
 pub mod sea_orm;
+
+#[derive(Debug, Serialize, TypedBuilder)]
+#[cfg_attr(feature = "cli", derive(clap::Parser))]
+#[non_exhaustive]
+pub struct UpArgs {
+    /// The number of pending migration steps to apply.
+    #[cfg_attr(feature = "cli", clap(short = 'n', long))]
+    #[builder(default, setter(strip_option(fallback = steps_opt)))]
+    pub steps: Option<usize>,
+}
+
+#[derive(Debug, Serialize, TypedBuilder)]
+#[cfg_attr(feature = "cli", derive(clap::Parser))]
+#[non_exhaustive]
+pub struct DownArgs {
+    /// The number of applied migration steps to roll back.
+    #[cfg_attr(feature = "cli", clap(short = 'n', long))]
+    #[builder(default, setter(strip_option(fallback = steps_opt)))]
+    pub steps: Option<usize>,
+}
+
+#[derive(Debug, Serialize, TypedBuilder)]
+pub struct Migration {
+    pub name: String,
+    pub status: MigrationStatus,
+}
+
+#[cfg(feature = "db-sea-orm")]
+impl From<sea_orm_migration::Migration> for Migration {
+    fn from(value: sea_orm_migration::Migration) -> Self {
+        Self {
+            name: value.name().to_string(),
+            status: value.status().into(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, EnumString, IntoStaticStr)]
+pub enum MigrationStatus {
+    Applied,
+    Pending,
+}
+
+#[cfg(feature = "db-sea-orm")]
+impl From<sea_orm_migration::MigrationStatus> for MigrationStatus {
+    fn from(value: sea_orm_migration::MigrationStatus) -> Self {
+        match value {
+            sea_orm_migration::MigrationStatus::Applied => Self::Applied,
+            sea_orm_migration::MigrationStatus::Pending => Self::Pending,
+        }
+    }
+}
 
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
@@ -18,7 +73,16 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    async fn up(&self, state: &S) -> RoadsterResult<()>;
+    /// Apply pending migrations. Returns the number of migrations that were successfully
+    /// applied.
+    async fn up(&self, state: &S, args: &UpArgs) -> RoadsterResult<usize>;
+
+    /// Roll back previous applied migrations. Returns the number of migrations that were
+    /// successfully rolled back.
+    async fn down(&self, state: &S, args: &DownArgs) -> RoadsterResult<usize>;
+
+    /// Get the status of all migrations in this [`Migrator`].
+    async fn status(&self, state: &S) -> RoadsterResult<Vec<Migration>>;
 }
 
 // todo: Maybe instead of implementing for any `T: sea_orm_migration::MigratorTrait`, create
@@ -41,12 +105,56 @@ where
     crate::app::context::AppContext: axum_core::extract::FromRef<S>,
 {
     #[tracing::instrument(skip_all)]
-    async fn up(&self, state: &S) -> crate::error::RoadsterResult<()> {
+    async fn up(&self, state: &S, args: &UpArgs) -> crate::error::RoadsterResult<usize> {
         use axum_core::extract::FromRef;
 
         let context = crate::app::context::AppContext::from_ref(state);
-        T::up(context.db(), None).await?;
-        Ok(())
+        let pending = T::get_pending_migrations(context.db()).await?;
+
+        let to_run = if let Some(steps) = args.steps {
+            min(steps, pending.len())
+        } else {
+            pending.len()
+        };
+
+        T::up(context.db(), args.steps.map(|steps| steps as u32)).await?;
+
+        // Assume all of the pending steps (up to `args.steps` count) ran successfully.
+        Ok(to_run)
+    }
+
+    #[tracing::instrument(skip_all)]
+    async fn down(&self, state: &S, args: &DownArgs) -> RoadsterResult<usize> {
+        use axum_core::extract::FromRef;
+
+        let context = crate::app::context::AppContext::from_ref(state);
+        let applied = T::get_applied_migrations(context.db()).await?;
+
+        let to_roll_back = if let Some(steps) = args.steps {
+            min(steps, applied.len())
+        } else {
+            applied.len()
+        };
+
+        T::down(context.db(), args.steps.map(|steps| steps as u32)).await?;
+
+        // Assume all of the applied steps (up to `args.steps` count) were rolled back successfully.
+        Ok(to_roll_back)
+    }
+
+    #[tracing::instrument(skip_all)]
+    async fn status(&self, state: &S) -> RoadsterResult<Vec<Migration>> {
+        use axum_core::extract::FromRef;
+
+        let context = crate::app::context::AppContext::from_ref(state);
+
+        let migrations = T::get_migration_with_status(context.db())
+            .await?
+            .into_iter()
+            .map(|migration| migration.instrument())
+            .collect();
+
+        Ok(migrations)
     }
 }
 
@@ -59,11 +167,12 @@ where
     AppContext: FromRef<S>,
 {
     #[tracing::instrument(skip_all)]
-    async fn up(&self, state: &S) -> RoadsterResult<()> {
+    async fn up(&self, state: &S, args: &UpArgs) -> RoadsterResult<usize> {
         use diesel::Connection;
         use diesel_migrations::MigrationHarness;
+        use std::cmp::min;
 
-        tracing::info!("Starting migration");
+        tracing::info!("Started applying migrations");
 
         let migration_wrapper = EmbeddedMigrationsWrapper::try_from(self)?;
 
@@ -72,11 +181,113 @@ where
         //  connection pools.
         let context = AppContext::from_ref(state);
         let mut conn = diesel::PgConnection::establish(context.config().database.uri.as_ref())?;
-        conn.run_pending_migrations(migration_wrapper)?;
 
-        tracing::info!("Migrations completed");
+        let pending = conn.pending_migrations(migration_wrapper)?;
 
-        Ok(())
+        let pending = if let Some(steps) = args.steps {
+            let steps = min(steps, pending.len());
+            pending.into_iter().take(steps).collect()
+        } else {
+            pending
+        };
+
+        let completed = conn.run_migrations(&pending)?;
+        let completed = completed.len();
+
+        tracing::info!("Completed applying {completed} migrations");
+
+        Ok(completed)
+    }
+
+    #[tracing::instrument(skip_all)]
+    async fn down(&self, state: &S, args: &DownArgs) -> RoadsterResult<usize> {
+        use diesel::migration::MigrationSource;
+        use diesel::Connection;
+        use diesel_migrations::MigrationError;
+        use diesel_migrations::MigrationHarness;
+        use itertools::Itertools;
+        use std::cmp::min;
+        use std::collections::HashMap;
+
+        tracing::info!("Started rolling back migrations");
+
+        let migration_wrapper = EmbeddedMigrationsWrapper::try_from(self)?;
+
+        // todo: Is there a way to use a pooled connection instead? It seems like the trait bounds
+        //  aren't satisfied by the pooled connections currently, at least not for async
+        //  connection pools.
+        let context = AppContext::from_ref(state);
+        let mut conn = diesel::PgConnection::establish(context.config().database.uri.as_ref())?;
+
+        let to_roll_back = conn.applied_migrations()?.len();
+        let to_roll_back = if let Some(steps) = args.steps {
+            min(steps, to_roll_back)
+        } else {
+            to_roll_back
+        };
+
+        // This is mostly copied from the default `MigrationHarness#revert_all_migrations`
+        // implementation, with a slight modification to only revert the first `to_roll_back`
+        // migrations.
+        // Todo: which order are applied migrations returned in?
+        let applied_versions = conn
+            .applied_migrations()?
+            .into_iter()
+            .take(to_roll_back)
+            .collect_vec();
+        let mut migrations: HashMap<_, _> = migration_wrapper
+            .migrations()?
+            .into_iter()
+            .map(|m| (m.name().version().as_owned(), m))
+            .collect();
+
+        for version in applied_versions {
+            let migration_to_revert = migrations
+                .remove(&version)
+                .ok_or(MigrationError::UnknownMigrationVersion(version))?;
+            conn.revert_migration(&migration_to_revert)?;
+        }
+
+        tracing::info!("Completed rolling back {to_roll_back} migrations");
+
+        Ok(to_roll_back)
+    }
+
+    #[tracing::instrument(skip_all)]
+    async fn status(&self, state: &S) -> RoadsterResult<Vec<Migration>> {
+        use diesel::Connection;
+        use diesel_migrations::MigrationHarness;
+
+        tracing::info!("Started applying migrations");
+
+        let migration_wrapper = EmbeddedMigrationsWrapper::try_from(self)?;
+
+        // todo: Is there a way to use a pooled connection instead? It seems like the trait bounds
+        //  aren't satisfied by the pooled connections currently, at least not for async
+        //  connection pools.
+        let context = AppContext::from_ref(state);
+        let mut conn = diesel::PgConnection::establish(context.config().database.uri.as_ref())?;
+
+        let applied = conn.applied_migrations()?.into_iter().map(|version| {
+            Migration::builder()
+                .name(version.to_string())
+                .status(MigrationStatus::Applied)
+                .build()
+        });
+
+        let pending = conn
+            .pending_migrations(migration_wrapper)?
+            .into_iter()
+            .map(|migration| {
+                Migration::builder()
+                    .name(migration.name().to_string())
+                    .status(MigrationStatus::Pending)
+                    .build()
+            });
+
+        let migrations = applied.chain(pending).collect();
+
+        Ok(migrations)
     }
 }
 

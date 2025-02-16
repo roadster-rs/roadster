@@ -27,7 +27,7 @@ where
             .service_registry
             .get::<HttpService>()
             .map_err(|err| {
-                anyhow!("Unable to get HttpService from registry. Was it registered?")
+                anyhow!("Unable to get HttpService from registry. Was it registered? Err: {err}")
             })?;
 
         let routes = http_service

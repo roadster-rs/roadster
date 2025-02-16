@@ -1,5 +1,3 @@
-#[cfg(feature = "cli")]
-use crate::api::cli::roadster::RoadsterCli;
 use crate::api::core::health::health_check_with_checks;
 use crate::app::context::AppContext;
 use crate::app::App;

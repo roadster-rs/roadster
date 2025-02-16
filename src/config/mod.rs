@@ -131,15 +131,15 @@ cfg_if! {
 // Hmm, defining these methods in this macro is not the best experience; at what point to we just
 // implement our own builder type?
 #[builder(mutators(
-    fn async_config_sources(&mut self, async_config_sources: Vec<Box<dyn config::AsyncSource + Send + Sync>>) -> &mut Self{
+    fn async_config_sources(&mut self, async_config_sources: Vec<Box<dyn config::AsyncSource + Send>>) -> &mut Self{
         self.async_config_sources = async_config_sources;
     self
     }
-    pub fn add_async_source(&mut self, source: impl config::AsyncSource + Send + Sync + 'static) -> &mut Self{
+    pub fn add_async_source(&mut self, source: impl config::AsyncSource + Send + 'static) -> &mut Self{
         self.async_config_sources.push(Box::new(source));
     self
     }
-    pub fn add_async_source_boxed(&mut self, source: Box<dyn config::AsyncSource + Send + Sync>) -> &mut Self{
+    pub fn add_async_source_boxed(&mut self, source: Box<dyn config::AsyncSource + Send>) -> &mut Self{
         self.async_config_sources.push(source);
     self
     }
@@ -151,7 +151,7 @@ pub struct AppConfigOptions {
     #[builder(default, setter(into, strip_option(fallback = config_dir_opt)))]
     pub config_dir: Option<PathBuf>,
     #[builder(via_mutators)]
-    pub async_config_sources: Vec<Box<dyn AsyncSource + Send + Sync>>,
+    pub async_config_sources: Vec<Box<dyn AsyncSource + Send>>,
 }
 
 impl AppConfig {
