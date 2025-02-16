@@ -159,6 +159,7 @@ where
 }
 
 // todo: implement for file based migrations too
+// todo: support other db backends
 #[cfg(feature = "db-diesel")]
 #[async_trait]
 impl<S> Migrator<S> for diesel_migrations::EmbeddedMigrations
@@ -174,15 +175,14 @@ where
 
         tracing::info!("Started applying migrations");
 
-        let migration_wrapper = EmbeddedMigrationsWrapper::try_from(self)?;
-
         // todo: Is there a way to use a pooled connection instead? It seems like the trait bounds
         //  aren't satisfied by the pooled connections currently, at least not for async
         //  connection pools.
         let context = AppContext::from_ref(state);
         let mut conn = diesel::PgConnection::establish(context.config().database.uri.as_ref())?;
 
-        let pending = conn.pending_migrations(migration_wrapper)?;
+        let pending = conn.pending_migrations(EmbeddedMigrationsWrapper::try_from(self)?)?;
+        tracing::debug!("pending: {}", pending.len());
 
         let pending = if let Some(steps) = args.steps {
             let steps = min(steps, pending.len());
@@ -211,8 +211,6 @@ where
 
         tracing::info!("Started rolling back migrations");
 
-        let migration_wrapper = EmbeddedMigrationsWrapper::try_from(self)?;
-
         // todo: Is there a way to use a pooled connection instead? It seems like the trait bounds
         //  aren't satisfied by the pooled connections currently, at least not for async
         //  connection pools.
@@ -235,7 +233,7 @@ where
             .into_iter()
             .take(to_roll_back)
             .collect_vec();
-        let mut migrations: HashMap<_, _> = migration_wrapper
+        let mut migrations: HashMap<_, _> = self
             .migrations()?
             .into_iter()
             .map(|m| (m.name().version().as_owned(), m))
@@ -260,20 +258,28 @@ where
         use diesel_migrations::MigrationHarness;
         use std::collections::HashMap;
 
-        tracing::info!("Started applying migrations");
-
-        let migration_wrapper = EmbeddedMigrationsWrapper::try_from(self)?;
-
         // todo: Is there a way to use a pooled connection instead? It seems like the trait bounds
         //  aren't satisfied by the pooled connections currently, at least not for async
         //  connection pools.
         let context = AppContext::from_ref(state);
         let mut conn = diesel::PgConnection::establish(context.config().database.uri.as_ref())?;
 
-        let migrations: HashMap<_, _> = migration_wrapper
+        let pending = conn
+            .pending_migrations(EmbeddedMigrationsWrapper::try_from(self)?)?
+            .into_iter()
+            .map(|migration| {
+                Migration::builder()
+                    .name(migration.name().to_string())
+                    .status(MigrationStatus::Pending)
+                    .build()
+            });
+
+        let migrations: HashMap<_, _> = self
             .migrations()?
             .into_iter()
-            .map(|m| (m.name().version().as_owned(), m))
+            .map(|m: Box<dyn diesel::migration::Migration<diesel::pg::Pg>>| {
+                (m.name().version().as_owned(), m)
+            })
             .collect();
 
         let applied = conn
@@ -291,17 +297,7 @@ where
             })
             .rev();
 
-        let pending = conn
-            .pending_migrations(migration_wrapper)?
-            .into_iter()
-            .map(|migration| {
-                Migration::builder()
-                    .name(migration.name().to_string())
-                    .status(MigrationStatus::Pending)
-                    .build()
-            });
-
-        let migrations = applied.chain(pending).collect();
+        let migrations = applied.into_iter().chain(pending.into_iter()).collect();
 
         Ok(migrations)
     }

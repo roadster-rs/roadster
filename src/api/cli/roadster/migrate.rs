@@ -104,9 +104,6 @@ where
                     total_steps_run += steps_run;
                 }
             }
-            // MigrateCommand::Refresh => A::M::refresh(context.db()).await?,
-            // MigrateCommand::Reset => A::M::reset(context.db()).await?,
-            // MigrateCommand::Fresh => A::M::fresh(context.db()).await?,
             MigrateCommand::Status => {
                 let mut migrations: Vec<Migration> = Vec::new();
                 for migrator in prepared_app.migrators.iter() {
