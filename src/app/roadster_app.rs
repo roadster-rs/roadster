@@ -605,16 +605,21 @@ where
     }
 
     #[cfg(feature = "db-sql")]
-    fn migrators(&self, _state: &S) -> RoadsterResult<Vec<Box<dyn Migrator<S>>>> {
+    fn migrators(&self, state: &S) -> RoadsterResult<Vec<Box<dyn Migrator<S>>>> {
         let mut migrators = self
             .migrators
             .lock()
-            .map_err(|err| anyhow!("Unable to lock lifecycle_handlers mutex: {err}"))?;
+            .map_err(|err| anyhow!("Unable to lock migrators mutex: {err}"))?;
 
         let mut result = Vec::new();
         for migrator in migrators.drain(..) {
             result.push(migrator);
         }
+
+        for migrator_provider in self.inner.migrator_providers.iter() {
+            result.push(migrator_provider(state)?);
+        }
+
         Ok(result)
     }
 
