@@ -34,6 +34,8 @@ type AsyncConfigSourceProvider =
 type MetadataProvider = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<AppMetadata>;
 #[cfg(feature = "db-sea-orm")]
 type DbConnOptionsProvider = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<ConnectOptions>;
+#[cfg(feature = "db-sql")]
+type MigratorProvider<S> = dyn Send + Sync + Fn(&S) -> RoadsterResult<Box<dyn Migrator<S>>>;
 type LifecycleHandlers<A, S> = Vec<Box<dyn AppLifecycleHandler<A, S>>>;
 type LifecycleHandlerProviders<A, S> =
     Vec<Box<dyn Send + Sync + Fn(&mut LifecycleHandlerRegistry<A, S>, &S) -> RoadsterResult<()>>>;
@@ -71,6 +73,8 @@ struct Inner<
     db_conn_options: Option<ConnectOptions>,
     #[cfg(feature = "db-sea-orm")]
     db_conn_options_provider: Option<Box<DbConnOptionsProvider>>,
+    #[cfg(feature = "db-sql")]
+    migrator_providers: Vec<Box<MigratorProvider<S>>>,
     health_checks: Vec<Arc<dyn HealthCheck>>,
     health_check_providers: HealthCheckProviders<S>,
     graceful_shutdown_signal_provider: GracefulShutdownSignalProvider<S>,
@@ -98,6 +102,8 @@ where
             db_conn_options: None,
             #[cfg(feature = "db-sea-orm")]
             db_conn_options_provider: None,
+            #[cfg(feature = "db-sql")]
+            migrator_providers: Default::default(),
             health_checks: Default::default(),
             health_check_providers: Default::default(),
             graceful_shutdown_signal_provider: None,
@@ -156,6 +162,14 @@ where
         builder: impl 'static + Send + Sync + Fn(AppContext) -> RoadsterResult<S>,
     ) {
         self.state_provider = Some(Box::new(builder));
+    }
+
+    #[cfg(feature = "db-sql")]
+    fn add_migrator_provider(
+        &mut self,
+        migrator_provider: impl 'static + Send + Sync + Fn(&S) -> RoadsterResult<Box<dyn Migrator<S>>>,
+    ) {
+        self.migrator_providers.push(Box::new(migrator_provider))
     }
 
     fn add_health_check(&mut self, health_check: impl 'static + HealthCheck) {
@@ -340,10 +354,7 @@ where
 
     /// Add an async config source ([`AsyncSource`]). Useful to load configs/secrets from an
     /// external service, e.g., AWS or GCS secrets manager services.
-    pub fn add_async_config_source(
-        mut self,
-        source: impl AsyncSource + Send + Sync + 'static,
-    ) -> Self {
+    pub fn add_async_config_source(mut self, source: impl AsyncSource + Send + 'static) -> Self {
         self.async_config_sources.push(Box::new(source));
         self
     }
@@ -415,10 +426,22 @@ where
         self
     }
 
-    // todo: add a migrator provider method
+    /// Add a [`Migrator`] to run on app start up (if the `database.auto-migrate` config field is
+    /// set to `true`)
     #[cfg(feature = "db-sql")]
     pub fn add_migrator(mut self, migrator: impl Migrator<S> + 'static) -> Self {
         self.migrators.push(Box::new(migrator));
+        self
+    }
+
+    /// Add a [`MigratorProvider`] that provides a [`Migrator`] to run on app start up
+    /// (if the `database.auto-migrate` config field is set to `true`).
+    #[cfg(feature = "db-sql")]
+    pub fn add_migrator_provider(
+        mut self,
+        migrator_provider: impl 'static + Send + Sync + Fn(&S) -> RoadsterResult<Box<dyn Migrator<S>>>,
+    ) -> Self {
+        self.inner.add_migrator_provider(migrator_provider);
         self
     }
 
