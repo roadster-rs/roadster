@@ -351,7 +351,7 @@ impl<DB: diesel::backend::Backend> diesel::migration::MigrationSource<DB>
 
         match migrations.take() {
             Some(migrations) => Ok(migrations),
-            None => Ok(vec![]),
+            None => Err(anyhow::anyhow!("EmbeddedMigrationsWrapper#migrations was called twice! This is not supported as the migrations were removed by the first call.").into()),
         }
     }
 }
