@@ -60,7 +60,7 @@ async fn main() -> RoadsterResult<()> {
     // Alternatively, manually implement Roadster's `Migrator` trait (Roadster provides an
     // auto-impl for any type that implements sea-orm's `MigratorTrait`).
     #[cfg(feature = "db-sea-orm")]
-    let builder = { builder.migrator(migration::Migrator) };
+    let builder = { builder.add_migrator(migration::Migrator) };
 
     // Provide your custom state via the `state_provider` method.
     let builder = builder.state_provider(move |app_context| {

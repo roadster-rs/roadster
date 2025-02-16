@@ -254,7 +254,7 @@ pub struct RoadsterApp<
     inner: Inner<S, Cli>,
     async_config_sources: Mutex<Vec<Box<dyn AsyncSource + Send + Sync>>>,
     #[cfg(feature = "db-sql")]
-    migrator: Mutex<Option<Box<dyn Migrator<S>>>>,
+    migrators: Mutex<Vec<Box<dyn Migrator<S>>>>,
     // Interior mutability pattern -- this allows us to keep the handler reference as a
     // Box, which helps with single ownership and ensuring we only register a handler once.
     lifecycle_handlers: Mutex<LifecycleHandlers<RoadsterApp<S, Cli>, S>>,
@@ -274,7 +274,7 @@ pub struct RoadsterAppBuilder<
     inner: Inner<S, Cli>,
     async_config_sources: Vec<Box<dyn AsyncSource + Send + Sync>>,
     #[cfg(feature = "db-sql")]
-    migrator: Option<Box<dyn Migrator<S>>>,
+    migrators: Vec<Box<dyn Migrator<S>>>,
     lifecycle_handlers: LifecycleHandlers<RoadsterApp<S, Cli>, S>,
     services: Services<RoadsterApp<S, Cli>, S>,
 }
@@ -332,7 +332,7 @@ where
             inner: Inner::new(),
             async_config_sources: Default::default(),
             #[cfg(feature = "db-sql")]
-            migrator: None,
+            migrators: Default::default(),
             lifecycle_handlers: Default::default(),
             services: Default::default(),
         }
@@ -416,8 +416,8 @@ where
     }
 
     #[cfg(feature = "db-sql")]
-    pub fn migrator(mut self, migrator: impl Migrator<S> + 'static) -> Self {
-        self.migrator = Some(Box::new(migrator));
+    pub fn add_migrator(mut self, migrator: impl Migrator<S> + 'static) -> Self {
+        self.migrators.push(Box::new(migrator));
         self
     }
 
@@ -522,7 +522,7 @@ where
             inner: self.inner,
             async_config_sources: Mutex::new(self.async_config_sources),
             #[cfg(feature = "db-sql")]
-            migrator: Mutex::new(self.migrator),
+            migrators: Mutex::new(self.migrators),
             lifecycle_handlers: Mutex::new(self.lifecycle_handlers),
             services: Mutex::new(self.services),
         }
@@ -581,16 +581,17 @@ where
     }
 
     #[cfg(feature = "db-sql")]
-    fn migrator(&self, _state: &S) -> RoadsterResult<Box<dyn Migrator<S>>> {
-        let mut migrator = self
-            .migrator
+    fn migrators(&self, _state: &S) -> RoadsterResult<Vec<Box<dyn Migrator<S>>>> {
+        let mut migrators = self
+            .migrators
             .lock()
             .map_err(|err| anyhow!("Unable to lock lifecycle_handlers mutex: {err}"))?;
 
-        match migrator.take() {
-            Some(migrator) => Ok(migrator),
-            None => Ok(Box::new(Empty)),
+        let mut result = Vec::new();
+        for migrator in migrators.drain(..) {
+            result.push(migrator);
         }
+        Ok(result)
     }
 
     async fn lifecycle_handlers(

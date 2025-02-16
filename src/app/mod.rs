@@ -202,7 +202,7 @@ where
     pub app: A,
     pub state: S,
     #[cfg(feature = "db-sql")]
-    pub migrator: Box<dyn Migrator<S>>,
+    pub migrators: Vec<Box<dyn Migrator<S>>>,
     pub health_check_registry: HealthCheckRegistry,
     pub service_registry: ServiceRegistry<A, S>,
     pub lifecycle_handler_registry: LifecycleHandlerRegistry<A, S>,
@@ -218,7 +218,7 @@ where
     pub app: A,
     pub state: S,
     #[cfg(feature = "db-sql")]
-    pub migrator: Box<dyn Migrator<S>>,
+    pub migrators: Vec<Box<dyn Migrator<S>>>,
     pub service_registry: ServiceRegistry<A, S>,
     pub lifecycle_handler_registry: LifecycleHandlerRegistry<A, S>,
 }
@@ -305,7 +305,7 @@ where
             app,
             state,
             #[cfg(feature = "db-sql")]
-            migrator,
+            migrators,
             service_registry,
             lifecycle_handler_registry,
         },
@@ -319,7 +319,7 @@ where
         #[cfg(feature = "cli")]
         app_cli,
         #[cfg(feature = "db-sql")]
-        migrator,
+        migrators,
         state,
         health_check_registry,
         service_registry,
@@ -339,7 +339,7 @@ where
     let context = AppContext::from_ref(&state);
 
     #[cfg(feature = "db-sql")]
-    let migrator = app.migrator(&state)?;
+    let migrators = app.migrators(&state)?;
 
     let mut lifecycle_handler_registry = LifecycleHandlerRegistry::new(&state);
     app.lifecycle_handlers(&mut lifecycle_handler_registry, &state)
@@ -362,7 +362,7 @@ where
             app,
             state,
             #[cfg(feature = "db-sql")]
-            migrator,
+            migrators,
             service_registry,
             lifecycle_handler_registry,
         },
@@ -441,7 +441,7 @@ where
         app: prepared_app.app,
         state: prepared_app.state,
         #[cfg(feature = "db-sql")]
-        migrator: prepared_app.migrator,
+        migrators: prepared_app.migrators,
         service_registry: prepared_app.service_registry,
         lifecycle_handler_registry: prepared_app.lifecycle_handler_registry,
     };
@@ -523,8 +523,8 @@ where
     async fn provide_state(&self, context: AppContext) -> RoadsterResult<S>;
 
     #[cfg(feature = "db-sql")]
-    fn migrator(&self, _state: &S) -> RoadsterResult<Box<dyn Migrator<S>>> {
-        Ok(Box::new(crate::util::empty::Empty))
+    fn migrators(&self, _state: &S) -> RoadsterResult<Vec<Box<dyn Migrator<S>>>> {
+        Ok(Default::default())
     }
 
     async fn lifecycle_handlers(
