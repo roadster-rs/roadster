@@ -415,6 +415,7 @@ where
         self
     }
 
+    // todo: add a migrator provider method
     #[cfg(feature = "db-sql")]
     pub fn add_migrator(mut self, migrator: impl Migrator<S> + 'static) -> Self {
         self.migrators.push(Box::new(migrator));
