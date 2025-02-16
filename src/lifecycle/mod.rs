@@ -18,17 +18,15 @@ use axum_core::extract::FromRef;
 /// 4. Run the roadster/app CLI command, if one was specified when the app was started
 /// 5. Register [`AppLifecycleHandler`]s, [`crate::health::check::HealthCheck`]s, and
 ///    [`crate::service::AppService`]s
-/// 6. Run the app's registered [`AppLifecycleHandler::before_service_cli`] hooks.
-/// 7. Run any CLI commands that are implemented by [`crate::service::AppService::handle_cli`]
-/// 8. Run the app's registered [`AppLifecycleHandler::before_health_checks`] hooks.
-/// 9. Run the registered [`crate::health::check::HealthCheck`]s
-/// 10. Run the app's registered [`AppLifecycleHandler::before_services`] hooks.
-/// 11. Run the registered [`crate::service::AppService`]s
-/// 12. Wait for a shutdown signal, e.g., `Ctrl+c` or a custom signal from
+/// 6. Run the app's registered [`AppLifecycleHandler::before_health_checks`] hooks.
+/// 7. Run the registered [`crate::health::check::HealthCheck`]s
+/// 8. Run the app's registered [`AppLifecycleHandler::before_services`] hooks.
+/// 9. Run the registered [`crate::service::AppService`]s
+/// 10. Wait for a shutdown signal, e.g., `Ctrl+c` or a custom signal from
 ///    [`crate::app::App::graceful_shutdown_signal`], and stop the [`crate::service::AppService`]s
 ///    when the signal is received.
-/// 13. Run Roadster's graceful shutdown logic
-/// 14. Run the app's registered [`AppLifecycleHandler::on_shutdown`] hooks.
+/// 11. Run Roadster's graceful shutdown logic
+/// 12. Run the app's registered [`AppLifecycleHandler::on_shutdown`] hooks.
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
 pub trait AppLifecycleHandler<A, S>: Send + Sync

@@ -21,7 +21,7 @@ pub struct Database {
     #[serde_as(as = "serde_with::DurationMilliSeconds")]
     pub connect_timeout: Duration,
 
-    /// Whether to attempt to connect to the DB immediately upon creating the [`ConnectOptions`].
+    /// Whether to attempt to connect to the DB immediately when the DB connection pool is created.
     /// If `true` will wait to connect to the DB until the first DB query is attempted.
     #[serde(default = "default_true")]
     pub connect_lazy: bool,

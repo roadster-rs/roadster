@@ -64,9 +64,10 @@ async fn main() -> RoadsterResult<()> {
         builder
             // The `Migrator` can either be provided directly,
             .add_migrator(migration::Migrator)
-            // or via a provider function. The provider approach is useful if the migrator
-            // needs access to the app's state for any reason.
-            .add_migrator_provider(|_state| Ok(Box::new(migration::empty::EmptyMigrator)))
+        // or via a provider function. The provider approach is useful if the migrator
+        // needs access to the app's state for any reason.
+        // Note: the provider is commented out to avoid providing a duplicate migrator
+        // .add_migrator_provider(|_state| Ok(Box::new(migration::Migrator)))
     };
 
     // Provide your custom state via the `state_provider` method.

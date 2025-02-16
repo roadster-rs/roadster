@@ -1,4 +1,4 @@
-//! This [`AppLifecycleHandler`] runs the app's ['up' migration][`MigratorTrait::up`]
+//! This [`AppLifecycleHandler`] runs the app's ['up' migrations][`crate::migration::Migrator::up`]
 //! in [`AppLifecycleHandler::before_services`].
 
 use crate::app::context::AppContext;
