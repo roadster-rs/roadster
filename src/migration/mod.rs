@@ -35,13 +35,13 @@ pub struct DownArgs {
 }
 
 #[derive(Debug, Serialize, TypedBuilder)]
-pub struct Migration {
+pub struct MigrationInfo {
     pub name: String,
     pub status: MigrationStatus,
 }
 
 #[cfg(feature = "db-sea-orm")]
-impl From<sea_orm_migration::Migration> for Migration {
+impl From<sea_orm_migration::Migration> for MigrationInfo {
     fn from(value: sea_orm_migration::Migration) -> Self {
         Self {
             name: value.name().to_string(),
@@ -82,7 +82,7 @@ where
     async fn down(&self, state: &S, args: &DownArgs) -> RoadsterResult<usize>;
 
     /// Get the status of all migrations in this [`Migrator`].
-    async fn status(&self, state: &S) -> RoadsterResult<Vec<Migration>>;
+    async fn status(&self, state: &S) -> RoadsterResult<Vec<MigrationInfo>>;
 }
 
 // todo: Maybe instead of implementing for any `T: sea_orm_migration::MigratorTrait`, create
@@ -143,7 +143,7 @@ where
     }
 
     #[tracing::instrument(skip_all)]
-    async fn status(&self, state: &S) -> RoadsterResult<Vec<Migration>> {
+    async fn status(&self, state: &S) -> RoadsterResult<Vec<MigrationInfo>> {
         use axum_core::extract::FromRef;
 
         let context = crate::app::context::AppContext::from_ref(state);
@@ -252,7 +252,7 @@ where
     }
 
     #[tracing::instrument(skip_all)]
-    async fn status(&self, state: &S) -> RoadsterResult<Vec<Migration>> {
+    async fn status(&self, state: &S) -> RoadsterResult<Vec<MigrationInfo>> {
         use diesel::migration::MigrationSource;
         use diesel::Connection;
         use diesel_migrations::MigrationHarness;
@@ -268,7 +268,7 @@ where
             .pending_migrations(EmbeddedMigrationsWrapper::try_from(self)?)?
             .into_iter()
             .map(|migration| {
-                Migration::builder()
+                MigrationInfo::builder()
                     .name(migration.name().to_string())
                     .status(MigrationStatus::Pending)
                     .build()
@@ -290,7 +290,7 @@ where
                     .get(&version)
                     .map(|migration| migration.name().to_string())
                     .unwrap_or(version.to_string());
-                Migration::builder()
+                MigrationInfo::builder()
                     .name(name)
                     .status(MigrationStatus::Applied)
                     .build()

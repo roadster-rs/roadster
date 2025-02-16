@@ -2,7 +2,7 @@ use crate::api::cli::roadster::RunRoadsterCommand;
 use crate::app::context::AppContext;
 use crate::app::{App, PreparedApp};
 use crate::error::RoadsterResult;
-use crate::migration::{DownArgs, Migration, UpArgs};
+use crate::migration::{DownArgs, MigrationInfo, UpArgs};
 use anyhow::anyhow;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
@@ -105,7 +105,7 @@ where
                 }
             }
             MigrateCommand::Status => {
-                let mut migrations: Vec<Migration> = Vec::new();
+                let mut migrations: Vec<MigrationInfo> = Vec::new();
                 for migrator in prepared_app.migrators.iter() {
                     migrations.extend(migrator.status(&prepared_app.state).await?);
                 }
