@@ -65,7 +65,11 @@ where
             );
         }
         match self {
-            MigrateCommand::Up(args) => prepared_app.migrator.up(&prepared_app.state).await?,
+            MigrateCommand::Up(args) => {
+                for migrator in prepared_app.migrators.iter() {
+                    migrator.up(&prepared_app.state).await?
+                }
+            }
             // MigrateCommand::Up(args) => A::M::up(state).await?,
             // MigrateCommand::Down(args) => A::M::down(context.db(), args.steps).await?,
             // MigrateCommand::Refresh => A::M::refresh(context.db()).await?,
