@@ -107,6 +107,7 @@ where
     #[tracing::instrument(skip_all)]
     async fn up(&self, state: &S, args: &UpArgs) -> crate::error::RoadsterResult<usize> {
         use axum_core::extract::FromRef;
+        use std::cmp::min;
 
         let context = crate::app::context::AppContext::from_ref(state);
         let pending = T::get_pending_migrations(context.db()).await?;
@@ -126,6 +127,7 @@ where
     #[tracing::instrument(skip_all)]
     async fn down(&self, state: &S, args: &DownArgs) -> RoadsterResult<usize> {
         use axum_core::extract::FromRef;
+        use std::cmp::min;
 
         let context = crate::app::context::AppContext::from_ref(state);
         let applied = T::get_applied_migrations(context.db()).await?;
