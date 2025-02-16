@@ -7,7 +7,10 @@ use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
+use diesel::connection::BoxableConnection;
 use serde_derive::Serialize;
+use std::marker::PhantomData;
+use std::ops::{Deref, DerefMut};
 use strum_macros::{EnumString, IntoStaticStr};
 use typed_builder::TypedBuilder;
 
@@ -85,6 +88,48 @@ where
     async fn status(&self, state: &S) -> RoadsterResult<Vec<MigrationInfo>>;
 }
 
+#[cfg(feature = "db-sea-orm")]
+pub struct SeaOrmMigrator<M>
+where
+    M: sea_orm_migration::MigratorTrait + Send + Sync,
+{
+    migrator: M,
+}
+
+#[cfg(feature = "db-sea-orm")]
+impl<M> SeaOrmMigrator<M>
+where
+    M: sea_orm_migration::MigratorTrait + Send + Sync,
+{
+    pub fn new(migrator: M) -> Self {
+        Self { migrator }
+    }
+}
+
+#[cfg(feature = "db-diesel")]
+pub struct DieselMigrator<M, DB>
+where
+    M: diesel::migration::MigrationSource<DB>,
+    DB: diesel::backend::Backend,
+{
+    migrator: M,
+    _db: PhantomData<DB>,
+}
+
+#[cfg(feature = "db-diesel")]
+impl<M, DB> DieselMigrator<M, DB>
+where
+    M: diesel::migration::MigrationSource<DB>,
+    DB: diesel::backend::Backend,
+{
+    pub fn new(migrator: M) -> Self {
+        Self {
+            migrator,
+            _db: Default::default(),
+        }
+    }
+}
+
 // todo: Maybe instead of implementing for any `T: sea_orm_migration::MigratorTrait`, create
 //  wrapper structs (e.g. `SeaOrmMigrator<T: sea_orm_migration::MigratorTrait>(T)`
 //  and `DieselMigrator<T: MigrationHarness>(T)`) and implement `Migrator` for the wrapper structs.
@@ -157,6 +202,63 @@ where
             .collect();
 
         Ok(migrations)
+    }
+}
+
+#[cfg(feature = "db-diesel")]
+#[async_trait::async_trait]
+impl<S, M, DB> Migrator<S> for DieselMigrator<M, DB>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    M: diesel::migration::MigrationSource<DB> + Send + Sync,
+    DB: diesel::backend::Backend + Send + Sync,
+{
+    #[tracing::instrument(skip_all)]
+    async fn up(&self, state: &S, args: &UpArgs) -> RoadsterResult<usize> {
+        use diesel::Connection;
+        use diesel_migrations::MigrationHarness;
+        use std::cmp::min;
+
+        tracing::info!("Started applying migrations");
+
+        // todo: Is there a way to use a pooled connection instead? It seems like the trait bounds
+        //  aren't satisfied by the pooled connections currently, at least not for async
+        //  connection pools.
+        let context = AppContext::from_ref(state);
+        // let mut conn = diesel::PgConnection::establish(context.config().database.uri.as_ref())?;
+        let mut conn: Box<dyn BoxableConnection<DB>> = Box::new(diesel::Connection::establish(
+            context.config().database.uri.as_ref(),
+        )?);
+
+        let pending = conn
+            .deref_mut()
+            .pending_migrations(EmbeddedMigrationsWrapper::try_from(self)?)?;
+        tracing::debug!("pending: {}", pending.len());
+
+        let pending = if let Some(steps) = args.steps {
+            let steps = min(steps, pending.len());
+            pending.into_iter().take(steps).collect()
+        } else {
+            pending
+        };
+
+        let completed = conn.run_migrations(&pending)?;
+        let completed = completed.len();
+
+        tracing::info!("Completed applying {completed} migrations");
+
+        Ok(completed)
+    }
+
+    #[tracing::instrument(skip_all)]
+    async fn down(&self, state: &S, args: &DownArgs) -> RoadsterResult<usize> {
+        todo!()
+    }
+
+    #[tracing::instrument(skip_all)]
+    async fn status(&self, state: &S) -> RoadsterResult<Vec<MigrationInfo>> {
+        todo!()
     }
 }
 
