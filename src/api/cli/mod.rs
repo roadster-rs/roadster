@@ -241,7 +241,7 @@ mod tests {
             app_cli,
             app,
             #[cfg(feature = "db-sql")]
-            migrator: Box::new(crate::util::empty::Empty),
+            migrators: Default::default(),
             health_check_registry: HealthCheckRegistry::new(&context),
             service_registry: ServiceRegistry::new(&context),
             lifecycle_handler_registry: LifecycleHandlerRegistry::new(&context),

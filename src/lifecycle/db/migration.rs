@@ -45,7 +45,9 @@ where
 
     #[instrument(skip_all)]
     async fn before_services(&self, prepared_app: &PreRunAppState<A, S>) -> RoadsterResult<()> {
-        prepared_app.migrator.up(&prepared_app.state).await?;
+        for migrator in prepared_app.migrators.iter() {
+            migrator.up(&prepared_app.state).await?;
+        }
 
         Ok(())
     }
