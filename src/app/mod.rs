@@ -434,32 +434,6 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    // let PreparedApp {
-    //     //     app,
-    //     //     state,
-    //     health_check_registry,
-    //     //     service_registry,
-    //     //     lifecycle_handler_registry,
-    //     ..
-    // } = prepared_app;
-
-    // let pre_run_app_state = PreRunAppState {
-    //     app: prepared_app.app,
-    //     state: prepared_app.state,
-    //     #[cfg(feature = "db-sql")]
-    //     migrator: prepared_app.migrator,
-    //     service_registry: prepared_app.service_registry,
-    //     lifecycle_handler_registry: prepared_app.lifecycle_handler_registry,
-    // };
-
-    // let PreRunAppState {
-    //     app,
-    //     state,
-    //     service_registry,
-    //     lifecycle_handler_registry,
-    //     ..
-    // } = &pre_run_app_state;
-
     let context = AppContext::from_ref(&prepared_app.state);
     context.set_health_checks(prepared_app.health_check_registry)?;
 
@@ -505,10 +479,8 @@ where
     Ok(())
 }
 
-#[cfg_attr(all(test, feature = "cli", feature = "db-sea-orm"), mockall::automock(type Cli = MockTestCli<S>; type M = crate::migration::MockMigrator;))]
-#[cfg_attr(all(test, feature = "cli", not(feature = "db-sea-orm")), mockall::automock(type Cli = MockTestCli<S>; type M = crate::util::empty::Empty;))]
-#[cfg_attr(all(test, not(feature = "cli"), feature = "db-sea-orm"), mockall::automock(type Cli = crate::util::empty::Empty; type M = MockMigrator;))]
-#[cfg_attr(all(test, not(feature = "cli"), not(feature = "db-sea-orm")), mockall::automock(type Cli = crate::util::empty::Empty; type M = crate::util::empty::Empty;))]
+#[cfg_attr(all(test, feature = "cli"), mockall::automock(type Cli = MockTestCli<S>;))]
+#[cfg_attr(all(test, not(feature = "cli")), mockall::automock(type Cli = crate::util::empty::Empty;))]
 #[async_trait]
 pub trait App<S>: Send + Sync + Sized
 where
@@ -519,15 +491,6 @@ where
     type Cli: clap::Args + RunCommand<Self, S> + Send + Sync;
     #[cfg(not(feature = "cli"))]
     type Cli;
-    // todo: Make our own "migrator" trait so consumers can use either sea-orm or diesel with
-    //  a single type parameter
-    // todo: can we get rid of this type parameter and use a boxed value? Hmm, I'm not sure
-    //  we can because the trait doesn't take `self` anywhere but let's double check.
-    //. Maybe if we have our own trait we can box it?
-    // #[cfg(feature = "db-sql")]
-    // type M: Migrator;
-    // #[cfg(not(feature = "db-sql"))]
-    // type M;
 
     fn async_config_sources(
         &self,
