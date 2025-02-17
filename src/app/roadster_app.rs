@@ -426,6 +426,37 @@ where
         self
     }
 
+    #[cfg(feature = "db-sea-orm")]
+    pub fn sea_orm_migrator(
+        mut self,
+        migrator: impl 'static + Send + Sync + sea_orm_migration::MigratorTrait,
+    ) -> Self {
+        // todo: make a single field instead of adding to the general list
+        self.migrators
+            .push(Box::new(crate::migration::SeaOrmMigrator::new(migrator)));
+        self
+    }
+
+    #[cfg(feature = "db-diesel")]
+    pub fn diesel_migrator<C>(
+        mut self,
+        migrator: impl 'static + Send + Sync + diesel::migration::MigrationSource<C::Backend>,
+    ) -> Self
+    where
+        C: 'static
+            + diesel::connection::Connection
+            + Send
+            + diesel_migrations::MigrationHarness<C::Backend>,
+    {
+        // todo: if diesel also doesn't like having multiple migrators, make a single field instead
+        //  of adding to the general list
+        self.migrators
+            .push(Box::new(crate::migration::DieselMigrator::<C>::new(
+                migrator,
+            )));
+        self
+    }
+
     /// Add a [`Migrator`] to run on app start up (if the `database.auto-migrate` config field is
     /// set to `true`)
     #[cfg(feature = "db-sql")]
