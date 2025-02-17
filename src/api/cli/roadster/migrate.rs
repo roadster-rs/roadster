@@ -63,60 +63,16 @@ where
             );
         }
         match self {
-            // Todo: reduce duplication
             MigrateCommand::Up(args) => {
-                let mut total_steps_run = 0;
-                for migrator in prepared_app.migrators.iter() {
-                    let remaining_steps = args
-                        .steps
-                        .map(|steps| steps.saturating_sub(total_steps_run));
-                    if let Some(remaining) = remaining_steps {
-                        if remaining == 0 {
-                            return Ok(true);
-                        }
-                    }
-                    let steps_run = migrator
-                        .up(
-                            &prepared_app.state,
-                            &UpArgs::builder().steps_opt(remaining_steps).build(),
-                        )
-                        .await?;
-                    total_steps_run += steps_run;
-                }
+                migrate_up(prepared_app, args).await?;
+                print_status(prepared_app).await?;
             }
             MigrateCommand::Down(args) => {
-                let mut total_steps_run = 0;
-                for migrator in prepared_app.migrators.iter().rev() {
-                    let remaining_steps = args
-                        .steps
-                        .map(|steps| steps.saturating_sub(total_steps_run));
-                    if let Some(remaining) = remaining_steps {
-                        if remaining == 0 {
-                            return Ok(true);
-                        }
-                    }
-                    let steps_run = migrator
-                        .down(
-                            &prepared_app.state,
-                            &DownArgs::builder().steps_opt(remaining_steps).build(),
-                        )
-                        .await?;
-                    total_steps_run += steps_run;
-                }
+                migrate_down(prepared_app, args).await?;
+                print_status(prepared_app).await?;
             }
             MigrateCommand::Status => {
-                let mut migrations: Vec<MigrationInfo> = Vec::new();
-                for migrator in prepared_app.migrators.iter() {
-                    migrations.extend(migrator.status(&prepared_app.state).await?);
-                }
-                let migrations = migrations
-                    .into_iter()
-                    .map(|migration| {
-                        let status: &'static str = migration.status.into();
-                        format!("{}\t{}", status, migration.name)
-                    })
-                    .join("\n");
-                info!("Migration status:\n{migrations}");
+                print_status(prepared_app).await?;
             }
         };
         Ok(true)
@@ -125,4 +81,81 @@ where
 
 fn is_destructive(command: &MigrateCommand) -> bool {
     !matches!(command, MigrateCommand::Status)
+}
+
+// Todo: reduce duplication
+async fn migrate_up<A, S>(prepared_app: &PreparedApp<A, S>, args: &UpArgs) -> RoadsterResult<()>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S>,
+{
+    let mut total_steps_run = 0;
+    for migrator in prepared_app.migrators.iter() {
+        let remaining_steps = args
+            .steps
+            .map(|steps| steps.saturating_sub(total_steps_run));
+        if let Some(remaining) = remaining_steps {
+            if remaining == 0 {
+                return Ok(());
+            }
+        }
+        let steps_run = migrator
+            .up(
+                &prepared_app.state,
+                &UpArgs::builder().steps_opt(remaining_steps).build(),
+            )
+            .await?;
+        total_steps_run += steps_run;
+    }
+    Ok(())
+}
+
+// Todo: reduce duplication
+async fn migrate_down<A, S>(prepared_app: &PreparedApp<A, S>, args: &DownArgs) -> RoadsterResult<()>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S>,
+{
+    let mut total_steps_run = 0;
+    for migrator in prepared_app.migrators.iter().rev() {
+        let remaining_steps = args
+            .steps
+            .map(|steps| steps.saturating_sub(total_steps_run));
+        if let Some(remaining) = remaining_steps {
+            if remaining == 0 {
+                return Ok(());
+            }
+        }
+        let steps_run = migrator
+            .down(
+                &prepared_app.state,
+                &DownArgs::builder().steps_opt(remaining_steps).build(),
+            )
+            .await?;
+        total_steps_run += steps_run;
+    }
+    Ok(())
+}
+
+async fn print_status<A, S>(prepared_app: &PreparedApp<A, S>) -> RoadsterResult<()>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S>,
+{
+    let mut migrations: Vec<MigrationInfo> = Vec::new();
+    for migrator in prepared_app.migrators.iter() {
+        migrations.extend(migrator.status(&prepared_app.state).await?);
+    }
+    let migrations = migrations
+        .into_iter()
+        .map(|migration| {
+            let status: &'static str = migration.status.into();
+            format!("{}\t{}", status, migration.name)
+        })
+        .join("\n");
+    info!("Migration status:\n{migrations}");
+    Ok(())
 }

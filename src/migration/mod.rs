@@ -232,7 +232,7 @@ where
         let completed = conn.run_migrations(&pending)?;
         let completed = completed.len();
 
-        tracing::info!("Completed applying {completed} migrations");
+        tracing::info!(count = completed, "Completed applying migrations");
 
         Ok(completed)
     }
@@ -279,10 +279,11 @@ where
             let migration_to_revert = migrations
                 .remove(&version)
                 .ok_or(MigrationError::UnknownMigrationVersion(version))?;
+            tracing::info!(name=%migration_to_revert.name(), "Rolling back migration");
             conn.revert_migration(&migration_to_revert)?;
         }
 
-        tracing::info!("Completed rolling back {to_roll_back} migrations");
+        tracing::info!(count = to_roll_back, "Completed rolling back migrations");
 
         Ok(to_roll_back)
     }
