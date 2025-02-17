@@ -226,14 +226,16 @@ where
         //  aren't satisfied by the pooled connections currently, at least not for async
         //  connection pools.
         let context = AppContext::from_ref(state);
-        // let mut conn = diesel::PgConnection::establish(context.config().database.uri.as_ref())?;
-        let mut conn: Box<dyn BoxableConnection<DB>> = Box::new(diesel::Connection::establish(
-            context.config().database.uri.as_ref(),
-        )?);
 
-        let pending = conn
-            .deref_mut()
-            .pending_migrations(EmbeddedMigrationsWrapper::try_from(self)?)?;
+        // Todo: use this macro to support multiple backends: https://docs.rs/diesel/latest/diesel/derive.MultiConnection.html
+
+        // let mut conn = diesel::PgConnection::establish(context.config().database.uri.as_ref())?;
+        // let conn = diesel::Connection::establish(context.config().database.uri.as_ref())?;
+        // let mut conn: Box<dyn BoxableConnection<DB>> = Box::new(diesel::Connection::establish(
+        //     context.config().database.uri.as_ref(),
+        // )?);
+        //
+        // let pending = conn.pending_migrations(EmbeddedMigrationsWrapper::try_from(self)?)?;
         tracing::debug!("pending: {}", pending.len());
 
         let pending = if let Some(steps) = args.steps {
