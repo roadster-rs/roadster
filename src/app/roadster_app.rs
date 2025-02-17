@@ -267,6 +267,8 @@ pub struct RoadsterApp<
 {
     inner: Inner<S, Cli>,
     async_config_sources: Mutex<Vec<Box<dyn AsyncSource + Send + Sync>>>,
+    #[cfg(feature = "db-sea-orm")]
+    sea_orm_migrator: Mutex<Option<Box<dyn Migrator<S>>>>,
     #[cfg(feature = "db-sql")]
     migrators: Mutex<Vec<Box<dyn Migrator<S>>>>,
     // Interior mutability pattern -- this allows us to keep the handler reference as a
@@ -287,6 +289,8 @@ pub struct RoadsterAppBuilder<
 {
     inner: Inner<S, Cli>,
     async_config_sources: Vec<Box<dyn AsyncSource + Send + Sync>>,
+    #[cfg(feature = "db-sea-orm")]
+    sea_orm_migrator: Option<Box<dyn Migrator<S>>>,
     #[cfg(feature = "db-sql")]
     migrators: Vec<Box<dyn Migrator<S>>>,
     lifecycle_handlers: LifecycleHandlers<RoadsterApp<S, Cli>, S>,
@@ -345,6 +349,8 @@ where
         Self {
             inner: Inner::new(),
             async_config_sources: Default::default(),
+            #[cfg(feature = "db-sea-orm")]
+            sea_orm_migrator: None,
             #[cfg(feature = "db-sql")]
             migrators: Default::default(),
             lifecycle_handlers: Default::default(),
@@ -429,11 +435,9 @@ where
     #[cfg(feature = "db-sea-orm")]
     pub fn sea_orm_migrator(
         mut self,
-        migrator: impl 'static + Send + Sync + sea_orm_migration::MigratorTrait,
+        migrator: impl 'static + Sync + sea_orm_migration::MigratorTrait,
     ) -> Self {
-        // todo: make a single field instead of adding to the general list
-        self.migrators
-            .push(Box::new(crate::migration::SeaOrmMigrator::new(migrator)));
+        self.sea_orm_migrator = Some(Box::new(crate::migration::SeaOrmMigrator::new(migrator)));
         self
     }
 
@@ -576,6 +580,8 @@ where
         RoadsterApp {
             inner: self.inner,
             async_config_sources: Mutex::new(self.async_config_sources),
+            #[cfg(feature = "db-sea-orm")]
+            sea_orm_migrator: Mutex::new(self.sea_orm_migrator),
             #[cfg(feature = "db-sql")]
             migrators: Mutex::new(self.migrators),
             lifecycle_handlers: Mutex::new(self.lifecycle_handlers),

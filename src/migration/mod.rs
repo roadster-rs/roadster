@@ -94,7 +94,7 @@ pub struct SeaOrmMigrator<M>
 where
     M: sea_orm_migration::MigratorTrait + Send + Sync,
 {
-    migrator: M,
+    migrator: PhantomData<M>,
 }
 
 #[cfg(feature = "db-sea-orm")]
@@ -102,8 +102,10 @@ impl<M> SeaOrmMigrator<M>
 where
     M: sea_orm_migration::MigratorTrait + Send + Sync,
 {
-    pub fn new(migrator: M) -> Self {
-        Self { migrator }
+    pub fn new(_migrator: M) -> Self {
+        Self {
+            migrator: Default::default(),
+        }
     }
 }
 
@@ -134,24 +136,13 @@ where
     }
 }
 
-// todo: Maybe instead of implementing for any `T: sea_orm_migration::MigratorTrait`, create
-//  wrapper structs (e.g. `SeaOrmMigrator<T: sea_orm_migration::MigratorTrait>(T)`
-//  and `DieselMigrator<T: MigrationHarness>(T)`) and implement `Migrator` for the wrapper structs.
-//
-// todo: conflicting def for `diesel_migrations::EmbeddedMigrations` because of using
-//  `sea_orm_migration::MigratorTrait` trait instead of a concrete type. For now, use `cfg` flags
-//  to disable the default impl diesel is enabled. This is not ideal because enabling
-//  diesel when sea-orm is also disabled causes the impl to be removed which is a semver
-//  breaking change. However, most consumers should not have both diesel and sea-orm enabled
-//  at the same time, so we'll accept this trade-off for now. I think there's a Rust feature in
-//  nightly that would improve this that we could use in the future.
-#[cfg(all(not(feature = "db-diesel"), feature = "db-sea-orm"))]
-#[async_trait::async_trait]
-impl<T, S> crate::migration::Migrator<S> for T
+#[cfg(feature = "db-sea-orm")]
+#[async_trait]
+impl<S, M> Migrator<S> for SeaOrmMigrator<M>
 where
-    T: sea_orm_migration::MigratorTrait + Send + Sync,
     S: Clone + Send + Sync + 'static,
-    crate::app::context::AppContext: axum_core::extract::FromRef<S>,
+    AppContext: FromRef<S>,
+    M: sea_orm_migration::MigratorTrait + Send + Sync,
 {
     #[tracing::instrument(skip_all)]
     async fn up(&self, state: &S, args: &UpArgs) -> crate::error::RoadsterResult<usize> {
@@ -159,7 +150,7 @@ where
         use std::cmp::min;
 
         let context = crate::app::context::AppContext::from_ref(state);
-        let pending = T::get_pending_migrations(context.db()).await?;
+        let pending = M::get_pending_migrations(context.db()).await?;
 
         let to_run = if let Some(steps) = args.steps {
             min(steps, pending.len())
@@ -167,7 +158,7 @@ where
             pending.len()
         };
 
-        T::up(context.db(), args.steps.map(|steps| steps as u32)).await?;
+        M::up(context.db(), args.steps.map(|steps| steps as u32)).await?;
 
         // Assume all of the pending steps (up to `args.steps` count) ran successfully.
         Ok(to_run)
@@ -179,7 +170,7 @@ where
         use std::cmp::min;
 
         let context = crate::app::context::AppContext::from_ref(state);
-        let applied = T::get_applied_migrations(context.db()).await?;
+        let applied = M::get_applied_migrations(context.db()).await?;
 
         let to_roll_back = if let Some(steps) = args.steps {
             min(steps, applied.len())
@@ -187,7 +178,7 @@ where
             applied.len()
         };
 
-        T::down(context.db(), args.steps.map(|steps| steps as u32)).await?;
+        M::down(context.db(), args.steps.map(|steps| steps as u32)).await?;
 
         // Assume all of the applied steps (up to `args.steps` count) were rolled back successfully.
         Ok(to_roll_back)
@@ -199,41 +190,13 @@ where
 
         let context = crate::app::context::AppContext::from_ref(state);
 
-        let migrations = T::get_migration_with_status(context.db())
+        let migrations = M::get_migration_with_status(context.db())
             .await?
             .into_iter()
             .map(|migration| migration.into())
             .collect();
 
         Ok(migrations)
-    }
-}
-
-// #[cfg_attr(feature = "db-diesel", derive(diesel::MultiConnection))]
-// pub enum AnyConnection {
-//     Postgresql(diesel::PgConnection),
-//     // Mysql(diesel::MysqlConnection),
-//     // Sqlite(diesel::SqliteConnection),
-// }
-
-#[cfg(feature = "db-sea-orm")]
-#[async_trait]
-impl<S, M> Migrator<S> for SeaOrmMigrator<M>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-    M: sea_orm_migration::MigratorTrait + Send + Sync,
-{
-    async fn up(&self, state: &S, args: &UpArgs) -> RoadsterResult<usize> {
-        todo!()
-    }
-
-    async fn down(&self, state: &S, args: &DownArgs) -> RoadsterResult<usize> {
-        todo!()
-    }
-
-    async fn status(&self, state: &S) -> RoadsterResult<Vec<MigrationInfo>> {
-        todo!()
     }
 }
 
@@ -374,151 +337,6 @@ where
         Ok(migrations)
     }
 }
-//
-// // todo: implement for file based migrations too
-// // todo: support other db backends
-// #[cfg(feature = "db-diesel")]
-// #[async_trait]
-// impl<S> Migrator<S> for diesel_migrations::EmbeddedMigrations
-// where
-//     S: Clone + Send + Sync + 'static,
-//     AppContext: FromRef<S>,
-// {
-//     #[tracing::instrument(skip_all)]
-//     async fn up(&self, state: &S, args: &UpArgs) -> RoadsterResult<usize> {
-//         use diesel::Connection;
-//         use diesel_migrations::MigrationHarness;
-//         use std::cmp::min;
-//
-//         tracing::info!("Started applying migrations");
-//
-//         // todo: Is there a way to use a pooled connection instead? It seems like the trait bounds
-//         //  aren't satisfied by the pooled connections currently, at least not for async
-//         //  connection pools.
-//         let context = AppContext::from_ref(state);
-//         let mut conn = diesel::PgConnection::establish(context.config().database.uri.as_ref())?;
-//
-//         let pending = conn.pending_migrations(DieselMigrationSourceWrapper::try_from(self)?)?;
-//         tracing::debug!("pending: {}", pending.len());
-//
-//         let pending = if let Some(steps) = args.steps {
-//             let steps = min(steps, pending.len());
-//             pending.into_iter().take(steps).collect()
-//         } else {
-//             pending
-//         };
-//
-//         let completed = conn.run_migrations(&pending)?;
-//         let completed = completed.len();
-//
-//         tracing::info!("Completed applying {completed} migrations");
-//
-//         Ok(completed)
-//     }
-//
-//     #[tracing::instrument(skip_all)]
-//     async fn down(&self, state: &S, args: &DownArgs) -> RoadsterResult<usize> {
-//         use diesel::migration::MigrationSource;
-//         use diesel::Connection;
-//         use diesel_migrations::MigrationError;
-//         use diesel_migrations::MigrationHarness;
-//         use itertools::Itertools;
-//         use std::cmp::min;
-//         use std::collections::HashMap;
-//
-//         tracing::info!("Started rolling back migrations");
-//
-//         // todo: Is there a way to use a pooled connection instead? It seems like the trait bounds
-//         //  aren't satisfied by the pooled connections currently, at least not for async
-//         //  connection pools.
-//         let context = AppContext::from_ref(state);
-//         let mut conn = diesel::PgConnection::establish(context.config().database.uri.as_ref())?;
-//
-//         let to_roll_back = conn.applied_migrations()?.len();
-//         let to_roll_back = if let Some(steps) = args.steps {
-//             min(steps, to_roll_back)
-//         } else {
-//             to_roll_back
-//         };
-//
-//         // This is mostly copied from the default `MigrationHarness#revert_all_migrations`
-//         // implementation, with a slight modification to only revert the first `to_roll_back`
-//         // migrations.
-//         // Todo: which order are applied migrations returned in?
-//         let applied_versions = conn
-//             .applied_migrations()?
-//             .into_iter()
-//             .take(to_roll_back)
-//             .collect_vec();
-//         let mut migrations: HashMap<_, _> = self
-//             .migrations()?
-//             .into_iter()
-//             .map(|m| (m.name().version().as_owned(), m))
-//             .collect();
-//
-//         for version in applied_versions {
-//             let migration_to_revert = migrations
-//                 .remove(&version)
-//                 .ok_or(MigrationError::UnknownMigrationVersion(version))?;
-//             conn.revert_migration(&migration_to_revert)?;
-//         }
-//
-//         tracing::info!("Completed rolling back {to_roll_back} migrations");
-//
-//         Ok(to_roll_back)
-//     }
-//
-//     #[tracing::instrument(skip_all)]
-//     async fn status(&self, state: &S) -> RoadsterResult<Vec<MigrationInfo>> {
-//         use diesel::migration::MigrationSource;
-//         use diesel::Connection;
-//         use diesel_migrations::MigrationHarness;
-//         use std::collections::HashMap;
-//
-//         // todo: Is there a way to use a pooled connection instead? It seems like the trait bounds
-//         //  aren't satisfied by the pooled connections currently, at least not for async
-//         //  connection pools.
-//         let context = AppContext::from_ref(state);
-//         let mut conn = diesel::PgConnection::establish(context.config().database.uri.as_ref())?;
-//
-//         let pending = conn
-//             .pending_migrations(DieselMigrationSourceWrapper::try_from(self)?)?
-//             .into_iter()
-//             .map(|migration| {
-//                 MigrationInfo::builder()
-//                     .name(migration.name().to_string())
-//                     .status(MigrationStatus::Pending)
-//                     .build()
-//             });
-//
-//         let migrations: HashMap<_, _> = self
-//             .migrations()?
-//             .into_iter()
-//             .map(|m: Box<dyn diesel::migration::Migration<diesel::pg::Pg>>| {
-//                 (m.name().version().as_owned(), m)
-//             })
-//             .collect();
-//
-//         let applied = conn
-//             .applied_migrations()?
-//             .into_iter()
-//             .map(|version| {
-//                 let name = migrations
-//                     .get(&version)
-//                     .map(|migration| migration.name().to_string())
-//                     .unwrap_or(version.to_string());
-//                 MigrationInfo::builder()
-//                     .name(name)
-//                     .status(MigrationStatus::Applied)
-//                     .build()
-//             })
-//             .rev();
-//
-//         let migrations = applied.into_iter().chain(pending.into_iter()).collect();
-//
-//         Ok(migrations)
-//     }
-// }
 
 /// [`MigrationHarness#run_pending_migrations`] takes an owned version of the
 /// [`diesel_migrations::MigrationSource`], but our [`Migrator`] trait uses a reference. Because
