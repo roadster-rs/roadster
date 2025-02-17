@@ -222,7 +222,6 @@ where
         let mut conn: C = Connection::establish(context.config().database.uri.as_ref())?;
         let pending =
             conn.pending_migrations(DieselMigrationSourceWrapper::try_from(&self.migrator)?)?;
-        //
         let pending = if let Some(steps) = args.steps {
             let steps = min(steps, pending.len());
             pending.into_iter().take(steps).collect()
@@ -384,7 +383,7 @@ impl<DB: diesel::backend::Backend> diesel::migration::MigrationSource<DB>
 
         match migrations.take() {
             Some(migrations) => Ok(migrations),
-            None => Err(anyhow::anyhow!("EmbeddedMigrationsWrapper#migrations was called twice! This is not supported as the migrations were removed by the first call.").into()),
+            None => Err(anyhow::anyhow!("DieselMigrationSourceWrapper#migrations was called twice! This is not supported as the migrations were removed by the first call.").into()),
         }
     }
 }

@@ -269,6 +269,8 @@ pub struct RoadsterApp<
     async_config_sources: Mutex<Vec<Box<dyn AsyncSource + Send + Sync>>>,
     #[cfg(feature = "db-sea-orm")]
     sea_orm_migrator: Mutex<Option<Box<dyn Migrator<S>>>>,
+    #[cfg(feature = "db-diesel")]
+    diesel_migrator: Mutex<Option<Box<dyn Migrator<S>>>>,
     #[cfg(feature = "db-sql")]
     migrators: Mutex<Vec<Box<dyn Migrator<S>>>>,
     // Interior mutability pattern -- this allows us to keep the handler reference as a
@@ -291,6 +293,8 @@ pub struct RoadsterAppBuilder<
     async_config_sources: Vec<Box<dyn AsyncSource + Send + Sync>>,
     #[cfg(feature = "db-sea-orm")]
     sea_orm_migrator: Option<Box<dyn Migrator<S>>>,
+    #[cfg(feature = "db-diesel")]
+    diesel_migrator: Option<Box<dyn Migrator<S>>>,
     #[cfg(feature = "db-sql")]
     migrators: Vec<Box<dyn Migrator<S>>>,
     lifecycle_handlers: LifecycleHandlers<RoadsterApp<S, Cli>, S>,
@@ -351,6 +355,8 @@ where
             async_config_sources: Default::default(),
             #[cfg(feature = "db-sea-orm")]
             sea_orm_migrator: None,
+            #[cfg(feature = "db-diesel")]
+            diesel_migrator: None,
             #[cfg(feature = "db-sql")]
             migrators: Default::default(),
             lifecycle_handlers: Default::default(),
@@ -432,6 +438,11 @@ where
         self
     }
 
+    /// Add the diesel migrator [`sea_orm_migration::MigratorTrait`] to run on app start up
+    /// (if the `database.auto-migrate` config field is set to `true`)
+    ///
+    /// Note: SeaORM migrations expect all of the applied migrations to be available
+    /// to the provided migrator, so only a single SeaORM migrator is allowed.
     #[cfg(feature = "db-sea-orm")]
     pub fn sea_orm_migrator(
         mut self,
@@ -441,6 +452,11 @@ where
         self
     }
 
+    /// Add the diesel migrator [`diesel::migration::MigrationSource`] to run on app start up
+    /// (if the `database.auto-migrate` config field is set to `true`)
+    ///
+    /// Note: Diesel migrations expect all of the applied migrations to be available
+    /// to the provided migrator, so only a single Diesel migrator is allowed.
     #[cfg(feature = "db-diesel")]
     pub fn diesel_migrator<C>(
         mut self,
@@ -452,17 +468,18 @@ where
             + Send
             + diesel_migrations::MigrationHarness<C::Backend>,
     {
-        // todo: if diesel also doesn't like having multiple migrators, make a single field instead
-        //  of adding to the general list
-        self.migrators
-            .push(Box::new(crate::migration::DieselMigrator::<C>::new(
-                migrator,
-            )));
+        self.diesel_migrator = Some(Box::new(crate::migration::DieselMigrator::<C>::new(
+            migrator,
+        )));
         self
     }
 
     /// Add a [`Migrator`] to run on app start up (if the `database.auto-migrate` config field is
-    /// set to `true`)
+    /// set to `true`).
+    ///
+    /// Note: SeaORM and Diesel migrations expect all of the applied migrations to be available
+    /// to the provided migrator, so multiple SeaORM or Diesel migrators should not be provided
+    /// via this method.
     #[cfg(feature = "db-sql")]
     pub fn add_migrator(mut self, migrator: impl Migrator<S> + 'static) -> Self {
         self.migrators.push(Box::new(migrator));
@@ -471,6 +488,13 @@ where
 
     /// Add a [`MigratorProvider`] that provides a [`Migrator`] to run on app start up
     /// (if the `database.auto-migrate` config field is set to `true`).
+    ///
+    /// This is useful compared to [`Self::add_migrator`] if the [`Migrator`] implementation
+    /// needs access to the app state for any reason.
+    ///
+    /// Note: SeaORM and Diesel migrations expect all of the applied migrations to be available
+    /// to the provided migrator, so multiple SeaORM or Diesel migrators should not be provided
+    /// via this method.
     #[cfg(feature = "db-sql")]
     pub fn add_migrator_provider(
         mut self,
@@ -582,6 +606,8 @@ where
             async_config_sources: Mutex::new(self.async_config_sources),
             #[cfg(feature = "db-sea-orm")]
             sea_orm_migrator: Mutex::new(self.sea_orm_migrator),
+            #[cfg(feature = "db-diesel")]
+            diesel_migrator: Mutex::new(self.diesel_migrator),
             #[cfg(feature = "db-sql")]
             migrators: Mutex::new(self.migrators),
             lifecycle_handlers: Mutex::new(self.lifecycle_handlers),
@@ -643,12 +669,34 @@ where
 
     #[cfg(feature = "db-sql")]
     fn migrators(&self, state: &S) -> RoadsterResult<Vec<Box<dyn Migrator<S>>>> {
+        let mut result = Vec::new();
+
+        #[cfg(feature = "db-sea-orm")]
+        {
+            let mut sea_orm_migrator = self
+                .sea_orm_migrator
+                .lock()
+                .map_err(|err| anyhow!("Unable to lock the sea_orm_migrator mutext: {err}"))?;
+            if let Some(sea_orm_migrator) = sea_orm_migrator.take() {
+                result.push(sea_orm_migrator);
+            }
+        }
+
+        #[cfg(feature = "db-diesel")]
+        {
+            let mut diesel_migrator = self
+                .diesel_migrator
+                .lock()
+                .map_err(|err| anyhow!("Unable to lock the diesel_migrator mutext: {err}"))?;
+            if let Some(diesel_migrator) = diesel_migrator.take() {
+                result.push(diesel_migrator);
+            }
+        }
+
         let mut migrators = self
             .migrators
             .lock()
             .map_err(|err| anyhow!("Unable to lock migrators mutex: {err}"))?;
-
-        let mut result = Vec::new();
         for migrator in migrators.drain(..) {
             result.push(migrator);
         }

@@ -15,7 +15,11 @@ const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
 async fn main() -> RoadsterResult<()> {
     let builder: RoadsterAppBuilder<AppState, _> = RoadsterApp::builder()
         .state_provider(move |app_context| Ok(AppState::new(app_context)))
-        // .add_migrator(MIGRATIONS)
+        /*
+        Roadster can automatically run the app's DB migrations on start up. Simply provide
+        the app's migrator instance (something that implements diesel's `MigrationSource`), and
+        specify the connection type to use to run the migrations.
+         */
         .diesel_migrator::<diesel::pg::PgConnection>(MIGRATIONS)
         .add_service_provider(|registry, state| {
             Box::pin(async {

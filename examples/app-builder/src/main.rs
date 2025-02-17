@@ -57,18 +57,8 @@ async fn main() -> RoadsterResult<()> {
 
     // Roadster can automatically run the app's DB migrations on start up. Simply provide
     // the app's migrator instance (something that implements sea-orm's `MigratorTrait`).
-    // Alternatively, manually implement Roadster's `Migrator` trait (Roadster provides an
-    // auto-impl for any type that implements sea-orm's `MigratorTrait`).
     #[cfg(feature = "db-sea-orm")]
-    let builder = {
-        builder
-            // The `Migrator` can either be provided directly,
-            .add_migrator(migration::Migrator)
-        // or via a provider function. The provider approach is useful if the migrator
-        // needs access to the app's state for any reason.
-        // Note: the provider is commented out to avoid providing a duplicate migrator
-        // .add_migrator_provider(|_state| Ok(Box::new(migration::Migrator)))
-    };
+    let builder = { builder.sea_orm_migrator(migration::Migrator) };
 
     // Provide your custom state via the `state_provider` method.
     let builder = builder.state_provider(move |app_context| {
