@@ -448,7 +448,9 @@ where
         mut self,
         migrator: impl 'static + Sync + sea_orm_migration::MigratorTrait,
     ) -> Self {
-        self.sea_orm_migrator = Some(Box::new(crate::migration::SeaOrmMigrator::new(migrator)));
+        self.sea_orm_migrator = Some(Box::new(crate::migration::sea_orm::SeaOrmMigrator::new(
+            migrator,
+        )));
         self
     }
 
@@ -468,9 +470,9 @@ where
             + Send
             + diesel_migrations::MigrationHarness<C::Backend>,
     {
-        self.diesel_migrator = Some(Box::new(crate::migration::DieselMigrator::<C>::new(
-            migrator,
-        )));
+        self.diesel_migrator = Some(Box::new(
+            crate::migration::diesel::DieselMigrator::<C>::new(migrator),
+        ));
         self
     }
 
