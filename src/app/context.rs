@@ -6,6 +6,7 @@ use crate::health::check::registry::HealthCheckRegistry;
 use crate::health::check::HealthCheck;
 use anyhow::anyhow;
 use axum_core::extract::FromRef;
+use bb8::ErrorSink;
 #[cfg(feature = "db-sea-orm")]
 use sea_orm::DatabaseConnection;
 use std::sync::{Arc, OnceLock, Weak};
@@ -75,6 +76,22 @@ impl AppContext {
                 let manager = diesel_async::pooled_connection::AsyncDieselConnectionManager::<
                     diesel_async::AsyncPgConnection,
                 >::new(url);
+
+                #[derive(Debug)]
+                struct TracingErrorSync;
+                impl ErrorSink<diesel_async::pooled_connection::PoolError> for TracingErrorSync {
+                    fn sink(&self, err: diesel_async::pooled_connection::PoolError) {
+                        tracing::error!("DB connection pool error: {err}");
+                    }
+
+                    fn boxed_clone(
+                        &self,
+                    ) -> Box<dyn ErrorSink<diesel_async::pooled_connection::PoolError>>
+                    {
+                        Box::new(TracingErrorSync)
+                    }
+                }
+
                 // todo: set other pool fields
                 let builder = diesel_async::pooled_connection::bb8::Pool::builder()
                     .test_on_check_out(true)
@@ -82,7 +99,8 @@ impl AppContext {
                     .max_size(config.database.max_connections)
                     .idle_timeout(config.database.idle_timeout)
                     .connection_timeout(config.database.connect_timeout)
-                    .max_lifetime(config.database.max_lifetime);
+                    .max_lifetime(config.database.max_lifetime)
+                    .error_sink(Box::new(TracingErrorSync));
                 if config.database.connect_lazy {
                     builder.build_unchecked(manager)
                 } else {

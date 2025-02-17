@@ -7,7 +7,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Emitter::default().add_instructions(&gitcl)?.emit()?;
 
     // https://docs.rs/diesel_migrations/2.2.0/diesel_migrations/macro.embed_migrations.html#automatic-rebuilds
-    // todo: check that this is correct
     println!("cargo:rerun-if-changed=migrations");
 
     Ok(())
