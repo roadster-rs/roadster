@@ -1,5 +1,4 @@
 use crate::util::serde::default_true;
-use sea_orm::ConnectOptions;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::serde_as;
 use std::time::Duration;
@@ -22,7 +21,7 @@ pub struct Database {
     #[serde_as(as = "serde_with::DurationMilliSeconds")]
     pub connect_timeout: Duration,
 
-    /// Whether to attempt to connect to the DB immediately upon creating the [`ConnectOptions`].
+    /// Whether to attempt to connect to the DB immediately when the DB connection pool is created.
     /// If `true` will wait to connect to the DB until the first DB query is attempted.
     #[serde(default = "default_true")]
     pub connect_lazy: bool,
@@ -41,6 +40,14 @@ pub struct Database {
     pub min_connections: u32,
 
     pub max_connections: u32,
+
+    #[serde(default = "default_true")]
+    pub test_on_checkout: bool,
+
+    /// See [`bb8_8::Builder::retry_connection`]
+    #[cfg(feature = "db-diesel-pool-async")]
+    #[serde(default = "default_true")]
+    pub retry_connection: bool,
 
     /// Options for creating a Test Container instance for the DB. If enabled, the `Database#uri`
     /// field will be overridden to be the URI for the Test Container instance that's created when
@@ -61,16 +68,19 @@ impl Database {
     }
 }
 
-impl From<Database> for ConnectOptions {
+#[cfg(feature = "db-sea-orm")]
+impl From<Database> for sea_orm::ConnectOptions {
     fn from(database: Database) -> Self {
-        ConnectOptions::from(&database)
+        sea_orm::ConnectOptions::from(&database)
     }
 }
 
-impl From<&Database> for ConnectOptions {
+#[cfg(feature = "db-sea-orm")]
+impl From<&Database> for sea_orm::ConnectOptions {
     fn from(database: &Database) -> Self {
-        let mut options = ConnectOptions::new(database.uri.to_string());
+        let mut options = sea_orm::ConnectOptions::new(database.uri.to_string());
         options
+            .test_before_acquire(database.test_on_checkout)
             .connect_timeout(database.connect_timeout)
             .connect_lazy(database.connect_lazy)
             .acquire_timeout(database.acquire_timeout)
@@ -91,8 +101,7 @@ impl From<&Database> for ConnectOptions {
 mod tests {
     use super::*;
     use crate::testing::snapshot::TestCase;
-    use insta::{assert_debug_snapshot, assert_toml_snapshot};
-    use rstest::{fixture, rstest};
+    use rstest::fixture;
 
     #[fixture]
     #[cfg_attr(coverage_nightly, coverage(off))]
@@ -100,7 +109,7 @@ mod tests {
         Default::default()
     }
 
-    #[rstest]
+    #[rstest::rstest]
     #[case(
         r#"
         uri = "https://example.com:1234"
@@ -119,11 +128,12 @@ mod tests {
         max-lifetime = 4000
         "#
     )]
+    #[cfg(feature = "db-diesel-pool-async")]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn serialization(_case: TestCase, #[case] config: &str) {
         let database: Database = toml::from_str(config).unwrap();
 
-        assert_toml_snapshot!(database);
+        insta::assert_toml_snapshot!(database);
     }
 
     #[fixture]
@@ -141,22 +151,27 @@ mod tests {
             max_lifetime: Some(Duration::from_secs(4)),
             min_connections: 10,
             max_connections: 20,
+            test_on_checkout: true,
+            #[cfg(feature = "db-diesel-pool-async")]
+            retry_connection: true,
         }
     }
 
-    #[rstest]
+    #[rstest::rstest]
+    #[cfg(feature = "db-sea-orm")]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn db_config_to_connect_options(db_config: Database) {
-        let connect_options = ConnectOptions::from(db_config);
+        let connect_options = sea_orm::ConnectOptions::from(db_config);
 
-        assert_debug_snapshot!(connect_options);
+        insta::assert_debug_snapshot!(connect_options);
     }
 
-    #[rstest]
+    #[rstest::rstest]
+    #[cfg(feature = "db-sea-orm")]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn db_config_to_connect_options_ref(db_config: Database) {
-        let connect_options = ConnectOptions::from(&db_config);
+        let connect_options = sea_orm::ConnectOptions::from(&db_config);
 
-        assert_debug_snapshot!(connect_options);
+        insta::assert_debug_snapshot!(connect_options);
     }
 }

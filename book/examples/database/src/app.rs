@@ -8,7 +8,6 @@ pub struct MyApp;
 #[async_trait]
 impl App<AppContext> for MyApp {
     type Cli = crate::cli::Cli;
-    type M = crate::migrator::Migrator;
 
     async fn provide_state(&self, context: AppContext) -> RoadsterResult<AppContext> {
         Ok(context)

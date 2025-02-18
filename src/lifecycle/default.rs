@@ -13,10 +13,12 @@ where
     A: App<S> + 'static,
 {
     let lifecycle_handlers: Vec<Box<dyn AppLifecycleHandler<A, S>>> = vec![
-        #[cfg(feature = "db-sea-orm")]
+        #[cfg(feature = "db-sql")]
         Box::new(crate::lifecycle::db::migration::DbMigrationLifecycleHandler),
         #[cfg(feature = "db-sea-orm")]
-        Box::new(crate::lifecycle::db::graceful_shutdown::DbGracefulShutdownLifecycleHandler),
+        Box::new(
+            crate::lifecycle::db::sea_orm::graceful_shutdown::DbSeaOrmGracefulShutdownLifecycleHandler,
+        ),
     ];
 
     lifecycle_handlers

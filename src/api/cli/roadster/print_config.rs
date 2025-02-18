@@ -1,15 +1,14 @@
+use crate::api::cli::roadster::RunRoadsterCommand;
+use crate::app::context::AppContext;
+use crate::app::{App, PreparedApp};
+use crate::config::AppConfig;
+use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use clap::Parser;
 use serde_derive::{Deserialize, Serialize};
 use strum_macros::{EnumString, IntoStaticStr};
 use tracing::info;
-
-use crate::api::cli::roadster::{RoadsterCli, RunRoadsterCommand};
-use crate::app::context::AppContext;
-use crate::app::App;
-use crate::config::AppConfig;
-use crate::error::RoadsterResult;
 
 #[derive(Debug, Parser, Serialize)]
 #[non_exhaustive]
@@ -40,8 +39,8 @@ where
     AppContext: FromRef<S>,
     A: App<S>,
 {
-    async fn run(&self, _app: &A, _cli: &RoadsterCli, state: &S) -> RoadsterResult<bool> {
-        let context = AppContext::from_ref(state);
+    async fn run(&self, prepared_app: &PreparedApp<A, S>) -> RoadsterResult<bool> {
+        let context = AppContext::from_ref(&prepared_app.state);
         let serialized = serialize_config(&self.format, context.config())?;
 
         info!("\n{}", serialized);

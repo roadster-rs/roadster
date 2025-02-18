@@ -1,5 +1,0 @@
----
-source: src/migration/check.rs
-expression: table_stmt.to_string(PostgresQueryBuilder)
----
-CREATE TABLE "foo" ( "bar" varchar NOT NULL CHECK (CHAR_LENGTH("bar") > 0) )

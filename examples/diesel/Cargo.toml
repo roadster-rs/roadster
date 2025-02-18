@@ -1,0 +1,59 @@
+[package]
+name = "roadster-diesel-example"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+roadster = { version = "0.7.0-alpha.3", path = "../..", default-features = false, features = ["default-diesel"] }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+async-trait = { workspace = true }
+
+# Http API
+aide = { workspace = true }
+axum = { workspace = true }
+schemars = { workspace = true }
+
+# DB
+diesel = { workspace = true }
+diesel-async = { workspace = true }
+diesel_migrations = { workspace = true }
+
+# CLI
+clap = { workspace = true, features = ["derive"] }
+
+# The default `rss-stats` feature has a dependency that currently can't be satisfied (memchr: ~2.3)
+rusty-sidekiq = { workspace = true, default-features = false }
+serde = { workspace = true, features = ["derive"] }
+
+# Email
+lettre = { workspace = true, features = ["pool"] }
+sendgrid = { workspace = true }
+
+# Other
+uuid = { workspace = true, features = ["v7"] }
+chrono = { workspace = true, features = ["serde"] }
+fake = { workspace = true }
+
+[dev-dependencies]
+roadster = { version = "0.7.0-alpha.3", path = "../..", features = ["testing-mocks"] }
+tokio = { workspace = true, features = ["test-util"] }
+tower-util = { workspace = true }
+
+[build-dependencies]
+tonic-build = { workspace = true }
+vergen = { workspace = true }
+vergen-gitcl = { workspace = true }
+
+[[bin]]
+name = "roadster_diesel_example"
+path = "src/main.rs"
+
+[lib]
+name = "roadster_diesel_example"
+path = "src/lib.rs"

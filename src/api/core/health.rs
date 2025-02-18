@@ -130,9 +130,12 @@ pub struct Latency {
 }
 
 #[cfg(feature = "db-sea-orm")]
-pub(crate) async fn db_health(context: &AppContext, duration: Option<Duration>) -> CheckResponse {
+pub(crate) async fn db_sea_orm_health(
+    context: &AppContext,
+    duration: Option<Duration>,
+) -> CheckResponse {
     let db_timer = Instant::now();
-    let db_status = match ping_db(context.db(), duration).await {
+    let db_status = match ping_db_sea_orm(context.sea_orm(), duration).await {
         Ok(_) => Status::Ok,
         Err(err) => Status::Err(ErrorData::builder().msg(err.to_string()).build()),
     };
@@ -145,13 +148,186 @@ pub(crate) async fn db_health(context: &AppContext, duration: Option<Duration>) 
 
 #[cfg(feature = "db-sea-orm")]
 #[instrument(skip_all)]
-async fn ping_db(db: &DatabaseConnection, duration: Option<Duration>) -> RoadsterResult<()> {
+async fn ping_db_sea_orm(
+    db: &DatabaseConnection,
+    duration: Option<Duration>,
+) -> RoadsterResult<()> {
     if let Some(duration) = duration {
         timeout(duration, db.ping()).await??;
     } else {
         db.ping().await?;
     }
     Ok(())
+}
+
+// Todo: reduce duplication
+#[cfg(feature = "db-diesel-pool")]
+pub(crate) async fn db_diesel_health<C>(
+    pool: &r2d2::Pool<diesel::r2d2::ConnectionManager<C>>,
+    duration: Option<Duration>,
+) -> CheckResponse
+where
+    C: 'static + diesel::connection::Connection + diesel::r2d2::R2D2Connection,
+{
+    let db_timer = Instant::now();
+    let (db_status, acquire_conn_latency, ping_latency) = match ping_diesel_db(pool, duration) {
+        Ok((acquire_latency, ping_latency)) => (
+            Status::Ok,
+            Some(acquire_latency.as_millis()),
+            Some(ping_latency.as_millis()),
+        ),
+        Err(err) => (
+            Status::Err(ErrorData::builder().msg(err.to_string()).build()),
+            None,
+            None,
+        ),
+    };
+    let db_timer = db_timer.elapsed();
+    CheckResponse::builder()
+        .status(db_status)
+        .latency(db_timer)
+        .custom(Latency {
+            acquire_conn_latency,
+            ping_latency,
+        })
+        .build()
+}
+
+// Todo: reduce duplication
+#[cfg(feature = "db-diesel-pool")]
+#[instrument(skip_all)]
+fn ping_diesel_db<C>(
+    pool: &r2d2::Pool<diesel::r2d2::ConnectionManager<C>>,
+    duration: Option<Duration>,
+) -> RoadsterResult<(Duration, Duration)>
+where
+    C: 'static + diesel::connection::Connection + diesel::r2d2::R2D2Connection,
+{
+    let timer = Instant::now();
+    let mut conn = if let Some(duration) = duration {
+        pool.get_timeout(duration)?
+    } else {
+        pool.get()?
+    };
+    let acquire_conn_latency = timer.elapsed();
+
+    let timer = Instant::now();
+    conn.ping()?;
+    let ping_latency = timer.elapsed();
+
+    Ok((acquire_conn_latency, ping_latency))
+}
+
+// Todo: reduce duplication
+#[cfg(feature = "db-diesel-postgres-pool-async")]
+pub(crate) async fn db_diesel_health_pg_async(
+    context: &AppContext,
+    duration: Option<Duration>,
+) -> CheckResponse {
+    let db_timer = Instant::now();
+    let (db_status, acquire_conn_latency, ping_latency) =
+        match ping_diesel_db_pg_async(context, duration).await {
+            Ok((acquire_latency, ping_latency)) => (
+                Status::Ok,
+                Some(acquire_latency.as_millis()),
+                Some(ping_latency.as_millis()),
+            ),
+            Err(err) => (
+                Status::Err(ErrorData::builder().msg(err.to_string()).build()),
+                None,
+                None,
+            ),
+        };
+    let db_timer = db_timer.elapsed();
+    CheckResponse::builder()
+        .status(db_status)
+        .latency(db_timer)
+        .custom(Latency {
+            acquire_conn_latency,
+            ping_latency,
+        })
+        .build()
+}
+
+// Todo: reduce duplication
+#[cfg(feature = "db-diesel-postgres-pool-async")]
+#[instrument(skip_all)]
+async fn ping_diesel_db_pg_async(
+    context: &AppContext,
+    duration: Option<Duration>,
+) -> RoadsterResult<(Duration, Duration)> {
+    use diesel_async::pooled_connection::PoolableConnection;
+
+    let timer = Instant::now();
+    let mut conn = if let Some(duration) = duration {
+        timeout(duration, context.diesel_pg_pool_async().get()).await??
+    } else {
+        context.diesel_pg_pool_async().get().await?
+    };
+    let acquire_conn_latency = timer.elapsed();
+
+    let timer = Instant::now();
+    conn.ping(&diesel_async::pooled_connection::RecyclingMethod::Fast)
+        .await?;
+    let ping_latency = timer.elapsed();
+
+    Ok((acquire_conn_latency, ping_latency))
+}
+
+// Todo: reduce duplication
+#[cfg(feature = "db-diesel-mysql-pool-async")]
+pub(crate) async fn db_diesel_health_mysql_async(
+    context: &AppContext,
+    duration: Option<Duration>,
+) -> CheckResponse {
+    let db_timer = Instant::now();
+    let (db_status, acquire_conn_latency, ping_latency) =
+        match ping_diesel_db_mysql_async(context, duration).await {
+            Ok((acquire_latency, ping_latency)) => (
+                Status::Ok,
+                Some(acquire_latency.as_millis()),
+                Some(ping_latency.as_millis()),
+            ),
+            Err(err) => (
+                Status::Err(ErrorData::builder().msg(err.to_string()).build()),
+                None,
+                None,
+            ),
+        };
+    let db_timer = db_timer.elapsed();
+    CheckResponse::builder()
+        .status(db_status)
+        .latency(db_timer)
+        .custom(Latency {
+            acquire_conn_latency,
+            ping_latency,
+        })
+        .build()
+}
+
+// Todo: reduce duplication
+#[cfg(feature = "db-diesel-mysql-pool-async")]
+#[instrument(skip_all)]
+async fn ping_diesel_db_mysql_async(
+    context: &AppContext,
+    duration: Option<Duration>,
+) -> RoadsterResult<(Duration, Duration)> {
+    use diesel_async::pooled_connection::PoolableConnection;
+
+    let timer = Instant::now();
+    let mut conn = if let Some(duration) = duration {
+        timeout(duration, context.diesel_mysql_pool_async().get()).await??
+    } else {
+        context.diesel_mysql_pool_async().get().await?
+    };
+    let acquire_conn_latency = timer.elapsed();
+
+    let timer = Instant::now();
+    conn.ping(&diesel_async::pooled_connection::RecyclingMethod::Fast)
+        .await?;
+    let ping_latency = timer.elapsed();
+
+    Ok((acquire_conn_latency, ping_latency))
 }
 
 #[cfg(feature = "email-smtp")]

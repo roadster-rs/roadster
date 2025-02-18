@@ -1,7 +1,6 @@
 use std::time::Duration;
 
-#[cfg(feature = "db-sea-orm")]
-pub mod database;
+pub mod db;
 pub mod default;
 #[cfg(feature = "email")]
 pub mod email;
@@ -90,6 +89,10 @@ pub trait HealthCheck: Send + Sync {
     fn enabled(&self) -> bool;
 
     /// Run the [`HealthCheck`].
+    // Note: This is not able to take a state/AppContext type parameter because that makes it
+    // not "dyn-compatible", which means it can't be made into an object. If a `HealthCheck` impl
+    // needs the state/AppContext, it needs to have it as a field in its struct, and it should
+    // use an `AppContextWeak` to avoid a reference cycle.
     async fn check(&self) -> RoadsterResult<CheckResponse>;
 }
 

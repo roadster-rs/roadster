@@ -1,6 +1,10 @@
 use crate::app::context::AppContext;
+#[cfg(feature = "db-diesel-mysql-pool-async")]
+use crate::health::check::db::diesel_mysql_async::DbDieselMysqlAsyncHealthCheck;
+#[cfg(feature = "db-diesel-postgres-pool-async")]
+use crate::health::check::db::diesel_pg_async::DbDieselPgAsyncHealthCheck;
 #[cfg(feature = "db-sea-orm")]
-use crate::health::check::database::DatabaseHealthCheck;
+use crate::health::check::db::sea_orm::DbSeaOrmHealthCheck;
 #[cfg(feature = "email-smtp")]
 use crate::health::check::email::smtp::SmtpHealthCheck;
 #[cfg(feature = "sidekiq")]
@@ -16,7 +20,33 @@ pub fn default_health_checks(
 ) -> BTreeMap<String, Arc<dyn HealthCheck>> {
     let health_checks: Vec<Arc<dyn HealthCheck>> = vec![
         #[cfg(feature = "db-sea-orm")]
-        Arc::new(DatabaseHealthCheck {
+        Arc::new(DbSeaOrmHealthCheck {
+            context: context.downgrade(),
+        }),
+        #[cfg(feature = "db-diesel-postgres-pool")]
+        Arc::new(crate::health::check::db::diesel::DbDieselHealthCheck::new(
+            context,
+            "postgres",
+            |context| context.diesel_pg_pool(),
+        )),
+        #[cfg(feature = "db-diesel-mysql-pool")]
+        Arc::new(crate::health::check::db::diesel::DbDieselHealthCheck::new(
+            context,
+            "mysql",
+            |context| context.diesel_mysql_pool(),
+        )),
+        #[cfg(feature = "db-diesel-sqlite-pool")]
+        Arc::new(crate::health::check::db::diesel::DbDieselHealthCheck::new(
+            context,
+            "sqlite",
+            |context| context.diesel_sqlite_pool(),
+        )),
+        #[cfg(feature = "db-diesel-postgres-pool-async")]
+        Arc::new(DbDieselPgAsyncHealthCheck {
+            context: context.downgrade(),
+        }),
+        #[cfg(feature = "db-diesel-mysql-pool-async")]
+        Arc::new(DbDieselMysqlAsyncHealthCheck {
             context: context.downgrade(),
         }),
         #[cfg(feature = "sidekiq")]

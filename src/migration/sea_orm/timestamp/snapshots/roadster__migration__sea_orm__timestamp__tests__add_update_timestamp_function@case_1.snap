@@ -1,0 +1,11 @@
+---
+source: src/migration/sea_orm/timestamp/mod.rs
+expression: statement
+---
+Some(
+    Statement {
+        sql: "\nCREATE OR REPLACE FUNCTION update_timestamp_updated_at() RETURNS TRIGGER AS $$\nBEGIN\n    NEW.updated_at = NOW();\n    RETURN NEW;\nEND;\n$$ language 'plpgsql';\n",
+        values: None,
+        db_backend: Postgres,
+    },
+)

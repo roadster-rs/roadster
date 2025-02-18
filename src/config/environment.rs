@@ -6,6 +6,7 @@ use clap::builder::PossibleValue;
 #[cfg(feature = "cli")]
 use clap::ValueEnum;
 use const_format::concatcp;
+use dotenvy::dotenv;
 use serde_derive::{Deserialize, Serialize};
 use std::env;
 use std::fmt::{Display, Formatter};
@@ -39,6 +40,8 @@ impl Environment {
     // log from this method.
     #[allow(clippy::disallowed_macros)]
     pub fn new() -> RoadsterResult<Self> {
+        dotenv().ok();
+
         // Get the stage, and validate it by parsing to the Environment enum
         let environment = env::var(ENV_VAR_WITH_PREFIX)
             .map_err(|_| anyhow!("Env var `{ENV_VAR_WITH_PREFIX}` not defined."))?;

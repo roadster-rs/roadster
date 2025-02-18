@@ -11,3 +11,5 @@ idle-timeout = 3000
 max-lifetime = 4000
 min-connections = 0
 max-connections = 1
+test-on-checkout = true
+retry-connection = true

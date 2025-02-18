@@ -1,0 +1,14 @@
+[tracing]
+format = "pretty"
+
+[auth.jwt]
+secret = "secret-dev"
+
+[database]
+uri = "postgres://roadster:roadster@localhost:5432/example_dev"
+
+[service.sidekiq]
+num-workers = 2
+
+[service.sidekiq.redis]
+uri = "redis://localhost:6379"

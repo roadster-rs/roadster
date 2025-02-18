@@ -3,10 +3,13 @@ pub mod auth;
 #[cfg(feature = "http")]
 pub mod axum;
 pub mod config;
+#[cfg(feature = "db-sql")]
+pub mod db;
 #[cfg(feature = "email")]
 pub mod email;
 #[cfg(feature = "http")]
 pub mod mime;
+mod mutex;
 pub mod other;
 pub mod parse;
 pub mod reqwest;
@@ -22,10 +25,13 @@ use crate::error::api::ApiError;
 use crate::error::auth::AuthError;
 #[cfg(feature = "http")]
 use crate::error::axum::AxumError;
+#[cfg(feature = "db-sql")]
+use crate::error::db::DbError;
 #[cfg(feature = "email")]
 use crate::error::email::EmailError;
 #[cfg(feature = "http")]
 use crate::error::mime::MimeError;
+use crate::error::mutex::MutexError;
 use crate::error::other::OtherError;
 use crate::error::parse::ParseError;
 use crate::error::reqwest::ReqwestError;
@@ -59,9 +65,9 @@ pub enum Error {
     #[error(transparent)]
     Serde(#[from] SerdeError),
 
-    #[cfg(feature = "db-sea-orm")]
+    #[cfg(feature = "db-sql")]
     #[error(transparent)]
-    Db(#[from] sea_orm::DbErr),
+    Db(#[from] DbError),
 
     #[cfg(feature = "sidekiq")]
     #[error(transparent)]
@@ -110,6 +116,9 @@ pub enum Error {
 
     #[error(transparent)]
     ServiceRegistry(#[from] ServiceRegistryError),
+
+    #[error(transparent)]
+    Mutex(#[from] MutexError),
 
     #[error(transparent)]
     Other(#[from] OtherError),

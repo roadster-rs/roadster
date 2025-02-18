@@ -180,6 +180,8 @@ connect-lazy = true
 acquire-timeout = 1000
 min-connections = 0
 max-connections = 10
+test-on-checkout = true
+retry-connection = true
 
 [email]
 from = 'no-reply@example.com'

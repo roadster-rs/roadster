@@ -36,6 +36,9 @@ clap = { workspace = true, features = ["derive"], optional = true }
 rusty-sidekiq = { workspace = true, default-features = false }
 serde = { workspace = true, features = ["derive"] }
 
+# Config
+config = { workspace = true, features = ["async"] }
+
 [build-dependencies]
 tonic-build = { workspace = true }
 vergen = { workspace = true }

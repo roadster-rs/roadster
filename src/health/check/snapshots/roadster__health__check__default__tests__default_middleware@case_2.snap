@@ -3,7 +3,12 @@ source: src/health/check/default.rs
 expression: health_checks
 ---
 [
-    'db',
+    'db-diesel-mysql',
+    'db-diesel-mysql-async',
+    'db-diesel-postgres',
+    'db-diesel-postgres-async',
+    'db-diesel-sqlite',
+    'db-sea-orm',
     'sidekiq-enqueue',
     'sidekiq-fetch',
     'smtp',

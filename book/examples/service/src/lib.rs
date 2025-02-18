@@ -5,7 +5,7 @@ use roadster::app::RoadsterApp;
 use roadster::service::http::service::HttpService;
 use roadster::util::empty::Empty;
 
-type App = RoadsterApp<AppContext, Empty, Empty>;
+type App = RoadsterApp<AppContext, Empty>;
 
 fn build_app() -> App {
     RoadsterApp::builder()

@@ -4,22 +4,24 @@ use crate::app;
 use crate::app::context::AppContext;
 use crate::app::metadata::AppMetadata;
 use crate::app::App;
+use crate::config::environment::Environment;
 use crate::config::AppConfig;
 use crate::error::RoadsterResult;
 use crate::health::check::registry::HealthCheckRegistry;
 use crate::health::check::HealthCheck;
 use crate::lifecycle::registry::LifecycleHandlerRegistry;
 use crate::lifecycle::AppLifecycleHandler;
+#[cfg(feature = "db-sql")]
+use crate::migration::Migrator;
 use crate::service::registry::ServiceRegistry;
 use crate::service::AppService;
 use crate::util::empty::Empty;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
+use config::AsyncSource;
 #[cfg(feature = "db-sea-orm")]
 use sea_orm::ConnectOptions;
-#[cfg(feature = "db-sea-orm")]
-use sea_orm_migration::MigratorTrait;
 use std::future;
 use std::future::Future;
 use std::pin::Pin;
@@ -27,9 +29,13 @@ use std::sync::{Arc, Mutex};
 
 type StateBuilder<S> = dyn Send + Sync + Fn(AppContext) -> RoadsterResult<S>;
 type TracingInitializer = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<()>;
+type AsyncConfigSourceProvider =
+    dyn Send + Sync + Fn(&Environment) -> RoadsterResult<Box<dyn AsyncSource + Send + Sync>>;
 type MetadataProvider = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<AppMetadata>;
 #[cfg(feature = "db-sea-orm")]
 type DbConnOptionsProvider = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<ConnectOptions>;
+#[cfg(feature = "db-sql")]
+type MigratorProvider<S> = dyn Send + Sync + Fn(&S) -> RoadsterResult<Box<dyn Migrator<S>>>;
 type LifecycleHandlers<A, S> = Vec<Box<dyn AppLifecycleHandler<A, S>>>;
 type LifecycleHandlerProviders<A, S> =
     Vec<Box<dyn Send + Sync + Fn(&mut LifecycleHandlerRegistry<A, S>, &S) -> RoadsterResult<()>>>;
@@ -52,36 +58,35 @@ type GracefulShutdownSignalProvider<S> =
 /// Inner state shared between both the [`RoadsterApp`] and [`RoadsterAppBuilder`].
 struct Inner<
     S,
-    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync = Empty,
+    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync = Empty,
     #[cfg(not(feature = "cli"))] Cli: 'static = Empty,
-    #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync = Empty,
-    #[cfg(not(feature = "db-sea-orm"))] M: 'static = Empty,
 > where
     S: 'static + Clone + Send + Sync,
     AppContext: FromRef<S>,
 {
     state_provider: Option<Box<StateBuilder<S>>>,
     tracing_initializer: Option<Box<TracingInitializer>>,
+    async_config_source_providers: Vec<Box<AsyncConfigSourceProvider>>,
     metadata: Option<AppMetadata>,
     metadata_provider: Option<Box<MetadataProvider>>,
     #[cfg(feature = "db-sea-orm")]
-    db_conn_options: Option<ConnectOptions>,
+    sea_orm_conn_options: Option<ConnectOptions>,
     #[cfg(feature = "db-sea-orm")]
-    db_conn_options_provider: Option<Box<DbConnOptionsProvider>>,
+    sea_orm_conn_options_provider: Option<Box<DbConnOptionsProvider>>,
+    #[cfg(feature = "db-sql")]
+    migrator_providers: Vec<Box<MigratorProvider<S>>>,
     health_checks: Vec<Arc<dyn HealthCheck>>,
     health_check_providers: HealthCheckProviders<S>,
     graceful_shutdown_signal_provider: GracefulShutdownSignalProvider<S>,
-    lifecycle_handler_providers: LifecycleHandlerProviders<RoadsterApp<S, Cli, M>, S>,
-    service_providers: ServiceProviders<RoadsterApp<S, Cli, M>, S>,
+    lifecycle_handler_providers: LifecycleHandlerProviders<RoadsterApp<S, Cli>, S>,
+    service_providers: ServiceProviders<RoadsterApp<S, Cli>, S>,
 }
 
 impl<
         S,
-        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
+        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
         #[cfg(not(feature = "cli"))] Cli: 'static,
-        #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync,
-        #[cfg(not(feature = "db-sea-orm"))] M: 'static,
-    > Inner<S, Cli, M>
+    > Inner<S, Cli>
 where
     S: 'static + Clone + Send + Sync,
     AppContext: FromRef<S>,
@@ -90,12 +95,15 @@ where
         Self {
             state_provider: None,
             tracing_initializer: None,
+            async_config_source_providers: Default::default(),
             metadata: None,
             metadata_provider: None,
             #[cfg(feature = "db-sea-orm")]
-            db_conn_options: None,
+            sea_orm_conn_options: None,
             #[cfg(feature = "db-sea-orm")]
-            db_conn_options_provider: None,
+            sea_orm_conn_options_provider: None,
+            #[cfg(feature = "db-sql")]
+            migrator_providers: Default::default(),
             health_checks: Default::default(),
             health_check_providers: Default::default(),
             graceful_shutdown_signal_provider: None,
@@ -111,6 +119,17 @@ where
         self.tracing_initializer = Some(Box::new(tracing_initializer));
     }
 
+    fn add_async_config_source_provider(
+        &mut self,
+        async_config_source_provider: impl 'static
+            + Send
+            + Sync
+            + Fn(&Environment) -> RoadsterResult<Box<dyn AsyncSource + Send + Sync>>,
+    ) {
+        self.async_config_source_providers
+            .push(Box::new(async_config_source_provider));
+    }
+
     fn set_metadata(&mut self, metadata: AppMetadata) {
         self.metadata = Some(metadata);
     }
@@ -123,19 +142,19 @@ where
     }
 
     #[cfg(feature = "db-sea-orm")]
-    fn db_conn_options(&mut self, db_conn_options: ConnectOptions) {
-        self.db_conn_options = Some(db_conn_options);
+    fn sea_orm_conn_options(&mut self, sea_orm_conn_options: ConnectOptions) {
+        self.sea_orm_conn_options = Some(sea_orm_conn_options);
     }
 
     #[cfg(feature = "db-sea-orm")]
-    fn db_conn_options_provider(
+    fn sea_orm_conn_options_provider(
         &mut self,
-        db_conn_options_provider: impl 'static
+        sea_orm_conn_options_provider: impl 'static
             + Send
             + Sync
             + Fn(&AppConfig) -> RoadsterResult<ConnectOptions>,
     ) {
-        self.db_conn_options_provider = Some(Box::new(db_conn_options_provider));
+        self.sea_orm_conn_options_provider = Some(Box::new(sea_orm_conn_options_provider));
     }
 
     fn state_provider(
@@ -143,6 +162,14 @@ where
         builder: impl 'static + Send + Sync + Fn(AppContext) -> RoadsterResult<S>,
     ) {
         self.state_provider = Some(Box::new(builder));
+    }
+
+    #[cfg(feature = "db-sql")]
+    fn add_migrator_provider(
+        &mut self,
+        migrator_provider: impl 'static + Send + Sync + Fn(&S) -> RoadsterResult<Box<dyn Migrator<S>>>,
+    ) {
+        self.migrator_providers.push(Box::new(migrator_provider))
     }
 
     fn add_health_check(&mut self, health_check: impl 'static + HealthCheck) {
@@ -189,11 +216,13 @@ where
     }
 
     #[cfg(feature = "db-sea-orm")]
-    fn db_connection_options(&self, config: &AppConfig) -> RoadsterResult<ConnectOptions> {
-        if let Some(db_conn_options) = self.db_conn_options.as_ref() {
-            Ok(db_conn_options.clone())
-        } else if let Some(db_conn_options_provider) = self.db_conn_options_provider.as_ref() {
-            db_conn_options_provider(config)
+    fn sea_orm_connection_options(&self, config: &AppConfig) -> RoadsterResult<ConnectOptions> {
+        if let Some(sea_orm_conn_options) = self.sea_orm_conn_options.as_ref() {
+            Ok(sea_orm_conn_options.clone())
+        } else if let Some(sea_orm_conn_options_provider) =
+            self.sea_orm_conn_options_provider.as_ref()
+        {
+            sea_orm_conn_options_provider(config)
         } else {
             Ok(ConnectOptions::from(&config.database))
         }
@@ -232,51 +261,59 @@ where
 
 pub struct RoadsterApp<
     S,
-    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync = Empty,
+    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync = Empty,
     #[cfg(not(feature = "cli"))] Cli: 'static = Empty,
-    #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync = Empty,
-    #[cfg(not(feature = "db-sea-orm"))] M: 'static = Empty,
 > where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    inner: Inner<S, Cli, M>,
+    inner: Inner<S, Cli>,
+    async_config_sources: Mutex<Vec<Box<dyn AsyncSource + Send + Sync>>>,
+    #[cfg(feature = "db-sea-orm")]
+    sea_orm_migrator: Mutex<Option<Box<dyn Migrator<S>>>>,
+    #[cfg(feature = "db-diesel")]
+    diesel_migrator: Mutex<Option<Box<dyn Migrator<S>>>>,
+    #[cfg(feature = "db-sql")]
+    migrators: Mutex<Vec<Box<dyn Migrator<S>>>>,
     // Interior mutability pattern -- this allows us to keep the handler reference as a
     // Box, which helps with single ownership and ensuring we only register a handler once.
-    lifecycle_handlers: Mutex<LifecycleHandlers<RoadsterApp<S, Cli, M>, S>>,
+    lifecycle_handlers: Mutex<LifecycleHandlers<RoadsterApp<S, Cli>, S>>,
     // Interior mutability pattern -- this allows us to keep the service reference as a
     // Box, which helps with single ownership and ensuring we only register a service once.
-    services: Mutex<Services<RoadsterApp<S, Cli, M>, S>>,
+    services: Mutex<Services<RoadsterApp<S, Cli>, S>>,
 }
 
 pub struct RoadsterAppBuilder<
     S,
-    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync = Empty,
+    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync = Empty,
     #[cfg(not(feature = "cli"))] Cli: 'static = Empty,
-    #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync = Empty,
-    #[cfg(not(feature = "db-sea-orm"))] M: 'static = Empty,
 > where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    inner: Inner<S, Cli, M>,
-    lifecycle_handlers: LifecycleHandlers<RoadsterApp<S, Cli, M>, S>,
-    services: Services<RoadsterApp<S, Cli, M>, S>,
+    inner: Inner<S, Cli>,
+    async_config_sources: Vec<Box<dyn AsyncSource + Send + Sync>>,
+    #[cfg(feature = "db-sea-orm")]
+    sea_orm_migrator: Option<Box<dyn Migrator<S>>>,
+    #[cfg(feature = "db-diesel")]
+    diesel_migrator: Option<Box<dyn Migrator<S>>>,
+    #[cfg(feature = "db-sql")]
+    migrators: Vec<Box<dyn Migrator<S>>>,
+    lifecycle_handlers: LifecycleHandlers<RoadsterApp<S, Cli>, S>,
+    services: Services<RoadsterApp<S, Cli>, S>,
 }
 
 impl<
         S,
-        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
+        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
         #[cfg(not(feature = "cli"))] Cli: 'static,
-        #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync,
-        #[cfg(not(feature = "db-sea-orm"))] M: 'static,
-    > RoadsterApp<S, Cli, M>
+    > RoadsterApp<S, Cli>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
     /// Create a new [`RoadsterAppBuilder`] to use to build the [`RoadsterApp`].
-    pub fn builder() -> RoadsterAppBuilder<S, Cli, M> {
+    pub fn builder() -> RoadsterAppBuilder<S, Cli> {
         RoadsterAppBuilder::new()
     }
 
@@ -293,11 +330,9 @@ where
 
 impl<
         S,
-        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
+        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
         #[cfg(not(feature = "cli"))] Cli: 'static,
-        #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync,
-        #[cfg(not(feature = "db-sea-orm"))] M: 'static,
-    > Default for RoadsterAppBuilder<S, Cli, M>
+    > Default for RoadsterAppBuilder<S, Cli>
 where
     S: 'static + Clone + Send + Sync,
     AppContext: FromRef<S>,
@@ -309,11 +344,9 @@ where
 
 impl<
         S,
-        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
+        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
         #[cfg(not(feature = "cli"))] Cli: 'static,
-        #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync,
-        #[cfg(not(feature = "db-sea-orm"))] M: 'static,
-    > RoadsterAppBuilder<S, Cli, M>
+    > RoadsterAppBuilder<S, Cli>
 where
     S: 'static + Clone + Send + Sync,
     AppContext: FromRef<S>,
@@ -321,9 +354,36 @@ where
     pub fn new() -> Self {
         Self {
             inner: Inner::new(),
+            async_config_sources: Default::default(),
+            #[cfg(feature = "db-sea-orm")]
+            sea_orm_migrator: None,
+            #[cfg(feature = "db-diesel")]
+            diesel_migrator: None,
+            #[cfg(feature = "db-sql")]
+            migrators: Default::default(),
             lifecycle_handlers: Default::default(),
             services: Default::default(),
         }
+    }
+
+    /// Add an async config source ([`AsyncSource`]). Useful to load configs/secrets from an
+    /// external service, e.g., AWS or GCS secrets manager services.
+    pub fn add_async_config_source(mut self, source: impl AsyncSource + Send + 'static) -> Self {
+        self.async_config_sources.push(Box::new(source));
+        self
+    }
+
+    /// Add an async config source ([`AsyncSource`]). Useful to load configs/secrets from an
+    /// external service, e.g., AWS or GCS secrets manager services.
+    pub fn add_async_config_source_provider(
+        mut self,
+        source_provider: impl 'static
+            + Send
+            + Sync
+            + Fn(&Environment) -> RoadsterResult<Box<dyn AsyncSource + Send + Sync>>,
+    ) -> Self {
+        self.inner.add_async_config_source_provider(source_provider);
+        self
     }
 
     /// Provide the logic to initialize tracing for the [`RoadsterApp`].
@@ -352,22 +412,22 @@ where
 
     /// Provide the [`ConnectOptions`] for the [`RoadsterApp`].
     #[cfg(feature = "db-sea-orm")]
-    pub fn db_conn_options(mut self, db_conn_options: ConnectOptions) -> Self {
-        self.inner.db_conn_options(db_conn_options);
+    pub fn sea_orm_conn_options(mut self, sea_orm_conn_options: ConnectOptions) -> Self {
+        self.inner.sea_orm_conn_options(sea_orm_conn_options);
         self
     }
 
     /// Provide the logic to build the [`ConnectOptions`] for the [`RoadsterApp`].
     #[cfg(feature = "db-sea-orm")]
-    pub fn db_conn_options_provider(
+    pub fn sea_orm_conn_options_provider(
         mut self,
-        db_conn_options_provider: impl 'static
+        sea_orm_conn_options_provider: impl 'static
             + Send
             + Sync
             + Fn(&AppConfig) -> RoadsterResult<ConnectOptions>,
     ) -> Self {
         self.inner
-            .db_conn_options_provider(db_conn_options_provider);
+            .sea_orm_conn_options_provider(sea_orm_conn_options_provider);
         self
     }
 
@@ -380,12 +440,80 @@ where
         self
     }
 
+    /// Add the diesel migrator [`sea_orm_migration::MigratorTrait`] to run on app start up
+    /// (if the `database.auto-migrate` config field is set to `true`)
+    ///
+    /// Note: SeaORM migrations expect all of the applied migrations to be available
+    /// to the provided migrator, so only a single SeaORM migrator is allowed.
+    #[cfg(feature = "db-sea-orm")]
+    pub fn sea_orm_migrator(
+        mut self,
+        migrator: impl 'static + Sync + sea_orm_migration::MigratorTrait,
+    ) -> Self {
+        self.sea_orm_migrator = Some(Box::new(crate::migration::sea_orm::SeaOrmMigrator::new(
+            migrator,
+        )));
+        self
+    }
+
+    /// Add the diesel migrator [`diesel::migration::MigrationSource`] to run on app start up
+    /// (if the `database.auto-migrate` config field is set to `true`)
+    ///
+    /// Note: Diesel migrations expect all of the applied migrations to be available
+    /// to the provided migrator, so only a single Diesel migrator is allowed.
+    #[cfg(feature = "db-diesel")]
+    pub fn diesel_migrator<C>(
+        mut self,
+        migrator: impl 'static + Send + Sync + diesel::migration::MigrationSource<C::Backend>,
+    ) -> Self
+    where
+        C: 'static
+            + diesel::connection::Connection
+            + Send
+            + diesel_migrations::MigrationHarness<C::Backend>,
+    {
+        self.diesel_migrator = Some(Box::new(
+            crate::migration::diesel::DieselMigrator::<C>::new(migrator),
+        ));
+        self
+    }
+
+    /// Add a [`Migrator`] to run on app start up (if the `database.auto-migrate` config field is
+    /// set to `true`).
+    ///
+    /// Note: SeaORM and Diesel migrations expect all of the applied migrations to be available
+    /// to the provided migrator, so multiple SeaORM or Diesel migrators should not be provided
+    /// via this method.
+    #[cfg(feature = "db-sql")]
+    pub fn add_migrator(mut self, migrator: impl Migrator<S> + 'static) -> Self {
+        self.migrators.push(Box::new(migrator));
+        self
+    }
+
+    /// Add a [`MigratorProvider`] that provides a [`Migrator`] to run on app start up
+    /// (if the `database.auto-migrate` config field is set to `true`).
+    ///
+    /// This is useful compared to [`Self::add_migrator`] if the [`Migrator`] implementation
+    /// needs access to the app state for any reason.
+    ///
+    /// Note: SeaORM and Diesel migrations expect all of the applied migrations to be available
+    /// to the provided migrator, so multiple SeaORM or Diesel migrators should not be provided
+    /// via this method.
+    #[cfg(feature = "db-sql")]
+    pub fn add_migrator_provider(
+        mut self,
+        migrator_provider: impl 'static + Send + Sync + Fn(&S) -> RoadsterResult<Box<dyn Migrator<S>>>,
+    ) -> Self {
+        self.inner.add_migrator_provider(migrator_provider);
+        self
+    }
+
     /// Add a [`AppLifecycleHandler`] for the [`RoadsterApp`].
     ///
     /// This method can be called multiple times to register multiple handlers.
     pub fn add_lifecycle_handler(
         mut self,
-        lifecycle_handler: impl 'static + AppLifecycleHandler<RoadsterApp<S, Cli, M>, S>,
+        lifecycle_handler: impl 'static + AppLifecycleHandler<RoadsterApp<S, Cli>, S>,
     ) -> Self {
         self.lifecycle_handlers.push(Box::new(lifecycle_handler));
         self
@@ -400,7 +528,7 @@ where
         lifecycle_handler_provider: impl 'static
             + Send
             + Sync
-            + Fn(&mut LifecycleHandlerRegistry<RoadsterApp<S, Cli, M>, S>, &S) -> RoadsterResult<()>,
+            + Fn(&mut LifecycleHandlerRegistry<RoadsterApp<S, Cli>, S>, &S) -> RoadsterResult<()>,
     ) -> Self {
         self.inner
             .lifecycle_handler_providers
@@ -436,7 +564,7 @@ where
     /// This method can be called multiple times to register multiple services.
     pub fn add_service(
         mut self,
-        service: impl 'static + AppService<RoadsterApp<S, Cli, M>, S>,
+        service: impl 'static + AppService<RoadsterApp<S, Cli>, S>,
     ) -> Self {
         self.services.push(Box::new(service));
         self
@@ -452,7 +580,7 @@ where
             + Send
             + Sync
             + for<'a> Fn(
-                &'a mut ServiceRegistry<RoadsterApp<S, Cli, M>, S>,
+                &'a mut ServiceRegistry<RoadsterApp<S, Cli>, S>,
                 &'a S,
             ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>>,
     ) -> Self {
@@ -476,9 +604,16 @@ where
     }
 
     /// Build the [`RoadsterApp`] from this [`RoadsterAppBuilder`].
-    pub fn build(self) -> RoadsterApp<S, Cli, M> {
+    pub fn build(self) -> RoadsterApp<S, Cli> {
         RoadsterApp {
             inner: self.inner,
+            async_config_sources: Mutex::new(self.async_config_sources),
+            #[cfg(feature = "db-sea-orm")]
+            sea_orm_migrator: Mutex::new(self.sea_orm_migrator),
+            #[cfg(feature = "db-diesel")]
+            diesel_migrator: Mutex::new(self.diesel_migrator),
+            #[cfg(feature = "db-sql")]
+            migrators: Mutex::new(self.migrators),
             lifecycle_handlers: Mutex::new(self.lifecycle_handlers),
             services: Mutex::new(self.services),
         }
@@ -488,17 +623,36 @@ where
 #[async_trait]
 impl<
         S,
-        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli, M>, S> + Send + Sync,
+        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
         #[cfg(not(feature = "cli"))] Cli: 'static,
-        #[cfg(feature = "db-sea-orm")] M: 'static + MigratorTrait + Send + Sync,
-        #[cfg(not(feature = "db-sea-orm"))] M: 'static,
-    > App<S> for RoadsterApp<S, Cli, M>
+    > App<S> for RoadsterApp<S, Cli>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
     type Cli = Cli;
-    type M = M;
+
+    fn async_config_sources(
+        &self,
+        environment: &Environment,
+    ) -> RoadsterResult<Vec<Box<dyn AsyncSource + Send + Sync>>> {
+        let mut async_config_sources = self
+            .async_config_sources
+            .lock()
+            .map_err(crate::error::Error::from)?;
+
+        let mut sources: Vec<Box<dyn AsyncSource + Send + Sync>> = Default::default();
+        for source in async_config_sources.drain(..) {
+            sources.push(source);
+        }
+
+        for provider in self.inner.async_config_source_providers.iter() {
+            let source = provider(environment)?;
+            sources.push(source);
+        }
+
+        Ok(sources)
+    }
 
     fn init_tracing(&self, config: &AppConfig) -> RoadsterResult<()> {
         self.inner.init_tracing(config)
@@ -509,12 +663,50 @@ where
     }
 
     #[cfg(feature = "db-sea-orm")]
-    fn db_connection_options(&self, config: &AppConfig) -> RoadsterResult<ConnectOptions> {
-        self.inner.db_connection_options(config)
+    fn sea_orm_connection_options(&self, config: &AppConfig) -> RoadsterResult<ConnectOptions> {
+        self.inner.sea_orm_connection_options(config)
     }
 
     async fn provide_state(&self, context: AppContext) -> RoadsterResult<S> {
         self.inner.provide_state(context).await
+    }
+
+    #[cfg(feature = "db-sql")]
+    fn migrators(&self, state: &S) -> RoadsterResult<Vec<Box<dyn Migrator<S>>>> {
+        let mut result = Vec::new();
+
+        #[cfg(feature = "db-sea-orm")]
+        {
+            let mut sea_orm_migrator = self
+                .sea_orm_migrator
+                .lock()
+                .map_err(crate::error::Error::from)?;
+            if let Some(sea_orm_migrator) = sea_orm_migrator.take() {
+                result.push(sea_orm_migrator);
+            }
+        }
+
+        #[cfg(feature = "db-diesel")]
+        {
+            let mut diesel_migrator = self
+                .diesel_migrator
+                .lock()
+                .map_err(crate::error::Error::from)?;
+            if let Some(diesel_migrator) = diesel_migrator.take() {
+                result.push(diesel_migrator);
+            }
+        }
+
+        let mut migrators = self.migrators.lock().map_err(crate::error::Error::from)?;
+        for migrator in migrators.drain(..) {
+            result.push(migrator);
+        }
+
+        for migrator_provider in self.inner.migrator_providers.iter() {
+            result.push(migrator_provider(state)?);
+        }
+
+        Ok(result)
     }
 
     async fn lifecycle_handlers(
@@ -526,7 +718,7 @@ where
             let mut lifecycle_handlers = self
                 .lifecycle_handlers
                 .lock()
-                .map_err(|err| anyhow!("Unable to lock lifecycle_handlers mutex: {err}"))?;
+                .map_err(crate::error::Error::from)?;
             for lifecycle_handler in lifecycle_handlers.drain(..) {
                 registry.register_boxed(lifecycle_handler)?;
             }
@@ -552,10 +744,7 @@ where
         state: &S,
     ) -> RoadsterResult<()> {
         {
-            let mut services = self
-                .services
-                .lock()
-                .map_err(|err| anyhow!("Unable to lock services mutex: {err}"))?;
+            let mut services = self.services.lock().map_err(crate::error::Error::from)?;
             for service in services.drain(..) {
                 registry.register_boxed(service)?;
             }

@@ -17,11 +17,11 @@ pub struct LifecycleHandler {
     #[serde(default = "default_true")]
     pub default_enable: bool,
 
-    #[cfg(feature = "db-sea-orm")]
+    #[cfg(feature = "db-sql")]
     #[validate(nested)]
     pub db_migration: LifecycleHandlerConfig<crate::config::EmptyConfig>,
 
-    #[cfg(feature = "db-sea-orm")]
+    #[cfg(feature = "db-sql")]
     #[validate(nested)]
     pub db_graceful_shutdown: LifecycleHandlerConfig<crate::config::EmptyConfig>,
 

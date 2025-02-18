@@ -14,12 +14,33 @@ rust-version = "1.81"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["sidekiq", "db-sea-orm", "open-api", "jwt-ietf", "cli", "otel"]
+default = ["default-common", "db-sea-orm"]
+default-common = ["sidekiq", "open-api", "jwt-ietf", "cli", "otel"]
+# The same as `default`, except using `diesel` as the SQL ORM instead of `sea-orm`
+default-diesel = ["default-common", "db-diesel-postgres-pool-async"]
 http = ["dep:axum", "dep:axum-extra", "dep:tower", "dep:tower-http", "dep:http-body-util", "dep:mime"]
 open-api = ["http", "dep:aide", "dep:schemars"]
 sidekiq = ["dep:rusty-sidekiq", "dep:bb8", "dep:num_cpus"]
 db-sql = []
-db-sea-orm = ["dep:sea-orm", "dep:sea-orm-migration", "db-sql"]
+db-sea-orm = ["db-sql", "dep:sea-orm", "dep:sea-orm-migration"]
+
+# Diesel
+## Core Diesel feature
+db-diesel = ["db-sql", "dep:diesel", "dep:diesel_migrations"]
+## Core DB backend features
+db-diesel-postgres = ["db-diesel", "diesel/postgres"]
+db-diesel-mysql = ["db-diesel", "diesel/mysql"]
+db-diesel-sqlite = ["db-diesel", "diesel/sqlite"]
+## Features to create (non-async) connection pools
+db-diesel-pool = ["db-diesel", "dep:r2d2"]
+db-diesel-postgres-pool = ["db-diesel-pool", "db-diesel-postgres"]
+db-diesel-mysql-pool = ["db-diesel-pool", "db-diesel-mysql"]
+db-diesel-sqlite-pool = ["db-diesel-pool", "db-diesel-sqlite"]
+## Features to create async connection pools
+db-diesel-pool-async = ["db-diesel", "dep:diesel-async", "dep:bb8_8"]
+db-diesel-postgres-pool-async = ["db-diesel-pool-async", "db-diesel-postgres", "diesel-async/postgres"]
+db-diesel-mysql-pool-async = ["db-diesel-pool-async", "db-diesel-mysql", "diesel-async/mysql"]
+
 email = ["dep:lettre"]
 email-smtp = ["email"]
 email-sendgrid = ["email", "dep:sendgrid"]
@@ -38,7 +59,7 @@ config-yml = ["config/yaml"]
 # Config
 # We only support `toml` configs currently, and one of the default features (`rust-ini`) pulls in a dependency
 # that breaks the coverage build on nightly.
-config = { workspace = true }
+config = { workspace = true, features = ["async"] }
 dotenvy = { workspace = true }
 
 # Tracing
@@ -67,9 +88,18 @@ schemars = { workspace = true, optional = true }
 http-body-util = { workspace = true, optional = true }
 mime = { workspace = true, optional = true }
 
-# DB
+# DB - SeaORM
 sea-orm = { workspace = true, features = ["debug-print", "runtime-tokio-rustls", "sqlx-postgres", "macros"], optional = true }
 sea-orm-migration = { workspace = true, features = ["runtime-tokio-rustls", "sqlx-postgres"], optional = true }
+
+# DB - Diesel
+diesel = { workspace = true, features = ["extras"], optional = true }
+diesel_migrations = { workspace = true, optional = true }
+diesel-async = { workspace = true, features = ["bb8", "async-connection-wrapper", "sync-connection-wrapper", "tokio"], optional = true }
+# r2d2 is used for non-async Diesel connection pools
+r2d2 = { workspace = true, optional = true }
+# bb8 is use for async Diesel connection pools
+bb8_8 = { workspace = true, optional = true }
 
 # Email
 lettre = { workspace = true, features = ["serde"], optional = true }
@@ -167,9 +197,17 @@ schemars = "0.8.16"
 mime = "0.3.17"
 http-body-util = { version = "0.1.2" }
 
-# DB
+# DB - SeaORM
 sea-orm = { version = "1.1.2" }
 sea-orm-migration = { version = "1.1.2" }
+
+# DB - Diesel
+diesel = { version = "2.2.3" }
+diesel-async = { version = "0.5.2" }
+diesel_migrations = { version = "2.2.0" }
+r2d2 = { version = "0.8.4" }
+# `diesel-async` is currently using `bb8-0.8`
+bb8_8 = { package = "bb8", version = "0.8.1" }
 
 # Email
 lettre = "0.11.0"
@@ -208,8 +246,8 @@ serde = { version = "1.0.185", features = ["derive"] }
 serde_derive = "1.0.185"
 serde_json = "1.0.96"
 serde_with = { version = "3.7.0", features = ["macros", "chrono_0_4"] }
-strum = "0.26.0"
-strum_macros = "0.26.0"
+strum = "0.27.0"
+strum_macros = "0.27.0"
 toml = "0.8.0"
 url = { version = "2.5.0", features = ["serde"] }
 futures = "0.3.30"
@@ -224,9 +262,9 @@ vergen = { version = "9.0.0" }
 vergen-gitcl = { version = "1.0.0" }
 reqwest = "0.12.8"
 itertools = "0.14.0"
-cargo-manifest = "0.18.0"
+cargo-manifest = "0.19.1"
 typed-builder = "0.20.0"
-rand = "0.8.5"
+rand = "0.9.0"
 thiserror = "2.0.9"
 uuid = { version = "1.10.0", features = ["v4", "serde"] }
 chrono = { version = "0.4.34", features = ["serde"] }
@@ -239,6 +277,7 @@ rustc_version = "0.4.1"
 cargo-husky = { version = "1.5.0", default-features = false, features = ["user-hooks"] }
 mockall_double = "0.3.1"
 tokio-test = "0.4.4"
+fake = { version = "3.1.0" }
 
 [package.metadata.docs.rs]
 # Have docs.rs pass `--all-features` to ensure all features have their documentation built.

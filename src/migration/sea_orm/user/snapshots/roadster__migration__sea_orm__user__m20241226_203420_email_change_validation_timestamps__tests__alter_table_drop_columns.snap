@@ -1,0 +1,5 @@
+---
+source: src/migration/sea_orm/user/m20241226_203420_email_change_validation_timestamps.rs
+expression: query.to_string(PostgresQueryBuilder)
+---
+ALTER TABLE "user" DROP COLUMN "email_change_new_confirmed_at", DROP COLUMN "email_change_current_confirmed_at"

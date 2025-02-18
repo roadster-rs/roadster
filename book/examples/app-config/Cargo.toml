@@ -1,0 +1,10 @@
+[package]
+name = "app-config"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+roadster = { path = "../../.." }
+async-trait = { workspace = true }
+config = { workspace = true }

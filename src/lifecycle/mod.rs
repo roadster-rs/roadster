@@ -1,10 +1,10 @@
-#[cfg(feature = "db-sea-orm")]
+#[cfg(feature = "db-sql")]
 pub mod db;
 pub mod default;
 pub mod registry;
 
 use crate::app::context::AppContext;
-use crate::app::App;
+use crate::app::{App, PreRunAppState};
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
@@ -18,17 +18,15 @@ use axum_core::extract::FromRef;
 /// 4. Run the roadster/app CLI command, if one was specified when the app was started
 /// 5. Register [`AppLifecycleHandler`]s, [`crate::health::check::HealthCheck`]s, and
 ///    [`crate::service::AppService`]s
-/// 6. Run the app's registered [`AppLifecycleHandler::before_service_cli`] hooks.
-/// 7. Run any CLI commands that are implemented by [`crate::service::AppService::handle_cli`]
-/// 8. Run the app's registered [`AppLifecycleHandler::before_health_checks`] hooks.
-/// 9. Run the registered [`crate::health::check::HealthCheck`]s
-/// 10. Run the app's registered [`AppLifecycleHandler::before_services`] hooks.
-/// 11. Run the registered [`crate::service::AppService`]s
-/// 12. Wait for a shutdown signal, e.g., `Ctrl+c` or a custom signal from
+/// 6. Run the app's registered [`AppLifecycleHandler::before_health_checks`] hooks.
+/// 7. Run the registered [`crate::health::check::HealthCheck`]s
+/// 8. Run the app's registered [`AppLifecycleHandler::before_services`] hooks.
+/// 9. Run the registered [`crate::service::AppService`]s
+/// 10. Wait for a shutdown signal, e.g., `Ctrl+c` or a custom signal from
 ///    [`crate::app::App::graceful_shutdown_signal`], and stop the [`crate::service::AppService`]s
 ///    when the signal is received.
-/// 13. Run Roadster's graceful shutdown logic
-/// 14. Run the app's registered [`AppLifecycleHandler::on_shutdown`] hooks.
+/// 11. Run Roadster's graceful shutdown logic
+/// 12. Run the app's registered [`AppLifecycleHandler::on_shutdown`] hooks.
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
 pub trait AppLifecycleHandler<A, S>: Send + Sync
@@ -60,21 +58,17 @@ where
         0
     }
 
-    /// This method is run right before running any CLI commands implemented by
-    /// [`crate::service::AppService::handle_cli`].
-    #[cfg(feature = "cli")]
-    async fn before_service_cli(&self, _state: &S) -> RoadsterResult<()> {
-        Ok(())
-    }
-
     /// This method is run right before the app's [`crate::health::check::HealthCheck`]s during
     /// app startup.
-    async fn before_health_checks(&self, _state: &S) -> RoadsterResult<()> {
+    async fn before_health_checks(
+        &self,
+        _prepared_app: &PreRunAppState<A, S>,
+    ) -> RoadsterResult<()> {
         Ok(())
     }
 
     /// This method is run right before the app's [`crate::service::AppService`]s are started.
-    async fn before_services(&self, _state: &S) -> RoadsterResult<()> {
+    async fn before_services(&self, _prepared_app: &PreRunAppState<A, S>) -> RoadsterResult<()> {
         Ok(())
     }
 
