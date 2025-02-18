@@ -2,7 +2,7 @@
 
 Roadster provides sensible defaults, but is highly customizable via configuration files and environment variables.
 Virtually all behavior of Roadster can be configured; to see the available configuration keys, see
-the [AppConfig](https://docs.rs/roadster/latest/roadster/config/struct.AppConfig.html) struct.
+the [`AppConfig`](https://docs.rs/roadster/latest/roadster/config/struct.AppConfig.html) struct.
 
 To see the full app config that's loaded for your app, use the `print-config` CLI command. This will print the app
 config after all the config sources (files, env vars, cli args) have been loaded and merged.
@@ -52,7 +52,7 @@ anyone who has access to your server, but they're better than checking your sens
 control.
 
 Env vars can either be set on the command line, or in a `.env` file. Environment variables should be prefixed with
-`ROADSTER__` named according to the [AppConfig](https://docs.rs/roadster/latest/roadster/config/struct.AppConfig.html)
+`ROADSTER__` named according to the [`AppConfig`](https://docs.rs/roadster/latest/roadster/config/struct.AppConfig.html)
 structure, where each level of the structure is separated by a double underscore (`__`). For example, to override the
 `AppConfig#environment`, you would use an environment variable named `ROADSTER__ENVIRONMENT`, and to override
 `AppConfig#app#shutdown_on_error`, you would use `ROADSTER__APP__SHUTDOWN_ON_ERROR`. E.g.:
@@ -62,25 +62,40 @@ export ROADSTER__ENVIRONMENT=dev
 export ROADSTER__APP__SHUTDOWN_ON_ERROR=true
 ```
 
+## Async sources
+
+You can also provide one or more [`AsyncSource`](https://docs.rs/config/latest/config/trait.AsyncSource.html)s to add to
+the configuration. This is useful to load configuration fields (particularly sensitive ones) from an external service,
+such as AWS or GCS secrets manager services.
+
+`AsyncSource`s are loaded into the configuration after all the other sources, so they have the highest precedence (they
+will override any duplicate fields from other sources).
+
+```rust,ignore
+{{#include ../../examples/app-config/src/example_async_source.rs:4:}}
+```
+
 ## Config mechanism precedence
 
-- `default.yml` (lowest)
 - `default.toml` (lowest)
 - `default/<filename>.toml`
 - `<env>.toml`
 - `<env>/<filename>.toml`
-- Environment variables (highest -- overrides lower precedence values)
+- Environment variables
+- [`AsyncSource`](https://docs.rs/config/latest/config/trait.AsyncSource.html)s (highest -- overrides lower precedence
+  values)
 
-If the `config-yml` feature is enabled, the precedence of file extensions is the following:
+If the `config-yml` feature is enabled, files with extensions `.yml` and `.yaml`. The precedence of all supported file
+extensions is the following:
 
-- `.yml`
+- `.yml` (lowest)
 - `.yaml`
-- `.toml`
+- `.toml` (highest -- overrides lower precedence values)
 
 ## Environment names
 
 Roadster provides some pre-defined environment names in
-the [Environment](https://docs.rs/roadster/latest/roadster/config/environment/enum.Environment.html) enum.
+the [`Environment`](https://docs.rs/roadster/latest/roadster/config/environment/enum.Environment.html) enum.
 
 - `development` (alias: `dev`)
 - `test`
@@ -91,4 +106,4 @@ is useful for special app-specific environments, such as additional pre-prod or 
 
 ## Docs.rs links
 
-- [AppConfig](https://docs.rs/roadster/latest/roadster/config/struct.AppConfig.html) struct
+- [`AppConfig`](https://docs.rs/roadster/latest/roadster/config/struct.AppConfig.html) struct

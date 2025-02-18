@@ -1,16 +1,15 @@
+use crate::api::cli::roadster::RunRoadsterCommand;
+use crate::app::context::AppContext;
+use crate::app::{App, PreparedApp};
+use crate::error::RoadsterResult;
+use crate::migration::{DownArgs, MigrationInfo, UpArgs};
 use anyhow::anyhow;
 use async_trait::async_trait;
-
 use axum_core::extract::FromRef;
 use clap::{Parser, Subcommand};
-use sea_orm_migration::MigratorTrait;
+use itertools::Itertools;
 use serde_derive::Serialize;
-use tracing::warn;
-
-use crate::api::cli::roadster::{RoadsterCli, RunRoadsterCommand};
-use crate::app::context::AppContext;
-use crate::app::App;
-use crate::error::RoadsterResult;
+use tracing::{info, warn};
 
 #[derive(Debug, Parser, Serialize)]
 #[non_exhaustive]
@@ -26,8 +25,8 @@ where
     AppContext: FromRef<S>,
     A: App<S>,
 {
-    async fn run(&self, app: &A, cli: &RoadsterCli, state: &S) -> RoadsterResult<bool> {
-        self.command.run(app, cli, state).await
+    async fn run(&self, prepared_app: &PreparedApp<A, S>) -> RoadsterResult<bool> {
+        self.command.run(prepared_app).await
     }
 }
 
@@ -35,16 +34,12 @@ where
 #[serde(tag = "type")]
 #[non_exhaustive]
 pub enum MigrateCommand {
-    /// Apply pending migrations
+    /// Apply pending migrations. If no `steps` argument is provided, will apply all pending
+    /// migrations.
     Up(UpArgs),
-    /// Rollback applied migrations
+    /// Roll back applied migrations. If no `steps` argument is provided, will roll back all
+    /// applied migrations.
     Down(DownArgs),
-    /// Rollback all applied migrations, then reapply all migrations
-    Refresh,
-    /// Rollback all applied migrations
-    Reset,
-    /// Drop all tables from the database, then reapply all migrations
-    Fresh,
     /// Check the status of all migrations
     Status,
 }
@@ -56,9 +51,9 @@ where
     AppContext: FromRef<S>,
     A: App<S>,
 {
-    async fn run(&self, _app: &A, cli: &RoadsterCli, state: &S) -> RoadsterResult<bool> {
-        let context = AppContext::from_ref(state);
-        if is_destructive(self) && !cli.allow_dangerous(&context) {
+    async fn run(&self, prepared_app: &PreparedApp<A, S>) -> RoadsterResult<bool> {
+        let context = AppContext::from_ref(&prepared_app.state);
+        if is_destructive(self) && !prepared_app.roadster_cli.allow_dangerous(&context) {
             return Err(anyhow!("Running destructive command `{:?}` is not allowed in environment `{:?}`. To override, provide the `--allow-dangerous` CLI arg.", self, context.config().environment).into());
         } else if is_destructive(self) {
             warn!(
@@ -68,33 +63,99 @@ where
             );
         }
         match self {
-            MigrateCommand::Up(args) => A::M::up(context.db(), args.steps).await?,
-            MigrateCommand::Down(args) => A::M::down(context.db(), args.steps).await?,
-            MigrateCommand::Refresh => A::M::refresh(context.db()).await?,
-            MigrateCommand::Reset => A::M::reset(context.db()).await?,
-            MigrateCommand::Fresh => A::M::fresh(context.db()).await?,
-            MigrateCommand::Status => A::M::status(context.db()).await?,
+            MigrateCommand::Up(args) => {
+                migrate_up(prepared_app, args).await?;
+                print_status(prepared_app).await?;
+            }
+            MigrateCommand::Down(args) => {
+                migrate_down(prepared_app, args).await?;
+                print_status(prepared_app).await?;
+            }
+            MigrateCommand::Status => {
+                print_status(prepared_app).await?;
+            }
         };
         Ok(true)
     }
 }
 
-#[derive(Debug, Parser, Serialize)]
-#[non_exhaustive]
-pub struct UpArgs {
-    /// The number of pending migration steps to apply.
-    #[clap(short = 'n', long)]
-    pub steps: Option<u32>,
-}
-
-#[derive(Debug, Parser, Serialize)]
-#[non_exhaustive]
-pub struct DownArgs {
-    /// The number of applied migration steps to rollback.
-    #[clap(short = 'n', long)]
-    pub steps: Option<u32>,
-}
-
 fn is_destructive(command: &MigrateCommand) -> bool {
     !matches!(command, MigrateCommand::Status)
+}
+
+// Todo: reduce duplication
+async fn migrate_up<A, S>(prepared_app: &PreparedApp<A, S>, args: &UpArgs) -> RoadsterResult<()>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S>,
+{
+    let mut total_steps_run = 0;
+    for migrator in prepared_app.migrators.iter() {
+        let remaining_steps = args
+            .steps
+            .map(|steps| steps.saturating_sub(total_steps_run));
+        if let Some(remaining) = remaining_steps {
+            if remaining == 0 {
+                return Ok(());
+            }
+        }
+        let steps_run = migrator
+            .up(
+                &prepared_app.state,
+                &UpArgs::builder().steps_opt(remaining_steps).build(),
+            )
+            .await?;
+        total_steps_run += steps_run;
+    }
+    Ok(())
+}
+
+// Todo: reduce duplication
+async fn migrate_down<A, S>(prepared_app: &PreparedApp<A, S>, args: &DownArgs) -> RoadsterResult<()>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S>,
+{
+    let mut total_steps_run = 0;
+    for migrator in prepared_app.migrators.iter().rev() {
+        let remaining_steps = args
+            .steps
+            .map(|steps| steps.saturating_sub(total_steps_run));
+        if let Some(remaining) = remaining_steps {
+            if remaining == 0 {
+                return Ok(());
+            }
+        }
+        let steps_run = migrator
+            .down(
+                &prepared_app.state,
+                &DownArgs::builder().steps_opt(remaining_steps).build(),
+            )
+            .await?;
+        total_steps_run += steps_run;
+    }
+    Ok(())
+}
+
+async fn print_status<A, S>(prepared_app: &PreparedApp<A, S>) -> RoadsterResult<()>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S>,
+{
+    let mut migrations: Vec<MigrationInfo> = Vec::new();
+    for migrator in prepared_app.migrators.iter() {
+        migrations.extend(migrator.status(&prepared_app.state).await?);
+    }
+    let migrations = migrations
+        .into_iter()
+        .map(|migration| {
+            let status: &'static str = migration.status.into();
+            format!("{}\t{}", status, migration.name)
+        })
+        .join("\n");
+    info!("Migration status:\n{migrations}");
+    Ok(())
 }

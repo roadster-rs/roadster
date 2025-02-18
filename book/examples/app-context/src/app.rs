@@ -9,7 +9,7 @@ use roadster::health::check::{CheckResponse, HealthCheck, Status};
 use roadster::util::empty::Empty;
 use std::time::Duration;
 
-pub type App = RoadsterApp<CustomState, Empty, Empty>;
+pub type App = RoadsterApp<CustomState, Empty>;
 
 pub struct ExampleHealthCheck {
     // Prevent reference cycle because the `ExampleHealthCheck` is also stored in the `AppContext`

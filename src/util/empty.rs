@@ -8,20 +8,14 @@ pub struct Empty;
 // parameter to implement for any `impl App`.
 #[cfg(feature = "cli")]
 #[async_trait::async_trait]
-impl<
-        S,
-        #[cfg(feature = "db-sea-orm")] M: 'static + sea_orm_migration::MigratorTrait + Send + Sync,
-        #[cfg(not(feature = "db-sea-orm"))] M: 'static + Send + Sync,
-    > crate::api::cli::RunCommand<crate::app::RoadsterApp<S, Empty, M>, S> for Empty
+impl<S> crate::api::cli::RunCommand<crate::app::RoadsterApp<S, Empty>, S> for Empty
 where
     S: Clone + Send + Sync + 'static,
     crate::app::context::AppContext: axum_core::extract::FromRef<S>,
 {
     async fn run(
         &self,
-        _app: &crate::app::RoadsterApp<S, Empty, M>,
-        _cli: &Empty,
-        _state: &S,
+        _prepared_app: &crate::app::PreparedApp<crate::app::RoadsterApp<S, Empty>, S>,
     ) -> crate::error::RoadsterResult<bool> {
         Ok(false)
     }

@@ -1,0 +1,5 @@
+---
+source: src/error/mutex.rs
+expression: error.to_string()
+---
+"Unable to acquire mutex `roadster::error::mutex::tests::FooStruct`; the mutex is poisoned. Err: poisoned lock: another task failed inside"

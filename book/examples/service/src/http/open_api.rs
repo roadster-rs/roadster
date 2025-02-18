@@ -1,10 +1,11 @@
 use roadster::app::context::AppContext;
-use roadster::app::{prepare, PrepareOptions, RoadsterApp, RoadsterAppBuilder};
+use roadster::app::{prepare, PrepareOptions, RoadsterApp};
 use roadster::error::RoadsterResult;
-use roadster::service::http::service::{HttpService, OpenApiArgs};
+use roadster::service::http::service::HttpService;
+use roadster::service::http::service::OpenApiArgs;
 use roadster::util::empty::Empty;
 
-type App = RoadsterApp<AppContext, Empty, Empty>;
+type App = RoadsterApp<AppContext, Empty>;
 
 async fn open_api() -> RoadsterResult<()> {
     // Build the app

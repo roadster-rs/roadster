@@ -1,5 +1,3 @@
-#[cfg(feature = "cli")]
-use crate::api::cli::roadster::RoadsterCli;
 use crate::app::context::AppContext;
 use crate::app::App;
 use crate::error::RoadsterResult;
@@ -33,23 +31,6 @@ where
 
     /// Whether the service is enabled. If the service is not enabled, it will not be run.
     fn enabled(&self, state: &S) -> bool;
-
-    /// Called when the app is starting up allow the service to handle CLI commands.
-    ///
-    /// Note: this is called after attempting to handle the CLI commands via [crate::api::cli::RunCommand]
-    /// implementations and won't be called if the command was already handled.
-    ///
-    /// See [crate::api::cli::RunCommand] for an explanation of the return values -- the behavior is
-    /// the same.
-    #[cfg(feature = "cli")]
-    async fn handle_cli(
-        &self,
-        _roadster_cli: &RoadsterCli,
-        _app_cli: &A::Cli,
-        _state: &S,
-    ) -> RoadsterResult<bool> {
-        Ok(false)
-    }
 
     /// Perform any initialization work or other checks that should be done before the service runs.
     ///

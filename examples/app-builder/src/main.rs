@@ -1,5 +1,7 @@
 use app_builder::api::http;
 use app_builder::app_state::AppState;
+use app_builder::config::example_async_source::ExampleAsyncSource;
+use app_builder::config::example_async_source_with_env::ExampleAsyncSourceWithEnv;
 use app_builder::health::check::example::ExampleHealthCheck;
 use app_builder::lifecycle::example::ExampleLifecycleHandler;
 use app_builder::worker::example::ExampleWorker;
@@ -20,8 +22,20 @@ const BASE: &str = "/api";
 async fn main() -> RoadsterResult<()> {
     let custom_state = "custom".to_string();
 
-    let builder: RoadsterAppBuilder<AppState, _, _> = RoadsterApp::builder()
+    let builder: RoadsterAppBuilder<AppState, _> = RoadsterApp::builder()
         .tracing_initializer(|config| roadster::tracing::init_tracing(config, &metadata()));
+
+    // If your application needs to load configuration fields (particularly sensitive ones) from an
+    // external service, such as AWS or GCS secrets manager services, you can load them via
+    // an `AsyncSource`.
+    let builder = builder
+        .add_async_config_source(ExampleAsyncSource)
+        // If the `AsyncSource` needs to know which environment it's running in, e.g. in order
+        // to use a different secrets manager endpoint per-environment, you can use the
+        // `async_config_source_provider` hook to build the source.
+        .add_async_config_source_provider(|environment| {
+            Ok(Box::new(ExampleAsyncSourceWithEnv::new(environment)))
+        });
 
     // Metadata can either be provided directly or via a provider callback. Note that the two
     // approaches are mutually exclusive, with the `metadata` method taking priority.
@@ -37,9 +51,16 @@ async fn main() -> RoadsterResult<()> {
             sea_orm::ConnectOptions::new("postgres://roadster:roadster@localhost:5432/example_dev");
         db_conn_options.connect_lazy(true);
         builder
-            .db_conn_options(db_conn_options)
-            .db_conn_options_provider(|config| Ok(sea_orm::ConnectOptions::from(&config.database)))
+            .sea_orm_conn_options(db_conn_options)
+            .sea_orm_conn_options_provider(|config| {
+                Ok(sea_orm::ConnectOptions::from(&config.database))
+            })
     };
+
+    // Roadster can automatically run the app's DB migrations on start up. Simply provide
+    // the app's migrator instance (something that implements sea-orm's `MigratorTrait`).
+    #[cfg(feature = "db-sea-orm")]
+    let builder = { builder.sea_orm_migrator(migration::Migrator) };
 
     // Provide your custom state via the `state_provider` method.
     let builder = builder.state_provider(move |app_context| {

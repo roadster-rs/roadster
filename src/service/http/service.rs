@@ -1,9 +1,3 @@
-#[cfg(feature = "cli")]
-use crate::api::cli::roadster::RoadsterCli;
-#[cfg(feature = "cli")]
-use crate::api::cli::roadster::RoadsterCommand;
-#[cfg(all(feature = "cli", feature = "open-api"))]
-use crate::api::cli::roadster::RoadsterSubCommand;
 use crate::app::context::AppContext;
 use crate::app::App;
 use crate::error::RoadsterResult;
@@ -20,7 +14,6 @@ use itertools::Itertools;
 use std::fs::File;
 #[cfg(feature = "open-api")]
 use std::io::Write;
-#[cfg(feature = "open-api")]
 use std::path::PathBuf;
 #[cfg(feature = "open-api")]
 use std::sync::Arc;
@@ -52,38 +45,6 @@ where
 
     fn enabled(&self, state: &S) -> bool {
         enabled(&AppContext::from_ref(state))
-    }
-
-    #[cfg(feature = "cli")]
-    async fn handle_cli(
-        &self,
-        roadster_cli: &RoadsterCli,
-        _app_cli: &A::Cli,
-        _state: &S,
-    ) -> RoadsterResult<bool> {
-        if let Some(command) = roadster_cli.command.as_ref() {
-            match command {
-                RoadsterCommand::Roadster(args) => match &args.command {
-                    #[cfg(feature = "open-api")]
-                    RoadsterSubCommand::ListRoutes(_) => {
-                        let routes = self
-                            .list_routes()
-                            .into_iter()
-                            .map(|(path, method)| format!("[{method}]\t{path}"))
-                            .join("\n\t");
-                        info!("API routes:\n\t{routes}");
-                        return Ok(true);
-                    }
-                    #[cfg(feature = "open-api")]
-                    RoadsterSubCommand::OpenApi(args) => {
-                        self.print_open_api_schema(args)?;
-                        return Ok(true);
-                    }
-                    _ => {}
-                },
-            }
-        }
-        Ok(false)
     }
 
     async fn run(
@@ -173,7 +134,6 @@ impl HttpService {
     }
 }
 
-#[cfg(feature = "open-api")]
 #[derive(Debug, serde_derive::Serialize, typed_builder::TypedBuilder)]
 #[cfg_attr(feature = "cli", derive(clap::Parser))]
 #[non_exhaustive]

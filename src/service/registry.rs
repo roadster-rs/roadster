@@ -35,7 +35,7 @@ pub struct ServiceRegistry<A, S>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + ?Sized + 'static,
+    A: App<S> + 'static,
 {
     pub(crate) state: S,
     pub(crate) service_names: HashSet<String>,
@@ -121,10 +121,11 @@ where
         doc = r##"
   ```rust
 # tokio_test::block_on(async {
+# use roadster::service::http::service::OpenApiArgs;
 # use roadster::app::RoadsterApp;
 # use roadster::util::empty::Empty;
 # use roadster::service::AppServiceBuilder;
-# use roadster::service::http::service::{HttpService, OpenApiArgs};
+# use roadster::service::http::service::HttpService;
 # use std::env::current_dir;
 # use std::path::PathBuf;
 # use std::sync::LazyLock;
@@ -140,7 +141,7 @@ where
 # use roadster::app::prepare;
 # use roadster::service::AppService;
 #
-type App = RoadsterApp<AppContext, Empty, Empty>;
+type App = RoadsterApp<AppContext, Empty>;
 
 let app: App = RoadsterApp::builder()
     .state_provider(|state| Ok(state))

@@ -1,5 +1,5 @@
 use crate::config::auth::Auth;
-#[cfg(feature = "db-sea-orm")]
+#[cfg(feature = "db-sql")]
 use crate::config::database::Database;
 #[cfg(feature = "email")]
 use crate::config::email::Email;
@@ -12,7 +12,7 @@ use crate::util::serde::default_true;
 use ::tracing::warn;
 use cfg_if::cfg_if;
 use config::builder::DefaultState;
-use config::{Config, ConfigBuilder, FileFormat};
+use config::{AsyncSource, Config, ConfigBuilder, FileFormat, Map};
 use convert_case::Casing;
 use dotenvy::dotenv;
 use health::check;
@@ -27,7 +27,7 @@ use typed_builder::TypedBuilder;
 use validator::{Validate, ValidationErrors};
 
 pub mod auth;
-#[cfg(feature = "db-sea-orm")]
+#[cfg(feature = "db-sql")]
 pub mod database;
 #[cfg(feature = "email")]
 pub mod email;
@@ -54,7 +54,7 @@ pub struct AppConfig {
     pub auth: Auth,
     #[validate(nested)]
     pub tracing: Tracing,
-    #[cfg(feature = "db-sea-orm")]
+    #[cfg(feature = "db-sql")]
     #[validate(nested)]
     pub database: Database,
     #[cfg(feature = "email")]
@@ -128,28 +128,40 @@ cfg_if! {
 }
 
 #[derive(TypedBuilder)]
+// Hmm, defining these methods in this macro is not the best experience; at what point to we just
+// implement our own builder type?
+#[builder(mutators(
+    fn async_config_sources(&mut self, async_config_sources: Vec<Box<dyn config::AsyncSource + Send>>) -> &mut Self{
+        self.async_config_sources = async_config_sources;
+    self
+    }
+    pub fn add_async_source(&mut self, source: impl config::AsyncSource + Send + 'static) -> &mut Self{
+        self.async_config_sources.push(Box::new(source));
+    self
+    }
+    pub fn add_async_source_boxed(&mut self, source: Box<dyn config::AsyncSource + Send>) -> &mut Self{
+        self.async_config_sources.push(source);
+    self
+    }
+))]
 #[non_exhaustive]
 pub struct AppConfigOptions {
-    #[builder(default, setter(strip_option(fallback = environment_opt)))]
-    pub environment: Option<Environment>,
-    #[builder(default, setter(strip_option(fallback = config_dir_opt)))]
+    #[builder]
+    pub environment: Environment,
+    #[builder(default, setter(into, strip_option(fallback = config_dir_opt)))]
     pub config_dir: Option<PathBuf>,
+    #[builder(via_mutators)]
+    pub async_config_sources: Vec<Box<dyn AsyncSource + Send>>,
 }
 
 impl AppConfig {
     // This runs before tracing is initialized, so we need to use `println` in order to
     // log from this method.
     #[allow(clippy::disallowed_macros)]
-    pub fn new_with_options(options: AppConfigOptions) -> RoadsterResult<Self> {
+    pub async fn new_with_options(options: AppConfigOptions) -> RoadsterResult<Self> {
         dotenv().ok();
 
-        let environment = if let Some(environment) = options.environment {
-            println!("Using environment from options: {environment:?}");
-            environment
-        } else {
-            Environment::new()?
-        };
-        let environment_string = environment.clone().to_string();
+        let environment_string = options.environment.clone().to_string();
         let environment_str = environment_string.as_str();
 
         let config_root_dir = options
@@ -159,23 +171,36 @@ impl AppConfig {
 
         println!("Loading configuration from directory {config_root_dir:?}");
 
-        let config = Self::default_config(environment.clone())?;
+        let config = Self::default_config(options.environment.clone())?;
         let config = config_env_file("default", &config_root_dir, config);
         let config = config_env_dir("default", &config_root_dir, config)?;
         let config = config_env_file(environment_str, &config_root_dir, config);
         let config = config_env_dir(environment_str, &config_root_dir, config)?;
+        let config = config.add_source(
+            config::Environment::default()
+                .prefix(ENV_VAR_PREFIX)
+                .convert_case(config::Case::Kebab)
+                .separator(ENV_VAR_SEPARATOR),
+        );
+
+        // Convert builder state to `AsyncState`
+        let config = config.add_async_source(BoxedAsyncSource(None));
+
+        // Add all of the provided async sources
+        let config = options
+            .async_config_sources
+            .into_iter()
+            .fold(config, |config, source| {
+                config.add_async_source(BoxedAsyncSource(Some(source)))
+            });
+
         let config = config
-            .add_source(
-                config::Environment::default()
-                    .prefix(ENV_VAR_PREFIX)
-                    .convert_case(config::Case::Kebab)
-                    .separator(ENV_VAR_SEPARATOR),
-            )
             .set_override(
                 ENVIRONMENT_ENV_VAR_NAME.to_case(convert_case::Case::Kebab),
                 environment_str,
             )?
-            .build()?;
+            .build()
+            .await?;
         let config: AppConfig = config.try_deserialize()?;
 
         Ok(config)
@@ -353,6 +378,20 @@ fn config_env_dir_recursive(
     })
 }
 
+#[derive(Debug)]
+struct BoxedAsyncSource(Option<Box<dyn AsyncSource + Send + Sync>>);
+
+#[async_trait::async_trait]
+impl AsyncSource for BoxedAsyncSource {
+    async fn collect(&self) -> Result<Map<String, config::Value>, config::ConfigError> {
+        if let Some(source) = self.0.as_ref() {
+            source.collect().await
+        } else {
+            Ok(Default::default())
+        }
+    }
+}
+
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -374,17 +413,23 @@ pub struct TestContainer {
 
 #[cfg(all(
     test,
-    feature = "http",
+    feature = "default",
+    feature = "default-diesel",
     feature = "open-api",
     feature = "sidekiq",
     feature = "db-sea-orm",
+    feature = "db-diesel-postgres-pool",
+    feature = "db-diesel-mysql-pool",
+    feature = "db-diesel-sqlite-pool",
+    feature = "db-diesel-postgres-pool-async",
+    feature = "db-diesel-mysql-pool-async",
     feature = "email-smtp",
     feature = "email-sendgrid",
-    feature = "jwt",
     feature = "jwt-ietf",
+    feature = "jwt-openid",
+    feature = "cli",
     feature = "otel",
     feature = "grpc",
-    feature = "testing",
     feature = "test-containers",
     feature = "testing-mocks",
     feature = "config-yml",
@@ -443,5 +488,36 @@ mod file_extensions_tests {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn file_extensions_yml() {
         assert_debug_snapshot!(super::FILE_EXTENSIONS);
+    }
+}
+
+#[cfg(test)]
+mod app_config_options_tests {
+    use crate::config::environment::Environment;
+    use crate::config::AppConfigOptions;
+    use config::{AsyncSource, Map, Value};
+
+    #[derive(Debug)]
+    struct TestAsyncSource;
+
+    #[async_trait::async_trait]
+    impl AsyncSource for TestAsyncSource {
+        async fn collect(&self) -> Result<Map<String, Value>, config::ConfigError> {
+            Ok(Default::default())
+        }
+    }
+
+    #[test]
+    fn app_config_options_builder() {
+        let builder = AppConfigOptions::builder()
+            .environment(Environment::Test)
+            .config_dir("./")
+            .async_config_sources(vec![Box::new(TestAsyncSource)])
+            .add_async_source(TestAsyncSource)
+            .add_async_source_boxed(Box::new(TestAsyncSource));
+
+        let options = builder.build();
+
+        assert_eq!(options.async_config_sources.len(), 3);
     }
 }

@@ -30,7 +30,7 @@ use typed_builder::TypedBuilder;
 /// #    unimplemented!()
 /// }
 ///
-/// type App = RoadsterApp<AppContext, Empty, Empty>;
+/// type App = RoadsterApp<AppContext, Empty>;
 ///
 /// let service = FunctionService::builder()
 ///             .name("example".to_string())

@@ -34,6 +34,46 @@ fn main() -> anyhow::Result<()> {
         vec!["jwt", "jwt-openid"],
         vec!["open-api", "http"],
         vec!["db-sea-orm", "db-sql"],
+        // Diesel
+        vec!["db-diesel", "db-sql"],
+        vec!["db-diesel-postgres", "db-diesel", "db-sql"],
+        vec!["db-diesel-mysql", "db-diesel", "db-sql"],
+        vec!["db-diesel-sqlite", "db-diesel", "db-sql"],
+        // Diesel pool
+        vec![
+            "db-diesel-postgres-pool",
+            "db-diesel-postgres",
+            "db-diesel",
+            "db-sql",
+        ],
+        vec![
+            "db-diesel-mysql-pool",
+            "db-diesel-mysql",
+            "db-diesel",
+            "db-sql",
+        ],
+        vec![
+            "db-diesel-sqlite-pool",
+            "db-diesel-sqlite",
+            "db-diesel",
+            "db-sql",
+        ],
+        // Diesel async pool
+        vec!["db-diesel-pool-async", "db-diesel", "db-sql"],
+        vec![
+            "db-diesel-postgres-pool-async",
+            "db-diesel-pool-async",
+            "db-diesel-postgres",
+            "db-diesel",
+            "db-sql",
+        ],
+        vec![
+            "db-diesel-mysql-pool-async",
+            "db-diesel-pool-async",
+            "db-diesel-mysql",
+            "db-diesel",
+            "db-sql",
+        ],
     ]
     .into_iter()
     .map(|v| v.into_iter().map(|s| s.to_string()).collect())

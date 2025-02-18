@@ -1,7 +1,7 @@
-use crate::api::cli::roadster::{RoadsterCli, RunRoadsterCommand};
+use crate::api::cli::roadster::RunRoadsterCommand;
 use crate::api::core::health::health_check;
 use crate::app::context::AppContext;
-use crate::app::App;
+use crate::app::{App, PreparedApp};
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
@@ -25,20 +25,15 @@ where
     AppContext: FromRef<S>,
     A: App<S>,
 {
-    async fn run(
-        &self,
-        _app: &A,
-        _cli: &RoadsterCli,
-        #[allow(unused_variables)] state: &S,
-    ) -> RoadsterResult<bool> {
+    async fn run(&self, prepared_app: &PreparedApp<A, S>) -> RoadsterResult<bool> {
         let duration = self
             .max_duration
             .map(Duration::from_millis)
             .unwrap_or_else(|| {
-                let context = AppContext::from_ref(state);
+                let context = AppContext::from_ref(&prepared_app.state);
                 context.config().health_check.max_duration.cli
             });
-        let health = health_check(state, Some(duration)).await?;
+        let health = health_check(&prepared_app.state, Some(duration)).await?;
         let health = serde_json::to_string_pretty(&health)?;
         info!("\n{health}");
         Ok(true)
