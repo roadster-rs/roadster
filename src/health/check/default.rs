@@ -74,6 +74,11 @@ pub fn default_health_checks(
     test,
     feature = "sidekiq",
     feature = "db-sea-orm",
+    feature = "db-diesel-postgres-pool",
+    feature = "db-diesel-mysql-pool",
+    feature = "db-diesel-sqlite-pool",
+    feature = "db-diesel-postgres-pool-async",
+    feature = "db-diesel-mysql-pool-async",
     feature = "email-smtp"
 ))]
 mod tests {
