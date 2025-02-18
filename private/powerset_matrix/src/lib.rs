@@ -103,7 +103,6 @@ fn random(cli: &Cli, features: Vec<String>) -> anyhow::Result<Vec<Vec<String>>> 
     } else {
         rand::random()
     };
-    println!("Foo");
     eprintln!("Using seed {seed}");
     let mut rng = StdRng::seed_from_u64(seed);
 
