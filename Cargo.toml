@@ -210,7 +210,7 @@ r2d2 = { version = "0.8.4" }
 bb8_8 = { package = "bb8", version = "0.8.1" }
 
 # Email
-lettre = "0.11.0"
+lettre = { version = "0.11.0", default-features = false, features = ["smtp-transport", "pool", "rustls-tls", "hostname", "builder"] }
 sendgrid = "0.23.0"
 
 # CLI
@@ -260,7 +260,7 @@ validator = { version = "0.20.0", features = ["derive"] }
 cfg-if = "1.0.0"
 vergen = { version = "9.0.0" }
 vergen-gitcl = { version = "1.0.0" }
-reqwest = "0.12.8"
+reqwest = { version = "0.12.8", default-features = false, features = ["rustls-tls", "charset", "http2", "macos-system-configuration"] }
 itertools = "0.14.0"
 cargo-manifest = "0.19.1"
 typed-builder = "0.20.0"
