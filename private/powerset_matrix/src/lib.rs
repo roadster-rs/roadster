@@ -66,27 +66,30 @@ fn powerset_impl(
         .unique()
         .collect_vec();
 
-    let sets = limited(cli, features.clone())?
+    let mut sets: Vec<Vec<&String>> = Default::default();
+
+    // Start the powerset size at 2 because we already test each feature individually on each PR.
+    for i in 1..cli.limited_depth {
+        sets.extend(
+            features
+                .iter()
+                .combinations(i + 1)
+                .map(|x| x.into_iter().unique().collect_vec())
+                .collect_vec(),
+        );
+    }
+
+    let mut sets = sets
         .into_iter()
-        .chain(random(cli, features)?)
+        .map(|x| x.iter().map(|x| x.to_string()).collect_vec())
         .collect_vec();
+
+    sets.extend(random(cli, features)?);
 
     Ok(sets)
 }
 
-fn limited(cli: &Cli, features: Vec<String>) -> anyhow::Result<Vec<Vec<String>>> {
-    let ps = features.into_iter().powerset().collect_vec();
-
-    let ps = ps
-        .into_iter()
-        // Reduce the size of the powerset by
-        // - Skipping sets with only one item -- we already check each feature on every PR
-        // - Skipping sets with more than `cli.limited_depth` items
-        .filter(|s| s.len() > 1 && s.len() <= cli.limited_depth)
-        .collect_vec();
-
-    Ok(ps)
-}
+const RANDOM_MAX_DEPTH: usize = 6;
 
 fn random(cli: &Cli, features: Vec<String>) -> anyhow::Result<Vec<Vec<String>>> {
     let count = if let Some(count) = cli.random_count {
@@ -100,16 +103,30 @@ fn random(cli: &Cli, features: Vec<String>) -> anyhow::Result<Vec<Vec<String>>> 
     } else {
         rand::random()
     };
+    println!("Foo");
     eprintln!("Using seed {seed}");
     let mut rng = StdRng::seed_from_u64(seed);
 
-    let ps = features
-        .into_iter()
-        .powerset()
-        .filter(|s| s.len() > cli.limited_depth)
-        .choose_multiple(&mut rng, count);
+    let mut sets: Vec<Vec<&String>> = Default::default();
 
-    Ok(ps)
+    for i in cli.limited_depth..RANDOM_MAX_DEPTH {
+        sets.extend(
+            features
+                .iter()
+                .combinations(i + 1)
+                .map(|x| x.into_iter().unique().collect_vec())
+                .collect_vec(),
+        );
+    }
+
+    let sets = sets
+        .iter()
+        .choose_multiple(&mut rng, count)
+        .iter()
+        .map(|x| x.iter().map(|x| x.to_string()).collect_vec())
+        .collect_vec();
+
+    Ok(sets)
 }
 
 #[cfg(test)]
