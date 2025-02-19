@@ -30,15 +30,17 @@ missing features are not planned but we'd be open to adding if there was enough 
 | &ensp;↳ OpenAPI docs explorer http route provided by default                                                                    | ✅              | ❌                                         |
 | GRPC API with [tonic](https://crates.io/crates/tonic)                                                                           | ✅              | ❌                                         |
 | Channels (websockets and/or http long-polling)                                                                                  | ❌              | ✅                                         |
-| Support for running arbitrary long-running services                                                                             | ✅              | ❌                                         |
+| Support for arbitrary long-running services                                                                                     | ✅              | ❌                                         |
 | Health checks                                                                                                                   | ✅              | ✅                                         |
 | &ensp;↳ Run in "health" API route                                                                                               | ✅              | ✅                                         |
 | &ensp;↳ Run on app startup                                                                                                      | ✅              | ❌                                         |
 | &ensp;↳ Run via CLI                                                                                                             | ✅              | ❌                                         |
 | &ensp;↳ Consumer can provide custom checks                                                                                      | ✅              | ❌                                         |
 | Custom app context / Axum state using Axum's [`FromRef`](https://docs.rs/axum-core/latest/axum_core/extract/trait.FromRef.html) | ✅              | ❌                                         |
-| SQL DB via SeaORM                                                                                                               | ✅              | ✅                                         |
-| &ensp;↳ Migrations for common DB schemas                                                                                        | ✅<br/>(in lib) | ✅<br/>(in starters)                       |
+| SQL DB                                                                                                                          | ✅              | ✅                                         |
+| &ensp;↳ via Diesel                                                                                                              | ✅              | ❌                                         |
+| &ensp;↳ via SeaORM                                                                                                              | ✅              | ✅                                         |
+| &ensp;&ensp;↳ SeaORM migrations for common DB schemas                                                                           | ✅<br/>(in lib) | ✅<br/>(in starters)                       |
 | Sample JWT Axum extractor                                                                                                       | ✅              | ✅                                         |
 | &ensp;↳ Multiple JWT standards supported                                                                                        | ✅              | ❌                                         |
 | Email                                                                                                                           | ✅              | ✅                                         |
