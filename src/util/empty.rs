@@ -42,10 +42,3 @@ impl clap::FromArgMatches for Empty {
         Ok(())
     }
 }
-
-#[cfg(feature = "db-sea-orm")]
-impl sea_orm_migration::MigratorTrait for Empty {
-    fn migrations() -> Vec<Box<dyn sea_orm_migration::MigrationTrait>> {
-        Default::default()
-    }
-}

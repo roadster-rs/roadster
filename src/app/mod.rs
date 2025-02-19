@@ -7,8 +7,7 @@ mod roadster_app;
 /// See <https://github.com/roadster-rs/roadster/tree/main/examples/app-builder/src/main.rs> for
 /// an example of how to use the [`RoadsterApp`].
 ///
-/// The `Cli` and `M` type parameters are only required when the `cli` and `db-sea-orm` features are
-/// enabled, respectively.
+/// The `Cli` type parameter is only required when the using a custom CLI.
 pub use roadster_app::RoadsterApp;
 
 /// Builder-style API to build/customize a [`RoadsterApp`].
@@ -16,8 +15,7 @@ pub use roadster_app::RoadsterApp;
 /// See <https://github.com/roadster-rs/roadster/tree/main/examples/app-builder/src/main.rs> for
 /// an example of how to use the [`RoadsterAppBuilder`].
 ///
-/// The `Cli` and `M` type parameters are only required when the `cli` and `db-sea-orm` features are
-/// enabled, respectively.
+/// The `Cli` type parameter is only required when the using a custom CLI.
 pub use roadster_app::RoadsterAppBuilder;
 
 #[cfg(feature = "cli")]

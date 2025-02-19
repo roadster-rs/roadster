@@ -197,7 +197,7 @@ mod tests {
     #[cfg_attr(feature = "open-api", case::list_routes(Some("roadster list-routes")))]
     #[cfg_attr(feature = "open-api", case::list_routes(Some("r list-routes")))]
     #[cfg_attr(feature = "open-api", case::open_api(Some("r open-api")))]
-    #[cfg_attr(feature = "db-sea-orm", case::migrate(Some("r migrate up")))]
+    #[cfg_attr(feature = "db-sql", case::migrate(Some("r migrate up")))]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn parse_cli(_case: TestCase, #[case] args: Option<&str>) {
         // Arrange
