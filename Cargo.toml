@@ -50,7 +50,7 @@ jwt-openid = ["jwt"]
 cli = ["dep:clap"]
 otel = ["dep:opentelemetry", "dep:opentelemetry_sdk", "dep:opentelemetry-otlp", "dep:tracing-opentelemetry", "dep:prost"]
 grpc = ["dep:tonic"]
-testing = ["dep:insta", "dep:rstest", "dep:testcontainers-modules"]
+testing = ["dep:insta", "dep:rstest"]
 test-containers = ["testing", "dep:testcontainers-modules"]
 testing-mocks = ["testing", "dep:mockall", "sea-orm?/mock"]
 config-yml = ["config/yaml"]
@@ -127,7 +127,7 @@ tonic = { workspace = true, optional = true }
 # Testing
 insta = { workspace = true, optional = true }
 rstest = { workspace = true, optional = true }
-testcontainers-modules = { workspace = true, features = ["postgres", "redis"], optional = true }
+testcontainers-modules = { workspace = true, features = ["postgres", "mysql", "redis"], optional = true }
 mockall = { workspace = true, optional = true }
 
 # Others
