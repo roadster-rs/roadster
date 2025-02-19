@@ -20,7 +20,6 @@ use typed_builder::TypedBuilder;
 /// # use roadster::service::function::service::FunctionService;
 /// # use roadster::service::registry::ServiceRegistry;
 /// # use roadster::app::RoadsterApp;
-/// # use roadster::util::empty::Empty;
 ///
 /// async fn example_service(
 ///     _state: AppContext,
@@ -30,7 +29,7 @@ use typed_builder::TypedBuilder;
 /// #    unimplemented!()
 /// }
 ///
-/// type App = RoadsterApp<AppContext, Empty>;
+/// type App = RoadsterApp<AppContext>;
 ///
 /// let service = FunctionService::builder()
 ///             .name("example".to_string())

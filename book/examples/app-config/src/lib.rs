@@ -1,11 +1,10 @@
 use crate::example_async_source::ExampleAsyncSource;
 use roadster::app::context::AppContext;
 use roadster::app::RoadsterApp;
-use roadster::util::empty::Empty;
 
 pub mod example_async_source;
 
-pub type App = RoadsterApp<AppContext, Empty>;
+pub type App = RoadsterApp<AppContext>;
 
 pub fn build_app() -> App {
     let builder = RoadsterApp::builder();
