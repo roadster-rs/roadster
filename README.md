@@ -37,6 +37,8 @@ and [Poem](https://github.com/poem-web/poem).
   JWT extractor for Axum that simply puts all claims into a map (available with the `jwt` feature)
 - Built-in support for [SeaORM](https://crates.io/crates/sea-orm), including creating DB connections (requires
   the `db-sea-orm` feature)
+- Built-in support for [Deisel](https://crates.io/crates/diesel), including creating DB connections (requires a subset
+  of the `db-diesel-*` collection of features, depending on what's needed)
 - Built-in support for [Sidekiq.rs](https://crates.io/crates/rusty-sidekiq) for running async/background jobs (requires
   the `sidekiq` feature)
 - Built-in support for sending emails via SMTP (requires the `email-smtp` feature)
