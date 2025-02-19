@@ -123,7 +123,6 @@ where
 # tokio_test::block_on(async {
 # use roadster::service::http::service::OpenApiArgs;
 # use roadster::app::RoadsterApp;
-# use roadster::util::empty::Empty;
 # use roadster::service::AppServiceBuilder;
 # use roadster::service::http::service::HttpService;
 # use std::env::current_dir;
@@ -141,7 +140,7 @@ where
 # use roadster::app::prepare;
 # use roadster::service::AppService;
 #
-type App = RoadsterApp<AppContext, Empty>;
+type App = RoadsterApp<AppContext>;
 
 let app: App = RoadsterApp::builder()
     .state_provider(|state| Ok(state))

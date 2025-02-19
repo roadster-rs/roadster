@@ -15,6 +15,6 @@ cfg_if! {
 if #[cfg(feature = "cli")] {
     pub type App = RoadsterApp<AppState, api::cli::AppCli>;
 } else {
-    pub type App = RoadsterApp<AppState, roadster::util::empty::Empty>;
+    pub type App = RoadsterApp<AppState>;
 }
 }

@@ -3,9 +3,8 @@ use roadster::app::{prepare, PrepareOptions, RoadsterApp};
 use roadster::error::RoadsterResult;
 use roadster::service::http::service::HttpService;
 use roadster::service::http::service::OpenApiArgs;
-use roadster::util::empty::Empty;
 
-type App = RoadsterApp<AppContext, Empty>;
+type App = RoadsterApp<AppContext>;
 
 async fn open_api() -> RoadsterResult<()> {
     // Build the app

@@ -23,11 +23,10 @@ use tracing::info;
 /// # use roadster::app::RoadsterApp;
 /// # use roadster::lifecycle::AppLifecycleHandler;
 /// # use roadster::lifecycle::registry::LifecycleHandlerRegistry;
-/// # use roadster::util::empty::Empty;
 /// #
 /// struct ExampleLifecycleHandler;
 ///
-/// type App = RoadsterApp<AppContext, Empty>;
+/// type App = RoadsterApp<AppContext>;
 ///
 /// impl AppLifecycleHandler<App, AppContext> for ExampleLifecycleHandler {
 ///     fn name(&self) -> String {
