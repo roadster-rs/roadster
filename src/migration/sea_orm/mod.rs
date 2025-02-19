@@ -14,7 +14,6 @@ pub mod timestamp;
 pub mod user;
 pub mod uuid;
 
-#[cfg(feature = "db-sea-orm")]
 impl From<sea_orm_migration::Migration> for MigrationInfo {
     fn from(value: sea_orm_migration::Migration) -> Self {
         Self {
@@ -24,7 +23,6 @@ impl From<sea_orm_migration::Migration> for MigrationInfo {
     }
 }
 
-#[cfg(feature = "db-sea-orm")]
 impl From<sea_orm_migration::MigrationStatus> for MigrationStatus {
     fn from(value: sea_orm_migration::MigrationStatus) -> Self {
         match value {
@@ -34,7 +32,6 @@ impl From<sea_orm_migration::MigrationStatus> for MigrationStatus {
     }
 }
 
-#[cfg(feature = "db-sea-orm")]
 pub struct SeaOrmMigrator<M>
 where
     M: MigratorTrait + Send + Sync,
@@ -42,7 +39,6 @@ where
     migrator: PhantomData<M>,
 }
 
-#[cfg(feature = "db-sea-orm")]
 impl<M> SeaOrmMigrator<M>
 where
     M: MigratorTrait + Send + Sync,
@@ -54,7 +50,6 @@ where
     }
 }
 
-#[cfg(feature = "db-sea-orm")]
 #[async_trait]
 impl<S, M> Migrator<S> for SeaOrmMigrator<M>
 where
