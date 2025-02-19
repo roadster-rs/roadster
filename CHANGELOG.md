@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.7.0-alpha.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.3...roadster-v0.7.0-alpha.4) - 2025-02-18
 
+This is a very large release with a lot of breaking changes. See the below changelog the detailed commit history. In summary, this release adds support for the [Diesel](https://github.com/diesel-rs/diesel) SQL ORM. Diesel is a very different ORM compared to SeaORM (the ORM we currently support), and as such this release required a lot of refactoring in order to provide a relatively consistent experience regardless of which ORM a consumer decides to use (or if they decide to use both, which is possible but not particularly recommended). The refactor also resulted in some general simplifications and improvements to the devx; read on for more details. Some breaking changes include:
+
+- Remove the `M` associated type from the `App` trait. A `Migrator` can now be provided via the `migrators` method instead.
+- Similarly, remove the `M` type parameter from `RoadsterApp`. SeaORM, Diesel, or a generic `Migrator` can now be provided via the builder methods.
+- Change `RunCommand#run` to take a single `PreparedApp` struct
+- ^This allowed removing the CLI handler method from the `AppService` trait. CLI's now have access to the `ServiceRegistry` from the `PreparedApp`, so they can get access to a particular `AppService` using `ServiceRegistry#get` (assuming it was registered).
+- Consolidate DB migration CLI commands to provide consistent experience between SeaORM and Diesel. This also removed some slightly redundant commands.
+- Rename  `AppContext#db` to `AppContext#sea_orm`
+- Rename `App#db_connection_options` to
+`App#sea_orm_connection_options`, and rename the related methods in `RoadsterApp`
+- Move/rename the DB health check
+- Add `Sized` as a parent trait for the `App`
+
+This release also includes the following non-breaking changes:
+- Add `AppContext` methods to get various Diesel connection pools types, including Postgres, Mysql, Sqlite, and async pools for Postgres and Mysql. Due to Diesel's type strategy for connections, there isn't a single "DbConnection" like there is in SeaORM, so we provide individual methods depending on which feature flags are enabled.
+- Allow providing `AsyncSource` implementations to use with the `config` crate. This allows, for example, loading secret config values from an external service, such as AWS or GCS secrets managers.
+- Add a couple db config fields, `test-on-checkout` and `retry-connection`
+- Add more variants to our custom `Error` type
+
 ### Added
 
 - [**breaking**] Add `diesel` support (#626)
@@ -20,31 +39,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Other
 
-- [**breaking**] Fix health check default list test (#629)
-- Remove stray print in power set crate (#628)
-- Replace native-tls with rustls in several dependencies (#621)
-- [**breaking**] Remove `AppContext!mailer` method in favor of the `smtp` method (#613)
+- [**breaking**] Replace native-tls with rustls in several dependencies (#621) thanks to @tomtom5152
+- [**breaking**] Remove `AppContext::mailer` method in favor of the `smtp` method (#613)
 - Remove leptos-0.6 example so to  maintain a single leptos example (#610)
-- Add book chapter for axum state (#609)
-- Rounded favicon for book site (#607)
-- Update config book chapter (#606)
-- Add note to `Empty` for why it can't impl RunCommand for any App (#605)
-- Add `build_path` doc and http service book chapter (#604)
-- Improve service chapter of book (#603)
-- Minor update to db book chapter (#602)
-- Add to database book chapter and add examples (#601)
-- Add example of `ProvideRef` in book (#600)
 - Add doc comments for `Provide` and `ProvideRef` and add to book (#598)
-- Small change to config dir structure in book chapter (#597)
-- Add to `AppContext` book docs (#596)
-- More improvements to config chapter (#595)
-- Use `RoadsterApp` and `Empty` placeholder to simplify doc tests (#594)
 - Minor improvement to initializing health checks in state (#593)
-- Add docs for config files (#591)
 - Refactor `RoadsterApp` to reduce duplication (#589)
 - Add example of using tower/axum `oneshot` to test APIs (#587)
 - Improve test coverage (#582)
 - Update the validator trait (#585)
+- Various documentation + test improvements
 
 ## [0.7.0-alpha.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.2...roadster-v0.7.0-alpha.3) - 2025-01-22
 
