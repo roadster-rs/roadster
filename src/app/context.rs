@@ -82,7 +82,7 @@ impl AppContext {
 
         #[cfg(not(test))]
         let context = {
-            #[cfg(all(feature = "db-sea-orm", feature = "test-containers"))]
+            #[cfg(all(feature = "db-sql", feature = "test-containers"))]
             let db_test_container = db_test_container(&mut config).await?;
             #[cfg(all(feature = "sidekiq", feature = "test-containers"))]
             let sidekiq_redis_test_container = sidekiq_redis_test_container(&mut config).await?;
@@ -679,42 +679,86 @@ impl Provide<Option<RedisFetch>> for AppContext {
     }
 }
 
-#[cfg(all(feature = "db-sea-orm", feature = "test-containers"))]
-#[cfg_attr(test, allow(dead_code))]
-async fn db_test_container(
-    config: &mut AppConfig,
-) -> RoadsterResult<
-    Option<
+#[cfg(all(feature = "db-sql", feature = "test-containers"))]
+enum DbTestContainer {
+    Postgres(
         testcontainers_modules::testcontainers::ContainerAsync<
             testcontainers_modules::postgres::Postgres,
         >,
-    >,
-> {
+    ),
+    Mysql(
+        testcontainers_modules::testcontainers::ContainerAsync<
+            testcontainers_modules::mysql::Mysql,
+        >,
+    ),
+}
+
+#[cfg(all(feature = "db-sql", feature = "test-containers"))]
+impl DbTestContainer {
+    async fn get_host(
+        &self,
+    ) -> testcontainers_modules::testcontainers::core::error::Result<url::Host> {
+        match self {
+            DbTestContainer::Postgres(container) => container.get_host().await,
+            DbTestContainer::Mysql(container) => container.get_host().await,
+        }
+    }
+
+    async fn get_port(&self) -> testcontainers_modules::testcontainers::core::error::Result<u16> {
+        match self {
+            DbTestContainer::Postgres(container) => container.get_host_port_ipv4(5432).await,
+            DbTestContainer::Mysql(container) => container.get_host_port_ipv4(3306).await,
+        }
+    }
+
+    async fn get_uri(&self) -> RoadsterResult<url::Url> {
+        let host = self.get_host().await.map_err(|err| anyhow!("{err}"))?;
+        let port = self.get_port().await.map_err(|err| anyhow!("{err}"))?;
+        let uri = match self {
+            DbTestContainer::Postgres(_) => {
+                format!("postgres://postgres:postgres@{host}:{port}/postgres").parse()?
+            }
+            DbTestContainer::Mysql(_) => format!("mysql://{host}:{port}/test").parse()?,
+        };
+        Ok(uri)
+    }
+}
+
+#[cfg(all(feature = "db-sql", feature = "test-containers"))]
+#[cfg_attr(test, allow(dead_code))]
+async fn db_test_container(config: &mut AppConfig) -> RoadsterResult<Option<DbTestContainer>> {
     use testcontainers_modules::testcontainers::runners::AsyncRunner;
     use testcontainers_modules::testcontainers::ImageExt;
 
-    let container = if let Some(test_container) = config.database.test_container.as_ref() {
-        let container = testcontainers_modules::postgres::Postgres::default()
-            .with_tag(test_container.tag.to_string())
-            .start()
-            .await
-            .map_err(|err| anyhow!("{err}"))?;
-        Some(container)
-    } else {
-        None
-    };
+    let uri_scheme = config.database.uri.scheme();
+
+    let container: Option<DbTestContainer> =
+        if let Some(test_container) = config.database.test_container.as_ref() {
+            if uri_scheme == "postgres" {
+                let container = testcontainers_modules::postgres::Postgres::default()
+                    .with_tag(test_container.tag.to_string())
+                    .start()
+                    .await
+                    .map_err(|err| anyhow!("{err}"))?;
+                Some(DbTestContainer::Postgres(container))
+            } else if uri_scheme == "mysql" {
+                let container = testcontainers_modules::mysql::Mysql::default()
+                    .with_tag(test_container.tag.to_string())
+                    .start()
+                    .await
+                    .map_err(|err| anyhow!("{err}"))?;
+                Some(DbTestContainer::Mysql(container))
+            } else {
+                None
+            }
+        } else {
+            None
+        };
 
     if let Some(container) = container.as_ref() {
-        let host_ip = container.get_host().await.map_err(|err| anyhow!("{err}"))?;
-
-        let host_port = container
-            .get_host_port_ipv4(5432)
-            .await
-            .map_err(|err| anyhow!("{err}"))?;
-
-        config.database.uri =
-            format!("postgres://postgres:postgres@{host_ip}:{host_port}/postgres").parse()?;
+        config.database.uri = container.get_uri().await?;
     }
+
     Ok(container)
 }
 
@@ -776,11 +820,7 @@ struct AppContextInner {
     diesel_mysql_pool_async: DieselMysqlPoolAsync,
     #[cfg(all(feature = "db-sql", feature = "test-containers"))]
     #[allow(dead_code)]
-    db_test_container: Option<
-        testcontainers_modules::testcontainers::ContainerAsync<
-            testcontainers_modules::postgres::Postgres,
-        >,
-    >,
+    db_test_container: Option<DbTestContainer>,
     #[cfg(feature = "sidekiq")]
     redis_enqueue: RedisEnqueue,
     /// The Redis connection pool used by [sidekiq::Processor] to fetch Sidekiq jobs from Redis.
