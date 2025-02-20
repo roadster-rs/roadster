@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-alpha.5](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.4...roadster-v0.7.0-alpha.5) - 2025-02-20
+
+### Added
+
+- Support mysql test container (#636)
+
+### Fixed
+
+- Use `db-sql` instead of `db-sea-orm` where appropriate (#637)
+
+### Other
+
+- Remove unnecessary `Empty` for `RoadsterApp` `Cli` type (#633)
+- Add `diesel` to `loco` comparison page (#632)
+- Update db chapter of book (#631)
+
 ## [0.7.0-alpha.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.3...roadster-v0.7.0-alpha.4) - 2025-02-18
 
 This is a very large release with a lot of breaking changes. See the below changelog the detailed commit history. In summary, this release adds support for the [Diesel](https://github.com/diesel-rs/diesel) SQL ORM. Diesel is a very different ORM compared to SeaORM (the ORM we currently support), and as such this release required a lot of refactoring in order to provide a relatively consistent experience regardless of which ORM a consumer decides to use (or if they decide to use both, which is possible but not particularly recommended). The refactor also resulted in some general simplifications and improvements to the devx; read on for more details. Some breaking changes include:
