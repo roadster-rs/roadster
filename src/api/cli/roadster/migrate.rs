@@ -53,7 +53,14 @@ where
 {
     async fn run(&self, prepared_app: &PreparedApp<A, S>) -> RoadsterResult<bool> {
         let context = AppContext::from_ref(&prepared_app.state);
-        if is_destructive(self) && !prepared_app.roadster_cli.allow_dangerous(&context) {
+        // Todo: Refactor to allow `PreparedApp#cli` to not be an optional
+        let allow_dangerous = prepared_app
+            .cli
+            .as_ref()
+            .map(|cli| cli.roadster_cli.allow_dangerous(&context))
+            .unwrap_or_default();
+
+        if is_destructive(self) && !allow_dangerous {
             return Err(anyhow!("Running destructive command `{:?}` is not allowed in environment `{:?}`. To override, provide the `--allow-dangerous` CLI arg.", self, context.config().environment).into());
         } else if is_destructive(self) {
             warn!(
@@ -62,6 +69,7 @@ where
                 context.config().environment
             );
         }
+
         match self {
             MigrateCommand::Up(args) => {
                 migrate_up(prepared_app, args).await?;

@@ -84,11 +84,13 @@ where
     AppContext: FromRef<S>,
     A: App<S>,
 {
-    if prepared_app.roadster_cli.run(prepared_app).await? {
-        return Ok(true);
-    }
-    if prepared_app.app_cli.run(prepared_app).await? {
-        return Ok(true);
+    if let Some(cli) = prepared_app.cli.as_ref() {
+        if cli.roadster_cli.run(prepared_app).await? {
+            return Ok(true);
+        }
+        if cli.app_cli.run(prepared_app).await? {
+            return Ok(true);
+        }
     }
     Ok(false)
 }
@@ -149,7 +151,7 @@ mockall::mock! {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::MockApp;
+    use crate::app::{MockApp, PreparedAppCli};
     use crate::lifecycle::registry::LifecycleHandlerRegistry;
     use crate::service::registry::ServiceRegistry;
     use crate::testing::snapshot::TestCase;
@@ -236,8 +238,12 @@ mod tests {
         let (roadster_cli, app_cli) = setup_cli(args, mock_handles_cli);
 
         let prepared_app = PreparedApp {
-            roadster_cli,
-            app_cli,
+            cli: Some(PreparedAppCli {
+                roadster_cli,
+                app_cli,
+                _app: Default::default(),
+                _state: Default::default(),
+            }),
             app,
             #[cfg(feature = "db-sql")]
             migrators: Default::default(),

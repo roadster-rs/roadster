@@ -38,3 +38,4 @@
     - [Testing](features/testing.md)
 - [Adding a UI](adding-a-ui/index.md)
     - [With Leptos](adding-a-ui/leptos.md)
+- [Changelog](changelog.md)

@@ -6,5 +6,6 @@ PrepareOptions {
     env: Some(
         Test,
     ),
+    parse_cli: false,
     config_dir: None,
 }

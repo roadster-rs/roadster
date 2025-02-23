@@ -5,7 +5,7 @@ format = "pretty"
 secret = "secret-test"
 
 [database]
-uri = "postgres://roadster:roadster@localhost:5433/example_test"
+uri = "postgres://roadster:roadster@localhost:5432/example_dev"
 temporary-test-db = true
 
 [service.sidekiq]

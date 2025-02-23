@@ -12,7 +12,7 @@ based on Axum and Tokio, there's not a lot technically preventing either framewo
 missing compared to the other. Features that Roadster would like to add in the near future are marked with '*'. Other
 missing features are not planned but we'd be open to adding if there was enough interest in them.
 
-*Last updated in Oct 2024.*
+*Last updated in Feb 2025.*
 
 | Feature                                                                                                                         | Roadster       | Loco                                      |
 |:--------------------------------------------------------------------------------------------------------------------------------|:---------------|:------------------------------------------|
@@ -65,6 +65,7 @@ missing features are not planned but we'd be open to adding if there was enough 
 | [insta](https://crates.io/crates/insta) snapshot utilities                                                                      | ✅              | ✅                                         |
 | Data seeding and cleanup hooks for tests                                                                                        | ❌*             | ✅<br/>(⚠️ makes tests non-parallelizable) |
 | Mock DB support for tests                                                                                                       | ✅              | ❌                                         |
+| &ensp;↳ via Temporary Test DBs                                                                                                  | ✅              | ✅                                         |
 | &ensp;↳ via SeaORM's [MockDatabase](https://www.sea-ql.org/SeaORM/docs/write-test/mock/)                                        | ✅              | ❌                                         |
 | &ensp;↳ via [TestContainers](https://testcontainers.com/)                                                                       | ✅              | ❌                                         |
 | Allows following any design pattern                                                                                             | ✅              | ❌<br/>(MVC only)                          |
