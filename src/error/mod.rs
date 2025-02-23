@@ -49,6 +49,7 @@ use ::axum::http::StatusCode;
 use ::axum::response::{IntoResponse, Response};
 #[cfg(feature = "open-api")]
 use aide::OperationOutput;
+use std::convert::Infallible;
 use thiserror::Error;
 
 pub type RoadsterResult<T> = Result<T, Error>;
@@ -119,6 +120,9 @@ pub enum Error {
 
     #[error(transparent)]
     Mutex(#[from] MutexError),
+
+    #[error(transparent)]
+    Infallible(#[from] Infallible),
 
     #[error(transparent)]
     Other(#[from] OtherError),

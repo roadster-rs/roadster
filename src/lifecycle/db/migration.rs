@@ -2,7 +2,7 @@
 //! in [`AppLifecycleHandler::before_services`].
 
 use crate::app::context::AppContext;
-use crate::app::{App, PreRunAppState};
+use crate::app::{App, PreparedApp};
 use crate::error::RoadsterResult;
 use crate::lifecycle::AppLifecycleHandler;
 use crate::migration::UpArgs;
@@ -45,7 +45,7 @@ where
     }
 
     #[instrument(skip_all)]
-    async fn before_services(&self, prepared_app: &PreRunAppState<A, S>) -> RoadsterResult<()> {
+    async fn before_services(&self, prepared_app: &PreparedApp<A, S>) -> RoadsterResult<()> {
         for migrator in prepared_app.migrators.iter() {
             migrator
                 .up(&prepared_app.state, &UpArgs::builder().build())

@@ -7,13 +7,13 @@ name: Feature Powerset
 on:
   schedule:
     # Run once a week on Friday at 11PM UTC (Friday 4PM PST)
-    - cron: '0 23 * * 5'
+    - cron: "0 23 * * 5"
     # Run once a week on Monday at 11PM UTC (Monday 4PM PST)
-    - cron: '0 23 * * 1'
+    - cron: "0 23 * * 1"
   workflow_dispatch:
   pull_request:
-    branches: [ main ]
-    types: [ labeled ]
+    branches: [main]
+    types: [labeled]
 
 env:
   CARGO_TERM_COLOR: always
@@ -66,6 +66,10 @@ jobs:
           else
               echo "seed=" >> "$GITHUB_OUTPUT"
           fi
+      - name: Update rust
+        run: |
+          cargo --version
+          rustup update
       - name: Build powerset data
         id: build_data
         run: |
@@ -86,6 +90,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: rui314/setup-mold@v1
       - uses: taiki-e/install-action@nextest
+      - name: Update rust
+        run: |
+          cargo --version
+          rustup update
       - name: Test
         run: |
           features=($features)
@@ -115,6 +123,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: rui314/setup-mold@v1
+      - name: Update rust
+        run: |
+          cargo --version
+          rustup update
       - name: Check
         run: |
           features=($features)
@@ -141,6 +153,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: rui314/setup-mold@v1
+      - name: Update rust
+        run: |
+          cargo --version
+          rustup update
       - name: Clippy
         run: |
           features=($features)

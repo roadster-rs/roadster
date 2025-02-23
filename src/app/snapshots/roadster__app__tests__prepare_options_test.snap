@@ -1,0 +1,10 @@
+---
+source: src/app/mod.rs
+expression: options
+---
+PrepareOptions {
+    env: Some(
+        Test,
+    ),
+    config_dir: None,
+}

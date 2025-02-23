@@ -26,8 +26,9 @@ impl AsyncSource for ExampleAsyncSourceWithEnv {
         secrets manager services.
         */
         let uri = match self.environment {
-            Environment::Development => "postgres://roadster:roadster@localhost:5432/example_dev",
-            Environment::Test => "postgres://roadster:roadster@localhost:5432/example_test",
+            Environment::Development | Environment::Test => {
+                "postgres://roadster:roadster@localhost:5432/example_dev"
+            }
             Environment::Production => "postgres://roadster:roadster@localhost:5432/example_prod",
             _ => unimplemented!(),
         };
