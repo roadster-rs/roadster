@@ -1,0 +1,9 @@
+---
+source: src/util/db/sea_orm.rs
+expression: statement
+---
+Statement {
+    sql: "DROP DATABASE IF EXISTS \"test\" WITH (FORCE)",
+    values: None,
+    db_backend: Postgres,
+}

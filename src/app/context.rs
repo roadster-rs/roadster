@@ -64,8 +64,8 @@ impl AppContext {
     #[cfg_attr(test, allow(dead_code))]
     pub(crate) async fn new<A, S>(
         #[allow(unused_variables)] app: &A,
-        #[cfg(not(feature = "test-containers"))] config: AppConfig,
-        #[cfg(feature = "test-containers")]
+        #[cfg(not(feature = "testing"))] config: AppConfig,
+        #[cfg(feature = "testing")]
         #[allow(unused_mut)]
         mut config: AppConfig,
         metadata: AppMetadata,
@@ -86,6 +86,9 @@ impl AppContext {
             let db_test_container = db_test_container(&mut config).await?;
             #[cfg(all(feature = "sidekiq", feature = "test-containers"))]
             let sidekiq_redis_test_container = sidekiq_redis_test_container(&mut config).await?;
+
+            #[cfg(all(feature = "db-sql", feature = "testing"))]
+            let temporary_test_db = create_temporary_test_db(&mut config).await?;
 
             #[cfg(feature = "db-sea-orm")]
             let sea_orm =
@@ -164,6 +167,8 @@ impl AppContext {
                 diesel_mysql_pool_async,
                 #[cfg(all(feature = "db-sql", feature = "test-containers"))]
                 db_test_container,
+                #[cfg(all(feature = "db-sql", feature = "testing"))]
+                temporary_test_db,
                 #[cfg(feature = "sidekiq")]
                 redis_enqueue,
                 #[cfg(feature = "sidekiq")]
@@ -188,6 +193,11 @@ impl AppContext {
         AppContextWeak {
             inner: Arc::downgrade(&self.inner),
         }
+    }
+
+    #[cfg(feature = "testing")]
+    pub(crate) async fn teardown(&self) -> RoadsterResult<()> {
+        self.inner.teardown().await
     }
 
     #[cfg(test)]
@@ -802,6 +812,52 @@ async fn sidekiq_redis_test_container(
     Ok(container)
 }
 
+#[cfg(all(feature = "db-sql", feature = "testing"))]
+#[cfg_attr(test, allow(dead_code))]
+async fn create_temporary_test_db(
+    config: &mut AppConfig,
+) -> RoadsterResult<Option<TemporaryTestDb>> {
+    if !config.database.temporary_test_db {
+        return Ok(None);
+    }
+
+    let original_uri = config.database.uri.clone();
+    let db_name = uuid::Uuid::new_v4().to_string();
+    tracing::debug!("Creating test db {db_name} using connection {original_uri}");
+
+    #[allow(unused_variables)]
+    let done = false;
+
+    #[cfg(feature = "db-diesel")]
+    let done = {
+        crate::util::db::diesel::create_database(&original_uri, &db_name)?;
+        true
+    };
+
+    #[cfg(feature = "db-sea-orm")]
+    let done = {
+        if !done {
+            crate::util::db::sea_orm::create_database(&original_uri, &db_name).await?;
+        }
+        true
+    };
+
+    if done {
+        let mut new_uri = original_uri.clone();
+        new_uri.set_path(&db_name);
+        config.database.uri = new_uri.clone();
+    }
+
+    if done && config.database.temporary_test_db_clean_up {
+        Ok(Some(TemporaryTestDb {
+            original_uri,
+            db_name,
+        }))
+    } else {
+        Ok(None)
+    }
+}
+
 struct AppContextInner {
     config: AppConfig,
     metadata: AppMetadata,
@@ -821,6 +877,8 @@ struct AppContextInner {
     #[cfg(all(feature = "db-sql", feature = "test-containers"))]
     #[allow(dead_code)]
     db_test_container: Option<DbTestContainer>,
+    #[cfg(all(feature = "db-sql", feature = "testing"))]
+    temporary_test_db: Option<TemporaryTestDb>,
     #[cfg(feature = "sidekiq")]
     redis_enqueue: RedisEnqueue,
     /// The Redis connection pool used by [sidekiq::Processor] to fetch Sidekiq jobs from Redis.
@@ -844,6 +902,16 @@ struct AppContextInner {
 #[cfg_attr(test, mockall::automock)]
 #[cfg_attr(test, allow(dead_code))]
 impl AppContextInner {
+    #[cfg(feature = "testing")]
+    async fn teardown(&self) -> RoadsterResult<()> {
+        #[cfg(feature = "db-sql")]
+        if let Some(temporary_test_db) = self.temporary_test_db.as_ref() {
+            temporary_test_db.drop_temporary_test_db().await?;
+        }
+
+        Ok(())
+    }
+
     fn config(&self) -> &AppConfig {
         &self.config
     }
@@ -915,5 +983,35 @@ impl AppContextInner {
     #[cfg(feature = "email-sendgrid")]
     fn sendgrid(&self) -> &sendgrid::v3::Sender {
         &self.sendgrid
+    }
+}
+
+#[cfg(all(feature = "db-sql", feature = "testing"))]
+struct TemporaryTestDb {
+    original_uri: url::Url,
+    db_name: String,
+}
+
+#[cfg(all(feature = "db-sql", feature = "testing"))]
+impl TemporaryTestDb {
+    #[cfg_attr(test, allow(dead_code))]
+    async fn drop_temporary_test_db(&self) -> RoadsterResult<()> {
+        #[allow(unused_variables)]
+        let done = false;
+
+        #[cfg(feature = "db-diesel")]
+        let done = {
+            crate::util::db::diesel::drop_database(&self.original_uri, &self.db_name).await?;
+            true
+        };
+
+        #[cfg(feature = "db-sea-orm")]
+        {
+            if done {
+                return Ok(());
+            }
+            crate::util::db::sea_orm::drop_database(&self.original_uri, &self.db_name).await?;
+        };
+        Ok(())
     }
 }

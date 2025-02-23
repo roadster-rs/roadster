@@ -6,6 +6,8 @@ secret = "secret-test"
 
 [database]
 uri = "postgres://roadster:roadster@localhost:5432/example_dev"
+temporary-test-db = true
+temporary-test-db-clean-up = true
 
 [service.sidekiq]
 num-workers = 2
