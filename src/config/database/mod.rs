@@ -49,6 +49,15 @@ pub struct Database {
     #[serde(default = "default_true")]
     pub retry_connection: bool,
 
+    /// Create a temporary database in the same DB host from the `uri` field.
+    #[serde(default)]
+    pub temporary_test_db: bool,
+
+    /// Automatically clean up (drop) the temporary test DB that was created by setting
+    /// `temporary_test_db` to `true`.
+    #[serde(default = "default_true")]
+    pub temporary_test_db_clean_up: bool,
+
     /// Options for creating a Test Container instance for the DB. If enabled, the `Database#uri`
     /// field will be overridden to be the URI for the Test Container instance that's created when
     /// building the app's [`crate::app::context::AppContext`].
@@ -154,6 +163,8 @@ mod tests {
             test_on_checkout: true,
             #[cfg(feature = "db-diesel-pool-async")]
             retry_connection: true,
+            temporary_test_db: false,
+            temporary_test_db_clean_up: false,
         }
     }
 

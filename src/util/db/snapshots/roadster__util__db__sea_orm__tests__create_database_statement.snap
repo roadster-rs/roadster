@@ -1,0 +1,9 @@
+---
+source: src/util/db/sea_orm.rs
+expression: statement
+---
+Statement {
+    sql: "CREATE DATABASE \"test\"",
+    values: None,
+    db_backend: Postgres,
+}

@@ -192,6 +192,8 @@ expression: serialized
     "max-connections": 10,
     "test-on-checkout": true,
     "retry-connection": true,
+    "temporary-test-db": false,
+    "temporary-test-db-clean-up": true,
     "test-container": null
   },
   "email": {

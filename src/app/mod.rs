@@ -529,6 +529,14 @@ where
         }
     }
 
+    // Todo: Move to a lifecycle handler? Currently this is only used for tests so it's probably
+    //  okay to keep it here for now.
+    #[cfg(feature = "testing")]
+    {
+        let context = AppContext::from_ref(state);
+        context.teardown().await?;
+    }
+
     info!("Shutdown complete");
 
     Ok(())

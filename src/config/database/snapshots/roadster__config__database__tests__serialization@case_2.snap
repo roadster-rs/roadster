@@ -13,3 +13,5 @@ min-connections = 0
 max-connections = 1
 test-on-checkout = true
 retry-connection = true
+temporary-test-db = false
+temporary-test-db-clean-up = true
