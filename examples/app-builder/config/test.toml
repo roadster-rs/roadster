@@ -11,4 +11,4 @@ uri = "postgres://roadster:roadster@localhost:5433/example_test"
 num-workers = 2
 
 [service.sidekiq.redis]
-uri = "redis://localhost:6380"
+uri = "redis://localhost:6379"

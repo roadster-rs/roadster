@@ -150,7 +150,6 @@ mockall::mock! {
 mod tests {
     use super::*;
     use crate::app::MockApp;
-    use crate::health::check::registry::HealthCheckRegistry;
     use crate::lifecycle::registry::LifecycleHandlerRegistry;
     use crate::service::registry::ServiceRegistry;
     use crate::testing::snapshot::TestCase;
@@ -242,7 +241,6 @@ mod tests {
             app,
             #[cfg(feature = "db-sql")]
             migrators: Default::default(),
-            health_check_registry: HealthCheckRegistry::new(&context),
             service_registry: ServiceRegistry::new(&context),
             lifecycle_handler_registry: LifecycleHandlerRegistry::new(&context),
             state: context,

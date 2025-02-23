@@ -49,6 +49,7 @@ use std::sync::Arc;
 use tracing::{error, info, warn};
 use typed_builder::TypedBuilder;
 
+/// Run the [`App`]
 pub async fn run<A, S>(app: A) -> RoadsterResult<()>
 where
     S: Clone + Send + Sync + 'static,
@@ -65,6 +66,107 @@ where
     }
 
     run_prepared_without_cli(prepared).await
+}
+
+/// Similar to [`run`], except intended to be used in tests. Does all of the same setup and
+/// teardown logic as [`run`], but does not actually run the registered
+/// [`crate::service::AppService`]s.
+///
+/// Note: If the test panics, the teardown logic will not be run.
+#[cfg(feature = "testing")]
+pub async fn run_test<A, S>(
+    app: A,
+    options: PrepareOptions,
+    // todo: RustRover doesn't seem to recognize `AsyncFn`. Does it just need an update?
+    test_fn: impl std::ops::AsyncFn(&PreRunAppState<A, S>),
+) -> RoadsterResult<()>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S> + Send + Sync + 'static,
+{
+    let prepared = prepare(app, options).await?;
+
+    before_app(&prepared).await?;
+
+    let pre_run_app_state = PreRunAppState {
+        app: prepared.app,
+        state: prepared.state.clone(),
+        service_registry: prepared.service_registry,
+    };
+
+    tracing::debug!("Starting test");
+
+    test_fn(&pre_run_app_state).await;
+
+    tracing::debug!("Test complete");
+
+    after_app(&prepared.lifecycle_handler_registry, &prepared.state).await?;
+
+    Ok(())
+}
+
+/// Similar to [`run_test`], except allows returning a [`Result`] to communicate test
+/// success/failure. If the test returns an [`Err`], the teardown logic will still be run. If the
+/// test returns an [`Err`], it will then be returned in the [`Err`] returned by
+/// [`run_test_with_result`] itself.
+///
+/// Note: If the test panics, the teardown logic will not be run. To ensure the teardown logic runs,
+/// return an error instead of panicking.
+#[cfg(feature = "testing")]
+pub async fn run_test_with_result<A, S, T, E>(
+    app: A,
+    options: PrepareOptions,
+    // todo: RustRover doesn't seem to recognize `AsyncFn`. Does it just need an update?
+    test_fn: T,
+) -> Result<(), (Option<crate::error::Error>, Option<E>)>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S> + Send + Sync + 'static,
+    T: std::ops::AsyncFn(&PreRunAppState<A, S>) -> Result<(), E>,
+    E: std::error::Error,
+{
+    let prepared = match prepare(app, options).await {
+        Ok(prepared) => prepared,
+        Err(err) => return Err((Some(err), None)),
+    };
+
+    if let Err(err) = before_app(&prepared).await {
+        return Err((Some(err), None));
+    }
+
+    let pre_run_app_state = PreRunAppState {
+        app: prepared.app,
+        state: prepared.state.clone(),
+        service_registry: prepared.service_registry,
+    };
+
+    tracing::debug!("Starting test");
+
+    let test_result = test_fn(&pre_run_app_state).await;
+
+    tracing::debug!("Test complete");
+
+    let after_app_result = after_app(&prepared.lifecycle_handler_registry, &prepared.state).await;
+
+    let after_app_result = if let Err(err) = after_app_result {
+        Some(err)
+    } else {
+        None
+    };
+
+    let test_result = if let Err(err) = test_result {
+        Some(err)
+    } else {
+        None
+    };
+
+    if after_app_result.is_some() || test_result.is_some() {
+        return Err((after_app_result, test_result));
+    }
+
+    Ok(())
 }
 
 #[non_exhaustive]
@@ -185,7 +287,6 @@ where
     pub state: S,
     #[cfg(feature = "db-sql")]
     pub migrators: Vec<Box<dyn Migrator<S>>>,
-    pub health_check_registry: HealthCheckRegistry,
     pub service_registry: ServiceRegistry<A, S>,
     pub lifecycle_handler_registry: LifecycleHandlerRegistry<A, S>,
 }
@@ -199,23 +300,26 @@ where
 {
     pub app: A,
     pub state: S,
-    #[cfg(feature = "db-sql")]
-    pub migrators: Vec<Box<dyn Migrator<S>>>,
     pub service_registry: ServiceRegistry<A, S>,
-    pub lifecycle_handler_registry: LifecycleHandlerRegistry<A, S>,
 }
 
 /// Options to use when preparing the app. Normally these values can be provided via env vars
 /// or CLI arguments when running the [`run`] method. However, if [`prepare`] is called directly,
 /// especially from somewhere without an env or CLI, then this can be used to configure the
 /// prepared app.
-#[derive(Default, TypedBuilder)]
+#[derive(Default, Debug, TypedBuilder)]
 #[non_exhaustive]
 pub struct PrepareOptions {
     #[builder(default, setter(strip_option))]
     pub env: Option<Environment>,
     #[builder(default, setter(strip_option))]
     pub config_dir: Option<PathBuf>,
+}
+
+impl PrepareOptions {
+    pub fn test() -> Self {
+        PrepareOptions::builder().env(Environment::Test).build()
+    }
 }
 
 /// Prepare the app. Sets up everything needed to start the app, but does not execute anything.
@@ -234,21 +338,16 @@ where
     prepare_from_cli_and_state(build_cli_and_state(app, options).await?).await
 }
 
-/// Initialize the app state. Does everything to initialize the app short of starting the app.
-/// Similar to [`prepare`], except performs some steps that are skipped in [`prepare`]:
-/// 1. Health checks
-/// 2. Lifecycle Handlers
-///
-/// The following are still skipped:
-/// 1. Handling CLI commands
-/// 2. Starting any services
-///
-/// Additionally, the health checks are not attached to the [`AppContext`] to avoid a reference
-/// cycle that prevents the [`AppContext`] from being dropped between tests.
+/// Initialize the app state. Does everything needed to initialize the app state, but does not
+/// run any other start up logic, such as running health checks, lifecycle handlers, or services.
 ///
 /// This is intended to only be used to get access to the app's fully set up state in tests.
+///
+/// This is useful compared to [`run_test`] and [`run_test_with_result`] if you just need
+/// access to your app's state and you don't need to run all of your app's startup/teardown logic
+/// in your test.
 #[cfg(feature = "testing")]
-pub async fn init_state<A, S>(app: A, config: AppConfig) -> RoadsterResult<S>
+pub async fn test_state<A, S>(app: A, config: AppConfig) -> RoadsterResult<S>
 where
     A: App<S> + 'static,
     S: Clone + Send + Sync + 'static,
@@ -256,13 +355,11 @@ where
 {
     let state = build_state(&app, config).await?;
 
-    let (pre_run_app_state, health_check_registry) = prepare_without_cli(app, state).await?;
+    let prepared_without_cli = prepare_without_cli(app, state).await?;
+    let context = AppContext::from_ref(&prepared_without_cli.state);
+    context.set_health_checks(prepared_without_cli.health_check_registry)?;
 
-    let context = AppContext::from_ref(&pre_run_app_state.state);
-    context.set_health_checks(health_check_registry)?;
-    before_app(&pre_run_app_state).await?;
-
-    Ok(pre_run_app_state.state)
+    Ok(prepared_without_cli.state)
 }
 
 async fn prepare_from_cli_and_state<A, S>(
@@ -282,17 +379,18 @@ where
         state,
     } = cli_and_state;
 
-    let (
-        PreRunAppState {
-            app,
-            state,
-            #[cfg(feature = "db-sql")]
-            migrators,
-            service_registry,
-            lifecycle_handler_registry,
-        },
+    let PreparedAppWithoutCli {
+        app,
+        state,
+        #[cfg(feature = "db-sql")]
+        migrators,
         health_check_registry,
-    ) = prepare_without_cli(app, state).await?;
+        service_registry,
+        lifecycle_handler_registry,
+    } = prepare_without_cli(app, state).await?;
+
+    let context = AppContext::from_ref(&state);
+    context.set_health_checks(health_check_registry)?;
 
     Ok(PreparedApp {
         app,
@@ -303,16 +401,28 @@ where
         #[cfg(feature = "db-sql")]
         migrators,
         state,
-        health_check_registry,
         service_registry,
         lifecycle_handler_registry,
     })
 }
 
-async fn prepare_without_cli<A, S>(
+#[non_exhaustive]
+struct PreparedAppWithoutCli<A, S>
+where
+    A: App<S> + 'static,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
     app: A,
     state: S,
-) -> RoadsterResult<(PreRunAppState<A, S>, HealthCheckRegistry)>
+    #[cfg(feature = "db-sql")]
+    migrators: Vec<Box<dyn Migrator<S>>>,
+    health_check_registry: HealthCheckRegistry,
+    service_registry: ServiceRegistry<A, S>,
+    lifecycle_handler_registry: LifecycleHandlerRegistry<A, S>,
+}
+
+async fn prepare_without_cli<A, S>(app: A, state: S) -> RoadsterResult<PreparedAppWithoutCli<A, S>>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
@@ -330,26 +440,19 @@ where
     let mut health_check_registry = HealthCheckRegistry::new(&context);
     app.health_checks(&mut health_check_registry, &state)
         .await?;
-    // Note that we used to set the health check registry on the `AppContext` here. However, we
-    // don't do that anymore because it causes a reference cycle between the `AppContext` and the
-    // `HealthChecks` (at least the ones that contain an `AppContext`). This shouldn't normally
-    // be a problem, but it causes TestContainers containers to not be cleaned up in tests.
-    // We may want to re-think some designs to avoid this reference cycle.
 
     let mut service_registry = ServiceRegistry::new(&state);
     app.services(&mut service_registry, &state).await?;
 
-    Ok((
-        PreRunAppState {
-            app,
-            state,
-            #[cfg(feature = "db-sql")]
-            migrators,
-            service_registry,
-            lifecycle_handler_registry,
-        },
+    Ok(PreparedAppWithoutCli {
+        app,
+        state,
+        #[cfg(feature = "db-sql")]
+        migrators,
+        service_registry,
+        lifecycle_handler_registry,
         health_check_registry,
-    ))
+    })
 }
 
 /// Run a [PreparedApp] that was previously crated by [prepare]
@@ -370,40 +473,63 @@ where
 }
 
 /// Run the app's initialization logic (lifecycle handlers, health checks, etc).
-async fn before_app<A, S>(pre_run_app_state: &PreRunAppState<A, S>) -> RoadsterResult<()>
+async fn before_app<A, S>(prepared_app: &PreparedApp<A, S>) -> RoadsterResult<()>
 where
     A: App<S> + 'static,
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    let PreRunAppState {
-        service_registry,
-        lifecycle_handler_registry,
-        state,
-        ..
-    } = pre_run_app_state;
-
-    if service_registry.services.is_empty() {
+    if prepared_app.service_registry.services.is_empty() {
         warn!("No enabled services were registered.");
     }
 
-    let lifecycle_handlers = lifecycle_handler_registry.handlers(state);
+    let lifecycle_handlers = prepared_app
+        .lifecycle_handler_registry
+        .handlers(&prepared_app.state);
 
     info!("Running AppLifecycleHandler::before_health_checks");
     for handler in lifecycle_handlers.iter() {
         info!(name=%handler.name(), "Running AppLifecycleHandler::before_health_checks");
-        handler.before_health_checks(pre_run_app_state).await?;
+        handler.before_health_checks(prepared_app).await?;
     }
 
-    let context = AppContext::from_ref(state);
+    let context = AppContext::from_ref(&prepared_app.state);
     crate::service::runner::health_checks(context.health_checks()).await?;
 
     info!("Running AppLifecycleHandler::before_services");
     for handler in lifecycle_handlers.iter() {
         info!(name=%handler.name(), "Running AppLifecycleHandler::before_services");
-        handler.before_services(pre_run_app_state).await?
+        handler.before_services(prepared_app).await?
     }
-    crate::service::runner::before_run(service_registry, state).await?;
+    crate::service::runner::before_run(&prepared_app.service_registry, &prepared_app.state).await?;
+
+    Ok(())
+}
+
+/// Run the app's teardown logic.
+async fn after_app<A, S>(
+    lifecycle_handler_registry: &LifecycleHandlerRegistry<A, S>,
+    state: &S,
+) -> RoadsterResult<()>
+where
+    A: App<S> + 'static,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    info!("Shutting down");
+
+    let lifecycle_handlers = lifecycle_handler_registry.handlers(state);
+
+    info!("Running AppLifecycleHandler::before_shutdown");
+    for handler in lifecycle_handlers.iter() {
+        info!(name=%handler.name(), "Running AppLifecycleHandler::before_shutdown");
+        let result = handler.on_shutdown(state).await;
+        if let Err(err) = result {
+            error!(name=%handler.name(), "An error occurred when running AppLifecycleHandler::before_shutdown: {err}");
+        }
+    }
+
+    info!("Shutdown complete");
 
     Ok(())
 }
@@ -416,47 +542,23 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    let context = AppContext::from_ref(&prepared_app.state);
-    context.set_health_checks(prepared_app.health_check_registry)?;
+    before_app(&prepared_app).await?;
 
-    let pre_run_app_state = PreRunAppState {
-        app: prepared_app.app,
-        state: prepared_app.state,
-        #[cfg(feature = "db-sql")]
-        migrators: prepared_app.migrators,
-        service_registry: prepared_app.service_registry,
-        lifecycle_handler_registry: prepared_app.lifecycle_handler_registry,
-    };
-
-    before_app(&pre_run_app_state).await?;
-
-    let PreRunAppState {
-        app,
-        state,
-        service_registry,
-        lifecycle_handler_registry,
-        ..
-    } = pre_run_app_state;
-
-    let result = crate::service::runner::run(app, service_registry, &state).await;
+    let result = crate::service::runner::run(
+        prepared_app.app,
+        prepared_app.service_registry,
+        &prepared_app.state,
+    )
+    .await;
     if let Err(err) = result {
         error!("An error occurred in the app: {err}");
     }
 
-    info!("Shutting down");
-
-    let lifecycle_handlers = lifecycle_handler_registry.handlers(&state);
-
-    info!("Running AppLifecycleHandler::before_shutdown");
-    for handler in lifecycle_handlers.iter() {
-        info!(name=%handler.name(), "Running AppLifecycleHandler::before_shutdown");
-        let result = handler.on_shutdown(&state).await;
-        if let Err(err) = result {
-            error!(name=%handler.name(), "An error occurred when running AppLifecycleHandler::before_shutdown: {err}");
-        }
-    }
-
-    info!("Shutdown complete");
+    after_app(
+        &prepared_app.lifecycle_handler_registry,
+        &prepared_app.state,
+    )
+    .await?;
 
     Ok(())
 }
@@ -539,5 +641,17 @@ where
     /// server when a particular API is called.
     async fn graceful_shutdown_signal(self: Arc<Self>, _state: &S) {
         let _output: () = future::pending().await;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::app::PrepareOptions;
+    use insta::assert_debug_snapshot;
+
+    #[test]
+    fn prepare_options_test() {
+        let options = PrepareOptions::test();
+        assert_debug_snapshot!(options);
     }
 }

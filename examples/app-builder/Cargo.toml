@@ -39,6 +39,10 @@ serde = { workspace = true, features = ["derive"] }
 # Config
 config = { workspace = true, features = ["async"] }
 
+[dev-dependencies]
+roadster = { version = "0.7.0-alpha.5", path = "../..", default-features = false, features = ["testing"] }
+tower-util = { workspace = true }
+
 [build-dependencies]
 tonic-build = { workspace = true }
 vergen = { workspace = true }

@@ -1,13 +1,13 @@
+use app_builder::build_app;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
-use full::app::App;
 use roadster::app::{run_test, PrepareOptions};
 use roadster::service::http::service::HttpService;
 use tower_util::ServiceExt;
 
 #[tokio::test]
 async fn ping() {
-    run_test(App, PrepareOptions::test(), async |app| {
+    run_test(build_app(), PrepareOptions::test(), async |app| {
         let http_service = app.service_registry.get::<HttpService>().unwrap();
         let router = http_service.router().clone();
 

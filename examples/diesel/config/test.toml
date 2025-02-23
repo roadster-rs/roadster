@@ -5,10 +5,10 @@ format = "pretty"
 secret = "secret-test"
 
 [database]
-uri = "postgres://roadster:roadster@localhost:5433/example_test"
+uri = "postgres://roadster:roadster@localhost:5432/example_dev"
 
 [service.sidekiq]
 num-workers = 2
 
 [service.sidekiq.redis]
-uri = "redis://localhost:6380"
+uri = "redis://localhost:6379"
