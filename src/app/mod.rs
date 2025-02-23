@@ -1,3 +1,5 @@
+// Todo: This file is pretty complex/convoluted. We should clean it up.
+
 pub mod context;
 pub mod metadata;
 mod roadster_app;
@@ -44,6 +46,7 @@ use sea_orm::ConnectOptions;
 #[cfg(feature = "cli")]
 use std::env;
 use std::future;
+use std::marker::PhantomData;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tracing::{error, info, warn};
@@ -77,8 +80,8 @@ where
 pub async fn run_test<A, S>(
     app: A,
     options: PrepareOptions,
-    // todo: RustRover doesn't seem to recognize `AsyncFn`. Does it just need an update?
-    test_fn: impl std::ops::AsyncFn(&PreRunAppState<A, S>),
+    // todo: RustRover doesn't seem to recognize `AsyncFnOnce`. Does it just need an update?
+    test_fn: impl std::ops::AsyncFnOnce(&PreRunAppState<A, S>),
 ) -> RoadsterResult<()>
 where
     S: Clone + Send + Sync + 'static,
@@ -117,14 +120,14 @@ where
 pub async fn run_test_with_result<A, S, T, E>(
     app: A,
     options: PrepareOptions,
-    // todo: RustRover doesn't seem to recognize `AsyncFn`. Does it just need an update?
+    // todo: RustRover doesn't seem to recognize `AsyncFnOnce`. Does it just need an update?
     test_fn: T,
 ) -> Result<(), (Option<crate::error::Error>, Option<E>)>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
     A: App<S> + Send + Sync + 'static,
-    T: std::ops::AsyncFn(&PreRunAppState<A, S>) -> Result<(), E>,
+    T: std::ops::AsyncFnOnce(&PreRunAppState<A, S>) -> Result<(), E>,
     E: std::error::Error,
 {
     let prepared = match prepare(app, options).await {
@@ -178,9 +181,9 @@ where
 {
     pub app: A,
     #[cfg(feature = "cli")]
-    pub roadster_cli: RoadsterCli,
+    pub roadster_cli: Option<RoadsterCli>,
     #[cfg(feature = "cli")]
-    pub app_cli: A::Cli,
+    pub app_cli: Option<A::Cli>,
     pub state: S,
 }
 
@@ -197,10 +200,18 @@ where
     A: App<S> + Send + Sync + 'static,
 {
     #[cfg(feature = "cli")]
-    let (roadster_cli, app_cli) = parse_cli::<A, S, _, _>(env::args_os())?;
+    let (roadster_cli, app_cli) = if options.parse_cli {
+        let (roadster_cli, app_cli) = parse_cli::<A, S, _, _>(env::args_os())?;
+        (Some(roadster_cli), Some(app_cli))
+    } else {
+        (None, None)
+    };
 
     #[cfg(feature = "cli")]
-    let environment = roadster_cli.environment.clone().or(options.env);
+    let environment = roadster_cli
+        .as_ref()
+        .and_then(|cli| cli.environment.clone())
+        .or(options.env);
     #[cfg(not(feature = "cli"))]
     let environment: Option<Environment> = options.env;
 
@@ -212,7 +223,10 @@ where
     };
 
     #[cfg(feature = "cli")]
-    let config_dir = roadster_cli.config_dir.clone().or(options.config_dir);
+    let config_dir = roadster_cli
+        .as_ref()
+        .and_then(|cli| cli.config_dir.clone())
+        .or(options.config_dir);
     #[cfg(not(feature = "cli"))]
     let config_dir: Option<std::path::PathBuf> = options.config_dir;
 
@@ -234,7 +248,12 @@ where
     #[cfg(not(feature = "cli"))]
     config.validate(true)?;
     #[cfg(feature = "cli")]
-    config.validate(!roadster_cli.skip_validate_config)?;
+    config.validate(
+        !roadster_cli
+            .as_ref()
+            .map(|cli| cli.skip_validate_config)
+            .unwrap_or_default(),
+    )?;
 
     let state = build_state(&app, config).await?;
 
@@ -280,15 +299,28 @@ where
     AppContext: FromRef<S>,
 {
     #[cfg(feature = "cli")]
-    pub roadster_cli: RoadsterCli,
-    #[cfg(feature = "cli")]
-    pub app_cli: A::Cli,
+    pub cli: Option<PreparedAppCli<A, S>>,
     pub app: A,
     pub state: S,
     #[cfg(feature = "db-sql")]
     pub migrators: Vec<Box<dyn Migrator<S>>>,
     pub service_registry: ServiceRegistry<A, S>,
     pub lifecycle_handler_registry: LifecycleHandlerRegistry<A, S>,
+}
+
+#[non_exhaustive]
+pub struct PreparedAppCli<A, S>
+where
+    A: App<S> + 'static,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    #[cfg(feature = "cli")]
+    pub roadster_cli: RoadsterCli,
+    #[cfg(feature = "cli")]
+    pub app_cli: A::Cli,
+    pub(crate) _app: PhantomData<A>,
+    pub(crate) _state: PhantomData<S>,
 }
 
 #[non_exhaustive]
@@ -312,13 +344,18 @@ where
 pub struct PrepareOptions {
     #[builder(default, setter(strip_option))]
     pub env: Option<Environment>,
+    #[builder(default = true)]
+    pub parse_cli: bool,
     #[builder(default, setter(strip_option))]
     pub config_dir: Option<PathBuf>,
 }
 
 impl PrepareOptions {
     pub fn test() -> Self {
-        PrepareOptions::builder().env(Environment::Test).build()
+        PrepareOptions::builder()
+            .env(Environment::Test)
+            .parse_cli(false)
+            .build()
     }
 }
 
@@ -384,20 +421,30 @@ where
         state,
         #[cfg(feature = "db-sql")]
         migrators,
-        health_check_registry,
         service_registry,
         lifecycle_handler_registry,
+        health_check_registry,
     } = prepare_without_cli(app, state).await?;
 
     let context = AppContext::from_ref(&state);
     context.set_health_checks(health_check_registry)?;
 
+    #[cfg(feature = "cli")]
+    let cli = if let Some((roadster_cli, app_cli)) = roadster_cli.zip(app_cli) {
+        Some(PreparedAppCli {
+            roadster_cli,
+            app_cli,
+            _app: Default::default(),
+            _state: Default::default(),
+        })
+    } else {
+        None
+    };
+
     Ok(PreparedApp {
+        #[cfg(feature = "cli")]
+        cli,
         app,
-        #[cfg(feature = "cli")]
-        roadster_cli,
-        #[cfg(feature = "cli")]
-        app_cli,
         #[cfg(feature = "db-sql")]
         migrators,
         state,
