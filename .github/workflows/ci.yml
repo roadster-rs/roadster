@@ -2,9 +2,9 @@ name: Checks
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 env:
   CARGO_TERM_COLOR: always
@@ -25,6 +25,10 @@ jobs:
       - uses: taiki-e/install-action@just
       # protoc is needed to build examples that have grpc enabled
       - uses: taiki-e/install-action@protoc
+      - name: Update rust
+        run: |
+          cargo --version
+          rustup update
       - name: Test
         run: just test-examples
 
@@ -36,6 +40,10 @@ jobs:
       - uses: rui314/setup-mold@v1
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@just
+      - name: Update rust
+        run: |
+          cargo --version
+          rustup update
       - name: Test
         run: just test-private
 
@@ -50,6 +58,10 @@ jobs:
       - uses: taiki-e/install-action@nextest
       # protoc is needed to build examples that have grpc enabled
       - uses: taiki-e/install-action@protoc
+      - name: Update rust
+        run: |
+          cargo --version
+          rustup update
       - name: Test
         run: cargo hack nextest run --no-fail-fast --each-feature --clean-per-run --log-group github-actions
 
@@ -63,6 +75,10 @@ jobs:
       - uses: taiki-e/install-action@cargo-hack
       # protoc is needed to build examples that have grpc enabled
       - uses: taiki-e/install-action@protoc
+      - name: Update rust
+        run: |
+          cargo --version
+          rustup update
       - name: Doc test
         run: cargo hack test --doc --no-fail-fast --each-feature --log-group github-actions
 
@@ -76,6 +92,10 @@ jobs:
       - uses: taiki-e/install-action@cargo-hack
       # protoc is needed to build examples that have grpc enabled
       - uses: taiki-e/install-action@protoc
+      - name: Update rust
+        run: |
+          cargo --version
+          rustup update
       - name: Check
         run: cargo hack check --each-feature --no-dev-deps --log-group github-actions
 
@@ -89,6 +109,10 @@ jobs:
       - uses: taiki-e/install-action@cargo-hack
       # protoc is needed to build examples that have grpc enabled
       - uses: taiki-e/install-action@protoc
+      - name: Update rust
+        run: |
+          cargo --version
+          rustup update
       - name: Clippy
         run: cargo hack clippy --all-targets --each-feature --log-group github-actions -- -D warnings
 
@@ -97,6 +121,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Update rust
+        run: |
+          cargo --version
+          rustup update
       - uses: EmbarkStudios/cargo-deny-action@v2
         with:
           command: check
@@ -112,6 +140,10 @@ jobs:
       - uses: rui314/setup-mold@v1
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-hack
+      - name: Update rust
+        run: |
+          cargo --version
+          rustup update
       - run: cargo hack check --rust-version --all-targets --ignore-private --log-group github-actions
 
   # https://doc.rust-lang.org/cargo/guide/continuous-integration.html#verifying-rust-version
@@ -124,6 +156,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-hack
       - uses: taiki-e/install-action@cargo-minimal-versions
+      - name: Update rust
+        run: |
+          cargo --version
+          rustup update
       - run: cargo minimal-versions check --direct --all-features
 
   check_formatting:
@@ -132,6 +168,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
+      - name: Update rust
+        run: |
+          cargo --version
+          rustup update
       - name: Formatting
         run: cargo fmt --all --check
 
@@ -141,6 +181,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
+      - name: Update rust
+        run: |
+          cargo --version
+          rustup update
       - name: Docs
         env:
           RUSTDOCFLAGS: "-D rustdoc::all -A rustdoc::private_intra_doc_links"
