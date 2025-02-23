@@ -18,6 +18,26 @@ jobs:
   test-examples:
     name: Test examples
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15.3-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_DB: example_dev
+          POSTGRES_PASSWORD: roadster
+          POSTGRES_USER: roadster
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7.2-alpine
+        ports:
+          - 6379:6379
+        options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+      smtp:
+        image: axllent/mailpit:v1.21
+        ports:
+          - 8025:8025
+          - 1025:1025
     steps:
       - uses: actions/checkout@v4
       - uses: rui314/setup-mold@v1
