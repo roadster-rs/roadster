@@ -1,5 +1,5 @@
 ---
-source: src/app/mod.rs
+source: src/app/prepare.rs
 expression: options
 ---
 PrepareOptions {

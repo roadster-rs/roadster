@@ -1,0 +1,143 @@
+use crate::app;
+use crate::app::context::AppContext;
+use crate::app::prepare::{PrepareOptions, PreparedAppWithoutCli};
+use crate::app::{prepare, run, App};
+use crate::config::AppConfig;
+use crate::error::RoadsterResult;
+use crate::service::registry::ServiceRegistry;
+use axum_core::extract::FromRef;
+use std::convert::Infallible;
+
+#[non_exhaustive]
+pub struct TestAppState<A, S>
+where
+    A: App<S> + 'static,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    pub app: A,
+    pub state: S,
+    pub service_registry: ServiceRegistry<A, S>,
+}
+
+/// Similar to [`run`], except intended to be used in tests. Does all of the same setup and
+/// teardown logic as [`run`], but does not actually run the registered
+/// [`crate::service::AppService`]s.
+///
+/// Note: If the test panics, the teardown logic will not be run.
+pub async fn run_test<A, S>(
+    app: A,
+    options: PrepareOptions,
+    // todo: RustRover doesn't seem to recognize `AsyncFnOnce`. Does it just need an update?
+    test_fn: impl std::ops::AsyncFnOnce(&TestAppState<A, S>),
+) -> RoadsterResult<()>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S> + Send + Sync + 'static,
+{
+    let result = run_test_with_result(app, options, async move |app| -> Result<(), Infallible> {
+        test_fn(app).await;
+        Ok(())
+    })
+    .await;
+
+    if let Err((Some(err), _)) = result {
+        return Err(err);
+    }
+
+    Ok(())
+}
+
+/// Similar to [`run_test`], except allows returning a [`Result`] to communicate test
+/// success/failure. If the test returns an [`Err`], the teardown logic will still be run. If the
+/// test returns an [`Err`], it will then be returned in the [`Err`] returned by
+/// [`run_test_with_result`] itself.
+///
+/// Note: If the test panics, the teardown logic will not be run. To ensure the teardown logic runs,
+/// return an error instead of panicking.
+pub async fn run_test_with_result<A, S, T, E>(
+    app: A,
+    options: PrepareOptions,
+    // todo: RustRover doesn't seem to recognize `AsyncFnOnce`. Does it just need an update?
+    test_fn: T,
+) -> Result<(), (Option<crate::error::Error>, Option<E>)>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S> + Send + Sync + 'static,
+    T: std::ops::AsyncFnOnce(&TestAppState<A, S>) -> Result<(), E>,
+    E: std::error::Error,
+{
+    let prepared = match app::prepare(app, options).await {
+        Ok(prepared) => prepared,
+        Err(err) => return Err((Some(err), None)),
+    };
+
+    let prepared = PreparedAppWithoutCli {
+        app: prepared.app,
+        state: prepared.state,
+        #[cfg(feature = "db-sql")]
+        migrators: prepared.migrators,
+        service_registry: prepared.service_registry,
+        lifecycle_handler_registry: prepared.lifecycle_handler_registry,
+    };
+
+    if let Err(err) = run::before_app(&prepared).await {
+        return Err((Some(err), None));
+    }
+
+    let pre_run_app_state = TestAppState {
+        app: prepared.app,
+        state: prepared.state.clone(),
+        service_registry: prepared.service_registry,
+    };
+
+    tracing::debug!("Starting test");
+
+    let test_result = test_fn(&pre_run_app_state).await;
+
+    tracing::debug!("Test complete");
+
+    let after_app_result =
+        run::after_app(&prepared.lifecycle_handler_registry, &prepared.state).await;
+
+    let after_app_result = if let Err(err) = after_app_result {
+        Some(err)
+    } else {
+        None
+    };
+
+    let test_result = if let Err(err) = test_result {
+        Some(err)
+    } else {
+        None
+    };
+
+    if after_app_result.is_some() || test_result.is_some() {
+        return Err((after_app_result, test_result));
+    }
+
+    Ok(())
+}
+
+/// Initialize the app state. Does everything needed to initialize the app state, but does not
+/// run any other start up logic, such as running health checks, lifecycle handlers, or services.
+///
+/// This is intended to only be used to get access to the app's fully set up state in tests.
+///
+/// This is useful compared to [`run_test`] and [`run_test_with_result`] if you just need
+/// access to your app's state and you don't need to run all of your app's startup/teardown logic
+/// in your test.
+pub async fn test_state<A, S>(app: A, config: AppConfig) -> RoadsterResult<S>
+where
+    A: App<S> + 'static,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    let state = prepare::build_state(&app, config).await?;
+
+    let prepared_without_cli = prepare::prepare_without_cli(app, state).await?;
+
+    Ok(prepared_without_cli.state)
+}

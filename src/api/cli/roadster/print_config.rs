@@ -1,6 +1,7 @@
 use crate::api::cli::roadster::RunRoadsterCommand;
+use crate::api::cli::CliState;
 use crate::app::context::AppContext;
-use crate::app::{App, PreparedApp};
+use crate::app::App;
 use crate::config::AppConfig;
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
@@ -39,8 +40,8 @@ where
     AppContext: FromRef<S>,
     A: App<S>,
 {
-    async fn run(&self, prepared_app: &PreparedApp<A, S>) -> RoadsterResult<bool> {
-        let context = AppContext::from_ref(&prepared_app.state);
+    async fn run(&self, cli: &CliState<A, S>) -> RoadsterResult<bool> {
+        let context = AppContext::from_ref(&cli.state);
         let serialized = serialize_config(&self.format, context.config())?;
 
         info!("\n{}", serialized);

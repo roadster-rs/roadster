@@ -1,15 +1,33 @@
 use crate::api::cli::roadster::{RoadsterCli, RunRoadsterCommand};
 use crate::app::context::AppContext;
+use crate::app::App;
 #[cfg(test)]
 use crate::app::MockApp;
-use crate::app::{App, PreparedApp};
 use crate::error::RoadsterResult;
+use crate::migration::Migrator;
+use crate::service::registry::ServiceRegistry;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use clap::{Args, Command, FromArgMatches};
 use std::ffi::OsString;
 
 pub mod roadster;
+
+#[non_exhaustive]
+pub struct CliState<A, S>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    A: App<S> + Sync + 'static,
+{
+    pub roadster_cli: RoadsterCli,
+    pub app_cli: A::Cli,
+    pub app: A,
+    pub state: S,
+    #[cfg(feature = "db-sql")]
+    pub migrators: Vec<Box<dyn Migrator<S>>>,
+    pub service_registry: ServiceRegistry<A, S>,
+}
 
 /// Implement to enable Roadster to run your custom CLI commands.
 #[async_trait]
@@ -28,7 +46,7 @@ where
     ///     continue execution after the command is complete.
     /// * `Err(...)` - If the implementation experienced an error while handling the command. The
     ///     app should end execution after the command is complete.
-    async fn run(&self, prepared_app: &PreparedApp<A, S>) -> RoadsterResult<bool>;
+    async fn run(&self, cli: &CliState<A, S>) -> RoadsterResult<bool>;
 }
 
 pub(crate) fn parse_cli<A, S, I, T>(args: I) -> RoadsterResult<(RoadsterCli, A::Cli)>
@@ -78,19 +96,17 @@ where
     Ok((roadster_cli, app_cli))
 }
 
-pub(crate) async fn handle_cli<A, S>(prepared_app: &PreparedApp<A, S>) -> RoadsterResult<bool>
+pub(crate) async fn handle_cli<A, S>(cli: &CliState<A, S>) -> RoadsterResult<bool>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
     A: App<S>,
 {
-    if let Some(cli) = prepared_app.cli.as_ref() {
-        if cli.roadster_cli.run(prepared_app).await? {
-            return Ok(true);
-        }
-        if cli.app_cli.run(prepared_app).await? {
-            return Ok(true);
-        }
+    if cli.roadster_cli.run(cli).await? {
+        return Ok(true);
+    }
+    if cli.app_cli.run(cli).await? {
+        return Ok(true);
     }
     Ok(false)
 }
@@ -118,7 +134,7 @@ mockall::mock! {
         S: Clone + Send + Sync + 'static,
         AppContext: FromRef<S>,
     {
-        async fn run(&self, prepared: &PreparedApp<MockApp<S>, S>) -> RoadsterResult<bool>;
+        async fn run(&self, prepared: &CliState<MockApp<S>, S>) -> RoadsterResult<bool>;
     }
 
     impl<S> clap::FromArgMatches for TestCli<S>
@@ -151,8 +167,7 @@ mockall::mock! {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::{MockApp, PreparedAppCli};
-    use crate::lifecycle::registry::LifecycleHandlerRegistry;
+    use crate::app::MockApp;
     use crate::service::registry::ServiceRegistry;
     use crate::testing::snapshot::TestCase;
     use insta::assert_toml_snapshot;
@@ -237,22 +252,17 @@ mod tests {
 
         let (roadster_cli, app_cli) = setup_cli(args, mock_handles_cli);
 
-        let prepared_app = PreparedApp {
-            cli: Some(PreparedAppCli {
-                roadster_cli,
-                app_cli,
-                _app: Default::default(),
-                _state: Default::default(),
-            }),
+        let cli = CliState {
+            roadster_cli,
+            app_cli,
             app,
             #[cfg(feature = "db-sql")]
             migrators: Default::default(),
             service_registry: ServiceRegistry::new(&context),
-            lifecycle_handler_registry: LifecycleHandlerRegistry::new(&context),
             state: context,
         };
 
-        let result = super::handle_cli(&prepared_app).await.unwrap();
+        let result = super::handle_cli(&cli).await.unwrap();
 
         assert_eq!(result, cli_handled);
     }

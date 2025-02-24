@@ -1,6 +1,7 @@
 use crate::api::cli::roadster::RunRoadsterCommand;
+use crate::api::cli::CliState;
 use crate::app::context::AppContext;
-use crate::app::{App, PreparedApp};
+use crate::app::App;
 use crate::error::RoadsterResult;
 use crate::migration::{DownArgs, MigrationInfo, UpArgs};
 use anyhow::anyhow;
@@ -25,8 +26,8 @@ where
     AppContext: FromRef<S>,
     A: App<S>,
 {
-    async fn run(&self, prepared_app: &PreparedApp<A, S>) -> RoadsterResult<bool> {
-        self.command.run(prepared_app).await
+    async fn run(&self, cli: &CliState<A, S>) -> RoadsterResult<bool> {
+        self.command.run(cli).await
     }
 }
 
@@ -51,14 +52,10 @@ where
     AppContext: FromRef<S>,
     A: App<S>,
 {
-    async fn run(&self, prepared_app: &PreparedApp<A, S>) -> RoadsterResult<bool> {
-        let context = AppContext::from_ref(&prepared_app.state);
-        // Todo: Refactor to allow `PreparedApp#cli` to not be an optional
-        let allow_dangerous = prepared_app
-            .cli
-            .as_ref()
-            .map(|cli| cli.roadster_cli.allow_dangerous(&context))
-            .unwrap_or_default();
+    async fn run(&self, cli: &CliState<A, S>) -> RoadsterResult<bool> {
+        let context = AppContext::from_ref(&cli.state);
+
+        let allow_dangerous = cli.roadster_cli.allow_dangerous(&context);
 
         if is_destructive(self) && !allow_dangerous {
             return Err(anyhow!("Running destructive command `{:?}` is not allowed in environment `{:?}`. To override, provide the `--allow-dangerous` CLI arg.", self, context.config().environment).into());
@@ -72,15 +69,15 @@ where
 
         match self {
             MigrateCommand::Up(args) => {
-                migrate_up(prepared_app, args).await?;
-                print_status(prepared_app).await?;
+                migrate_up(cli, args).await?;
+                print_status(cli).await?;
             }
             MigrateCommand::Down(args) => {
-                migrate_down(prepared_app, args).await?;
-                print_status(prepared_app).await?;
+                migrate_down(cli, args).await?;
+                print_status(cli).await?;
             }
             MigrateCommand::Status => {
-                print_status(prepared_app).await?;
+                print_status(cli).await?;
             }
         };
         Ok(true)
@@ -92,14 +89,14 @@ fn is_destructive(command: &MigrateCommand) -> bool {
 }
 
 // Todo: reduce duplication
-async fn migrate_up<A, S>(prepared_app: &PreparedApp<A, S>, args: &UpArgs) -> RoadsterResult<()>
+async fn migrate_up<A, S>(cli: &CliState<A, S>, args: &UpArgs) -> RoadsterResult<()>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
     A: App<S>,
 {
     let mut total_steps_run = 0;
-    for migrator in prepared_app.migrators.iter() {
+    for migrator in cli.migrators.iter() {
         let remaining_steps = args
             .steps
             .map(|steps| steps.saturating_sub(total_steps_run));
@@ -110,7 +107,7 @@ where
         }
         let steps_run = migrator
             .up(
-                &prepared_app.state,
+                &cli.state,
                 &UpArgs::builder().steps_opt(remaining_steps).build(),
             )
             .await?;
@@ -120,14 +117,14 @@ where
 }
 
 // Todo: reduce duplication
-async fn migrate_down<A, S>(prepared_app: &PreparedApp<A, S>, args: &DownArgs) -> RoadsterResult<()>
+async fn migrate_down<A, S>(cli: &CliState<A, S>, args: &DownArgs) -> RoadsterResult<()>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
     A: App<S>,
 {
     let mut total_steps_run = 0;
-    for migrator in prepared_app.migrators.iter().rev() {
+    for migrator in cli.migrators.iter().rev() {
         let remaining_steps = args
             .steps
             .map(|steps| steps.saturating_sub(total_steps_run));
@@ -138,7 +135,7 @@ where
         }
         let steps_run = migrator
             .down(
-                &prepared_app.state,
+                &cli.state,
                 &DownArgs::builder().steps_opt(remaining_steps).build(),
             )
             .await?;
@@ -147,15 +144,15 @@ where
     Ok(())
 }
 
-async fn print_status<A, S>(prepared_app: &PreparedApp<A, S>) -> RoadsterResult<()>
+async fn print_status<A, S>(cli: &CliState<A, S>) -> RoadsterResult<()>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
     A: App<S>,
 {
     let mut migrations: Vec<MigrationInfo> = Vec::new();
-    for migrator in prepared_app.migrators.iter() {
-        migrations.extend(migrator.status(&prepared_app.state).await?);
+    for migrator in cli.migrators.iter() {
+        migrations.extend(migrator.status(&cli.state).await?);
     }
     let migrations = migrations
         .into_iter()
