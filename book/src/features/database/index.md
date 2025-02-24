@@ -45,7 +45,7 @@ utilities.
 
 ### Automatically
 
-Roadster can automatically run your SeaORM migrations when your app is starting. This behavior is configured by the
+Roadster can automatically run your migrations when your app is starting. This behavior is configured by the
 [
 `database.auto-migrate`](https://docs.rs/roadster/latest/roadster/config/database/struct.Database.html#structfield.auto_migrate)
 config field.
