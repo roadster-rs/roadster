@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-alpha.6](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.5...roadster-v0.7.0-alpha.6) - 2025-02-24
+
+### Added
+
+- Create temporary databases for tests (#645)
+- [**breaking**] Add test hook (#643)
+
+### Fixed
+
+- [**breaking**] Fix `run_test*` to skip CLI (#647)
+
+### Other
+
+- Fix powerset checks (#648)
+
 ## [0.7.0-alpha.5](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.4...roadster-v0.7.0-alpha.5) - 2025-02-20
 
 ### Added
