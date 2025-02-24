@@ -828,7 +828,7 @@ async fn create_temporary_test_db(
     #[allow(unused_variables)]
     let done = false;
 
-    #[cfg(feature = "db-diesel")]
+    #[cfg(any(feature = "db-diesel-postgres", feature = "db-diesel-mysql"))]
     let done = {
         crate::util::db::diesel::create_database(&original_uri, &db_name)?;
         true
@@ -987,6 +987,7 @@ impl AppContextInner {
 }
 
 #[cfg(all(feature = "db-sql", feature = "testing"))]
+#[allow(dead_code)]
 struct TemporaryTestDb {
     original_uri: url::Url,
     db_name: String,
@@ -999,7 +1000,7 @@ impl TemporaryTestDb {
         #[allow(unused_variables)]
         let done = false;
 
-        #[cfg(feature = "db-diesel")]
+        #[cfg(any(feature = "db-diesel-postgres", feature = "db-diesel-mysql"))]
         let done = {
             crate::util::db::diesel::drop_database(&self.original_uri, &self.db_name).await?;
             true
