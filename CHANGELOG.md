@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-beta](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.8...roadster-v0.7.0-beta) - 2025-02-25
+
+This is the first beta release for version 0.7.0. From here until the stable 0.7.0 release, the focus will be on
+improving docs and internal clean up. Semver breaking changes are not expected going forward for 0.7.0, but are still
+possible.
+
+### Other
+
+- Update OTEL dependencies (#659)
+
 ## [0.7.0-alpha.8](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.7...roadster-v0.7.0-alpha.8) - 2025-02-25
 
 ### Added
@@ -53,22 +63,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.7.0-alpha.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.3...roadster-v0.7.0-alpha.4) - 2025-02-18
 
-This is a very large release with a lot of breaking changes. See the below changelog the detailed commit history. In summary, this release adds support for the [Diesel](https://github.com/diesel-rs/diesel) SQL ORM. Diesel is a very different ORM compared to SeaORM (the ORM we currently support), and as such this release required a lot of refactoring in order to provide a relatively consistent experience regardless of which ORM a consumer decides to use (or if they decide to use both, which is possible but not particularly recommended). The refactor also resulted in some general simplifications and improvements to the devx; read on for more details. Some breaking changes include:
+This is a very large release with a lot of breaking changes. See the below changelog the detailed commit history. In
+summary, this release adds support for the [Diesel](https://github.com/diesel-rs/diesel) SQL ORM. Diesel is a very
+different ORM compared to SeaORM (the ORM we currently support), and as such this release required a lot of refactoring
+in order to provide a relatively consistent experience regardless of which ORM a consumer decides to use (or if they
+decide to use both, which is possible but not particularly recommended). The refactor also resulted in some general
+simplifications and improvements to the devx; read on for more details. Some breaking changes include:
 
-- Remove the `M` associated type from the `App` trait. A `Migrator` can now be provided via the `migrators` method instead.
-- Similarly, remove the `M` type parameter from `RoadsterApp`. SeaORM, Diesel, or a generic `Migrator` can now be provided via the builder methods.
+- Remove the `M` associated type from the `App` trait. A `Migrator` can now be provided via the `migrators` method
+  instead.
+- Similarly, remove the `M` type parameter from `RoadsterApp`. SeaORM, Diesel, or a generic `Migrator` can now be
+  provided via the builder methods.
 - Change `RunCommand#run` to take a single `PreparedApp` struct
-- ^This allowed removing the CLI handler method from the `AppService` trait. CLI's now have access to the `ServiceRegistry` from the `PreparedApp`, so they can get access to a particular `AppService` using `ServiceRegistry#get` (assuming it was registered).
-- Consolidate DB migration CLI commands to provide consistent experience between SeaORM and Diesel. This also removed some slightly redundant commands.
+- ^This allowed removing the CLI handler method from the `AppService` trait. CLI's now have access to the
+  `ServiceRegistry` from the `PreparedApp`, so they can get access to a particular `AppService` using
+  `ServiceRegistry#get` (assuming it was registered).
+- Consolidate DB migration CLI commands to provide consistent experience between SeaORM and Diesel. This also removed
+  some slightly redundant commands.
 - Rename  `AppContext#db` to `AppContext#sea_orm`
 - Rename `App#db_connection_options` to
-`App#sea_orm_connection_options`, and rename the related methods in `RoadsterApp`
+  `App#sea_orm_connection_options`, and rename the related methods in `RoadsterApp`
 - Move/rename the DB health check
 - Add `Sized` as a parent trait for the `App`
 
 This release also includes the following non-breaking changes:
-- Add `AppContext` methods to get various Diesel connection pools types, including Postgres, Mysql, Sqlite, and async pools for Postgres and Mysql. Due to Diesel's type strategy for connections, there isn't a single "DbConnection" like there is in SeaORM, so we provide individual methods depending on which feature flags are enabled.
-- Allow providing `AsyncSource` implementations to use with the `config` crate. This allows, for example, loading secret config values from an external service, such as AWS or GCS secrets managers.
+
+- Add `AppContext` methods to get various Diesel connection pools types, including Postgres, Mysql, Sqlite, and async
+  pools for Postgres and Mysql. Due to Diesel's type strategy for connections, there isn't a single "DbConnection" like
+  there is in SeaORM, so we provide individual methods depending on which feature flags are enabled.
+- Allow providing `AsyncSource` implementations to use with the `config` crate. This allows, for example, loading secret
+  config values from an external service, such as AWS or GCS secrets managers.
 - Add a couple db config fields, `test-on-checkout` and `retry-connection`
 - Add more variants to our custom `Error` type
 
@@ -85,7 +109,7 @@ This release also includes the following non-breaking changes:
 
 - [**breaking**] Replace native-tls with rustls in several dependencies (#621) thanks to @tomtom5152
 - [**breaking**] Remove `AppContext::mailer` method in favor of the `smtp` method (#613)
-- Remove leptos-0.6 example so to  maintain a single leptos example (#610)
+- Remove leptos-0.6 example so to maintain a single leptos example (#610)
 - Add doc comments for `Provide` and `ProvideRef` and add to book (#598)
 - Minor improvement to initializing health checks in state (#593)
 - Refactor `RoadsterApp` to reduce duplication (#589)
@@ -179,7 +203,8 @@ This release also includes the following non-breaking changes:
 ### Other
 
 - Update OTEL patch version and remove a deprecated fn call ([#527](https://github.com/roadster-rs/roadster/pull/527))
-- Update Loco comparisons and add some links to other sections ([#522](https://github.com/roadster-rs/roadster/pull/522))
+- Update Loco comparisons and add some links to other
+  sections ([#522](https://github.com/roadster-rs/roadster/pull/522))
 - Add mailpit to SMTP dev server examples ([#521](https://github.com/roadster-rs/roadster/pull/521))
 - *(deps)* bump codecov/codecov-action from 4 to 5 ([#517](https://github.com/roadster-rs/roadster/pull/517))
 - Upgrade otel/tracing dependencies ([#516](https://github.com/roadster-rs/roadster/pull/516))
@@ -198,7 +223,8 @@ This release also includes the following non-breaking changes:
 
 ### Added
 
-- `Provide` and `ProvideRef` traits to provide `AppContext` objects ([#510](https://github.com/roadster-rs/roadster/pull/510))
+- `Provide` and `ProvideRef` traits to provide `AppContext`
+  objects ([#510](https://github.com/roadster-rs/roadster/pull/510))
 
 ## [0.6.18](https://github.com/roadster-rs/roadster/compare/roadster-v0.6.17...roadster-v0.6.18) - 2024-11-15
 
