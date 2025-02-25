@@ -4,7 +4,7 @@ pub mod default;
 pub mod registry;
 
 use crate::app::context::AppContext;
-use crate::app::{App, PreparedApp};
+use crate::app::{App, PreparedAppWithoutCli};
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
@@ -60,12 +60,18 @@ where
 
     /// This method is run right before the app's [`crate::health::check::HealthCheck`]s during
     /// app startup.
-    async fn before_health_checks(&self, _prepared_app: &PreparedApp<A, S>) -> RoadsterResult<()> {
+    async fn before_health_checks(
+        &self,
+        _prepared_app: &PreparedAppWithoutCli<A, S>,
+    ) -> RoadsterResult<()> {
         Ok(())
     }
 
     /// This method is run right before the app's [`crate::service::AppService`]s are started.
-    async fn before_services(&self, _prepared_app: &PreparedApp<A, S>) -> RoadsterResult<()> {
+    async fn before_services(
+        &self,
+        _prepared_app: &PreparedAppWithoutCli<A, S>,
+    ) -> RoadsterResult<()> {
         Ok(())
     }
 

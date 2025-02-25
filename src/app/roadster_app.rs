@@ -1,9 +1,8 @@
 #[cfg(feature = "cli")]
 use crate::api::cli::RunCommand;
-use crate::app;
 use crate::app::context::AppContext;
 use crate::app::metadata::AppMetadata;
-use crate::app::App;
+use crate::app::{run, App};
 use crate::config::environment::Environment;
 use crate::config::AppConfig;
 use crate::error::RoadsterResult;
@@ -320,9 +319,9 @@ where
     /// Utility method to run the [`RoadsterApp`].
     ///
     /// Note: RustRover doesn't seem to recognize this method in some cases. You can also run the
-    /// [`RoadsterApp`] using [`app::run`] directly instead.
+    /// [`RoadsterApp`] using [`crate::app::run`] directly instead.
     pub async fn run(self) -> RoadsterResult<()> {
-        app::run(self).await?;
+        run::run(self).await?;
 
         Ok(())
     }

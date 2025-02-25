@@ -15,7 +15,7 @@ where
 {
     async fn run(
         &self,
-        _prepared_app: &crate::app::PreparedApp<crate::app::RoadsterApp<S, Empty>, S>,
+        _prepared_app: &crate::api::cli::CliState<crate::app::RoadsterApp<S, Empty>, S>,
     ) -> crate::error::RoadsterResult<bool> {
         Ok(false)
     }

@@ -2,8 +2,7 @@ use crate::app_state::AppState;
 use crate::App;
 use async_trait::async_trait;
 use clap::{Parser, Subcommand};
-use roadster::api::cli::RunCommand;
-use roadster::app::PreparedApp;
+use roadster::api::cli::{CliState, RunCommand};
 use roadster::error::RoadsterResult;
 
 /// App builder example: Commands specific to managing the `app_builder` example app are provided in
@@ -20,7 +19,7 @@ pub struct AppCli {
 #[async_trait]
 impl RunCommand<App, AppState> for AppCli {
     #[allow(clippy::disallowed_types)]
-    async fn run(&self, prepared_app: &PreparedApp<App, AppState>) -> RoadsterResult<bool> {
+    async fn run(&self, prepared_app: &CliState<App, AppState>) -> RoadsterResult<bool> {
         if let Some(command) = self.command.as_ref() {
             command.run(prepared_app).await
         } else {
@@ -37,7 +36,7 @@ pub enum AppCommand {}
 
 #[async_trait]
 impl RunCommand<App, AppState> for AppCommand {
-    async fn run(&self, _prepared_app: &PreparedApp<App, AppState>) -> RoadsterResult<bool> {
+    async fn run(&self, _prepared_app: &CliState<App, AppState>) -> RoadsterResult<bool> {
         Ok(false)
     }
 }

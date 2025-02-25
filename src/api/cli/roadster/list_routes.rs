@@ -1,6 +1,7 @@
 use crate::api::cli::roadster::RunRoadsterCommand;
+use crate::api::cli::CliState;
 use crate::app::context::AppContext;
-use crate::app::{App, PreparedApp};
+use crate::app::App;
 use crate::error::RoadsterResult;
 use crate::service::http::service::HttpService;
 use anyhow::anyhow;
@@ -22,13 +23,10 @@ where
     AppContext: FromRef<S>,
     A: App<S>,
 {
-    async fn run(&self, prepared_app: &PreparedApp<A, S>) -> RoadsterResult<bool> {
-        let http_service = prepared_app
-            .service_registry
-            .get::<HttpService>()
-            .map_err(|err| {
-                anyhow!("Unable to get HttpService from registry. Was it registered? Err: {err}")
-            })?;
+    async fn run(&self, cli: &CliState<A, S>) -> RoadsterResult<bool> {
+        let http_service = cli.service_registry.get::<HttpService>().map_err(|err| {
+            anyhow!("Unable to get HttpService from registry. Was it registered? Err: {err}")
+        })?;
 
         let routes = http_service
             .list_routes()
