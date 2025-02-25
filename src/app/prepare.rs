@@ -6,11 +6,11 @@ use crate::app::context::AppContext;
 use crate::app::App;
 use crate::config::environment::Environment;
 use crate::config::{AppConfig, AppConfigOptions};
+#[cfg(feature = "db-sql")]
+use crate::db::migration::Migrator;
 use crate::error::RoadsterResult;
 use crate::health::check::registry::HealthCheckRegistry;
 use crate::lifecycle::registry::LifecycleHandlerRegistry;
-#[cfg(feature = "db-sql")]
-use crate::migration::Migrator;
 use crate::service::registry::ServiceRegistry;
 use axum_core::extract::FromRef;
 use std::marker::PhantomData;

@@ -1,6 +1,0 @@
----
-source: src/migration/user/m20241226_203420_email_change_validation_timestamps.rs
-expression: query.to_string(PostgresQueryBuilder)
-snapshot_kind: text
----
-ALTER TABLE "user" DROP COLUMN "email_change_new_confirmed_at", DROP COLUMN "email_change_current_confirmed_at"

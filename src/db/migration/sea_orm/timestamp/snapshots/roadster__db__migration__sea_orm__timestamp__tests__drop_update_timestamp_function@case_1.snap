@@ -1,0 +1,11 @@
+---
+source: src/db/migration/sea_orm/timestamp/mod.rs
+expression: statement
+---
+Some(
+    Statement {
+        sql: "DROP FUNCTION IF EXISTS update_timestamp_updated_at;",
+        values: None,
+        db_backend: Postgres,
+    },
+)

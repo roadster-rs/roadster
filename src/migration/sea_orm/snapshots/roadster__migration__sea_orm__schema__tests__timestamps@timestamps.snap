@@ -1,5 +1,0 @@
----
-source: src/migration/sea_orm/schema.rs
-expression: table_stmt.to_string(PostgresQueryBuilder)
----
-CREATE TABLE "foo" ( "created_at" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP )

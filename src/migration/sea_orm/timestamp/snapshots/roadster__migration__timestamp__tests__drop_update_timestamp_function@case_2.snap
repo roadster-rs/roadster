@@ -1,5 +1,0 @@
----
-source: src/migration/timestamp/mod.rs
-expression: statement
----
-None

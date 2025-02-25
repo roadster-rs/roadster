@@ -1,5 +1,0 @@
----
-source: src/migration/sea_orm/schema.rs
-expression: table_stmt.to_string(PostgresQueryBuilder)
----
-CREATE TABLE "foo" ( "bar" uuid NOT NULL DEFAULT custom_uuid_fn() PRIMARY KEY )

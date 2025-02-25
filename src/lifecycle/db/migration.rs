@@ -1,11 +1,11 @@
-//! This [`AppLifecycleHandler`] runs the app's ['up' migrations][`crate::migration::Migrator::up`]
+//! This [`AppLifecycleHandler`] runs the app's ['up' migrations][`crate::db::migration::Migrator::up`]
 //! in [`AppLifecycleHandler::before_services`].
 
 use crate::app::context::AppContext;
 use crate::app::{App, PreparedAppWithoutCli};
+use crate::db::migration::UpArgs;
 use crate::error::RoadsterResult;
 use crate::lifecycle::AppLifecycleHandler;
-use crate::migration::UpArgs;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use tracing::instrument;

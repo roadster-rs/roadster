@@ -34,11 +34,11 @@ use crate::api::cli::RunCommand;
 use crate::app::metadata::AppMetadata;
 use crate::config::environment::Environment;
 use crate::config::AppConfig;
+#[cfg(feature = "db-sql")]
+use crate::db::migration::Migrator;
 use crate::error::RoadsterResult;
 use crate::health::check::registry::HealthCheckRegistry;
 use crate::lifecycle::registry::LifecycleHandlerRegistry;
-#[cfg(feature = "db-sql")]
-use crate::migration::Migrator;
 use crate::service::registry::ServiceRegistry;
 use crate::tracing::init_tracing;
 use async_trait::async_trait;
@@ -82,6 +82,77 @@ where
     #[cfg(feature = "db-sea-orm")]
     fn sea_orm_connection_options(&self, config: &AppConfig) -> RoadsterResult<ConnectOptions> {
         Ok(ConnectOptions::from(&config.database))
+    }
+
+    #[cfg(feature = "db-diesel-pool")]
+    fn diesel_connection_customizer<C>(
+        &self,
+        _config: &AppConfig,
+    ) -> RoadsterResult<Option<Box<dyn r2d2::CustomizeConnection<C, diesel::r2d2::Error>>>>
+    where
+        C: 'static + diesel::connection::Connection + diesel::r2d2::R2D2Connection,
+    {
+        Ok(None)
+    }
+
+    #[cfg(feature = "db-diesel-postgres-pool")]
+    fn diesel_pg_connection_customizer(
+        &self,
+        _config: &AppConfig,
+    ) -> RoadsterResult<
+        Box<dyn r2d2::CustomizeConnection<crate::db::DieselPgConn, diesel::r2d2::Error>>,
+    > {
+        Ok(Box::new(r2d2::NopConnectionCustomizer))
+    }
+
+    #[cfg(feature = "db-diesel-mysql-pool")]
+    fn diesel_mysql_connection_customizer(
+        &self,
+        _config: &AppConfig,
+    ) -> RoadsterResult<
+        Box<dyn r2d2::CustomizeConnection<crate::db::DieselMysqlConn, diesel::r2d2::Error>>,
+    > {
+        Ok(Box::new(r2d2::NopConnectionCustomizer))
+    }
+
+    #[cfg(feature = "db-diesel-sqlite-pool")]
+    fn diesel_sqlite_connection_customizer(
+        &self,
+        _config: &AppConfig,
+    ) -> RoadsterResult<
+        Box<dyn r2d2::CustomizeConnection<crate::db::DieselSqliteConn, diesel::r2d2::Error>>,
+    > {
+        Ok(Box::new(r2d2::NopConnectionCustomizer))
+    }
+
+    #[cfg(feature = "db-diesel-postgres-pool-async")]
+    fn diesel_pg_async_connection_customizer(
+        &self,
+        _config: &AppConfig,
+    ) -> RoadsterResult<
+        Box<
+            dyn bb8_8::CustomizeConnection<
+                crate::db::DieselPgConnAsync,
+                diesel_async::pooled_connection::PoolError,
+            >,
+        >,
+    > {
+        Ok(Box::new(crate::util::empty::Empty))
+    }
+
+    #[cfg(feature = "db-diesel-mysql-pool-async")]
+    fn diesel_mysql_async_connection_customizer(
+        &self,
+        _config: &AppConfig,
+    ) -> RoadsterResult<
+        Box<
+            dyn bb8_8::CustomizeConnection<
+                crate::db::DieselMysqlConnAsync,
+                diesel_async::pooled_connection::PoolError,
+            >,
+        >,
+    > {
+        Ok(Box::new(crate::util::empty::Empty))
     }
 
     /// Provide the app state that will be used throughout the app. The state can simply be the

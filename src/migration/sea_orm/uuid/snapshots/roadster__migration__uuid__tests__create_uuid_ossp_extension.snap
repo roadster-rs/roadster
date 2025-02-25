@@ -1,9 +1,0 @@
----
-source: src/migration/uuid/mod.rs
-expression: statement
----
-Statement {
-    sql: "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";",
-    values: None,
-    db_backend: Postgres,
-}

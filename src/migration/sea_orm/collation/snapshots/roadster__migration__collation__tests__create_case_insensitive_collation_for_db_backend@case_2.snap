@@ -1,5 +1,0 @@
----
-source: src/migration/collation/mod.rs
-expression: statement
----
-None

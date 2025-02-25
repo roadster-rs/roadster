@@ -1,5 +1,0 @@
----
-source: src/migration/sea_orm/user/m20241226_080735_pending_email.rs
-expression: query.to_string(PostgresQueryBuilder)
----
-ALTER TABLE "user" DROP COLUMN "pending_email"

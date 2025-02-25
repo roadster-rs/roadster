@@ -5,13 +5,13 @@ use crate::app::metadata::AppMetadata;
 use crate::app::{run, App};
 use crate::config::environment::Environment;
 use crate::config::AppConfig;
+#[cfg(feature = "db-sql")]
+use crate::db::migration::Migrator;
 use crate::error::RoadsterResult;
 use crate::health::check::registry::HealthCheckRegistry;
 use crate::health::check::HealthCheck;
 use crate::lifecycle::registry::LifecycleHandlerRegistry;
 use crate::lifecycle::AppLifecycleHandler;
-#[cfg(feature = "db-sql")]
-use crate::migration::Migrator;
 use crate::service::registry::ServiceRegistry;
 use crate::service::AppService;
 use crate::util::empty::Empty;
@@ -33,6 +33,31 @@ type AsyncConfigSourceProvider =
 type MetadataProvider = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<AppMetadata>;
 #[cfg(feature = "db-sea-orm")]
 type DbConnOptionsProvider = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<ConnectOptions>;
+#[cfg(any(
+    feature = "db-diesel-postgres-pool",
+    feature = "db-diesel-mysql-pool",
+    feature = "db-diesel-sqlite-pool"
+))]
+type DieselConnectionCustomizer<C> = Box<dyn r2d2::CustomizeConnection<C, diesel::r2d2::Error>>;
+#[cfg(any(
+    feature = "db-diesel-postgres-pool",
+    feature = "db-diesel-mysql-pool",
+    feature = "db-diesel-sqlite-pool"
+))]
+type DieselConnectionCustomizerProvider<C> =
+    dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<DieselConnectionCustomizer<C>>;
+#[cfg(any(
+    feature = "db-diesel-postgres-pool-async",
+    feature = "db-diesel-mysql-pool-async"
+))]
+type DieselAsyncConnectionCustomizer<C> =
+    Box<dyn bb8_8::CustomizeConnection<C, diesel_async::pooled_connection::PoolError>>;
+#[cfg(any(
+    feature = "db-diesel-postgres-pool-async",
+    feature = "db-diesel-mysql-pool-async"
+))]
+type DieselAsyncConnectionCustomizerProvider<C> =
+    dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<DieselAsyncConnectionCustomizer<C>>;
 #[cfg(feature = "db-sql")]
 type MigratorProvider<S> = dyn Send + Sync + Fn(&S) -> RoadsterResult<Box<dyn Migrator<S>>>;
 type LifecycleHandlers<A, S> = Vec<Box<dyn AppLifecycleHandler<A, S>>>;
@@ -72,6 +97,21 @@ struct Inner<
     sea_orm_conn_options: Option<ConnectOptions>,
     #[cfg(feature = "db-sea-orm")]
     sea_orm_conn_options_provider: Option<Box<DbConnOptionsProvider>>,
+    #[cfg(feature = "db-diesel-postgres-pool")]
+    diesel_pg_connection_customizer_provider:
+        Option<Box<DieselConnectionCustomizerProvider<crate::db::DieselPgConn>>>,
+    #[cfg(feature = "db-diesel-mysql-pool")]
+    diesel_mysql_connection_customizer_provider:
+        Option<Box<DieselConnectionCustomizerProvider<crate::db::DieselMysqlConn>>>,
+    #[cfg(feature = "db-diesel-sqlite-pool")]
+    diesel_sqlite_connection_customizer_provider:
+        Option<Box<DieselConnectionCustomizerProvider<crate::db::DieselSqliteConn>>>,
+    #[cfg(feature = "db-diesel-postgres-pool-async")]
+    diesel_pg_async_connection_customizer_provider:
+        Option<Box<DieselAsyncConnectionCustomizerProvider<crate::db::DieselPgConnAsync>>>,
+    #[cfg(feature = "db-diesel-mysql-pool-async")]
+    diesel_mysql_async_connection_customizer_provider:
+        Option<Box<DieselAsyncConnectionCustomizerProvider<crate::db::DieselMysqlConnAsync>>>,
     #[cfg(feature = "db-sql")]
     migrator_providers: Vec<Box<MigratorProvider<S>>>,
     health_checks: Vec<Arc<dyn HealthCheck>>,
@@ -92,20 +132,30 @@ where
 {
     fn new() -> Self {
         Self {
-            state_provider: None,
-            tracing_initializer: None,
+            state_provider: Default::default(),
+            tracing_initializer: Default::default(),
             async_config_source_providers: Default::default(),
-            metadata: None,
-            metadata_provider: None,
+            metadata: Default::default(),
+            metadata_provider: Default::default(),
             #[cfg(feature = "db-sea-orm")]
-            sea_orm_conn_options: None,
+            sea_orm_conn_options: Default::default(),
             #[cfg(feature = "db-sea-orm")]
-            sea_orm_conn_options_provider: None,
+            sea_orm_conn_options_provider: Default::default(),
+            #[cfg(feature = "db-diesel-postgres-pool")]
+            diesel_pg_connection_customizer_provider: Default::default(),
+            #[cfg(feature = "db-diesel-mysql-pool")]
+            diesel_mysql_connection_customizer_provider: Default::default(),
+            #[cfg(feature = "db-diesel-sqlite-pool")]
+            diesel_sqlite_connection_customizer_provider: Default::default(),
+            #[cfg(feature = "db-diesel-postgres-pool-async")]
+            diesel_pg_async_connection_customizer_provider: Default::default(),
+            #[cfg(feature = "db-diesel-mysql-pool-async")]
+            diesel_mysql_async_connection_customizer_provider: Default::default(),
             #[cfg(feature = "db-sql")]
             migrator_providers: Default::default(),
             health_checks: Default::default(),
             health_check_providers: Default::default(),
-            graceful_shutdown_signal_provider: None,
+            graceful_shutdown_signal_provider: Default::default(),
             lifecycle_handler_providers: Default::default(),
             service_providers: Default::default(),
         }
@@ -161,6 +211,94 @@ where
         builder: impl 'static + Send + Sync + Fn(AppContext) -> RoadsterResult<S>,
     ) {
         self.state_provider = Some(Box::new(builder));
+    }
+
+    #[cfg(feature = "db-diesel-postgres-pool")]
+    fn diesel_pg_connection_customizer_provider(
+        &mut self,
+        connection_customizer: impl 'static
+            + Send
+            + Sync
+            + Fn(
+                &AppConfig,
+            ) -> RoadsterResult<
+                Box<dyn r2d2::CustomizeConnection<crate::db::DieselPgConn, diesel::r2d2::Error>>,
+            >,
+    ) {
+        self.diesel_pg_connection_customizer_provider = Some(Box::new(connection_customizer));
+    }
+
+    #[cfg(feature = "db-diesel-mysql-pool")]
+    fn diesel_mysql_connection_customizer_provider(
+        &mut self,
+        connection_customizer: impl 'static
+            + Send
+            + Sync
+            + Fn(
+                &AppConfig,
+            ) -> RoadsterResult<
+                Box<dyn r2d2::CustomizeConnection<crate::db::DieselMysqlConn, diesel::r2d2::Error>>,
+            >,
+    ) {
+        self.diesel_mysql_connection_customizer_provider = Some(Box::new(connection_customizer));
+    }
+
+    #[cfg(feature = "db-diesel-sqlite-pool")]
+    fn diesel_sqlite_connection_customizer_provider(
+        &mut self,
+        connection_customizer: impl 'static
+            + Send
+            + Sync
+            + Fn(
+                &AppConfig,
+            ) -> RoadsterResult<
+                Box<
+                    dyn r2d2::CustomizeConnection<crate::db::DieselSqliteConn, diesel::r2d2::Error>,
+                >,
+            >,
+    ) {
+        self.diesel_sqlite_connection_customizer_provider = Some(Box::new(connection_customizer));
+    }
+
+    #[cfg(feature = "db-diesel-postgres-pool-async")]
+    fn diesel_pg_async_connection_customizer_provider(
+        &mut self,
+        connection_customizer: impl 'static
+            + Send
+            + Sync
+            + Fn(
+                &AppConfig,
+            ) -> RoadsterResult<
+                Box<
+                    dyn bb8_8::CustomizeConnection<
+                        crate::db::DieselPgConnAsync,
+                        diesel_async::pooled_connection::PoolError,
+                    >,
+                >,
+            >,
+    ) {
+        self.diesel_pg_async_connection_customizer_provider = Some(Box::new(connection_customizer));
+    }
+
+    #[cfg(feature = "db-diesel-mysql-pool-async")]
+    fn diesel_mysql_async_connection_customizer_provider(
+        &mut self,
+        connection_customizer: impl 'static
+            + Send
+            + Sync
+            + Fn(
+                &AppConfig,
+            ) -> RoadsterResult<
+                Box<
+                    dyn bb8_8::CustomizeConnection<
+                        crate::db::DieselMysqlConnAsync,
+                        diesel_async::pooled_connection::PoolError,
+                    >,
+                >,
+            >,
+    ) {
+        self.diesel_mysql_async_connection_customizer_provider =
+            Some(Box::new(connection_customizer));
     }
 
     #[cfg(feature = "db-sql")]
@@ -274,6 +412,21 @@ pub struct RoadsterApp<
     diesel_migrator: Mutex<Option<Box<dyn Migrator<S>>>>,
     #[cfg(feature = "db-sql")]
     migrators: Mutex<Vec<Box<dyn Migrator<S>>>>,
+    #[cfg(feature = "db-diesel-postgres-pool")]
+    diesel_pg_connection_customizer:
+        Mutex<Option<DieselConnectionCustomizer<crate::db::DieselPgConn>>>,
+    #[cfg(feature = "db-diesel-mysql-pool")]
+    diesel_mysql_connection_customizer:
+        Mutex<Option<DieselConnectionCustomizer<crate::db::DieselMysqlConn>>>,
+    #[cfg(feature = "db-diesel-sqlite-pool")]
+    diesel_sqlite_connection_customizer:
+        Mutex<Option<DieselConnectionCustomizer<crate::db::DieselSqliteConn>>>,
+    #[cfg(feature = "db-diesel-postgres-pool-async")]
+    diesel_pg_async_connection_customizer:
+        Mutex<Option<DieselAsyncConnectionCustomizer<crate::db::DieselPgConnAsync>>>,
+    #[cfg(feature = "db-diesel-mysql-pool-async")]
+    diesel_mysql_async_connection_customizer:
+        Mutex<Option<DieselAsyncConnectionCustomizer<crate::db::DieselMysqlConnAsync>>>,
     // Interior mutability pattern -- this allows us to keep the handler reference as a
     // Box, which helps with single ownership and ensuring we only register a handler once.
     lifecycle_handlers: Mutex<LifecycleHandlers<RoadsterApp<S, Cli>, S>>,
@@ -298,6 +451,20 @@ pub struct RoadsterAppBuilder<
     diesel_migrator: Option<Box<dyn Migrator<S>>>,
     #[cfg(feature = "db-sql")]
     migrators: Vec<Box<dyn Migrator<S>>>,
+    #[cfg(feature = "db-diesel-postgres-pool")]
+    diesel_pg_connection_customizer: Option<DieselConnectionCustomizer<crate::db::DieselPgConn>>,
+    #[cfg(feature = "db-diesel-mysql-pool")]
+    diesel_mysql_connection_customizer:
+        Option<DieselConnectionCustomizer<crate::db::DieselMysqlConn>>,
+    #[cfg(feature = "db-diesel-sqlite-pool")]
+    diesel_sqlite_connection_customizer:
+        Option<DieselConnectionCustomizer<crate::db::DieselSqliteConn>>,
+    #[cfg(feature = "db-diesel-postgres-pool-async")]
+    diesel_pg_async_connection_customizer:
+        Option<DieselAsyncConnectionCustomizer<crate::db::DieselPgConnAsync>>,
+    #[cfg(feature = "db-diesel-mysql-pool-async")]
+    diesel_mysql_async_connection_customizer:
+        Option<DieselAsyncConnectionCustomizer<crate::db::DieselMysqlConnAsync>>,
     lifecycle_handlers: LifecycleHandlers<RoadsterApp<S, Cli>, S>,
     services: Services<RoadsterApp<S, Cli>, S>,
 }
@@ -355,11 +522,21 @@ where
             inner: Inner::new(),
             async_config_sources: Default::default(),
             #[cfg(feature = "db-sea-orm")]
-            sea_orm_migrator: None,
+            sea_orm_migrator: Default::default(),
             #[cfg(feature = "db-diesel")]
-            diesel_migrator: None,
+            diesel_migrator: Default::default(),
             #[cfg(feature = "db-sql")]
             migrators: Default::default(),
+            #[cfg(feature = "db-diesel-postgres-pool")]
+            diesel_pg_connection_customizer: Default::default(),
+            #[cfg(feature = "db-diesel-mysql-pool")]
+            diesel_mysql_connection_customizer: Default::default(),
+            #[cfg(feature = "db-diesel-sqlite-pool")]
+            diesel_sqlite_connection_customizer: Default::default(),
+            #[cfg(feature = "db-diesel-postgres-pool-async")]
+            diesel_pg_async_connection_customizer: Default::default(),
+            #[cfg(feature = "db-diesel-mysql-pool-async")]
+            diesel_mysql_async_connection_customizer: Default::default(),
             lifecycle_handlers: Default::default(),
             services: Default::default(),
         }
@@ -430,6 +607,159 @@ where
         self
     }
 
+    #[cfg(feature = "db-diesel-postgres-pool")]
+    pub fn diesel_pg_connection_customizer(
+        mut self,
+        connection_customizer: impl 'static
+            + r2d2::CustomizeConnection<crate::db::DieselPgConn, diesel::r2d2::Error>,
+    ) -> Self {
+        self.diesel_pg_connection_customizer = Some(Box::new(connection_customizer));
+        self
+    }
+
+    #[cfg(feature = "db-diesel-postgres-pool")]
+    pub fn diesel_pg_connection_customizer_provider(
+        mut self,
+        connection_customizer: impl 'static
+            + Send
+            + Sync
+            + Fn(
+                &AppConfig,
+            ) -> RoadsterResult<
+                Box<dyn r2d2::CustomizeConnection<crate::db::DieselPgConn, diesel::r2d2::Error>>,
+            >,
+    ) -> Self {
+        self.inner
+            .diesel_pg_connection_customizer_provider(connection_customizer);
+        self
+    }
+
+    #[cfg(feature = "db-diesel-mysql-pool")]
+    pub fn diesel_mysql_connection_customizer(
+        mut self,
+        connection_customizer: impl 'static
+            + r2d2::CustomizeConnection<crate::db::DieselMysqlConn, diesel::r2d2::Error>,
+    ) -> Self {
+        self.diesel_mysql_connection_customizer = Some(Box::new(connection_customizer));
+        self
+    }
+
+    #[cfg(feature = "db-diesel-mysql-pool")]
+    pub fn diesel_mysql_connection_customizer_provider(
+        mut self,
+        connection_customizer: impl 'static
+            + Send
+            + Sync
+            + Fn(
+                &AppConfig,
+            ) -> RoadsterResult<
+                Box<dyn r2d2::CustomizeConnection<crate::db::DieselMysqlConn, diesel::r2d2::Error>>,
+            >,
+    ) -> Self {
+        self.inner
+            .diesel_mysql_connection_customizer_provider(connection_customizer);
+        self
+    }
+
+    #[cfg(feature = "db-diesel-sqlite-pool")]
+    pub fn diesel_sqlite_connection_customizer(
+        mut self,
+        connection_customizer: impl 'static
+            + r2d2::CustomizeConnection<crate::db::DieselSqliteConn, diesel::r2d2::Error>,
+    ) -> Self {
+        self.diesel_sqlite_connection_customizer = Some(Box::new(connection_customizer));
+        self
+    }
+
+    #[cfg(feature = "db-diesel-sqlite-pool")]
+    pub fn diesel_sqlite_connection_customizer_provider(
+        mut self,
+        connection_customizer: impl 'static
+            + Send
+            + Sync
+            + Fn(
+                &AppConfig,
+            ) -> RoadsterResult<
+                Box<
+                    dyn r2d2::CustomizeConnection<crate::db::DieselSqliteConn, diesel::r2d2::Error>,
+                >,
+            >,
+    ) -> Self {
+        self.inner
+            .diesel_sqlite_connection_customizer_provider(connection_customizer);
+        self
+    }
+
+    #[cfg(feature = "db-diesel-postgres-pool-async")]
+    pub fn diesel_pg_async_connection_customizer(
+        mut self,
+        connection_customizer: impl 'static
+            + bb8_8::CustomizeConnection<
+                crate::db::DieselPgConnAsync,
+                diesel_async::pooled_connection::PoolError,
+            >,
+    ) -> Self {
+        self.diesel_pg_async_connection_customizer = Some(Box::new(connection_customizer));
+        self
+    }
+
+    #[cfg(feature = "db-diesel-postgres-pool-async")]
+    pub fn diesel_pg_async_connection_customizer_provider(
+        mut self,
+        connection_customizer: impl 'static
+            + Send
+            + Sync
+            + Fn(
+                &AppConfig,
+            ) -> RoadsterResult<
+                Box<
+                    dyn bb8_8::CustomizeConnection<
+                        crate::db::DieselPgConnAsync,
+                        diesel_async::pooled_connection::PoolError,
+                    >,
+                >,
+            >,
+    ) -> Self {
+        self.inner
+            .diesel_pg_async_connection_customizer_provider(connection_customizer);
+        self
+    }
+
+    #[cfg(feature = "db-diesel-mysql-pool-async")]
+    pub fn diesel_mysql_async_connection_customizer(
+        mut self,
+        connection_customizer: impl 'static
+            + bb8_8::CustomizeConnection<
+                crate::db::DieselMysqlConnAsync,
+                diesel_async::pooled_connection::PoolError,
+            >,
+    ) -> Self {
+        self.diesel_mysql_async_connection_customizer = Some(Box::new(connection_customizer));
+        self
+    }
+
+    #[cfg(feature = "db-diesel-mysql-pool-async")]
+    pub fn diesel_mysql_async_connection_customizer_provider(
+        mut self,
+        connection_customizer: impl 'static
+            + Send
+            + Sync
+            + Fn(
+                &AppConfig,
+            ) -> RoadsterResult<
+                Box<
+                    dyn bb8_8::CustomizeConnection<
+                        crate::db::DieselMysqlConnAsync,
+                        diesel_async::pooled_connection::PoolError,
+                    >,
+                >,
+            >,
+    ) -> Self {
+        self.inner
+            .diesel_mysql_async_connection_customizer_provider(connection_customizer);
+        self
+    }
+
     /// Provide the logic to build the custom state for the [`RoadsterApp`].
     pub fn state_provider(
         mut self,
@@ -449,9 +779,9 @@ where
         mut self,
         migrator: impl 'static + Sync + sea_orm_migration::MigratorTrait,
     ) -> Self {
-        self.sea_orm_migrator = Some(Box::new(crate::migration::sea_orm::SeaOrmMigrator::new(
-            migrator,
-        )));
+        self.sea_orm_migrator = Some(Box::new(
+            crate::db::migration::sea_orm::SeaOrmMigrator::new(migrator),
+        ));
         self
     }
 
@@ -472,7 +802,7 @@ where
             + diesel_migrations::MigrationHarness<C::Backend>,
     {
         self.diesel_migrator = Some(Box::new(
-            crate::migration::diesel::DieselMigrator::<C>::new(migrator),
+            crate::db::migration::diesel::DieselMigrator::<C>::new(migrator),
         ));
         self
     }
@@ -613,6 +943,22 @@ where
             diesel_migrator: Mutex::new(self.diesel_migrator),
             #[cfg(feature = "db-sql")]
             migrators: Mutex::new(self.migrators),
+            #[cfg(feature = "db-diesel-postgres-pool")]
+            diesel_pg_connection_customizer: Mutex::new(self.diesel_pg_connection_customizer),
+            #[cfg(feature = "db-diesel-mysql-pool")]
+            diesel_mysql_connection_customizer: Mutex::new(self.diesel_mysql_connection_customizer),
+            #[cfg(feature = "db-diesel-sqlite-pool")]
+            diesel_sqlite_connection_customizer: Mutex::new(
+                self.diesel_sqlite_connection_customizer,
+            ),
+            #[cfg(feature = "db-diesel-postgres-pool-async")]
+            diesel_pg_async_connection_customizer: Mutex::new(
+                self.diesel_pg_async_connection_customizer,
+            ),
+            #[cfg(feature = "db-diesel-mysql-pool-async")]
+            diesel_mysql_async_connection_customizer: Mutex::new(
+                self.diesel_mysql_async_connection_customizer,
+            ),
             lifecycle_handlers: Mutex::new(self.lifecycle_handlers),
             services: Mutex::new(self.services),
         }
@@ -668,6 +1014,149 @@ where
 
     async fn provide_state(&self, context: AppContext) -> RoadsterResult<S> {
         self.inner.provide_state(context).await
+    }
+
+    #[cfg(feature = "db-diesel-postgres-pool")]
+    fn diesel_pg_connection_customizer(
+        &self,
+        config: &AppConfig,
+    ) -> RoadsterResult<
+        Box<dyn r2d2::CustomizeConnection<crate::db::DieselPgConn, diesel::r2d2::Error>>,
+    > {
+        let mut connection_customizer = self
+            .diesel_pg_connection_customizer
+            .lock()
+            .map_err(crate::error::Error::from)?;
+
+        if let Some(connection_customizer) = connection_customizer.take() {
+            return Ok(connection_customizer);
+        }
+
+        if let Some(connection_customizer_provider) =
+            self.inner.diesel_pg_connection_customizer_provider.as_ref()
+        {
+            return connection_customizer_provider(config);
+        };
+
+        Ok(Box::new(r2d2::NopConnectionCustomizer))
+    }
+
+    #[cfg(feature = "db-diesel-mysql-pool")]
+    fn diesel_mysql_connection_customizer(
+        &self,
+        config: &AppConfig,
+    ) -> RoadsterResult<
+        Box<dyn r2d2::CustomizeConnection<crate::db::DieselMysqlConn, diesel::r2d2::Error>>,
+    > {
+        let mut connection_customizer = self
+            .diesel_mysql_connection_customizer
+            .lock()
+            .map_err(crate::error::Error::from)?;
+
+        if let Some(connection_customizer) = connection_customizer.take() {
+            return Ok(connection_customizer);
+        }
+
+        if let Some(connection_customizer_provider) = self
+            .inner
+            .diesel_mysql_connection_customizer_provider
+            .as_ref()
+        {
+            return connection_customizer_provider(config);
+        };
+
+        Ok(Box::new(r2d2::NopConnectionCustomizer))
+    }
+
+    #[cfg(feature = "db-diesel-sqlite-pool")]
+    fn diesel_sqlite_connection_customizer(
+        &self,
+        config: &AppConfig,
+    ) -> RoadsterResult<
+        Box<dyn r2d2::CustomizeConnection<crate::db::DieselSqliteConn, diesel::r2d2::Error>>,
+    > {
+        let mut connection_customizer = self
+            .diesel_sqlite_connection_customizer
+            .lock()
+            .map_err(crate::error::Error::from)?;
+
+        if let Some(connection_customizer) = connection_customizer.take() {
+            return Ok(connection_customizer);
+        }
+
+        if let Some(connection_customizer_provider) = self
+            .inner
+            .diesel_sqlite_connection_customizer_provider
+            .as_ref()
+        {
+            return connection_customizer_provider(config);
+        };
+
+        Ok(Box::new(r2d2::NopConnectionCustomizer))
+    }
+
+    #[cfg(feature = "db-diesel-postgres-pool-async")]
+    fn diesel_pg_async_connection_customizer(
+        &self,
+        config: &AppConfig,
+    ) -> RoadsterResult<
+        Box<
+            dyn bb8_8::CustomizeConnection<
+                crate::db::DieselPgConnAsync,
+                diesel_async::pooled_connection::PoolError,
+            >,
+        >,
+    > {
+        let mut connection_customizer = self
+            .diesel_pg_async_connection_customizer
+            .lock()
+            .map_err(crate::error::Error::from)?;
+
+        if let Some(connection_customizer) = connection_customizer.take() {
+            return Ok(connection_customizer);
+        }
+
+        if let Some(connection_customizer_provider) = self
+            .inner
+            .diesel_pg_async_connection_customizer_provider
+            .as_ref()
+        {
+            return connection_customizer_provider(config);
+        };
+
+        Ok(Box::new(Empty))
+    }
+
+    #[cfg(feature = "db-diesel-mysql-pool-async")]
+    fn diesel_mysql_async_connection_customizer(
+        &self,
+        config: &AppConfig,
+    ) -> RoadsterResult<
+        Box<
+            dyn bb8_8::CustomizeConnection<
+                crate::db::DieselMysqlConnAsync,
+                diesel_async::pooled_connection::PoolError,
+            >,
+        >,
+    > {
+        let mut connection_customizer = self
+            .diesel_mysql_async_connection_customizer
+            .lock()
+            .map_err(crate::error::Error::from)?;
+
+        if let Some(connection_customizer) = connection_customizer.take() {
+            return Ok(connection_customizer);
+        }
+
+        if let Some(connection_customizer_provider) = self
+            .inner
+            .diesel_mysql_async_connection_customizer_provider
+            .as_ref()
+        {
+            return connection_customizer_provider(config);
+        };
+
+        Ok(Box::new(Empty))
     }
 
     #[cfg(feature = "db-sql")]

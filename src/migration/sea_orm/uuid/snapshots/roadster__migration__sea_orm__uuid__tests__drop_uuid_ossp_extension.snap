@@ -1,9 +1,0 @@
----
-source: src/migration/sea_orm/uuid/mod.rs
-expression: statement
----
-Statement {
-    sql: "DROP EXTENSION IF EXISTS \"uuid-ossp\";",
-    values: None,
-    db_backend: Postgres,
-}
