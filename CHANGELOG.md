@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.7.0-beta](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.8...roadster-v0.7.0-beta) - 2025-02-25
 
+This is the first beta release for version 0.7.0. From here until the stable 0.7.0 release, the focus will be on
+improving docs and internal clean up. Semver breaking changes are not expected going forward for 0.7.0, but are still
+possible.
+
 ### Other
 
 - Update OTEL dependencies (#659)
