@@ -10,30 +10,6 @@ use axum_core::extract::FromRef;
 use sea_orm::DatabaseConnection;
 use std::sync::{Arc, OnceLock, Weak};
 
-#[cfg(feature = "db-diesel-postgres")]
-pub type DieselPgConn = diesel::pg::PgConnection;
-#[cfg(feature = "db-diesel-mysql")]
-pub type DieselMysqlConn = diesel::mysql::MysqlConnection;
-#[cfg(feature = "db-diesel-sqlite")]
-pub type DieselSqliteConn = diesel::sqlite::SqliteConnection;
-
-#[cfg(feature = "db-diesel-postgres-pool")]
-pub type DieselPgPool = r2d2::Pool<diesel::r2d2::ConnectionManager<DieselPgConn>>;
-#[cfg(feature = "db-diesel-mysql-pool")]
-pub type DieselMysqlPool = r2d2::Pool<diesel::r2d2::ConnectionManager<DieselMysqlConn>>;
-#[cfg(feature = "db-diesel-sqlite-pool")]
-pub type DieselSqlitePool = r2d2::Pool<diesel::r2d2::ConnectionManager<DieselSqliteConn>>;
-
-#[cfg(feature = "db-diesel-postgres-pool-async")]
-pub type DieselPgConnAsync = diesel_async::AsyncPgConnection;
-#[cfg(feature = "db-diesel-mysql-pool-async")]
-pub type DieselMysqlConnAsync = diesel_async::AsyncMysqlConnection;
-
-#[cfg(feature = "db-diesel-postgres-pool-async")]
-pub type DieselPgPoolAsync = diesel_async::pooled_connection::bb8::Pool<DieselPgConnAsync>;
-#[cfg(feature = "db-diesel-mysql-pool-async")]
-pub type DieselMysqlPoolAsync = diesel_async::pooled_connection::bb8::Pool<DieselMysqlConnAsync>;
-
 #[cfg(not(test))]
 type Inner = AppContextInner;
 #[cfg(test)]
@@ -95,19 +71,39 @@ impl AppContext {
                 sea_orm::Database::connect(app.sea_orm_connection_options(&config)?).await?;
 
             #[cfg(feature = "db-diesel-postgres-pool")]
-            let diesel_pg_pool = build_diesel_pool::<DieselPgConn>(&config)?;
+            let diesel_pg_pool = build_diesel_pool::<crate::db::DieselPgConn>(
+                &config,
+                app.diesel_connection_customizer(&config)?
+                    .unwrap_or(app.diesel_pg_connection_customizer(&config)?),
+            )?;
 
             #[cfg(feature = "db-diesel-mysql-pool")]
-            let diesel_mysql_pool = build_diesel_pool::<DieselMysqlConn>(&config)?;
+            let diesel_mysql_pool = build_diesel_pool::<crate::db::DieselMysqlConn>(
+                &config,
+                app.diesel_connection_customizer(&config)?
+                    .unwrap_or(app.diesel_mysql_connection_customizer(&config)?),
+            )?;
 
             #[cfg(feature = "db-diesel-sqlite-pool")]
-            let diesel_sqlite_pool = build_diesel_pool::<DieselSqliteConn>(&config)?;
+            let diesel_sqlite_pool = build_diesel_pool::<crate::db::DieselSqliteConn>(
+                &config,
+                app.diesel_connection_customizer(&config)?
+                    .unwrap_or(app.diesel_sqlite_connection_customizer(&config)?),
+            )?;
 
             #[cfg(feature = "db-diesel-postgres-pool-async")]
-            let diesel_pg_pool_async = build_diesel_pg_async_pool(&config).await?;
+            let diesel_pg_pool_async = build_diesel_pg_async_pool(
+                &config,
+                app.diesel_pg_async_connection_customizer(&config)?,
+            )
+            .await?;
 
             #[cfg(feature = "db-diesel-mysql-pool-async")]
-            let diesel_mysql_pool_async = build_diesel_mysql_async_pool(&config).await?;
+            let diesel_mysql_pool_async = build_diesel_mysql_async_pool(
+                &config,
+                app.diesel_mysql_async_connection_customizer(&config)?,
+            )
+            .await?;
 
             #[cfg(feature = "sidekiq")]
             let (redis_enqueue, redis_fetch) = {
@@ -262,27 +258,27 @@ impl AppContext {
     }
 
     #[cfg(feature = "db-diesel-postgres-pool")]
-    pub fn diesel_pg_pool(&self) -> &DieselPgPool {
+    pub fn diesel_pg_pool(&self) -> &crate::db::DieselPgPool {
         self.inner.diesel_pg_pool()
     }
 
     #[cfg(feature = "db-diesel-mysql-pool")]
-    pub fn diesel_mysql_pool(&self) -> &DieselMysqlPool {
+    pub fn diesel_mysql_pool(&self) -> &crate::db::DieselMysqlPool {
         self.inner.diesel_mysql_pool()
     }
 
     #[cfg(feature = "db-diesel-sqlite-pool")]
-    pub fn diesel_sqlite_pool(&self) -> &DieselSqlitePool {
+    pub fn diesel_sqlite_pool(&self) -> &crate::db::DieselSqlitePool {
         self.inner.diesel_sqlite_pool()
     }
 
     #[cfg(feature = "db-diesel-postgres-pool-async")]
-    pub fn diesel_pg_pool_async(&self) -> &DieselPgPoolAsync {
+    pub fn diesel_pg_pool_async(&self) -> &crate::db::DieselPgPoolAsync {
         self.inner.diesel_pg_pool_async()
     }
 
     #[cfg(feature = "db-diesel-mysql-pool-async")]
-    pub fn diesel_mysql_pool_async(&self) -> &DieselMysqlPoolAsync {
+    pub fn diesel_mysql_pool_async(&self) -> &crate::db::DieselMysqlPoolAsync {
         self.inner.diesel_mysql_pool_async()
     }
 
@@ -361,6 +357,7 @@ impl bb8_8::ErrorSink<diesel_async::pooled_connection::PoolError> for TracingErr
 #[cfg_attr(test, allow(dead_code))]
 fn build_diesel_pool<C>(
     config: &AppConfig,
+    connection_customizer: Box<dyn r2d2::CustomizeConnection<C, diesel::r2d2::Error>>,
 ) -> RoadsterResult<r2d2::Pool<diesel::r2d2::ConnectionManager<C>>>
 where
     C: 'static + diesel::connection::Connection + diesel::r2d2::R2D2Connection,
@@ -370,6 +367,7 @@ where
 
     let builder = r2d2::Pool::builder()
         .error_handler(Box::new(TracingErrorHandler))
+        .connection_customizer(connection_customizer)
         .test_on_check_out(config.database.test_on_checkout)
         .min_idle(Some(config.database.min_connections))
         .max_size(config.database.max_connections)
@@ -388,15 +386,23 @@ where
 // Todo: reduce duplication
 #[cfg(feature = "db-diesel-postgres-pool-async")]
 #[cfg_attr(test, allow(dead_code))]
-async fn build_diesel_pg_async_pool(config: &AppConfig) -> RoadsterResult<DieselPgPoolAsync> {
+async fn build_diesel_pg_async_pool(
+    config: &AppConfig,
+    connection_customizer: Box<
+        dyn bb8_8::CustomizeConnection<
+            crate::db::DieselPgConnAsync,
+            diesel_async::pooled_connection::PoolError,
+        >,
+    >,
+) -> RoadsterResult<crate::db::DieselPgPoolAsync> {
     let url = config.database.uri.clone();
-    let manager =
-        diesel_async::pooled_connection::AsyncDieselConnectionManager::<DieselPgConnAsync>::new(
-            url,
-        );
+    let manager = diesel_async::pooled_connection::AsyncDieselConnectionManager::<
+        crate::db::DieselPgConnAsync,
+    >::new(url);
 
     let builder = diesel_async::pooled_connection::bb8::Pool::builder()
         .error_sink(Box::new(TracingErrorHandler))
+        .connection_customizer(connection_customizer)
         .test_on_check_out(config.database.test_on_checkout)
         .min_idle(Some(config.database.min_connections))
         .max_size(config.database.max_connections)
@@ -416,14 +422,23 @@ async fn build_diesel_pg_async_pool(config: &AppConfig) -> RoadsterResult<Diesel
 // Todo: reduce duplication
 #[cfg(feature = "db-diesel-mysql-pool-async")]
 #[cfg_attr(test, allow(dead_code))]
-async fn build_diesel_mysql_async_pool(config: &AppConfig) -> RoadsterResult<DieselMysqlPoolAsync> {
+async fn build_diesel_mysql_async_pool(
+    config: &AppConfig,
+    connection_customizer: Box<
+        dyn bb8_8::CustomizeConnection<
+            crate::db::DieselMysqlConnAsync,
+            diesel_async::pooled_connection::PoolError,
+        >,
+    >,
+) -> RoadsterResult<crate::db::DieselMysqlPoolAsync> {
     let url = config.database.uri.clone();
     let manager = diesel_async::pooled_connection::AsyncDieselConnectionManager::<
-        DieselMysqlConnAsync,
+        crate::db::DieselMysqlConnAsync,
     >::new(url);
 
     let builder = diesel_async::pooled_connection::bb8::Pool::builder()
         .error_sink(Box::new(TracingErrorHandler))
+        .connection_customizer(connection_customizer)
         .test_on_check_out(config.database.test_on_checkout)
         .min_idle(Some(config.database.min_connections))
         .max_size(config.database.max_connections)
@@ -539,57 +554,57 @@ impl Provide<DatabaseConnection> for AppContext {
 }
 
 #[cfg(feature = "db-diesel-postgres-pool")]
-impl ProvideRef<DieselPgPool> for AppContext {
-    fn provide(&self) -> &DieselPgPool {
+impl ProvideRef<crate::db::DieselPgPool> for AppContext {
+    fn provide(&self) -> &crate::db::DieselPgPool {
         self.diesel_pg_pool()
     }
 }
 
 #[cfg(feature = "db-diesel-mysql-pool")]
-impl ProvideRef<DieselMysqlPool> for AppContext {
-    fn provide(&self) -> &DieselMysqlPool {
+impl ProvideRef<crate::db::DieselMysqlPool> for AppContext {
+    fn provide(&self) -> &crate::db::DieselMysqlPool {
         self.diesel_mysql_pool()
     }
 }
 
 #[cfg(feature = "db-diesel-sqlite-pool")]
-impl ProvideRef<DieselSqlitePool> for AppContext {
-    fn provide(&self) -> &DieselSqlitePool {
+impl ProvideRef<crate::db::DieselSqlitePool> for AppContext {
+    fn provide(&self) -> &crate::db::DieselSqlitePool {
         self.diesel_sqlite_pool()
     }
 }
 
 #[cfg(feature = "db-diesel-postgres-pool-async")]
-impl ProvideRef<DieselPgPoolAsync> for AppContext {
-    fn provide(&self) -> &DieselPgPoolAsync {
+impl ProvideRef<crate::db::DieselPgPoolAsync> for AppContext {
+    fn provide(&self) -> &crate::db::DieselPgPoolAsync {
         self.diesel_pg_pool_async()
     }
 }
 
 #[cfg(feature = "db-diesel-mysql-pool-async")]
-impl ProvideRef<DieselMysqlPoolAsync> for AppContext {
-    fn provide(&self) -> &DieselMysqlPoolAsync {
+impl ProvideRef<crate::db::DieselMysqlPoolAsync> for AppContext {
+    fn provide(&self) -> &crate::db::DieselMysqlPoolAsync {
         self.diesel_mysql_pool_async()
     }
 }
 
 #[cfg(feature = "db-diesel-postgres-pool")]
-impl Provide<DieselPgPool> for AppContext {
-    fn provide(&self) -> DieselPgPool {
+impl Provide<crate::db::DieselPgPool> for AppContext {
+    fn provide(&self) -> crate::db::DieselPgPool {
         self.diesel_pg_pool().clone()
     }
 }
 
 #[cfg(feature = "db-diesel-mysql-pool")]
-impl Provide<DieselMysqlPool> for AppContext {
-    fn provide(&self) -> DieselMysqlPool {
+impl Provide<crate::db::DieselMysqlPool> for AppContext {
+    fn provide(&self) -> crate::db::DieselMysqlPool {
         self.diesel_mysql_pool().clone()
     }
 }
 
 #[cfg(feature = "db-diesel-sqlite-pool")]
-impl Provide<DieselSqlitePool> for AppContext {
-    fn provide(&self) -> DieselSqlitePool {
+impl Provide<crate::db::DieselSqlitePool> for AppContext {
+    fn provide(&self) -> crate::db::DieselSqlitePool {
         self.diesel_sqlite_pool().clone()
     }
 }
@@ -866,15 +881,15 @@ struct AppContextInner {
     #[cfg(feature = "db-sea-orm")]
     sea_orm: DatabaseConnection,
     #[cfg(feature = "db-diesel-postgres-pool")]
-    diesel_pg_pool: DieselPgPool,
+    diesel_pg_pool: crate::db::DieselPgPool,
     #[cfg(feature = "db-diesel-mysql-pool")]
-    diesel_mysql_pool: DieselMysqlPool,
+    diesel_mysql_pool: crate::db::DieselMysqlPool,
     #[cfg(feature = "db-diesel-sqlite-pool")]
-    diesel_sqlite_pool: DieselSqlitePool,
+    diesel_sqlite_pool: crate::db::DieselSqlitePool,
     #[cfg(feature = "db-diesel-postgres-pool-async")]
-    diesel_pg_pool_async: DieselPgPoolAsync,
+    diesel_pg_pool_async: crate::db::DieselPgPoolAsync,
     #[cfg(feature = "db-diesel-mysql-pool-async")]
-    diesel_mysql_pool_async: DieselMysqlPoolAsync,
+    diesel_mysql_pool_async: crate::db::DieselMysqlPoolAsync,
     #[cfg(all(feature = "db-sql", feature = "test-containers"))]
     #[allow(dead_code)]
     db_test_container: Option<DbTestContainer>,
@@ -942,27 +957,27 @@ impl AppContextInner {
     }
 
     #[cfg(feature = "db-diesel-postgres-pool")]
-    fn diesel_pg_pool(&self) -> &DieselPgPool {
+    fn diesel_pg_pool(&self) -> &crate::db::DieselPgPool {
         &self.diesel_pg_pool
     }
 
     #[cfg(feature = "db-diesel-mysql-pool")]
-    fn diesel_mysql_pool(&self) -> &DieselMysqlPool {
+    fn diesel_mysql_pool(&self) -> &crate::db::DieselMysqlPool {
         &self.diesel_mysql_pool
     }
 
     #[cfg(feature = "db-diesel-sqlite-pool")]
-    fn diesel_sqlite_pool(&self) -> &DieselSqlitePool {
+    fn diesel_sqlite_pool(&self) -> &crate::db::DieselSqlitePool {
         &self.diesel_sqlite_pool
     }
 
     #[cfg(feature = "db-diesel-postgres-pool-async")]
-    fn diesel_pg_pool_async(&self) -> &DieselPgPoolAsync {
+    fn diesel_pg_pool_async(&self) -> &crate::db::DieselPgPoolAsync {
         &self.diesel_pg_pool_async
     }
 
     #[cfg(feature = "db-diesel-mysql-pool-async")]
-    fn diesel_mysql_pool_async(&self) -> &DieselMysqlPoolAsync {
+    fn diesel_mysql_pool_async(&self) -> &crate::db::DieselMysqlPoolAsync {
         &self.diesel_mysql_pool_async
     }
 

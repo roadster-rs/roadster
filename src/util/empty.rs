@@ -1,5 +1,6 @@
 /// A placeholder that implements various traits so it can be used as the default for various type
 /// parameters
+#[derive(Debug)]
 pub struct Empty;
 
 // Note: Unfortunately, this can't be implemented for any `impl App` because of a loop in the
@@ -41,4 +42,22 @@ impl clap::FromArgMatches for Empty {
     fn update_from_arg_matches(&mut self, _matches: &clap::ArgMatches) -> Result<(), clap::Error> {
         Ok(())
     }
+}
+
+#[cfg(feature = "db-diesel-postgres-pool-async")]
+impl
+    bb8_8::CustomizeConnection<
+        crate::db::DieselPgConnAsync,
+        diesel_async::pooled_connection::PoolError,
+    > for Empty
+{
+}
+
+#[cfg(feature = "db-diesel-mysql-pool-async")]
+impl
+    bb8_8::CustomizeConnection<
+        crate::db::DieselMysqlConnAsync,
+        diesel_async::pooled_connection::PoolError,
+    > for Empty
+{
 }

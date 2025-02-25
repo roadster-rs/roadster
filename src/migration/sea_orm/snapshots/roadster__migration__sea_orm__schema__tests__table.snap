@@ -1,5 +1,0 @@
----
-source: src/migration/sea_orm/schema.rs
-expression: statement.to_string(PostgresQueryBuilder)
----
-CREATE TABLE IF NOT EXISTS "foo" ( "created_at" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP )

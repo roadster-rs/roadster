@@ -24,7 +24,7 @@ where
     pub app: A,
     pub state: S,
     #[cfg(feature = "db-sql")]
-    pub migrators: Vec<Box<dyn crate::migration::Migrator<S>>>,
+    pub migrators: Vec<Box<dyn crate::db::migration::Migrator<S>>>,
     pub service_registry: ServiceRegistry<A, S>,
 }
 

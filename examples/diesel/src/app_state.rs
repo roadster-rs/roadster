@@ -70,7 +70,7 @@ impl AppState {
         }
     }
 
-    pub fn db(&self) -> &roadster::app::context::DieselPgPoolAsync {
+    pub fn db(&self) -> &roadster::db::DieselPgPoolAsync {
         self.app_context.diesel_pg_pool_async()
     }
 

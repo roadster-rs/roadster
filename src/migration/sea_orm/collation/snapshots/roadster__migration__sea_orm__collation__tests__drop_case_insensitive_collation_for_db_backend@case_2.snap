@@ -1,5 +1,0 @@
----
-source: src/migration/sea_orm/collation/mod.rs
-expression: statement
----
-None

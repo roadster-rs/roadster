@@ -1,5 +1,0 @@
----
-source: src/migration/sea_orm/user/m20240723_070533_add_user_account_management_fields.rs
-expression: query.to_string(PostgresQueryBuilder)
----
-ALTER TABLE "user" DROP COLUMN "email_confirmation_sent_at", DROP COLUMN "email_confirmation_token", DROP COLUMN "email_confirmed_at", DROP COLUMN "last_sign_in_at", DROP COLUMN "recovery_sent_at", DROP COLUMN "recovery_token", DROP COLUMN "email_change_sent_at", DROP COLUMN "email_change_token_new", DROP COLUMN "email_change_token_current", DROP COLUMN "deleted_at"

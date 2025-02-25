@@ -14,10 +14,10 @@ use roadster::app::context::AppContext;
 use roadster::app::metadata::AppMetadata;
 use roadster::app::App as RoadsterApp;
 use roadster::config::AppConfig;
+use roadster::db::migration::sea_orm::SeaOrmMigrator;
 use roadster::error::RoadsterResult;
 use roadster::health::check::registry::HealthCheckRegistry;
 use roadster::lifecycle::registry::LifecycleHandlerRegistry;
-use roadster::migration::sea_orm::SeaOrmMigrator;
 use roadster::service::function::service::FunctionService;
 #[cfg(feature = "grpc")]
 use roadster::service::grpc::service::GrpcService;
@@ -50,7 +50,7 @@ impl RoadsterApp<AppState> for App {
     fn migrators(
         &self,
         _state: &AppState,
-    ) -> RoadsterResult<Vec<Box<dyn roadster::migration::Migrator<AppState>>>> {
+    ) -> RoadsterResult<Vec<Box<dyn roadster::db::migration::Migrator<AppState>>>> {
         Ok(vec![Box::new(SeaOrmMigrator::new(Migrator))])
     }
 
