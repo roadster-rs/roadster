@@ -15,9 +15,7 @@ use opentelemetry_sdk::metrics::{PeriodicReader, SdkMeterProvider};
 #[cfg(feature = "otel")]
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 #[cfg(feature = "otel")]
-use opentelemetry_sdk::runtime::Tokio;
-#[cfg(feature = "otel")]
-use opentelemetry_semantic_conventions::resource::{SERVICE_NAME, SERVICE_VERSION};
+use opentelemetry_semantic_conventions::resource::SERVICE_VERSION;
 use std::str::FromStr;
 use tracing::Level;
 #[cfg(feature = "otel")]
@@ -98,28 +96,26 @@ pub fn init_tracing(
 
     #[cfg(feature = "otel")]
     let otel_resource = {
-        let mut resource_metadata = vec![opentelemetry::KeyValue::new(
-            SERVICE_NAME,
-            service_name.clone(),
-        )];
-
-        if let Some(version) = metadata.version.clone() {
-            resource_metadata.push(opentelemetry::KeyValue::new(SERVICE_VERSION, version))
-        }
-
-        opentelemetry_sdk::Resource::new(resource_metadata)
+        let builder = opentelemetry_sdk::Resource::builder().with_service_name(service_name);
+        let builder = metadata.version.iter().fold(builder, |builder, version| {
+            builder.with_attribute(opentelemetry::KeyValue::new(
+                SERVICE_VERSION,
+                version.clone(),
+            ))
+        });
+        builder.build()
     };
 
     // Trace layer
     #[cfg(feature = "otel")]
     let oltp_traces_layer = if let Some(otlp_endpoint) = config.tracing.otlp_endpoint.as_ref() {
         let exporter = SpanExporter::builder()
-            .with_tonic()
+            .with_http()
             .with_endpoint(otlp_endpoint.to_string())
             .build()?;
-        let provider = opentelemetry_sdk::trace::TracerProvider::builder()
+        let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
             .with_resource(otel_resource.clone())
-            .with_batch_exporter(exporter, Tokio)
+            .with_batch_exporter(exporter)
             .build();
         opentelemetry::global::set_tracer_provider(provider.clone());
         // Create a tracing layer with the configured tracer
@@ -134,10 +130,10 @@ pub fn init_tracing(
     #[cfg(feature = "otel")]
     let otlp_metrics_layer = if let Some(otlp_endpoint) = config.tracing.otlp_endpoint.as_ref() {
         let exporter = MetricExporter::builder()
-            .with_tonic()
+            .with_http()
             .with_endpoint(otlp_endpoint.clone())
             .build()?;
-        let reader = PeriodicReader::builder(exporter, Tokio);
+        let reader = PeriodicReader::builder(exporter);
         let reader = if let Some(interval) = config.tracing.metrics_export_interval {
             reader.with_interval(interval)
         } else {
