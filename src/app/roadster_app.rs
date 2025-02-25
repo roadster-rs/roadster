@@ -33,9 +33,17 @@ type AsyncConfigSourceProvider =
 type MetadataProvider = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<AppMetadata>;
 #[cfg(feature = "db-sea-orm")]
 type DbConnOptionsProvider = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<ConnectOptions>;
-#[cfg(feature = "db-diesel-pool")]
+#[cfg(any(
+    feature = "db-diesel-postgres-pool",
+    feature = "db-diesel-mysql-pool",
+    feature = "db-diesel-sqlite-pool"
+))]
 type DieselConnectionCustomizer<C> = Box<dyn r2d2::CustomizeConnection<C, diesel::r2d2::Error>>;
-#[cfg(feature = "db-diesel-pool")]
+#[cfg(any(
+    feature = "db-diesel-postgres-pool",
+    feature = "db-diesel-mysql-pool",
+    feature = "db-diesel-sqlite-pool"
+))]
 type DieselConnectionCustomizerProvider<C> =
     dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<DieselConnectionCustomizer<C>>;
 #[cfg(feature = "db-diesel-pool-async")]
