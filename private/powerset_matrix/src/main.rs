@@ -26,59 +26,9 @@ fn main() -> anyhow::Result<()> {
         .map(|f| f.to_string())
         .collect_vec();
 
-    // Features to group together -- helps reduce the size of the powerset
-    let groups: Vec<BTreeSet<String>> = vec![
-        vec!["email", "email-smtp"],
-        vec!["email", "email-sendgrid"],
-        vec!["jwt", "jwt-ietf"],
-        vec!["jwt", "jwt-openid"],
-        vec!["open-api", "http"],
-        vec!["db-sea-orm", "db-sql"],
-        // Diesel
-        vec!["db-diesel", "db-sql"],
-        vec!["db-diesel-postgres", "db-diesel", "db-sql"],
-        vec!["db-diesel-mysql", "db-diesel", "db-sql"],
-        vec!["db-diesel-sqlite", "db-diesel", "db-sql"],
-        // Diesel pool
-        vec![
-            "db-diesel-postgres-pool",
-            "db-diesel-postgres",
-            "db-diesel",
-            "db-sql",
-        ],
-        vec![
-            "db-diesel-mysql-pool",
-            "db-diesel-mysql",
-            "db-diesel",
-            "db-sql",
-        ],
-        vec![
-            "db-diesel-sqlite-pool",
-            "db-diesel-sqlite",
-            "db-diesel",
-            "db-sql",
-        ],
-        // Diesel async pool
-        vec!["db-diesel-pool-async", "db-diesel", "db-sql"],
-        vec![
-            "db-diesel-postgres-pool-async",
-            "db-diesel-pool-async",
-            "db-diesel-postgres",
-            "db-diesel",
-            "db-sql",
-        ],
-        vec![
-            "db-diesel-mysql-pool-async",
-            "db-diesel-pool-async",
-            "db-diesel-mysql",
-            "db-diesel",
-            "db-sql",
-        ],
-    ]
-    .into_iter()
-    .map(|v| v.into_iter().map(|s| s.to_string()).collect())
-    .collect_vec();
-
+    // Since we're only using a depth of 2 in CI, this isn't really doing much. I also think our
+    // logic for applying these groups in `powerset` is flawed. So, don't use this for now.
+    let groups: Vec<BTreeSet<String>> = Default::default();
     let powerset = powerset(&cli, manifest, groups, skip)?;
     let total_powersets = powerset.len();
     let powerset = powerset.into_iter().map(|v| v.join(",")).collect_vec();
