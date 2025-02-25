@@ -40,6 +40,7 @@ where
                 app_cli: cli.app_cli,
                 app: prepared.app,
                 state: prepared.state,
+                #[cfg(feature = "db-sql")]
                 migrators: prepared.migrators,
                 service_registry: prepared.service_registry,
             };

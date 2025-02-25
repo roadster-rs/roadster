@@ -4,7 +4,6 @@ use crate::app::App;
 #[cfg(test)]
 use crate::app::MockApp;
 use crate::error::RoadsterResult;
-use crate::migration::Migrator;
 use crate::service::registry::ServiceRegistry;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
@@ -25,7 +24,7 @@ where
     pub app: A,
     pub state: S,
     #[cfg(feature = "db-sql")]
-    pub migrators: Vec<Box<dyn Migrator<S>>>,
+    pub migrators: Vec<Box<dyn crate::migration::Migrator<S>>>,
     pub service_registry: ServiceRegistry<A, S>,
 }
 
