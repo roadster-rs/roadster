@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-alpha.7](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.6...roadster-v0.7.0-alpha.7) - 2025-02-25
+
+### Other
+
+- [**breaking**] Refactor app runners and change command + lifecycle params (#652)
+- minor re-word in db book chapter (#651)
+
 ## [0.7.0-alpha.6](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.5...roadster-v0.7.0-alpha.6) - 2025-02-24
 
 ### Added
