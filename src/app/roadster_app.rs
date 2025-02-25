@@ -46,10 +46,16 @@ type DieselConnectionCustomizer<C> = Box<dyn r2d2::CustomizeConnection<C, diesel
 ))]
 type DieselConnectionCustomizerProvider<C> =
     dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<DieselConnectionCustomizer<C>>;
-#[cfg(feature = "db-diesel-pool-async")]
+#[cfg(any(
+    feature = "db-diesel-postgres-pool-async",
+    feature = "db-diesel-mysql-pool-async"
+))]
 type DieselAsyncConnectionCustomizer<C> =
     Box<dyn bb8_8::CustomizeConnection<C, diesel_async::pooled_connection::PoolError>>;
-#[cfg(feature = "db-diesel-pool-async")]
+#[cfg(any(
+    feature = "db-diesel-postgres-pool-async",
+    feature = "db-diesel-mysql-pool-async"
+))]
 type DieselAsyncConnectionCustomizerProvider<C> =
     dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<DieselAsyncConnectionCustomizer<C>>;
 #[cfg(feature = "db-sql")]
