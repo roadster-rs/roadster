@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-alpha.8](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.7...roadster-v0.7.0-alpha.8) - 2025-02-25
+
+### Added
+
+- [**breaking**] Allow customizing the Diesel pool connections (#656)
+
 ## [0.7.0-alpha.7](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.6...roadster-v0.7.0-alpha.7) - 2025-02-25
 
 ### Other
