@@ -37,8 +37,11 @@ fn main() -> anyhow::Result<()> {
         // Diesel
         vec!["db-diesel", "db-sql"],
         vec!["db-diesel-postgres", "db-diesel", "db-sql"],
+        vec!["db-diesel-postgres", "db-sql"],
         vec!["db-diesel-mysql", "db-diesel", "db-sql"],
+        vec!["db-diesel-mysql", "db-sql"],
         vec!["db-diesel-sqlite", "db-diesel", "db-sql"],
+        vec!["db-diesel-sqlite", "db-sql"],
         // Diesel pool
         vec![
             "db-diesel-postgres-pool",
@@ -46,18 +49,27 @@ fn main() -> anyhow::Result<()> {
             "db-diesel",
             "db-sql",
         ],
+        vec!["db-diesel-postgres-pool", "db-sql"],
+        vec!["db-diesel-postgres-pool", "db-diesel"],
+        vec!["db-diesel-postgres-pool", "db-diesel-postgres"],
         vec![
             "db-diesel-mysql-pool",
             "db-diesel-mysql",
             "db-diesel",
             "db-sql",
         ],
+        vec!["db-diesel-mysql-pool", "db-sql"],
+        vec!["db-diesel-mysql-pool", "db-diesel"],
+        vec!["db-diesel-mysql-pool", "db-diesel-mysql"],
         vec![
             "db-diesel-sqlite-pool",
             "db-diesel-sqlite",
             "db-diesel",
             "db-sql",
         ],
+        vec!["db-diesel-sqlite-pool", "db-sql"],
+        vec!["db-diesel-sqlite-pool", "db-diesel"],
+        vec!["db-diesel-sqlite-pool", "db-diesel-sqlite"],
         // Diesel async pool
         vec!["db-diesel-pool-async", "db-diesel", "db-sql"],
         vec![
@@ -67,6 +79,14 @@ fn main() -> anyhow::Result<()> {
             "db-diesel",
             "db-sql",
         ],
+        vec!["db-diesel-pool-async", "db-sql"],
+        vec!["db-diesel-postgres-pool-async", "db-sql"],
+        vec!["db-diesel-postgres-pool-async", "db-diesel"],
+        vec!["db-diesel-postgres-pool-async", "db-diesel-postgres"],
+        vec!["db-diesel-postgres-pool-async", "db-diesel-pool-async"],
+        vec!["db-diesel-pool-async", "db-sql"],
+        vec!["db-diesel-pool-async", "db-diesel"],
+        vec!["db-diesel-pool-async", "db-diesel-postgres"],
         vec![
             "db-diesel-mysql-pool-async",
             "db-diesel-pool-async",
@@ -74,6 +94,14 @@ fn main() -> anyhow::Result<()> {
             "db-diesel",
             "db-sql",
         ],
+        vec!["db-diesel-pool-async", "db-sql"],
+        vec!["db-diesel-mysql-pool-async", "db-sql"],
+        vec!["db-diesel-mysql-pool-async", "db-diesel"],
+        vec!["db-diesel-mysql-pool-async", "db-diesel-mysql"],
+        vec!["db-diesel-mysql-pool-async", "db-diesel-pool-async"],
+        vec!["db-diesel-pool-async", "db-sql"],
+        vec!["db-diesel-pool-async", "db-diesel"],
+        vec!["db-diesel-pool-async", "db-diesel-mysql"],
     ]
     .into_iter()
     .map(|v| v.into_iter().map(|s| s.to_string()).collect())
