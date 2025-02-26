@@ -8,4 +8,6 @@ PrepareOptions {
     ),
     parse_cli: false,
     config_dir: None,
+    config_sources: [],
+    config: None,
 }
