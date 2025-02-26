@@ -16,7 +16,7 @@ To run your SeaORM migrations with Roadster, provide
 your [`MigratorTrait`](https://docs.rs/sea-orm-migration/1.1.4/sea_orm_migration/migrator/trait.MigratorTrait.html) type
 to Roadster. This is done by providing the migrator via the
 [
-`RoadsterAppBuilder#sea_orm_migrator`](https://docs.rs/roadster/0.7.0-alpha.4/roadster/app/struct.RoadsterAppBuilder.html#method.sea_orm_migrator)
+`RoadsterAppBuilder#sea_orm_migrator`](https://docs.rs/roadster/0.7.0-beta/roadster/app/struct.RoadsterAppBuilder.html#method.sea_orm_migrator)
 method
 
 ```rust,ignore
@@ -24,7 +24,7 @@ method
 ```
 
 or the
-[`App#migrators`](https://docs.rs/roadster/0.7.0-alpha.4/roadster/app/trait.App.html#method.migrators) impl
+[`App#migrators`](https://docs.rs/roadster/0.7.0-beta/roadster/app/trait.App.html#method.migrators) impl
 
 ```rust,ignore
 {{#include ../../../examples/database/src/app.rs:8:}}
@@ -60,7 +60,7 @@ async versions of the Postgres and Mysql connections are supported via [diesel-a
 To run your Diesel migrations with Roadster, provide
 your migrations to Roadster. This is done by setting providing the migrator in the
 [
-`RoadsterAppBuilder#diesel_migrator`](https://docs.rs/roadster/0.7.0-alpha.4/roadster/app/struct.RoadsterAppBuilder.html#method.sea_orm_migrator)
+`RoadsterAppBuilder#diesel_migrator`](https://docs.rs/roadster/0.7.0-beta/roadster/app/struct.RoadsterAppBuilder.html#method.sea_orm_migrator)
 method
 
 ```rust,ignore
@@ -68,7 +68,7 @@ method
 ```
 
 or the
-[`App#migrators`](https://docs.rs/roadster/0.7.0-alpha.4/roadster/app/trait.App.html#method.migrators) impl
+[`App#migrators`](https://docs.rs/roadster/0.7.0-beta/roadster/app/trait.App.html#method.migrators) impl
 
 ```rust,ignore
 {{#include ../../../examples/database-diesel/src/app.rs:8:}}
