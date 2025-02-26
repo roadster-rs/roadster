@@ -9,6 +9,6 @@ const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
 fn build_app() -> App {
     RoadsterApp::builder()
         .state_provider(|context| Ok(context))
-        .diesel_migrator(MIGRATIONS)
+        .diesel_migrator::<roadster::db::DieselPgConn>(MIGRATIONS)
         .build()
 }

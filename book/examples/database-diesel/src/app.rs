@@ -21,6 +21,8 @@ impl App<AppContext> for MyApp {
         &self,
         _state: &AppContext,
     ) -> RoadsterResult<Vec<Box<dyn roadster::db::migration::Migrator<AppContext>>>> {
-        Ok(vec![Box::new(DieselMigrator::new(MIGRATIONS))])
+        Ok(vec![Box::new(
+            DieselMigrator::<roadster::db::DieselPgConn>::new(MIGRATIONS),
+        )])
     }
 }
