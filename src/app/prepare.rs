@@ -5,7 +5,7 @@ use crate::api::cli::roadster::RoadsterCli;
 use crate::app::context::AppContext;
 use crate::app::App;
 use crate::config::environment::Environment;
-use crate::config::{AppConfig, AppConfigOptions};
+use crate::config::{AppConfig, AppConfigOptions, ConfigOverrideSource};
 #[cfg(feature = "db-sql")]
 use crate::db::migration::Migrator;
 use crate::error::RoadsterResult;
@@ -59,6 +59,20 @@ where
 /// the prepared app.
 #[derive(Default, Debug, TypedBuilder)]
 #[non_exhaustive]
+#[builder(mutators(
+    fn config_sources(&mut self, config_sources: Vec<Box<dyn config::Source + Send + Sync>>) -> &mut Self{
+        self.config_sources = config_sources;
+    self
+    }
+    pub fn add_config_source(&mut self, source: impl config::Source + Send + Sync + 'static) -> &mut Self{
+        self.config_sources.push(Box::new(source));
+    self
+    }
+    pub fn add_config_source_boxed(&mut self, source: Box<dyn config::Source + Send + Sync>) -> &mut Self{
+        self.config_sources.push(source);
+    self
+    }
+))]
 pub struct PrepareOptions {
     #[builder(default, setter(strip_option))]
     pub env: Option<Environment>,
@@ -66,14 +80,41 @@ pub struct PrepareOptions {
     pub parse_cli: bool,
     #[builder(default, setter(strip_option))]
     pub config_dir: Option<PathBuf>,
+    /// Manually provide custom config sources. This is mostly intended to allow overriding
+    /// specific app config fields for tests (e.g., using the [`ConfigOverrideSource`]), but it
+    /// can also be used to provide other custom config sources outside of tests.
+    #[builder(via_mutators)]
+    pub config_sources: Vec<Box<dyn config::Source + Send + Sync>>,
+    /// Explicitly override the entire [`AppConfig`] to run the app with. If provided, the other
+    /// config-related fields in this struct will not be used.
+    #[builder(default, setter(strip_option))]
+    pub config: Option<AppConfig>,
 }
 
 impl PrepareOptions {
+    /// The default recommended [`PrepareOptions`] to use in tests.
     pub fn test() -> Self {
         PrepareOptions::builder()
             .env(Environment::Test)
             .parse_cli(false)
             .build()
+    }
+
+    /// Provide an override for a specific config field.
+    pub fn with_config_override(mut self, name: String, value: config::Value) -> Self {
+        self.config_sources.push(Box::new(
+            ConfigOverrideSource::builder()
+                .name(name)
+                .value(value)
+                .build(),
+        ));
+        self
+    }
+
+    /// Override the entire [`AppConfig`].
+    pub fn with_config(mut self, config: AppConfig) -> Self {
+        self.config = Some(config);
+        self
     }
 }
 
@@ -140,14 +181,19 @@ where
 
     let app_config_options = AppConfigOptions::builder()
         .environment(environment)
-        .config_dir_opt(config_dir);
+        .config_dir_opt(config_dir)
+        .config_sources(options.config_sources);
     let app_config_options = async_config_sources
         .into_iter()
         .fold(app_config_options, |app_config_options, source| {
             app_config_options.add_async_source_boxed(source)
         })
         .build();
-    let config = AppConfig::new_with_options(app_config_options).await?;
+    let config = if let Some(config) = options.config {
+        config
+    } else {
+        AppConfig::new_with_options(app_config_options).await?
+    };
 
     app.init_tracing(&config)?;
 

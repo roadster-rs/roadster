@@ -12,7 +12,7 @@ use crate::util::serde::default_true;
 use ::tracing::warn;
 use cfg_if::cfg_if;
 use config::builder::DefaultState;
-use config::{AsyncSource, Config, ConfigBuilder, FileFormat, Map};
+use config::{AsyncSource, Config, ConfigBuilder, FileFormat, Map, Source};
 use convert_case::Casing;
 use dotenvy::dotenv;
 use health::check;
@@ -127,11 +127,41 @@ cfg_if! {
     }
 }
 
+#[derive(Debug, Clone, TypedBuilder)]
+pub struct ConfigOverrideSource {
+    pub name: String,
+    pub value: config::Value,
+}
+
+impl Source for ConfigOverrideSource {
+    fn clone_into_box(&self) -> Box<dyn Source + Send + Sync> {
+        Box::new(self.clone())
+    }
+
+    fn collect(&self) -> Result<Map<String, config::Value>, config::ConfigError> {
+        Ok([(self.name.clone(), self.value.clone())]
+            .into_iter()
+            .collect())
+    }
+}
+
 #[derive(TypedBuilder)]
 // Hmm, defining these methods in this macro is not the best experience; at what point to we just
 // implement our own builder type?
 #[builder(mutators(
-    fn async_config_sources(&mut self, async_config_sources: Vec<Box<dyn config::AsyncSource + Send>>) -> &mut Self{
+    pub(crate) fn config_sources(&mut self, config_sources: Vec<Box<dyn config::Source + Send + Sync>>) -> &mut Self{
+        self.config_sources = config_sources;
+    self
+    }
+    pub fn add_source(&mut self, source: impl config::Source + Send + Sync + 'static) -> &mut Self{
+        self.config_sources.push(Box::new(source));
+    self
+    }
+    pub fn add_source_boxed(&mut self, source: Box<dyn config::Source + Send + Sync>) -> &mut Self{
+        self.config_sources.push(source);
+    self
+    }
+    pub(crate) fn async_config_sources(&mut self, async_config_sources: Vec<Box<dyn config::AsyncSource + Send>>) -> &mut Self{
         self.async_config_sources = async_config_sources;
     self
     }
@@ -150,6 +180,8 @@ pub struct AppConfigOptions {
     pub environment: Environment,
     #[builder(default, setter(into, strip_option(fallback = config_dir_opt)))]
     pub config_dir: Option<PathBuf>,
+    #[builder(via_mutators)]
+    pub config_sources: Vec<Box<dyn Source + Send + Sync>>,
     #[builder(via_mutators)]
     pub async_config_sources: Vec<Box<dyn AsyncSource + Send>>,
 }
@@ -185,6 +217,14 @@ impl AppConfig {
 
         // Convert builder state to `AsyncState`
         let config = config.add_async_source(BoxedAsyncSource(None));
+
+        // Add all of the provided non-async sources
+        let config = options
+            .config_sources
+            .into_iter()
+            .fold(config, |config, source| {
+                config.add_source(BoxedSource(source))
+            });
 
         // Add all of the provided async sources
         let config = options
@@ -376,6 +416,19 @@ fn config_env_dir_recursive(
             Ok(config)
         }
     })
+}
+
+#[derive(Debug)]
+struct BoxedSource(Box<dyn Source + Send + Sync>);
+
+impl Source for BoxedSource {
+    fn clone_into_box(&self) -> Box<dyn Source + Send + Sync> {
+        self.0.clone_into_box()
+    }
+
+    fn collect(&self) -> Result<Map<String, config::Value>, config::ConfigError> {
+        self.0.collect()
+    }
 }
 
 #[derive(Debug)]
