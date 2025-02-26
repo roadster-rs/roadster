@@ -1,6 +1,6 @@
 use crate::example_async_source::ExampleAsyncSource;
-use roadster::app::context::AppContext;
 use roadster::app::RoadsterApp;
+use roadster::app::context::AppContext;
 
 pub mod example_async_source;
 

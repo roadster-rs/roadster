@@ -1,10 +1,10 @@
 use crate::app_state::AppState;
 use crate::worker::example::ExampleWorker;
-use aide::axum::routing::get_with;
 use aide::axum::ApiRouter;
+use aide::axum::routing::get_with;
 use aide::transform::TransformOperation;
-use axum::extract::State;
 use axum::Json;
+use axum::extract::State;
 use roadster::api::http::build_path;
 use roadster::error::RoadsterResult;
 use roadster::service::worker::sidekiq::app_worker::AppWorker;

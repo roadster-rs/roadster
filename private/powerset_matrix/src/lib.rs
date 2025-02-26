@@ -4,8 +4,8 @@ use crate::cli::Cli;
 use anyhow::anyhow;
 use cargo_manifest::Manifest;
 use itertools::Itertools;
-use rand::prelude::{IteratorRandom, StdRng};
 use rand::SeedableRng;
+use rand::prelude::{IteratorRandom, StdRng};
 use std::collections::BTreeSet;
 
 pub mod cli;

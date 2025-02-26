@@ -1,6 +1,6 @@
 use axum::body::Body;
 use axum::http::{Request, Response, StatusCode};
-use roadster::app::{run_test, PrepareOptions};
+use roadster::app::{PrepareOptions, run_test};
 use roadster::service::http::service::HttpService;
 use roadster_diesel_example::build_app;
 use tower_util::ServiceExt;
