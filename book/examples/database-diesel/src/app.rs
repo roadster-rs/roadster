@@ -1,7 +1,7 @@
 use async_trait::async_trait;
-use diesel_migrations::{embed_migrations, EmbeddedMigrations};
-use roadster::app::context::AppContext;
+use diesel_migrations::{EmbeddedMigrations, embed_migrations};
 use roadster::app::App;
+use roadster::app::context::AppContext;
 use roadster::db::migration::diesel::DieselMigrator;
 use roadster::error::RoadsterResult;
 

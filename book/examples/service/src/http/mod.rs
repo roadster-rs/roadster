@@ -2,11 +2,11 @@ mod example_b;
 mod example_c;
 mod open_api;
 
-use aide::axum::routing::get_with;
 use aide::axum::ApiRouter;
+use aide::axum::routing::get_with;
+use axum::Router;
 use axum::response::IntoResponse;
 use axum::routing::get;
-use axum::Router;
 use roadster::api::http::build_path;
 use roadster::app::context::AppContext;
 use roadster::service::http::builder::HttpServiceBuilder;

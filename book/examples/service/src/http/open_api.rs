@@ -1,5 +1,5 @@
 use roadster::app::context::AppContext;
-use roadster::app::{prepare, PrepareOptions, RoadsterApp};
+use roadster::app::{PrepareOptions, RoadsterApp, prepare};
 use roadster::error::RoadsterResult;
 use roadster::service::http::service::HttpService;
 use roadster::service::http::service::OpenApiArgs;

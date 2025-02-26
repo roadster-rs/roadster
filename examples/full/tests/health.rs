@@ -1,8 +1,8 @@
 use anyhow::anyhow;
-use axum::body::{to_bytes, Body};
+use axum::body::{Body, to_bytes};
 use axum::http::{Request, Response, StatusCode};
 use full::app::App;
-use roadster::app::{run_test_with_result, PrepareOptions};
+use roadster::app::{PrepareOptions, run_test_with_result};
 use roadster::error::RoadsterResult;
 use roadster::service::http::service::HttpService;
 use tower_util::ServiceExt;

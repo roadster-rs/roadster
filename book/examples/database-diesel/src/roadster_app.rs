@@ -1,6 +1,6 @@
-use diesel_migrations::{embed_migrations, EmbeddedMigrations};
-use roadster::app::context::AppContext;
+use diesel_migrations::{EmbeddedMigrations, embed_migrations};
 use roadster::app::RoadsterApp;
+use roadster::app::context::AppContext;
 
 type App = RoadsterApp<AppContext>;
 

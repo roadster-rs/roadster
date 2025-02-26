@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use leptos_meta::{provide_meta_context, MetaTags};
+use leptos_meta::{MetaTags, provide_meta_context};
 
 /// The static HTML shell of the app.
 pub fn shell(options: LeptosOptions) -> impl IntoView {

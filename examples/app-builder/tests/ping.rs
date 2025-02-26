@@ -1,7 +1,7 @@
 use app_builder::build_app;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
-use roadster::app::{run_test, PrepareOptions};
+use roadster::app::{PrepareOptions, run_test};
 use roadster::service::http::service::HttpService;
 use tower_util::ServiceExt;
 
