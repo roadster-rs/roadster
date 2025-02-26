@@ -1,0 +1,11 @@
+[package]
+name = "database-diesel"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+roadster = { path = "../../..", default-features = false, features = ["default-diesel"] }
+diesel_migrations = { workspace = true }
+clap = { workspace = true }
+async-trait = { workspace = true }
