@@ -1,7 +1,7 @@
 use crate::api::http;
 use crate::app_state::AppState;
 use crate::db::connection_customizer::CustomConnectionCustomizer;
-use diesel_migrations::{embed_migrations, EmbeddedMigrations};
+use diesel_migrations::{EmbeddedMigrations, embed_migrations};
 use roadster::app::{RoadsterApp, RoadsterAppBuilder};
 use roadster::service::http::service::HttpService;
 

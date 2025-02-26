@@ -1,6 +1,6 @@
 use crate::migrator::Migrator;
-use roadster::app::context::AppContext;
 use roadster::app::RoadsterApp;
+use roadster::app::context::AppContext;
 
 type App = RoadsterApp<AppContext>;
 

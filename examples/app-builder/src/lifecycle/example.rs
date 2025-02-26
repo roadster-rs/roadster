@@ -1,5 +1,5 @@
-use crate::app_state::AppState;
 use crate::App;
+use crate::app_state::AppState;
 use roadster::lifecycle::AppLifecycleHandler;
 
 pub struct ExampleLifecycleHandler {

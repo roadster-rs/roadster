@@ -1,13 +1,13 @@
 use crate::app_state::AppState;
 use crate::worker::example::ExampleWorker;
-use aide::axum::routing::get_with;
 use aide::axum::ApiRouter;
+use aide::axum::routing::get_with;
 use aide::transform::TransformOperation;
-use axum::extract::State;
 use axum::Json;
+use axum::extract::State;
+use lettre::Transport;
 use lettre::message::header::ContentType;
 use lettre::message::{Mailbox, MessageBuilder};
-use lettre::Transport;
 use roadster::api::http::build_path;
 use roadster::error::RoadsterResult;
 use roadster::service::worker::sidekiq::app_worker::AppWorker;
@@ -54,7 +54,9 @@ async fn example_get(State(state): State<AppState>) -> RoadsterResult<Json<Examp
         )
         .add_personalization(Personalization::new(Email::new("hello@example.com")));
     if let Err(err) = state.app_context.sendgrid().send(&email).await {
-        warn!("An error occurred when sending email using Sendgrid. This may be expected in a dev/test environment if a prod API key is not used. Error: {err}");
+        warn!(
+            "An error occurred when sending email using Sendgrid. This may be expected in a dev/test environment if a prod API key is not used. Error: {err}"
+        );
     }
 
     Ok(Json(ExampleResponse {}))

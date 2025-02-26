@@ -1,5 +1,5 @@
-use crate::app_state::AppState;
 use crate::App;
+use crate::app_state::AppState;
 use async_trait::async_trait;
 use clap::{Parser, Subcommand};
 use roadster::api::cli::{CliState, RunCommand};

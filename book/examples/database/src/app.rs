@@ -1,6 +1,6 @@
 use crate::migrator::Migrator;
-use roadster::app::context::AppContext;
 use roadster::app::App;
+use roadster::app::context::AppContext;
 use roadster::db::migration::sea_orm::SeaOrmMigrator;
 use roadster::error::RoadsterResult;
 use sea_orm::prelude::async_trait::async_trait;

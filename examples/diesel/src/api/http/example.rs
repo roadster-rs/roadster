@@ -1,10 +1,10 @@
 use crate::app_state::AppState;
 use crate::models::user::NewUser;
-use aide::axum::routing::get_with;
 use aide::axum::ApiRouter;
+use aide::axum::routing::get_with;
 use aide::transform::TransformOperation;
-use axum::extract::State;
 use axum::Json;
+use axum::extract::State;
 use diesel::SelectableHelper;
 use diesel_async::RunQueryDsl;
 use roadster::api::http::build_path;
@@ -32,10 +32,10 @@ pub struct ExampleResponse {
 
 #[instrument(skip_all)]
 async fn example_get(State(state): State<AppState>) -> RoadsterResult<Json<ExampleResponse>> {
+    use fake::Fake;
     use fake::faker::internet::raw::{Password, SafeEmail, Username};
     use fake::faker::name::raw::*;
     use fake::locales::*;
-    use fake::Fake;
 
     let name: String = Name(EN).fake();
     let username: String = Username(EN).fake();
@@ -63,10 +63,10 @@ fn example_get_docs(op: TransformOperation) -> TransformOperation {
     op.description("Example API.")
         .tag(TAG)
         .response_with::<200, Json<ExampleResponse>, _>(|res| {
+            use fake::Fake;
             use fake::faker::internet::raw::{SafeEmail, Username};
             use fake::faker::name::raw::*;
             use fake::locales::*;
-            use fake::Fake;
 
             let name: String = Name(EN).fake();
             let username: String = Username(EN).fake();
