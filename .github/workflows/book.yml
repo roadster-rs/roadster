@@ -17,11 +17,10 @@ permissions:
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+# https://stackoverflow.com/a/72408109
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   MDBOOK_VERSION: 0.4.40
@@ -45,31 +44,3 @@ jobs:
 
       - name: Test mdbook examples
         run: just test-book-examples
-
-  build-and-deploy-book:
-    # Only deploy on pushes to `main` or manual workflow dispatches
-    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
-    needs: test-book
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: taiki-e/install-action@mdbook
-
-      - name: Setup Pages
-        id: pages
-        uses: actions/configure-pages@v5
-
-      - name: Build
-        run: mdbook build book
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./book/book
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
