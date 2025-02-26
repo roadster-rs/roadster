@@ -128,8 +128,8 @@ pub struct MaxDuration {
 #[cfg(test)]
 mod tests {
     use crate::app::context::AppContext;
-    use crate::config::health::check::CommonConfig;
     use crate::config::AppConfig;
+    use crate::config::health::check::CommonConfig;
     use rstest::rstest;
 
     #[rstest]

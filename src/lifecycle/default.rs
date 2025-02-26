@@ -1,5 +1,5 @@
-use crate::app::context::AppContext;
 use crate::app::App;
+use crate::app::context::AppContext;
 use crate::lifecycle::AppLifecycleHandler;
 use axum_core::extract::FromRef;
 use std::collections::BTreeMap;

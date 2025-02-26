@@ -1,5 +1,5 @@
-use crate::app::context::AppContext;
 use crate::app::App;
+use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
@@ -45,7 +45,7 @@ where
     /// * cancel_token - A tokio [CancellationToken] to use as a signal to gracefully shut down
     /// the service.
     async fn run(self: Box<Self>, state: &S, cancel_token: CancellationToken)
-        -> RoadsterResult<()>;
+    -> RoadsterResult<()>;
 }
 
 /// Trait used to build an [AppService]. It's not a requirement that services implement this

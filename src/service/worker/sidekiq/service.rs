@@ -1,9 +1,9 @@
-use crate::app::context::AppContext;
 use crate::app::App;
+use crate::app::context::AppContext;
 use crate::config::service::worker::sidekiq::StaleCleanUpBehavior;
 use crate::error::RoadsterResult;
-use crate::service::worker::sidekiq::builder::{SidekiqWorkerServiceBuilder, PERIODIC_KEY};
 use crate::service::AppService;
+use crate::service::worker::sidekiq::builder::{PERIODIC_KEY, SidekiqWorkerServiceBuilder};
 use crate::util::redis::RedisCommands;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
@@ -101,7 +101,9 @@ where
             cancel_token.cancel();
             sidekiq_cancel_token.cancel();
             if let Err(join_err) = result {
-                error!("An error occurred when trying to join on one of the app's tasks. Error: {join_err}");
+                error!(
+                    "An error occurred when trying to join on one of the app's tasks. Error: {join_err}"
+                );
             }
         }
 

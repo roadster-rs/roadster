@@ -22,7 +22,7 @@ pub use roadster_app::RoadsterApp;
 /// The `Cli` type parameter is only required when the using a custom CLI.
 pub use roadster_app::RoadsterAppBuilder;
 
-pub use prepare::{prepare, PrepareOptions, PreparedApp, PreparedAppCli, PreparedAppWithoutCli};
+pub use prepare::{PrepareOptions, PreparedApp, PreparedAppCli, PreparedAppWithoutCli, prepare};
 pub use run::{run, run_prepared};
 #[cfg(feature = "testing")]
 pub use test::{run_test, run_test_with_result, test_state};
@@ -32,8 +32,8 @@ use crate::api::cli::MockTestCli;
 #[cfg(feature = "cli")]
 use crate::api::cli::RunCommand;
 use crate::app::metadata::AppMetadata;
-use crate::config::environment::Environment;
 use crate::config::AppConfig;
+use crate::config::environment::Environment;
 #[cfg(feature = "db-sql")]
 use crate::db::migration::Migrator;
 use crate::error::RoadsterResult;
@@ -132,9 +132,9 @@ where
     ) -> RoadsterResult<
         Box<
             dyn bb8_8::CustomizeConnection<
-                crate::db::DieselPgConnAsync,
-                diesel_async::pooled_connection::PoolError,
-            >,
+                    crate::db::DieselPgConnAsync,
+                    diesel_async::pooled_connection::PoolError,
+                >,
         >,
     > {
         Ok(Box::new(crate::util::empty::Empty))
@@ -147,9 +147,9 @@ where
     ) -> RoadsterResult<
         Box<
             dyn bb8_8::CustomizeConnection<
-                crate::db::DieselMysqlConnAsync,
-                diesel_async::pooled_connection::PoolError,
-            >,
+                    crate::db::DieselMysqlConnAsync,
+                    diesel_async::pooled_connection::PoolError,
+                >,
         >,
     > {
         Ok(Box::new(crate::util::empty::Empty))

@@ -152,8 +152,8 @@ mod tests {
     use crate::app::context::AppContext;
     use crate::config::service::http::initializer::{CommonConfig, InitializerConfig};
     use crate::config::{AppConfig, CustomConfig};
-    use crate::service::http::initializer::any::AnyInitializer;
     use crate::service::http::initializer::Initializer;
+    use crate::service::http::initializer::any::AnyInitializer;
     use crate::testing::snapshot::TestCase;
     use rstest::{fixture, rstest};
 

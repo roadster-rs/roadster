@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 use typed_builder::TypedBuilder;
 use url::Url;
 
-use crate::util::serde::{deserialize_from_str, serialize_to_str, UriOrString};
+use crate::util::serde::{UriOrString, deserialize_from_str, serialize_to_str};
 
 /// JWT Claims. Provides fields for the default/recommended registered claim names. Additional
 /// claim names are collected in the `custom` map.

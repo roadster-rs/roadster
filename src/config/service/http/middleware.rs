@@ -13,8 +13,8 @@ use crate::service::http::middleware::sensitive_headers::{
 };
 use crate::service::http::middleware::size_limit::SizeLimitConfig;
 use crate::service::http::middleware::timeout::TimeoutConfig;
-use crate::service::http::middleware::tracing::req_res_logging::RequestResponseLoggingConfig;
 use crate::service::http::middleware::tracing::TracingConfig;
+use crate::service::http::middleware::tracing::req_res_logging::RequestResponseLoggingConfig;
 use crate::util::serde::default_true;
 use axum_core::extract::FromRef;
 use serde_derive::{Deserialize, Serialize};

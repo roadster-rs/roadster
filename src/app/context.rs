@@ -1,9 +1,9 @@
-use crate::app::metadata::AppMetadata;
 use crate::app::App;
+use crate::app::metadata::AppMetadata;
 use crate::config::AppConfig;
 use crate::error::RoadsterResult;
-use crate::health::check::registry::HealthCheckRegistry;
 use crate::health::check::HealthCheck;
+use crate::health::check::registry::HealthCheckRegistry;
 use anyhow::anyhow;
 use axum_core::extract::FromRef;
 #[cfg(feature = "db-sea-orm")]
@@ -125,7 +125,9 @@ impl AppContext {
                     .iter()
                     .any(|max_conns| *max_conns == 0)
                 {
-                    tracing::info!("Redis fetch pool configured with size of zero, will not start the Sidekiq processor");
+                    tracing::info!(
+                        "Redis fetch pool configured with size of zero, will not start the Sidekiq processor"
+                    );
                     None
                 } else {
                     let pool = bb8::Pool::builder().min_idle(redis_config.fetch_pool.min_idle);
@@ -390,9 +392,9 @@ async fn build_diesel_pg_async_pool(
     config: &AppConfig,
     connection_customizer: Box<
         dyn bb8_8::CustomizeConnection<
-            crate::db::DieselPgConnAsync,
-            diesel_async::pooled_connection::PoolError,
-        >,
+                crate::db::DieselPgConnAsync,
+                diesel_async::pooled_connection::PoolError,
+            >,
     >,
 ) -> RoadsterResult<crate::db::DieselPgPoolAsync> {
     let url = config.database.uri.clone();
@@ -426,9 +428,9 @@ async fn build_diesel_mysql_async_pool(
     config: &AppConfig,
     connection_customizer: Box<
         dyn bb8_8::CustomizeConnection<
-            crate::db::DieselMysqlConnAsync,
-            diesel_async::pooled_connection::PoolError,
-        >,
+                crate::db::DieselMysqlConnAsync,
+                diesel_async::pooled_connection::PoolError,
+            >,
     >,
 ) -> RoadsterResult<crate::db::DieselMysqlPoolAsync> {
     let url = config.database.uri.clone();
@@ -752,8 +754,8 @@ impl DbTestContainer {
 #[cfg(all(feature = "db-sql", feature = "test-containers"))]
 #[cfg_attr(test, allow(dead_code))]
 async fn db_test_container(config: &mut AppConfig) -> RoadsterResult<Option<DbTestContainer>> {
-    use testcontainers_modules::testcontainers::runners::AsyncRunner;
     use testcontainers_modules::testcontainers::ImageExt;
+    use testcontainers_modules::testcontainers::runners::AsyncRunner;
 
     let uri_scheme = config.database.uri.scheme();
 
@@ -798,8 +800,8 @@ async fn sidekiq_redis_test_container(
         >,
     >,
 > {
-    use testcontainers_modules::testcontainers::runners::AsyncRunner;
     use testcontainers_modules::testcontainers::ImageExt;
+    use testcontainers_modules::testcontainers::runners::AsyncRunner;
 
     let container =
         if let Some(test_container) = config.service.sidekiq.custom.redis.test_container.as_ref() {

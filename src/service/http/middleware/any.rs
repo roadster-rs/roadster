@@ -120,8 +120,8 @@ mod tests {
     use crate::app::context::AppContext;
     use crate::config::service::http::middleware::{CommonConfig, MiddlewareConfig};
     use crate::config::{AppConfig, CustomConfig};
-    use crate::service::http::middleware::any::AnyMiddleware;
     use crate::service::http::middleware::Middleware;
+    use crate::service::http::middleware::any::AnyMiddleware;
     use crate::testing::snapshot::TestCase;
     use rstest::{fixture, rstest};
 

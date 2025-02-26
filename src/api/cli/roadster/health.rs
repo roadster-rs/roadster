@@ -1,8 +1,8 @@
-use crate::api::cli::roadster::RunRoadsterCommand;
 use crate::api::cli::CliState;
+use crate::api::cli::roadster::RunRoadsterCommand;
 use crate::api::core::health::health_check;
-use crate::app::context::AppContext;
 use crate::app::App;
+use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;

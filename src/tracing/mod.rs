@@ -1,6 +1,6 @@
 use crate::app::metadata::AppMetadata;
-use crate::config::tracing::Format;
 use crate::config::AppConfig;
+use crate::config::tracing::Format;
 use crate::error::RoadsterResult;
 #[cfg(feature = "otel")]
 use convert_case::{Case, Casing};
@@ -22,9 +22,9 @@ use tracing::Level;
 use tracing_opentelemetry::MetricsLayer;
 #[cfg(feature = "otel")]
 use tracing_opentelemetry::OpenTelemetryLayer;
+use tracing_subscriber::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use tracing_subscriber::EnvFilter;
 
 pub fn init_tracing(
     config: &AppConfig,

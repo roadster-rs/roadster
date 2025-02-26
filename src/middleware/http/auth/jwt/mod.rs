@@ -11,15 +11,15 @@ use crate::middleware::http::auth::jwt::ietf::Claims;
 #[cfg(all(feature = "jwt-openid", not(feature = "jwt-ietf")))]
 use crate::middleware::http::auth::jwt::openid::Claims;
 use crate::util::serde::{deserialize_from_str, serialize_to_str};
+use axum::RequestPartsExt;
 use axum::extract::{FromRef, FromRequestParts};
 use axum::http::request::Parts;
-use axum::RequestPartsExt;
-use axum_extra::extract::CookieJar;
-use axum_extra::headers::authorization::Bearer;
-use axum_extra::headers::Authorization;
 use axum_extra::TypedHeader;
+use axum_extra::extract::CookieJar;
+use axum_extra::headers::Authorization;
+use axum_extra::headers::authorization::Bearer;
 use itertools::Itertools;
-use jsonwebtoken::{decode, DecodingKey, Header, TokenData, Validation};
+use jsonwebtoken::{DecodingKey, Header, TokenData, Validation, decode};
 use serde_derive::{Deserialize, Serialize};
 #[cfg(not(any(feature = "jwt-ietf", feature = "jwt-openid")))]
 use serde_json::Value as Claims;
@@ -306,8 +306,8 @@ mod tests {
     use crate::config::AppConfig;
     use crate::testing::snapshot::TestCase;
     use crate::util::serde::Wrapper;
-    use axum::http::header::{AUTHORIZATION, COOKIE};
     use axum::http::Request;
+    use axum::http::header::{AUTHORIZATION, COOKIE};
     use axum_core::body::Body;
     use axum_extra::extract::cookie::Cookie;
     use chrono::{Duration, Utc};

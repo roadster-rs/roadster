@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use std::str::FromStr;
 
-use serde::{de, Deserializer, Serializer};
+use serde::{Deserializer, Serializer, de};
 use serde_derive::{Deserialize, Serialize};
 use url::Url;
 

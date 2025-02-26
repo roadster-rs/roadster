@@ -2,15 +2,15 @@
 use crate::api::http::default_api_routes;
 #[cfg(not(feature = "open-api"))]
 use crate::api::http::default_routes;
-use crate::app::context::AppContext;
 use crate::app::App;
+use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
-use crate::service::http::initializer::default::default_initializers;
-use crate::service::http::initializer::Initializer;
-use crate::service::http::middleware::default::default_middleware;
-use crate::service::http::middleware::Middleware;
-use crate::service::http::service::{enabled, HttpService, NAME};
 use crate::service::AppServiceBuilder;
+use crate::service::http::initializer::Initializer;
+use crate::service::http::initializer::default::default_initializers;
+use crate::service::http::middleware::Middleware;
+use crate::service::http::middleware::default::default_middleware;
+use crate::service::http::service::{HttpService, NAME, enabled};
 #[cfg(feature = "open-api")]
 use aide::axum::ApiRouter;
 #[cfg(feature = "open-api")]
@@ -207,7 +207,9 @@ where
                 initializer.before_middleware(router, state)
             })?;
 
-        info!("Installing middleware. Note: the order of installation is the inverse of the order middleware will run when handling a request.");
+        info!(
+            "Installing middleware. Note: the order of installation is the inverse of the order middleware will run when handling a request."
+        );
         let router = self
             .middleware
             .values()

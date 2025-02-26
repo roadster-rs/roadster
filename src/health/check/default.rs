@@ -1,4 +1,5 @@
 use crate::app::context::AppContext;
+use crate::health::check::HealthCheck;
 #[cfg(feature = "db-diesel-mysql-pool-async")]
 use crate::health::check::db::diesel_mysql_async::DbDieselMysqlAsyncHealthCheck;
 #[cfg(feature = "db-diesel-postgres-pool-async")]
@@ -11,7 +12,6 @@ use crate::health::check::email::smtp::SmtpHealthCheck;
 use crate::health::check::sidekiq_enqueue::SidekiqEnqueueHealthCheck;
 #[cfg(feature = "sidekiq")]
 use crate::health::check::sidekiq_fetch::SidekiqFetchHealthCheck;
-use crate::health::check::HealthCheck;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 

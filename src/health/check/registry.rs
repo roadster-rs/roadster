@@ -1,7 +1,7 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
-use crate::health::check::default::default_health_checks;
 use crate::health::check::HealthCheck;
+use crate::health::check::default::default_health_checks;
 use anyhow::anyhow;
 use std::collections::BTreeMap;
 use std::sync::Arc;

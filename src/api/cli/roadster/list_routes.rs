@@ -1,7 +1,7 @@
-use crate::api::cli::roadster::RunRoadsterCommand;
 use crate::api::cli::CliState;
-use crate::app::context::AppContext;
+use crate::api::cli::roadster::RunRoadsterCommand;
 use crate::app::App;
+use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::http::service::HttpService;
 use anyhow::anyhow;

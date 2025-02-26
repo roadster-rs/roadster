@@ -65,7 +65,7 @@ mod tests {
     use crate::util::serde::{UriOrString, Wrapper};
     use chrono::{TimeDelta, Utc};
     use insta::assert_debug_snapshot;
-    use jsonwebtoken::{encode, EncodingKey, Header, TokenData};
+    use jsonwebtoken::{EncodingKey, Header, TokenData, encode};
     use std::ops::{Add, Sub};
     use std::str::FromStr;
     use url::Url;

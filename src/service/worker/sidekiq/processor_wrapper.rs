@@ -1,7 +1,7 @@
 use crate::error::RoadsterResult;
 use crate::service::worker::sidekiq::roadster_worker::RoadsterWorker;
 use serde::Serialize;
-use sidekiq::{periodic, ServerMiddleware, Worker};
+use sidekiq::{ServerMiddleware, Worker, periodic};
 
 /// A wrapper around [sidekiq::Processor] to help with mocking; we can't simply mock
 /// sidekiq::Processor because [periodic::Builder] takes a [sidekiq::Processor] in order

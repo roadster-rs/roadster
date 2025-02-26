@@ -1,7 +1,7 @@
 //! This [`AppLifecycleHandler`] closes the DB connection pool when the app is shutting down.
 
-use crate::app::context::AppContext;
 use crate::app::App;
+use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::lifecycle::AppLifecycleHandler;
 use async_trait::async_trait;
@@ -51,7 +51,9 @@ where
         }
         #[cfg(feature = "testing-mocks")]
         {
-            tracing::warn!("Unable to manually close the db connection pool when `testing-mocks` feature is enabled.");
+            tracing::warn!(
+                "Unable to manually close the db connection pool when `testing-mocks` feature is enabled."
+            );
         }
 
         Ok(())

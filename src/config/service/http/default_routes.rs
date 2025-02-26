@@ -87,8 +87,8 @@ impl DefaultRouteConfig {
 
 #[cfg(test)]
 mod tests {
-    use crate::config::service::http::*;
     use crate::config::AppConfig;
+    use crate::config::service::http::*;
     use rstest::rstest;
 
     #[rstest]

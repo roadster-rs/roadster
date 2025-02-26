@@ -3,16 +3,16 @@ pub mod req_res_logging;
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
+use axum::Router;
 use axum::extract::{FromRef, MatchedPath};
 use axum::http::{Request, Response};
-use axum::Router;
 use opentelemetry_semantic_conventions::trace::{
     HTTP_REQUEST_METHOD, HTTP_RESPONSE_STATUS_CODE, HTTP_ROUTE, URL_PATH,
 };
 use serde_derive::{Deserialize, Serialize};
 use std::time::Duration;
 use tower_http::trace::{DefaultOnResponse, MakeSpan, OnRequest, OnResponse, TraceLayer};
-use tracing::{event, field, info_span, Level, Span, Value};
+use tracing::{Level, Span, Value, event, field, info_span};
 use validator::Validate;
 
 #[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]

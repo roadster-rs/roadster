@@ -2,7 +2,7 @@
 use crate::api::cli::CliState;
 use crate::app::context::AppContext;
 use crate::app::prepare::{PrepareOptions, PreparedApp, PreparedAppWithoutCli};
-use crate::app::{prepare, App};
+use crate::app::{App, prepare};
 use crate::error::RoadsterResult;
 use crate::lifecycle::registry::LifecycleHandlerRegistry;
 use axum_core::extract::FromRef;
