@@ -1,13 +1,13 @@
-use crate::api::core::health::{health_check, HeathCheckResponse};
+use crate::api::core::health::{HeathCheckResponse, health_check};
 use crate::api::http::build_path;
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 #[cfg(feature = "open-api")]
 use crate::health::check::{CheckResponse, ErrorData, Status};
 #[cfg(feature = "open-api")]
-use aide::axum::routing::get_with;
-#[cfg(feature = "open-api")]
 use aide::axum::ApiRouter;
+#[cfg(feature = "open-api")]
+use aide::axum::routing::get_with;
 #[cfg(feature = "open-api")]
 use aide::transform::TransformOperation;
 use axum::extract::State;

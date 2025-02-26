@@ -2,14 +2,14 @@ use crate::api::http::build_path;
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 #[cfg(feature = "open-api")]
-use aide::axum::routing::get_with;
-#[cfg(feature = "open-api")]
 use aide::axum::ApiRouter;
 #[cfg(feature = "open-api")]
+use aide::axum::routing::get_with;
+#[cfg(feature = "open-api")]
 use aide::transform::TransformOperation;
-use axum::routing::get;
 use axum::Json;
 use axum::Router;
+use axum::routing::get;
 use axum_core::extract::FromRef;
 #[cfg(feature = "open-api")]
 use schemars::JsonSchema;

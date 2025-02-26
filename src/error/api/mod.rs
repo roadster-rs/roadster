@@ -1,9 +1,9 @@
 #[cfg(feature = "http")]
 pub mod http;
 
+use crate::error::Error;
 #[cfg(feature = "http")]
 use crate::error::api::http::HttpError;
-use crate::error::Error;
 #[cfg(feature = "http")]
 use axum::http::StatusCode;
 #[cfg(feature = "http")]

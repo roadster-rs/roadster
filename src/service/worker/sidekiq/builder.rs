@@ -1,20 +1,20 @@
-use crate::app::context::AppContext;
 use crate::app::App;
+use crate::app::context::AppContext;
 use crate::config::service::worker::sidekiq::StaleCleanUpBehavior;
 use crate::error::RoadsterResult;
+use crate::service::AppServiceBuilder;
 use crate::service::worker::sidekiq::app_worker::{AppWorker, AppWorkerConfig};
 #[cfg_attr(test, mockall_double::double)]
 use crate::service::worker::sidekiq::processor_wrapper::ProcessorWrapper;
 use crate::service::worker::sidekiq::roadster_worker::RoadsterWorker;
-use crate::service::worker::sidekiq::service::{enabled, SidekiqWorkerService, NAME};
-use crate::service::AppServiceBuilder;
+use crate::service::worker::sidekiq::service::{NAME, SidekiqWorkerService, enabled};
 use anyhow::anyhow;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
 use serde::Serialize;
-use sidekiq::{periodic, ProcessorConfig, ServerMiddleware, Worker};
+use sidekiq::{ProcessorConfig, ServerMiddleware, Worker, periodic};
 use std::collections::HashSet;
 use tracing::{debug, info};
 
@@ -537,9 +537,11 @@ mod tests {
                 assert!(enabled, "Builder should be disabled!");
                 assert_eq!(registered_periodic_workers.len(), size);
                 job_names.iter().for_each(|job_string| {
-                    assert!(registered_periodic_workers
-                        .iter()
-                        .any(|registered| registered.contains(job_string)));
+                    assert!(
+                        registered_periodic_workers
+                            .iter()
+                            .any(|registered| registered.contains(job_string))
+                    );
                 });
             }
             BuilderState::Disabled => {

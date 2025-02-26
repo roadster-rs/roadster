@@ -6,13 +6,13 @@ pub mod http;
 pub mod worker;
 
 use crate::app::context::AppContext;
+use crate::config::CustomConfig;
 #[cfg(feature = "grpc")]
 use crate::config::service::grpc::GrpcServiceConfig;
 #[cfg(feature = "http")]
 use crate::config::service::http::HttpServiceConfig;
 #[cfg(feature = "sidekiq")]
 use crate::config::service::worker::sidekiq::SidekiqServiceConfig;
-use crate::config::CustomConfig;
 use crate::util::serde::default_true;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeMap;

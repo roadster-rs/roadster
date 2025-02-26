@@ -2,18 +2,18 @@
 use crate::api::cli::RunCommand;
 use crate::app::context::AppContext;
 use crate::app::metadata::AppMetadata;
-use crate::app::{run, App};
-use crate::config::environment::Environment;
+use crate::app::{App, run};
 use crate::config::AppConfig;
+use crate::config::environment::Environment;
 #[cfg(feature = "db-sql")]
 use crate::db::migration::Migrator;
 use crate::error::RoadsterResult;
-use crate::health::check::registry::HealthCheckRegistry;
 use crate::health::check::HealthCheck;
-use crate::lifecycle::registry::LifecycleHandlerRegistry;
+use crate::health::check::registry::HealthCheckRegistry;
 use crate::lifecycle::AppLifecycleHandler;
-use crate::service::registry::ServiceRegistry;
+use crate::lifecycle::registry::LifecycleHandlerRegistry;
 use crate::service::AppService;
+use crate::service::registry::ServiceRegistry;
 use crate::util::empty::Empty;
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -122,10 +122,10 @@ struct Inner<
 }
 
 impl<
-        S,
-        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
-        #[cfg(not(feature = "cli"))] Cli: 'static,
-    > Inner<S, Cli>
+    S,
+    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
+    #[cfg(not(feature = "cli"))] Cli: 'static,
+> Inner<S, Cli>
 where
     S: 'static + Clone + Send + Sync,
     AppContext: FromRef<S>,
@@ -171,9 +171,12 @@ where
     fn add_async_config_source_provider(
         &mut self,
         async_config_source_provider: impl 'static
-            + Send
-            + Sync
-            + Fn(&Environment) -> RoadsterResult<Box<dyn AsyncSource + Send + Sync>>,
+        + Send
+        + Sync
+        + Fn(
+            &Environment,
+        )
+            -> RoadsterResult<Box<dyn AsyncSource + Send + Sync>>,
     ) {
         self.async_config_source_providers
             .push(Box::new(async_config_source_provider));
@@ -199,9 +202,9 @@ where
     fn sea_orm_conn_options_provider(
         &mut self,
         sea_orm_conn_options_provider: impl 'static
-            + Send
-            + Sync
-            + Fn(&AppConfig) -> RoadsterResult<ConnectOptions>,
+        + Send
+        + Sync
+        + Fn(&AppConfig) -> RoadsterResult<ConnectOptions>,
     ) {
         self.sea_orm_conn_options_provider = Some(Box::new(sea_orm_conn_options_provider));
     }
@@ -217,13 +220,13 @@ where
     fn diesel_pg_connection_customizer_provider(
         &mut self,
         connection_customizer: impl 'static
-            + Send
-            + Sync
-            + Fn(
-                &AppConfig,
-            ) -> RoadsterResult<
-                Box<dyn r2d2::CustomizeConnection<crate::db::DieselPgConn, diesel::r2d2::Error>>,
-            >,
+        + Send
+        + Sync
+        + Fn(
+            &AppConfig,
+        ) -> RoadsterResult<
+            Box<dyn r2d2::CustomizeConnection<crate::db::DieselPgConn, diesel::r2d2::Error>>,
+        >,
     ) {
         self.diesel_pg_connection_customizer_provider = Some(Box::new(connection_customizer));
     }
@@ -232,13 +235,13 @@ where
     fn diesel_mysql_connection_customizer_provider(
         &mut self,
         connection_customizer: impl 'static
-            + Send
-            + Sync
-            + Fn(
-                &AppConfig,
-            ) -> RoadsterResult<
-                Box<dyn r2d2::CustomizeConnection<crate::db::DieselMysqlConn, diesel::r2d2::Error>>,
-            >,
+        + Send
+        + Sync
+        + Fn(
+            &AppConfig,
+        ) -> RoadsterResult<
+            Box<dyn r2d2::CustomizeConnection<crate::db::DieselMysqlConn, diesel::r2d2::Error>>,
+        >,
     ) {
         self.diesel_mysql_connection_customizer_provider = Some(Box::new(connection_customizer));
     }
@@ -247,15 +250,13 @@ where
     fn diesel_sqlite_connection_customizer_provider(
         &mut self,
         connection_customizer: impl 'static
-            + Send
-            + Sync
-            + Fn(
-                &AppConfig,
-            ) -> RoadsterResult<
-                Box<
-                    dyn r2d2::CustomizeConnection<crate::db::DieselSqliteConn, diesel::r2d2::Error>,
-                >,
-            >,
+        + Send
+        + Sync
+        + Fn(
+            &AppConfig,
+        ) -> RoadsterResult<
+            Box<dyn r2d2::CustomizeConnection<crate::db::DieselSqliteConn, diesel::r2d2::Error>>,
+        >,
     ) {
         self.diesel_sqlite_connection_customizer_provider = Some(Box::new(connection_customizer));
     }
@@ -264,18 +265,18 @@ where
     fn diesel_pg_async_connection_customizer_provider(
         &mut self,
         connection_customizer: impl 'static
-            + Send
-            + Sync
-            + Fn(
-                &AppConfig,
-            ) -> RoadsterResult<
-                Box<
-                    dyn bb8_8::CustomizeConnection<
+        + Send
+        + Sync
+        + Fn(
+            &AppConfig,
+        ) -> RoadsterResult<
+            Box<
+                dyn bb8_8::CustomizeConnection<
                         crate::db::DieselPgConnAsync,
                         diesel_async::pooled_connection::PoolError,
                     >,
-                >,
             >,
+        >,
     ) {
         self.diesel_pg_async_connection_customizer_provider = Some(Box::new(connection_customizer));
     }
@@ -284,18 +285,18 @@ where
     fn diesel_mysql_async_connection_customizer_provider(
         &mut self,
         connection_customizer: impl 'static
-            + Send
-            + Sync
-            + Fn(
-                &AppConfig,
-            ) -> RoadsterResult<
-                Box<
-                    dyn bb8_8::CustomizeConnection<
+        + Send
+        + Sync
+        + Fn(
+            &AppConfig,
+        ) -> RoadsterResult<
+            Box<
+                dyn bb8_8::CustomizeConnection<
                         crate::db::DieselMysqlConnAsync,
                         diesel_async::pooled_connection::PoolError,
                     >,
-                >,
             >,
+        >,
     ) {
         self.diesel_mysql_async_connection_customizer_provider =
             Some(Box::new(connection_customizer));
@@ -316,9 +317,9 @@ where
     fn add_health_check_provider(
         &mut self,
         health_check_provider: impl 'static
-            + Send
-            + Sync
-            + Fn(&mut HealthCheckRegistry, &S) -> RoadsterResult<()>,
+        + Send
+        + Sync
+        + Fn(&mut HealthCheckRegistry, &S) -> RoadsterResult<()>,
     ) {
         self.health_check_providers
             .push(Box::new(health_check_provider));
@@ -327,9 +328,9 @@ where
     fn provide_graceful_shutdown_signal(
         &mut self,
         graceful_shutdown_signal_provider: impl 'static
-            + Send
-            + Sync
-            + Fn(&S) -> Pin<Box<dyn Send + Future<Output = ()>>>,
+        + Send
+        + Sync
+        + Fn(&S) -> Pin<Box<dyn Send + Future<Output = ()>>>,
     ) {
         self.graceful_shutdown_signal_provider = Some(Box::new(graceful_shutdown_signal_provider));
     }
@@ -470,10 +471,10 @@ pub struct RoadsterAppBuilder<
 }
 
 impl<
-        S,
-        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
-        #[cfg(not(feature = "cli"))] Cli: 'static,
-    > RoadsterApp<S, Cli>
+    S,
+    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
+    #[cfg(not(feature = "cli"))] Cli: 'static,
+> RoadsterApp<S, Cli>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
@@ -495,10 +496,10 @@ where
 }
 
 impl<
-        S,
-        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
-        #[cfg(not(feature = "cli"))] Cli: 'static,
-    > Default for RoadsterAppBuilder<S, Cli>
+    S,
+    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
+    #[cfg(not(feature = "cli"))] Cli: 'static,
+> Default for RoadsterAppBuilder<S, Cli>
 where
     S: 'static + Clone + Send + Sync,
     AppContext: FromRef<S>,
@@ -509,10 +510,10 @@ where
 }
 
 impl<
-        S,
-        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
-        #[cfg(not(feature = "cli"))] Cli: 'static,
-    > RoadsterAppBuilder<S, Cli>
+    S,
+    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
+    #[cfg(not(feature = "cli"))] Cli: 'static,
+> RoadsterAppBuilder<S, Cli>
 where
     S: 'static + Clone + Send + Sync,
     AppContext: FromRef<S>,
@@ -554,9 +555,9 @@ where
     pub fn add_async_config_source_provider(
         mut self,
         source_provider: impl 'static
-            + Send
-            + Sync
-            + Fn(&Environment) -> RoadsterResult<Box<dyn AsyncSource + Send + Sync>>,
+        + Send
+        + Sync
+        + Fn(&Environment) -> RoadsterResult<Box<dyn AsyncSource + Send + Sync>>,
     ) -> Self {
         self.inner.add_async_config_source_provider(source_provider);
         self
@@ -598,9 +599,9 @@ where
     pub fn sea_orm_conn_options_provider(
         mut self,
         sea_orm_conn_options_provider: impl 'static
-            + Send
-            + Sync
-            + Fn(&AppConfig) -> RoadsterResult<ConnectOptions>,
+        + Send
+        + Sync
+        + Fn(&AppConfig) -> RoadsterResult<ConnectOptions>,
     ) -> Self {
         self.inner
             .sea_orm_conn_options_provider(sea_orm_conn_options_provider);
@@ -611,7 +612,10 @@ where
     pub fn diesel_pg_connection_customizer(
         mut self,
         connection_customizer: impl 'static
-            + r2d2::CustomizeConnection<crate::db::DieselPgConn, diesel::r2d2::Error>,
+        + r2d2::CustomizeConnection<
+            crate::db::DieselPgConn,
+            diesel::r2d2::Error,
+        >,
     ) -> Self {
         self.diesel_pg_connection_customizer = Some(Box::new(connection_customizer));
         self
@@ -621,13 +625,13 @@ where
     pub fn diesel_pg_connection_customizer_provider(
         mut self,
         connection_customizer: impl 'static
-            + Send
-            + Sync
-            + Fn(
-                &AppConfig,
-            ) -> RoadsterResult<
-                Box<dyn r2d2::CustomizeConnection<crate::db::DieselPgConn, diesel::r2d2::Error>>,
-            >,
+        + Send
+        + Sync
+        + Fn(
+            &AppConfig,
+        ) -> RoadsterResult<
+            Box<dyn r2d2::CustomizeConnection<crate::db::DieselPgConn, diesel::r2d2::Error>>,
+        >,
     ) -> Self {
         self.inner
             .diesel_pg_connection_customizer_provider(connection_customizer);
@@ -638,7 +642,10 @@ where
     pub fn diesel_mysql_connection_customizer(
         mut self,
         connection_customizer: impl 'static
-            + r2d2::CustomizeConnection<crate::db::DieselMysqlConn, diesel::r2d2::Error>,
+        + r2d2::CustomizeConnection<
+            crate::db::DieselMysqlConn,
+            diesel::r2d2::Error,
+        >,
     ) -> Self {
         self.diesel_mysql_connection_customizer = Some(Box::new(connection_customizer));
         self
@@ -648,13 +655,13 @@ where
     pub fn diesel_mysql_connection_customizer_provider(
         mut self,
         connection_customizer: impl 'static
-            + Send
-            + Sync
-            + Fn(
-                &AppConfig,
-            ) -> RoadsterResult<
-                Box<dyn r2d2::CustomizeConnection<crate::db::DieselMysqlConn, diesel::r2d2::Error>>,
-            >,
+        + Send
+        + Sync
+        + Fn(
+            &AppConfig,
+        ) -> RoadsterResult<
+            Box<dyn r2d2::CustomizeConnection<crate::db::DieselMysqlConn, diesel::r2d2::Error>>,
+        >,
     ) -> Self {
         self.inner
             .diesel_mysql_connection_customizer_provider(connection_customizer);
@@ -665,7 +672,10 @@ where
     pub fn diesel_sqlite_connection_customizer(
         mut self,
         connection_customizer: impl 'static
-            + r2d2::CustomizeConnection<crate::db::DieselSqliteConn, diesel::r2d2::Error>,
+        + r2d2::CustomizeConnection<
+            crate::db::DieselSqliteConn,
+            diesel::r2d2::Error,
+        >,
     ) -> Self {
         self.diesel_sqlite_connection_customizer = Some(Box::new(connection_customizer));
         self
@@ -675,15 +685,13 @@ where
     pub fn diesel_sqlite_connection_customizer_provider(
         mut self,
         connection_customizer: impl 'static
-            + Send
-            + Sync
-            + Fn(
-                &AppConfig,
-            ) -> RoadsterResult<
-                Box<
-                    dyn r2d2::CustomizeConnection<crate::db::DieselSqliteConn, diesel::r2d2::Error>,
-                >,
-            >,
+        + Send
+        + Sync
+        + Fn(
+            &AppConfig,
+        ) -> RoadsterResult<
+            Box<dyn r2d2::CustomizeConnection<crate::db::DieselSqliteConn, diesel::r2d2::Error>>,
+        >,
     ) -> Self {
         self.inner
             .diesel_sqlite_connection_customizer_provider(connection_customizer);
@@ -694,10 +702,10 @@ where
     pub fn diesel_pg_async_connection_customizer(
         mut self,
         connection_customizer: impl 'static
-            + bb8_8::CustomizeConnection<
-                crate::db::DieselPgConnAsync,
-                diesel_async::pooled_connection::PoolError,
-            >,
+        + bb8_8::CustomizeConnection<
+            crate::db::DieselPgConnAsync,
+            diesel_async::pooled_connection::PoolError,
+        >,
     ) -> Self {
         self.diesel_pg_async_connection_customizer = Some(Box::new(connection_customizer));
         self
@@ -707,18 +715,18 @@ where
     pub fn diesel_pg_async_connection_customizer_provider(
         mut self,
         connection_customizer: impl 'static
-            + Send
-            + Sync
-            + Fn(
-                &AppConfig,
-            ) -> RoadsterResult<
-                Box<
-                    dyn bb8_8::CustomizeConnection<
+        + Send
+        + Sync
+        + Fn(
+            &AppConfig,
+        ) -> RoadsterResult<
+            Box<
+                dyn bb8_8::CustomizeConnection<
                         crate::db::DieselPgConnAsync,
                         diesel_async::pooled_connection::PoolError,
                     >,
-                >,
             >,
+        >,
     ) -> Self {
         self.inner
             .diesel_pg_async_connection_customizer_provider(connection_customizer);
@@ -729,10 +737,10 @@ where
     pub fn diesel_mysql_async_connection_customizer(
         mut self,
         connection_customizer: impl 'static
-            + bb8_8::CustomizeConnection<
-                crate::db::DieselMysqlConnAsync,
-                diesel_async::pooled_connection::PoolError,
-            >,
+        + bb8_8::CustomizeConnection<
+            crate::db::DieselMysqlConnAsync,
+            diesel_async::pooled_connection::PoolError,
+        >,
     ) -> Self {
         self.diesel_mysql_async_connection_customizer = Some(Box::new(connection_customizer));
         self
@@ -742,18 +750,18 @@ where
     pub fn diesel_mysql_async_connection_customizer_provider(
         mut self,
         connection_customizer: impl 'static
-            + Send
-            + Sync
-            + Fn(
-                &AppConfig,
-            ) -> RoadsterResult<
-                Box<
-                    dyn bb8_8::CustomizeConnection<
+        + Send
+        + Sync
+        + Fn(
+            &AppConfig,
+        ) -> RoadsterResult<
+            Box<
+                dyn bb8_8::CustomizeConnection<
                         crate::db::DieselMysqlConnAsync,
                         diesel_async::pooled_connection::PoolError,
                     >,
-                >,
             >,
+        >,
     ) -> Self {
         self.inner
             .diesel_mysql_async_connection_customizer_provider(connection_customizer);
@@ -855,9 +863,12 @@ where
     pub fn add_lifecycle_handler_provider(
         mut self,
         lifecycle_handler_provider: impl 'static
-            + Send
-            + Sync
-            + Fn(&mut LifecycleHandlerRegistry<RoadsterApp<S, Cli>, S>, &S) -> RoadsterResult<()>,
+        + Send
+        + Sync
+        + Fn(
+            &mut LifecycleHandlerRegistry<RoadsterApp<S, Cli>, S>,
+            &S,
+        ) -> RoadsterResult<()>,
     ) -> Self {
         self.inner
             .lifecycle_handler_providers
@@ -880,9 +891,9 @@ where
     pub fn add_health_check_provider(
         mut self,
         health_check_provider: impl 'static
-            + Send
-            + Sync
-            + Fn(&mut HealthCheckRegistry, &S) -> RoadsterResult<()>,
+        + Send
+        + Sync
+        + Fn(&mut HealthCheckRegistry, &S) -> RoadsterResult<()>,
     ) -> Self {
         self.inner.add_health_check_provider(health_check_provider);
         self
@@ -906,12 +917,14 @@ where
     pub fn add_service_provider(
         mut self,
         service_provider: impl 'static
-            + Send
-            + Sync
-            + for<'a> Fn(
-                &'a mut ServiceRegistry<RoadsterApp<S, Cli>, S>,
-                &'a S,
-            ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>>,
+        + Send
+        + Sync
+        + for<'a> Fn(
+            &'a mut ServiceRegistry<RoadsterApp<S, Cli>, S>,
+            &'a S,
+        ) -> Pin<
+            Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>,
+        >,
     ) -> Self {
         self.inner
             .service_providers
@@ -923,9 +936,9 @@ where
     pub fn graceful_shutdown_signal_provider(
         mut self,
         graceful_shutdown_signal_provider: impl 'static
-            + Send
-            + Sync
-            + Fn(&S) -> Pin<Box<dyn Send + Future<Output = ()>>>,
+        + Send
+        + Sync
+        + Fn(&S) -> Pin<Box<dyn Send + Future<Output = ()>>>,
     ) -> Self {
         self.inner
             .provide_graceful_shutdown_signal(graceful_shutdown_signal_provider);
@@ -967,10 +980,10 @@ where
 
 #[async_trait]
 impl<
-        S,
-        #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
-        #[cfg(not(feature = "cli"))] Cli: 'static,
-    > App<S> for RoadsterApp<S, Cli>
+    S,
+    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
+    #[cfg(not(feature = "cli"))] Cli: 'static,
+> App<S> for RoadsterApp<S, Cli>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
@@ -1102,9 +1115,9 @@ where
     ) -> RoadsterResult<
         Box<
             dyn bb8_8::CustomizeConnection<
-                crate::db::DieselPgConnAsync,
-                diesel_async::pooled_connection::PoolError,
-            >,
+                    crate::db::DieselPgConnAsync,
+                    diesel_async::pooled_connection::PoolError,
+                >,
         >,
     > {
         let mut connection_customizer = self
@@ -1134,9 +1147,9 @@ where
     ) -> RoadsterResult<
         Box<
             dyn bb8_8::CustomizeConnection<
-                crate::db::DieselMysqlConnAsync,
-                diesel_async::pooled_connection::PoolError,
-            >,
+                    crate::db::DieselMysqlConnAsync,
+                    diesel_async::pooled_connection::PoolError,
+                >,
         >,
     > {
         let mut connection_customizer = self

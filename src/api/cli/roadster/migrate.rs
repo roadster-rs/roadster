@@ -1,7 +1,7 @@
-use crate::api::cli::roadster::RunRoadsterCommand;
 use crate::api::cli::CliState;
-use crate::app::context::AppContext;
+use crate::api::cli::roadster::RunRoadsterCommand;
 use crate::app::App;
+use crate::app::context::AppContext;
 use crate::db::migration::{DownArgs, MigrationInfo, UpArgs};
 use crate::error::RoadsterResult;
 use anyhow::anyhow;

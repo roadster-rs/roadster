@@ -6,7 +6,7 @@ use axum::http::header::ETAG;
 use axum::http::{HeaderMap, StatusCode};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
-use axum::{middleware, Router};
+use axum::{Router, middleware};
 use serde_derive::{Deserialize, Serialize};
 use std::future::Future;
 use validator::Validate;

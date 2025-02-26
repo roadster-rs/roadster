@@ -1,6 +1,6 @@
 use crate::app::context::AppContext;
-use crate::service::http::initializer::normalize_path::NormalizePathInitializer;
 use crate::service::http::initializer::Initializer;
+use crate::service::http::initializer::normalize_path::NormalizePathInitializer;
 use axum_core::extract::FromRef;
 use std::collections::BTreeMap;
 

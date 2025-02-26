@@ -1,4 +1,5 @@
 use crate::app::context::AppContext;
+use crate::service::http::middleware::Middleware;
 use crate::service::http::middleware::cache_control::CacheControlMiddleware;
 use crate::service::http::middleware::catch_panic::CatchPanicMiddleware;
 use crate::service::http::middleware::compression::RequestDecompressionMiddleware;
@@ -12,9 +13,8 @@ use crate::service::http::middleware::sensitive_headers::{
 };
 use crate::service::http::middleware::size_limit::RequestBodyLimitMiddleware;
 use crate::service::http::middleware::timeout::TimeoutMiddleware;
-use crate::service::http::middleware::tracing::req_res_logging::RequestResponseLoggingMiddleware;
 use crate::service::http::middleware::tracing::TracingMiddleware;
-use crate::service::http::middleware::Middleware;
+use crate::service::http::middleware::tracing::req_res_logging::RequestResponseLoggingMiddleware;
 use axum_core::extract::FromRef;
 use std::collections::BTreeMap;
 

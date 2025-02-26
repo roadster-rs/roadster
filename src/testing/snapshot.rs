@@ -1,8 +1,8 @@
 //! Utilities for modifying `insta` snapshot [Settings].
 
 use crate::util::regex::UUID_REGEX;
-use insta::internals::SettingsBindDropGuard;
 use insta::Settings;
+use insta::internals::SettingsBindDropGuard;
 use itertools::Itertools;
 use std::thread::current;
 use typed_builder::TypedBuilder;

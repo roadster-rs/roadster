@@ -1,8 +1,8 @@
-use crate::app::context::AppContext;
 use crate::app::App;
+use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
-use crate::lifecycle::default::default_lifecycle_handlers;
 use crate::lifecycle::AppLifecycleHandler;
+use crate::lifecycle::default::default_lifecycle_handlers;
 use anyhow::anyhow;
 use axum_core::extract::FromRef;
 use itertools::Itertools;

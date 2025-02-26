@@ -1,7 +1,7 @@
 use crate::app;
 use crate::app::context::AppContext;
 use crate::app::prepare::{PrepareOptions, PreparedAppWithoutCli};
-use crate::app::{prepare, run, App};
+use crate::app::{App, prepare, run};
 use crate::config::AppConfig;
 use crate::error::RoadsterResult;
 use crate::service::registry::ServiceRegistry;

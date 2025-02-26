@@ -1,7 +1,7 @@
 use crate::error::Error;
+use axum::Json;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
-use axum::Json;
 use serde_derive::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 

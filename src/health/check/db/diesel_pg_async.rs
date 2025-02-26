@@ -1,7 +1,7 @@
 use crate::api::core::health::db_diesel_health_pg_async;
 use crate::app::context::{AppContext, AppContextWeak};
 use crate::error::RoadsterResult;
-use crate::health::check::{missing_context_response, CheckResponse, HealthCheck};
+use crate::health::check::{CheckResponse, HealthCheck, missing_context_response};
 use async_trait::async_trait;
 use tracing::instrument;
 

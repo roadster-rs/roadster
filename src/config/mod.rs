@@ -3,7 +3,7 @@ use crate::config::auth::Auth;
 use crate::config::database::Database;
 #[cfg(feature = "email")]
 use crate::config::email::Email;
-use crate::config::environment::{Environment, ENVIRONMENT_ENV_VAR_NAME};
+use crate::config::environment::{ENVIRONMENT_ENV_VAR_NAME, Environment};
 use crate::config::lifecycle::LifecycleHandler;
 use crate::config::service::Service;
 use crate::config::tracing::Tracing;
@@ -546,8 +546,8 @@ mod file_extensions_tests {
 
 #[cfg(test)]
 mod app_config_options_tests {
-    use crate::config::environment::Environment;
     use crate::config::AppConfigOptions;
+    use crate::config::environment::Environment;
     use config::{AsyncSource, Map, Value};
 
     #[derive(Debug)]

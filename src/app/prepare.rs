@@ -2,8 +2,8 @@
 use crate::api::cli::parse_cli;
 #[cfg(feature = "cli")]
 use crate::api::cli::roadster::RoadsterCli;
-use crate::app::context::AppContext;
 use crate::app::App;
+use crate::app::context::AppContext;
 use crate::config::environment::Environment;
 use crate::config::{AppConfig, AppConfigOptions, ConfigOverrideSource};
 #[cfg(feature = "db-sql")]

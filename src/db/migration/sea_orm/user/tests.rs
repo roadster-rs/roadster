@@ -20,9 +20,11 @@ fn user_migrator_migrations_no_int_pk() {
         .map(|migration| migration.name().to_string())
         .collect_vec();
 
-    assert!(!user_migrations.contains(
-        &m20240714_203550_create_user_table_int_pk::Migration::default()
-            .name()
-            .to_string()
-    ))
+    assert!(
+        !user_migrations.contains(
+            &m20240714_203550_create_user_table_int_pk::Migration::default()
+                .name()
+                .to_string()
+        )
+    )
 }

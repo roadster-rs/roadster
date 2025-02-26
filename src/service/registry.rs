@@ -1,9 +1,9 @@
-use crate::app::context::AppContext;
 use crate::app::App;
+use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::{AppService, AppServiceBuilder};
 use axum_core::extract::FromRef;
-use std::any::{type_name, TypeId};
+use std::any::{TypeId, type_name};
 use std::collections::{BTreeMap, HashSet};
 use thiserror::Error;
 use tracing::info;

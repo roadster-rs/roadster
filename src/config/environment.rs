@@ -2,9 +2,9 @@ use crate::config::{ENV_VAR_PREFIX, ENV_VAR_SEPARATOR};
 use crate::error::RoadsterResult;
 use anyhow::anyhow;
 #[cfg(feature = "cli")]
-use clap::builder::PossibleValue;
-#[cfg(feature = "cli")]
 use clap::ValueEnum;
+#[cfg(feature = "cli")]
+use clap::builder::PossibleValue;
 use const_format::concatcp;
 use dotenvy::dotenv;
 use serde_derive::{Deserialize, Serialize};

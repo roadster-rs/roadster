@@ -1,8 +1,8 @@
 use crate::config::email::Email;
+use lettre::SmtpTransport;
 use lettre::message::MessageBuilder;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::transport::smtp::{PoolConfig, SmtpTransportBuilder};
-use lettre::SmtpTransport;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::serde_as;
 use std::time::Duration;

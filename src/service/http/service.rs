@@ -1,8 +1,8 @@
-use crate::app::context::AppContext;
 use crate::app::App;
+use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
-use crate::service::http::builder::HttpServiceBuilder;
 use crate::service::AppService;
+use crate::service::http::builder::HttpServiceBuilder;
 #[cfg(feature = "open-api")]
 use aide::openapi::OpenApi;
 use async_trait::async_trait;
@@ -157,8 +157,8 @@ mod tests {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn list_routes() {
         use super::*;
-        use aide::axum::routing::{delete_with, get, get_with, post_with, put_with};
         use aide::axum::ApiRouter;
+        use aide::axum::routing::{delete_with, get, get_with, post_with, put_with};
         use aide::openapi::OpenApi;
         use itertools::Itertools;
         use std::collections::BTreeMap;

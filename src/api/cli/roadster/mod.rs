@@ -1,12 +1,12 @@
+use crate::api::cli::CliState;
 use crate::api::cli::roadster::health::HealthArgs;
 #[cfg(feature = "open-api")]
 use crate::api::cli::roadster::list_routes::ListRoutesArgs;
 #[cfg(feature = "db-sql")]
 use crate::api::cli::roadster::migrate::MigrateArgs;
 use crate::api::cli::roadster::print_config::PrintConfigArgs;
-use crate::api::cli::CliState;
-use crate::app::context::AppContext;
 use crate::app::App;
+use crate::app::context::AppContext;
 use crate::config::environment::Environment;
 use crate::error::RoadsterResult;
 #[cfg(feature = "open-api")]
