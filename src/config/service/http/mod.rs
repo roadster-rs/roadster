@@ -22,6 +22,7 @@ pub(crate) fn default_config_per_env(
 ) -> Option<config::File<FileSourceString, FileFormat>> {
     let config = match environment {
         Environment::Production => Some(include_str!("config/production.toml")),
+        Environment::Development => Some(include_str!("config/development.toml")),
         _ => None,
     };
     config.map(|c| config::File::from_str(c, FileFormat::Toml))
