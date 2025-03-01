@@ -1,0 +1,5 @@
+[service.http.middleware.sensitive-request-headers]
+enable = false
+
+[service.http.middleware.sensitive-response-headers]
+enable = false
