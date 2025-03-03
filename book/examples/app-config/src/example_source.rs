@@ -13,9 +13,9 @@ async fn prepare_app(app: App) -> RoadsterResult<PreparedApp<App, AppContext>> {
     For example, `service.sidekiq.redis.uri` overrides the `AppConfig#service#sidekiq#redis#uri` field.
     See: <https://docs.rs/roadster/latest/roadster/config/service/worker/sidekiq/struct.Redis.html#structfield.uri>
 
-    Note: a hard-coded value is used here for demonstration purposes only. In a real application,
-    an `AsyncSource` is intended to fetch the value from an external service, such as AWS or GCS
-    secrets manager services.
+    Note: Take care to not hard-code any sensitive values when providing a custom config source.
+    However, it may be okay to hard-code a generic local connection URI (as we're doing here) if
+    it's only used for testing (the primary intended purpose of allowing custom `Source`s).
      */
     let options = PrepareOptions::builder()
         .add_config_source(
