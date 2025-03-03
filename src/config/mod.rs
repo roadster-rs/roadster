@@ -129,7 +129,9 @@ cfg_if! {
 
 #[derive(Debug, Clone, TypedBuilder)]
 pub struct ConfigOverrideSource {
+    #[builder(setter(into))]
     pub name: String,
+    #[builder(setter(into))]
     pub value: config::Value,
 }
 

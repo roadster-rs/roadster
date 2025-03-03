@@ -62,7 +62,17 @@ export ROADSTER__ENVIRONMENT=dev
 export ROADSTER__APP__SHUTDOWN_ON_ERROR=true
 ```
 
-## Async sources
+## Custom Sources
+
+You can also provide one or more [`Source`](https://docs.rs/config/latest/config/trait.Source.html)s to add to
+the configuration. This is primarilty intended to allow overriding specific app config fields for tests, but it can also
+be used to provide other custom config sources outside of tests.
+
+```rust,ignore
+{{#include ../../examples/app-config/src/example_source.rs:6:}}
+```
+
+## Custom Async sources
 
 You can also provide one or more [`AsyncSource`](https://docs.rs/config/latest/config/trait.AsyncSource.html)s to add to
 the configuration. This is useful to load configuration fields (particularly sensitive ones) from an external service,
@@ -72,7 +82,7 @@ such as AWS or GCS secrets manager services.
 will override any duplicate fields from other sources).
 
 ```rust,ignore
-{{#include ../../examples/app-config/src/example_async_source.rs:4:}}
+{{#include ../../examples/app-config/src/example_async_source.rs:6:}}
 ```
 
 ## Config mechanism precedence
@@ -82,6 +92,7 @@ will override any duplicate fields from other sources).
 - `<env>.toml`
 - `<env>/<filename>.toml`
 - Environment variables
+- [`Source`](https://docs.rs/config/latest/config/trait.Source.html)s
 - [`AsyncSource`](https://docs.rs/config/latest/config/trait.AsyncSource.html)s (highest -- overrides lower precedence
   values)
 
