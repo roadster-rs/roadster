@@ -1,5 +1,7 @@
 use async_trait::async_trait;
 use config::{AsyncSource, ConfigError, Value};
+use roadster::app::RoadsterApp;
+use roadster::app::context::AppContext;
 
 #[derive(Debug)]
 pub struct ExampleAsyncSource;
@@ -27,4 +29,15 @@ impl AsyncSource for ExampleAsyncSource {
 
         Ok(config)
     }
+}
+
+type App = RoadsterApp<AppContext>;
+
+fn build_app() -> App {
+    let builder = RoadsterApp::builder();
+
+    let builder = builder.add_async_config_source(ExampleAsyncSource);
+
+    let builder = builder.state_provider(|context| Ok(context));
+    builder.build()
 }
