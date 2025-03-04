@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-beta.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta...roadster-v0.7.0-beta.1) - 2025-03-04
+
+### Added
+
+- Allow logging sensitive headers in the dev environment ([#666](https://github.com/roadster-rs/roadster/pull/666))
+- Allow overriding config fields or entire config ([#661](https://github.com/roadster-rs/roadster/pull/661))
+
+### Fixed
+
+- Export `TestAppState` to allow for external use ([#672](https://github.com/roadster-rs/roadster/pull/672))
+
+### Other
+
+- Add non-async `Source` to config chapter in book ([#670](https://github.com/roadster-rs/roadster/pull/670))
+- Update testing chapter in book ([#668](https://github.com/roadster-rs/roadster/pull/668))
+- Update book deploy workflow to only run if book tests pass on main ([#665](https://github.com/roadster-rs/roadster/pull/665))
+- Update all workspace members to rust 2024 edition ([#664](https://github.com/roadster-rs/roadster/pull/664))
+- Improve diesel docs in book ([#663](https://github.com/roadster-rs/roadster/pull/663))
+- Update to rust 2024 edition + rustfmt 2024 style edition ([#662](https://github.com/roadster-rs/roadster/pull/662))
+
 ## [0.7.0-beta](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.8...roadster-v0.7.0-beta) - 2025-02-25
 
 This is the first beta release for version 0.7.0. From here until the stable 0.7.0 release, the focus will be on
