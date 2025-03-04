@@ -25,7 +25,7 @@ pub use roadster_app::RoadsterAppBuilder;
 pub use prepare::{PrepareOptions, PreparedApp, PreparedAppCli, PreparedAppWithoutCli, prepare};
 pub use run::{run, run_prepared};
 #[cfg(feature = "testing")]
-pub use test::{run_test, run_test_with_result, test_state};
+pub use test::{TestAppState, run_test, run_test_with_result, test_state};
 
 #[cfg(all(test, feature = "cli"))]
 use crate::api::cli::MockTestCli;
