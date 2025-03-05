@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-beta.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta...roadster-v0.7.0-beta.1) - 2025-03-04
+
+### Added
+
+- Allow logging sensitive headers in the dev environment ([#666](https://github.com/roadster-rs/roadster/pull/666))
+- Allow overriding config fields or entire config ([#661](https://github.com/roadster-rs/roadster/pull/661))
+- Accept `Into<String>` for `ConfigOverrideSource` builder ([#670](https://github.com/roadster-rs/roadster/pull/670))
+
+### Fixed
+
+- Export `TestAppState` to allow for external use ([#672](https://github.com/roadster-rs/roadster/pull/672))
+
+### Other
+
+- Update to rust 2024 edition + rustfmt 2024 style edition ([#662](https://github.com/roadster-rs/roadster/pull/662))
+
 ## [0.7.0-beta](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-alpha.8...roadster-v0.7.0-beta) - 2025-02-25
 
 This is the first beta release for version 0.7.0. From here until the stable 0.7.0 release, the focus will be on
