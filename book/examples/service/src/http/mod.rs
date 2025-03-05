@@ -1,5 +1,6 @@
 mod example_b;
 mod example_c;
+mod middleware;
 mod open_api;
 
 use aide::axum::ApiRouter;
