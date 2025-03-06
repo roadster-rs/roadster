@@ -38,8 +38,8 @@ where
     enabled: Option<bool>,
     #[builder(default, setter(strip_option(fallback = priority_opt)))]
     priority: Option<i32>,
-    #[builder(default, setter(strip_option(fallback = stage_opt)))]
-    stage: Option<Stage>,
+    #[builder(default)]
+    stage: Stage,
     #[builder(setter(transform = |a: impl Fn(Router, &S) -> RoadsterResult<Router> + Send + 'static| to_box_fn(a) ))]
     apply: ApplyFn<S>,
 }
@@ -115,7 +115,7 @@ where
     }
 
     fn after_router(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
-        if let Some(Stage::AfterRouter) = self.stage {
+        if let Stage::AfterRouter = self.stage {
             (self.apply)(router, _state)
         } else {
             Ok(router)
@@ -123,7 +123,7 @@ where
     }
 
     fn before_middleware(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
-        if let Some(Stage::BeforeMiddleware) = self.stage {
+        if let Stage::BeforeMiddleware = self.stage {
             (self.apply)(router, _state)
         } else {
             Ok(router)
@@ -131,7 +131,7 @@ where
     }
 
     fn after_middleware(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
-        if let Some(Stage::AfterMiddleware) = self.stage {
+        if let Stage::AfterMiddleware = self.stage {
             (self.apply)(router, _state)
         } else {
             Ok(router)
@@ -139,7 +139,7 @@ where
     }
 
     fn before_serve(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
-        if let Some(Stage::BeforeServe) = self.stage {
+        if let Stage::BeforeServe = self.stage {
             (self.apply)(router, _state)
         } else {
             Ok(router)
