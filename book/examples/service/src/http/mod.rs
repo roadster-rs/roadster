@@ -1,5 +1,6 @@
 mod example_b;
 mod example_c;
+mod initializer;
 mod middleware;
 mod open_api;
 
