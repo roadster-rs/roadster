@@ -1,4 +1,5 @@
 mod http;
+mod worker;
 
 use roadster::app::RoadsterApp;
 use roadster::app::context::AppContext;

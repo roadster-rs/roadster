@@ -11,3 +11,5 @@ tracing = { workspace = true }
 serde = { workspace = true }
 schemars = { workspace = true }
 axum = { workspace = true }
+async-trait = { workspace = true }
+rusty-sidekiq = { workspace = true }
