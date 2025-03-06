@@ -49,8 +49,8 @@ where
 pub enum Stage {
     AfterRouter,
     BeforeMiddleware,
-    AfterMiddleware,
     #[default]
+    AfterMiddleware,
     BeforeServe,
 }
 
