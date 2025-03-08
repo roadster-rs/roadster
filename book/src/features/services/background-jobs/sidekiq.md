@@ -11,9 +11,20 @@ the [Sidekiq.rs](https://docs.rs/rusty-sidekiq/latest/sidekiq/) for more details
 
 ## Service configs
 
-See: <https://docs.rs/roadster/latest/roadster/config/service/worker/sidekiq/struct.SidekiqServiceConfig.html>
+Various properties of the Sidekiq worker service can be configured via the app's config files. The most important fields
+to configure are the following:
 
-🛠 todo 🛠
+- `service.sidekiq.num-workers`: The number of Sidekiq workers that can run at the same time.
+- `service.sidekiq.queues`: The names of the worker queues to handle.
+- `service.sidekiq.redis.uri`: The URI of the Redis database to use as the Sidekiq server.
+
+```toml
+{{ #include ../../../../examples/service/config/development/sidekiq.toml }}
+```
+
+See
+the [config struct](https://docs.rs/roadster/latest/roadster/config/service/worker/sidekiq/struct.SidekiqServiceConfig.html)
+for the full list of fields available.
 
 ## Worker configs
 
