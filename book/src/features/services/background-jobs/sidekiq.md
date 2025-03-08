@@ -18,8 +18,8 @@ to configure are the following:
 - `service.sidekiq.queues`: The names of the worker queues to handle.
 - `service.sidekiq.redis.uri`: The URI of the Redis database to use as the Sidekiq server.
 
-```
-{{#include ../../../../examples/service/config/development/sidekiq.toml}}
+```toml
+{{ #include ../../../../examples/service/config/development/sidekiq.toml }}
 ```
 
 See
