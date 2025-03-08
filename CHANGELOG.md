@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-beta.2](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta.1...roadster-v0.7.0-beta.2) - 2025-03-08
+
+### Fixed
+
+- Make `AnyInitializer#stage` field non optional ([#676](https://github.com/roadster-rs/roadster/pull/676))
+
+### Other
+
+- Expand sidekiq chapter ([#679](https://github.com/roadster-rs/roadster/pull/679))
+- Expand the `Initializer` book chapter ([#677](https://github.com/roadster-rs/roadster/pull/677))
+- Axum HTTP middleware chapter ([#675](https://github.com/roadster-rs/roadster/pull/675))
+
 ## [0.7.0-beta.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta...roadster-v0.7.0-beta.1) - 2025-03-04
 
 ### Added
