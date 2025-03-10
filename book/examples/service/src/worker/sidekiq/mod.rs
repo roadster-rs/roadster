@@ -1,11 +1,14 @@
+mod worker_with_configs;
+
 use async_trait::async_trait;
 use axum::extract::State;
 use roadster::app::RoadsterApp;
 use roadster::app::context::AppContext;
 use roadster::error::RoadsterResult;
-use roadster::service::worker::sidekiq::app_worker::AppWorker;
+use roadster::service::worker::sidekiq::app_worker::{AppWorker, AppWorkerConfig};
 use roadster::service::worker::sidekiq::service::SidekiqWorkerService;
 use sidekiq::Worker;
+use std::time::Duration;
 use tracing::info;
 
 pub struct ExampleWorker {
@@ -43,6 +46,15 @@ fn build_app() -> RoadsterApp<AppContext> {
                             .await?
                             // Register the `ExampleWorker` with the sidekiq service
                             .register_worker(ExampleWorker::new(state))?
+                            // Optionally register the worker with worker-level config overrides
+                            .register_worker_with_config(
+                                ExampleWorker::new(state),
+                                AppWorkerConfig::builder()
+                                    .max_retries(3)
+                                    .timeout(true)
+                                    .max_duration(Duration::from_secs(30))
+                                    .build(),
+                            )?
                             // Register the `ExampleWorker` to run as a periodic cron job
                             .register_periodic_worker(
                                 sidekiq::periodic::builder("* * * * * *")?
