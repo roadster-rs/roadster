@@ -14,7 +14,7 @@ any custom claims to a map), or a custom claim struct can be provided instead.
 ### IETF claims
 
 ```rust,ignore
-{{#include ../../../examples/auth/src/jwt.rs:7:}}
+{{#include ../../../examples/auth/src/jwt.rs:6:}}
 ```
 
 Along with the IETF claims, Roadster also provides a claims struct to extract OpenID standard claims.
