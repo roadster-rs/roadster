@@ -1,0 +1,11 @@
+[package]
+name = "auth-example"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+roadster = { path = "../../..", features = ["jwt-openid"] }
+tracing = { workspace = true }
+axum = { workspace = true }
+uuid = { workspace = true }
