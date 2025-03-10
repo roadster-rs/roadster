@@ -4,6 +4,11 @@ version = "0.1.0"
 edition = "2024"
 publish = false
 
+[features]
+default = ["grpc"]
+grpc = ["roadster/grpc", "dep:tonic", "dep:tonic-reflection", "dep:prost", "roadster/grpc"]
+
+
 [dependencies]
 roadster = { path = "../../.." }
 aide = { workspace = true }
@@ -13,3 +18,12 @@ schemars = { workspace = true }
 axum = { workspace = true }
 async-trait = { workspace = true }
 rusty-sidekiq = { workspace = true }
+tokio-util = { workspace = true }
+
+# gRPC API
+tonic = { workspace = true, optional = true }
+tonic-reflection = { workspace = true, optional = true }
+prost = { workspace = true, optional = true }
+
+[build-dependencies]
+tonic-build = { workspace = true }

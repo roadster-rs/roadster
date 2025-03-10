@@ -49,7 +49,7 @@ jwt-ietf = ["jwt"]
 jwt-openid = ["jwt"]
 cli = ["dep:clap"]
 otel = ["dep:opentelemetry", "dep:opentelemetry_sdk", "dep:opentelemetry-otlp", "dep:tracing-opentelemetry", "dep:prost"]
-grpc = ["dep:tonic"]
+grpc = ["dep:tonic", "dep:tonic-reflection"]
 testing = ["dep:insta", "dep:rstest"]
 test-containers = ["testing", "dep:testcontainers-modules"]
 testing-mocks = ["testing", "dep:mockall", "sea-orm?/mock"]
@@ -123,6 +123,7 @@ clap = { workspace = true, features = ["derive", "string"], optional = true }
 
 # gRPC
 tonic = { workspace = true, optional = true }
+tonic-reflection = { workspace = true, optional = true }
 
 # Testing
 insta = { workspace = true, optional = true }
