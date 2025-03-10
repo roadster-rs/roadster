@@ -20,9 +20,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
-      - name: Update rust
-        run: |
-          cargo --version
-          rustup update
       - name: Check semver
         uses: obi1kenobi/cargo-semver-checks-action@v2

@@ -34,10 +34,6 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@mdbook
       - uses: taiki-e/install-action@just
-      - name: Update rust
-        run: |
-          cargo --version
-          rustup update
 
       - name: Test mdbook
         run: just test-book

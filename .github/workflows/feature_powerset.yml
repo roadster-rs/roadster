@@ -66,10 +66,6 @@ jobs:
           else
               echo "seed=" >> "$GITHUB_OUTPUT"
           fi
-      - name: Update rust
-        run: |
-          cargo --version
-          rustup update
       - name: Build powerset data
         id: build_data
         run: |
@@ -90,10 +86,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: rui314/setup-mold@v1
       - uses: taiki-e/install-action@nextest
-      - name: Update rust
-        run: |
-          cargo --version
-          rustup update
       - name: Test
         run: |
           features=($features)
@@ -123,10 +115,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: rui314/setup-mold@v1
-      - name: Update rust
-        run: |
-          cargo --version
-          rustup update
       - name: Check
         run: |
           features=($features)
@@ -153,10 +141,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: rui314/setup-mold@v1
-      - name: Update rust
-        run: |
-          cargo --version
-          rustup update
       - name: Clippy
         run: |
           features=($features)
