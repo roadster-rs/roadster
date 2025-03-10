@@ -29,11 +29,11 @@ use uuid::Uuid;
 
 type BearerAuthHeader = TypedHeader<Authorization<Bearer>>;
 
-/// Struct representing a JWT, including its [Header]s and `claims`. The `claims` type (`C`) can be
+/// Struct representing a JWT, including its [`Header`]s and `claims`. The `claims` type (`C`) can be
 /// customized. If features `jwt-ietf` or `jwt-openid` are enabled, the type will default to
 /// the claims for the respective feature. If both features are enabled, the type will default
 /// to the claims from `jwt-ietf`. If neither feature is enabled (but `jwt` is enabled), then
-/// the default will simply be a [serde_json::Value]. In all cases, the type can be overridden
+/// the default will simply be a [`serde_json::Value`]. In all cases, the type can be overridden
 /// by the consumer.
 #[cfg_attr(feature = "open-api", derive(aide::OperationIo))]
 #[derive(Deserialize, Serialize)]
@@ -58,12 +58,13 @@ where
 }
 
 /// Similar to [`Jwt`], but allows extracting the JWT from the request cookies (if the
-/// `auth.jwt.cookie-name` config is set) in addition to the request header. This is useful for
-/// use in web-apps because the JWT can be set as a cookie and be automatically sent along with
-/// every request instead of needing to add the header to every request (which would preclude the
-/// web-app from supporting clients without javascript enabled). However, *THIS MAY MAKE THE
-/// CONSUMING APPLICATION VULNERABLE TO CSRF ATTACKS*. If this struct is used, the consuming
-/// application should implement a CSRF protection mechanism. See the following for more
+/// `auth.jwt.cookie-name` config is set) in addition to the request header.
+///
+/// This is useful for use in web-apps because the JWT can be set as a cookie and be automatically
+/// sent along with every request instead of needing to add the header to every request (which would
+/// preclude the web-app from supporting clients without javascript enabled). However, *THIS MAY
+/// MAKE THE CONSUMING APPLICATION VULNERABLE TO CSRF ATTACKS*. If this struct is used, the
+/// consuming application should implement a CSRF protection mechanism. See the following for more
 /// information and recommendations:
 ///
 /// - <https://owasp.org/www-community/attacks/csrf>

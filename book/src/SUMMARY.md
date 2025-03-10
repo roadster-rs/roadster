@@ -25,7 +25,7 @@
         - [Grpc service with Tonic](features/services/grpc.md)
         - [Function service](features/services/function.md)
     - [Auth](features/auth/index.md)
-        - [JWT](features/auth/jwt.md)
+        - [JWTs](features/auth/jwt.md)
     - [OpenAPI with Aide](features/open-api.md)
     - [Email](features/email/index.md)
         - [SMTP](features/email/smtp.md)
