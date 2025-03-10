@@ -17,9 +17,9 @@ any custom claims to a map), or a custom claim struct can be provided instead.
 {{#include ../../../examples/auth/src/jwt.rs:6:}}
 ```
 
-Along with the IETF claims, Roadster also provides a claims struct to extract OpenID standard claims.
-
 ### OpenID claims
+
+Along with the IETF claims, Roadster also provides a claims struct to extract OpenID standard claims.
 
 ```rust,ignore
 {{#include ../../../examples/auth/src/jwt_openid.rs:6:}}
@@ -27,8 +27,8 @@ Along with the IETF claims, Roadster also provides a claims struct to extract Op
 
 ## JwtCsrf extractor
 
-Some apps may want or need to support clients that don't have javascript available. In those cases, auth is typically
-done by setting an auth cookie so it can be sent automatically by the client on every request. However, _THIS MAY MAKE
+Some apps may want or need to support clients that don't have javascript available. In those cases, the app will typically
+set an auth cookie so it can be sent automatically by the client on every request. However, _THIS MAY MAKE
 THE APPLICATION VULNERABLE TO CSRF ATTACKS_.
 
 Roadster provides a special [
