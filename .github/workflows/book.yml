@@ -34,6 +34,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@mdbook
       - uses: taiki-e/install-action@just
+      # protoc is needed to build examples that have grpc enabled
+      - uses: taiki-e/install-action@protoc
 
       - name: Test mdbook
         run: just test-book

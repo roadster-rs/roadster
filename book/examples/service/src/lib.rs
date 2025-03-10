@@ -1,3 +1,6 @@
+mod function;
+#[cfg(feature = "grpc")]
+mod grpc;
 mod http;
 mod worker;
 

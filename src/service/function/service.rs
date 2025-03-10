@@ -50,6 +50,7 @@ where
     F: Send + Sync + Fn(S, CancellationToken) -> Fut,
     Fut: Send + Future<Output = RoadsterResult<()>>,
 {
+    #[builder(setter(into))]
     name: String,
     #[builder(default, setter(strip_option))]
     enabled: Option<bool>,
