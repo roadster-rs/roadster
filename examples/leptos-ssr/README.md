@@ -11,6 +11,4 @@ Feel free to explore the project structure, but the best place to start with you
 cd examples/leptos-ssr
 # Run the app
 ROADSTER__ENVIRONMENT=development cargo leptos watch -- --config-dir "$(pwd)/config"
-# Alternatively, you can put the ROADSTER__ENVIRONMENT=development in a `.env` file and simply run
-cargo leptos watch -- --config-dir "$(pwd)/config"
 ```

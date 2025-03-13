@@ -25,7 +25,7 @@ ssr = [
 ]
 
 [dependencies]
-roadster = { version = "0.6", optional = true, default-features = false, features = ["http", "cli"] }
+roadster = { version = "0.7.0-beta.1", path = "../..", optional = true, default-features = false, features = ["http", "cli"] }
 tokio = { workspace = true, optional = true }
 tokio-util = { workspace = true, optional = true }
 anyhow = { workspace = true }
@@ -34,17 +34,17 @@ async-trait = { workspace = true }
 clap = { workspace = true }
 
 # Http API
-axum = { version = "0.7.9", optional = true }
+axum = { version = "0.8.1", optional = true }
 
 serde = { workspace = true, features = ["derive"] }
 
 # Leptos
-leptos = "0.7.0-rc1"
+leptos = "0.8.0-alpha"
 console_error_panic_hook = { version = "0.1", optional = true }
-leptos_axum = { version = "0.7.0-rc1", optional = true }
-leptos_meta = { version = "0.7.0-rc1" }
-leptos_router = { version = "0.7.0-rc1" }
-leptos_config = { version = "0.7.0-rc1" }
+leptos_axum = { version = "0.8.0-alpha", optional = true }
+leptos_meta = { version = "0.8.0-alpha" }
+leptos_router = { version = "0.8.0-alpha" }
+leptos_config = { version = "0.8.0-alpha" }
 tower = { version = "0.5.2", features = ["full"], optional = true }
 tower-http = { version = "0.6.0", features = ["full"], optional = true }
 wasm-bindgen = { version = "0.2.95", optional = true }
@@ -60,7 +60,7 @@ wasm-bindgen = { version = "0.2.95", optional = true }
 
 [package.metadata.leptos]
 # The name used by wasm-bindgen/cargo-leptos for the JS/WASM bundle. Defaults to the crate name
-output-name = "leptos-7-ssr-example"
+output-name = "leptos-ssr-example"
 
 # The site root folder is where cargo-leptos generate all output. WARNING: all content of this folder will be erased on a rebuild. Use it in your server setup.
 site-root = "target/site"
@@ -114,15 +114,11 @@ lib-default-features = false
 # Optional. Defaults to "release".
 #lib-profile-release = "wasm-release"
 
-[build-dependencies]
-vergen = { workspace = true }
-vergen-gitcl = { workspace = true }
-
 #[[bin]]
 #name = "leptos_ssr_example"
 #path = "./src/main.rs"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
-name = "leptos_7_ssr_example"
+name = "leptos_ssr_example"
 path = "./src/lib.rs"
