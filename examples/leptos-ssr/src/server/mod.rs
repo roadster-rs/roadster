@@ -1,73 +1,55 @@
 use crate::app::{App, shell};
 use crate::app_state::AppState;
 use anyhow::anyhow;
-use async_trait::async_trait;
 use axum::Router;
 use leptos::prelude::*;
 use leptos_axum::{LeptosRoutes, generate_route_list};
-use roadster::app::App as RoadsterApp;
+use roadster::app::RoadsterApp;
 use roadster::app::context::AppContext;
-use roadster::app::metadata::AppMetadata;
-use roadster::config::AppConfig;
 use roadster::config::environment::Environment;
-use roadster::error::RoadsterResult;
 use roadster::service::http::service::HttpService;
-use roadster::service::registry::ServiceRegistry;
 
 const BASE: &str = "/api";
 
-#[derive(Default)]
-pub struct Server;
+pub fn build_app() -> RoadsterApp<AppState> {
+    RoadsterApp::builder()
+        .state_provider(|app_context| {
+            let leptos_config = leptos_config(&app_context)?;
+            let leptos_options = leptos_config.leptos_options.clone();
 
-#[async_trait]
-impl RoadsterApp<AppState> for Server {
-    type Cli = crate::cli::AppCli;
+            let state = AppState {
+                app_context,
+                leptos_config,
+                leptos_options,
+            };
+            Ok(state)
+        })
+        .add_service_provider(|registry, state| {
+            Box::pin(async {
+                let state = state.clone();
+                assert_eq!(
+                    state.leptos_options.site_addr,
+                    state
+                        .app_context
+                        .config()
+                        .service
+                        .http
+                        .custom
+                        .address
+                        .socket_addr()?,
+                    "Leptos address does not match the Roadster http address."
+                );
 
-    fn metadata(&self, _config: &AppConfig) -> RoadsterResult<AppMetadata> {
-        Ok(AppMetadata::builder()
-            .version(env!("VERGEN_GIT_SHA").to_string())
-            .build())
-    }
+                registry
+                    .register_builder(
+                        HttpService::builder(Some(BASE), &state).router(leptos_routes(&state)),
+                    )
+                    .await?;
 
-    async fn provide_state(&self, app_context: AppContext) -> RoadsterResult<AppState> {
-        let leptos_config = leptos_config(&app_context)?;
-        let leptos_options = leptos_config.leptos_options.clone();
-
-        let state = AppState {
-            app_context,
-            leptos_config,
-            leptos_options,
-        };
-        Ok(state)
-    }
-
-    async fn services(
-        &self,
-        registry: &mut ServiceRegistry<Self, AppState>,
-        state: &AppState,
-    ) -> RoadsterResult<()> {
-        let state = state.clone();
-        assert_eq!(
-            state.leptos_options.site_addr,
-            state
-                .app_context
-                .config()
-                .service
-                .http
-                .custom
-                .address
-                .socket_addr()?,
-            "Leptos address does not match the Roadster http address."
-        );
-
-        registry
-            .register_builder(
-                HttpService::builder(Some(BASE), &state).router(leptos_routes(&state)),
-            )
-            .await?;
-
-        Ok(())
-    }
+                Ok(())
+            })
+        })
+        .build()
 }
 
 fn leptos_config(context: &AppContext) -> anyhow::Result<ConfFile> {

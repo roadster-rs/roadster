@@ -2,8 +2,6 @@ pub mod app;
 #[cfg(feature = "ssr")]
 pub mod app_state;
 #[cfg(feature = "ssr")]
-pub mod cli;
-#[cfg(feature = "ssr")]
 pub mod server;
 
 #[cfg(feature = "hydrate")]
