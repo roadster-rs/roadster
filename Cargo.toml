@@ -233,7 +233,7 @@ num_cpus = { version = "1.13.0" }
 
 # Testing
 insta = { version = "1.39.0", features = ["toml", "filters"] }
-rstest = { version = "0.24.0", default-features = false }
+rstest = { version = "0.25.0", default-features = false }
 testcontainers-modules = { version = "0.11.3" }
 mockall = "0.13.0"
 tower-util = "0.3.1"
@@ -251,10 +251,10 @@ strum = "0.27.0"
 strum_macros = "0.27.0"
 toml = "0.8.0"
 url = { version = "2.5.0", features = ["serde"] }
-futures = "0.3.30"
+futures = "0.3.31"
 futures-core = "0.3.31"
 byte-unit = { version = "5.0.0", features = ["serde"] }
-convert_case = "0.7.1"
+convert_case = "0.8.0"
 const_format = "0.2.32"
 num-traits = "0.2.18"
 validator = { version = "0.20.0", features = ["derive"] }
@@ -278,7 +278,7 @@ rustc_version = "0.4.1"
 cargo-husky = { version = "1.5.0", default-features = false, features = ["user-hooks"] }
 mockall_double = "0.3.1"
 tokio-test = "0.4.4"
-fake = { version = "3.1.0" }
+fake = { version = "4.0.0" }
 
 [package.metadata.docs.rs]
 # Have docs.rs pass `--all-features` to ensure all features have their documentation built.
