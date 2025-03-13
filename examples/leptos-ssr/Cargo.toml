@@ -34,7 +34,7 @@ async-trait = { workspace = true }
 clap = { workspace = true }
 
 # Http API
-axum = { version = "0.8.1", optional = true }
+axum = { workspace = true, optional = true }
 
 serde = { workspace = true, features = ["derive"] }
 
@@ -45,9 +45,9 @@ leptos_axum = { version = "0.8.0-alpha", optional = true }
 leptos_meta = { version = "0.8.0-alpha" }
 leptos_router = { version = "0.8.0-alpha" }
 leptos_config = { version = "0.8.0-alpha" }
-tower = { version = "0.5.2", features = ["full"], optional = true }
-tower-http = { version = "0.6.0", features = ["full"], optional = true }
-wasm-bindgen = { version = "0.2.95", optional = true }
+tower = { workspace = true, features = ["full"], optional = true }
+tower-http = { workspace = true, features = ["full"], optional = true }
+wasm-bindgen = { version = "0.2.100", optional = true }
 
 # Defines a size-optimized profile for the WASM bundle in release mode
 # Commented out here because profiles are ignored for packages that aren't the workspace root
