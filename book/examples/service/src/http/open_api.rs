@@ -13,7 +13,7 @@ async fn open_api() -> RoadsterResult<()> {
         .add_service_provider(move |registry, state| {
             Box::pin(async move {
                 registry
-                    .register_builder(crate::http::http_service(state).await)
+                    .register_builder(crate::http::http_service(state))
                     .await?;
                 Ok(())
             })
