@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-beta.2](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta.1...roadster-v0.7.0-beta.2) - 2025-03-15
+
+### Fixed
+
+- Make `AnyInitializer#stage` field non-optional ([#676](https://github.com/roadster-rs/roadster/pull/676))
+
+### Other
+
+- Update leptos-ssr example to leptos-0.8 and update various
+  dependencies ([#689](https://github.com/roadster-rs/roadster/pull/689))
+- Various updates to the documentation + book + book examples
+
 ## [0.7.0-beta.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta...roadster-v0.7.0-beta.1) - 2025-03-04
 
 ### Added
