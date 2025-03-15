@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-beta.2](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta.1...roadster-v0.7.0-beta.2) - 2025-03-15
+
+### Fixed
+
+- Make `AnyInitializer#stage` field non optional ([#676](https://github.com/roadster-rs/roadster/pull/676))
+
+### Other
+
+- Expand OpenAPI chapter ([#690](https://github.com/roadster-rs/roadster/pull/690))
+- Update leptos-ssr example to leptos-0.8 ([#689](https://github.com/roadster-rs/roadster/pull/689))
+- Minor changes to jwt chapter ([#687](https://github.com/roadster-rs/roadster/pull/687))
+- Add JwtCsrf extractor section of book ([#686](https://github.com/roadster-rs/roadster/pull/686))
+- Expand auth and auth/jwt chapters of book ([#685](https://github.com/roadster-rs/roadster/pull/685))
+- Don't update rust in github actions ([#684](https://github.com/roadster-rs/roadster/pull/684))
+- Add to remaining service sections/chapters in book ([#683](https://github.com/roadster-rs/roadster/pull/683))
+- Add sidekiq service config to book ([#682](https://github.com/roadster-rs/roadster/pull/682))
+- Expand sidekiq chapter ([#679](https://github.com/roadster-rs/roadster/pull/679))
+- Expand the `Initializer` book chapter ([#677](https://github.com/roadster-rs/roadster/pull/677))
+- Axum HTTP middleware chapter ([#675](https://github.com/roadster-rs/roadster/pull/675))
+
 ## [0.7.0-beta.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta...roadster-v0.7.0-beta.1) - 2025-03-04
 
 ### Added
