@@ -1,6 +1,6 @@
 # JWTs
 
-Json Web Tokens (JWTs) are a common component of many auth systems. Each auth system will have a slightly different
+JSON Web Tokens (JWTs) are a common component of many auth systems. Each auth system will have a slightly different
 set of fields available in the JWT; however, there are a few common fields as well as a few standards that could be
 used by any implementation, particularly a custom auth system.
 
@@ -27,7 +27,8 @@ Along with the IETF claims, Roadster also provides a claims struct to extract Op
 
 ## JwtCsrf extractor
 
-Some apps may want or need to support clients that don't have javascript available. In those cases, the app will typically
+Some apps may want or need to support clients that don't have javascript available. In those cases, the app will
+typically
 set an auth cookie so it can be sent automatically by the client on every request. However, _THIS MAY MAKE
 THE APPLICATION VULNERABLE TO CSRF ATTACKS_.
 
@@ -46,7 +47,8 @@ See the following for more information and recommendations for how to implement 
 - <https://owasp.org/www-community/attacks/csrf>
 - <https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html>
 
-If the functionality to extract from a cookie is not required, it’s recommended to use the normal  [`Jwt`](https://docs.rs/roadster/latest/roadster/middleware/http/auth/jwt/struct.Jwt.html) extracto directly.
+If the functionality to extract from a cookie is not required, it’s recommended to use the normal  [
+`Jwt`](https://docs.rs/roadster/latest/roadster/middleware/http/auth/jwt/struct.Jwt.html) extractor directly.
 
 ## Docs.rs links
 
