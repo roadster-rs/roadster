@@ -1,0 +1,20 @@
+[package]
+name = "email-example"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+roadster = { path = "../../..", features = ["email-smtp", "email-sendgrid", "sidekiq"] }
+aide = { workspace = true }
+tracing = { workspace = true }
+serde = { workspace = true }
+schemars = { workspace = true }
+axum = { workspace = true }
+async-trait = { workspace = true }
+rusty-sidekiq = { workspace = true }
+tokio-util = { workspace = true }
+uuid = { workspace = true }
+typed-builder = { workspace = true }
+lettre = { workspace = true }
+leptos = "0.8.0-alpha"

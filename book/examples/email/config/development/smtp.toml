@@ -1,0 +1,15 @@
+# Note: Hard-coded values are used here for demonstration purposes only. In a real application,
+# an `AsyncSource` is intended to fetch secrets from an external service, such as AWS or GCS
+# secrets manager services.
+
+[email]
+from = "no-reply@example.com"
+
+[email.smtp.connection]
+# The `smtps` scheme should be used in production
+uri = "smtp://localhost:1025"
+# Alternatively, provide connection details as individual fields
+#host = "smtp.example.com"
+#port = 465
+#username = "username"
+#password = "password"
