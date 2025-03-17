@@ -1,0 +1,4 @@
+[email.sendgrid]
+api-key = "api-key"
+# `sandbox` should not be true in prod (simply omit this field in the prod config)
+sandbox = true
