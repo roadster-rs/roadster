@@ -17,4 +17,5 @@ tokio-util = { workspace = true }
 uuid = { workspace = true }
 typed-builder = { workspace = true }
 lettre = { workspace = true }
+sendgrid = { workspace = true }
 leptos = "0.8.0-alpha"

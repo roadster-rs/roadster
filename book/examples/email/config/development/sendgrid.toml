@@ -1,3 +1,7 @@
+# Note: Hard-coded connection details are used here for demonstration purposes only. In a real application,
+# an `AsyncSource` should be used to fetch secrets from an external service, such as AWS or GCS
+# secrets manager services.
+
 [email.sendgrid]
 api-key = "api-key"
 # `sandbox` should not be true in prod (simply omit this field in the prod config)

@@ -66,5 +66,4 @@ The below example is the same as the plaintext example, except it formats the em
 
 ## Docs.rs links
 
-- [`smtp` mod](https://docs.rs/roadster/latest/roadster/config/email/smtp/index.html)
 - [email config](https://docs.rs/roadster/latest/roadster/config/email/struct.Email.html)
