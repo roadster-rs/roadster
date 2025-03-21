@@ -1,0 +1,5 @@
+[service.http.middleware.set-request-id]
+header-name = "request-id"
+
+[service.http.middleware.propagate-request-id]
+header-name = "request-id"
