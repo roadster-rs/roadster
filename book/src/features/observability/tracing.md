@@ -1,10 +1,11 @@
 # Tracing with Tokio's [tracing](https://crates.io/crates/tracing) crate
 
 Roadster provides support for tracing as defined by the
-[`init_tracing`](https://docs.rs/roadster/latest/roadster/tracing/fn.init_tracing.html) method. Some of the
-initialization
-logic can be configured via the app's config files. The app can also provide its own custom tracing initialization
-logic.
+[`init_tracing`](https://docs.rs/roadster/latest/roadster/tracing/fn.init_tracing.html) method, which is used in the
+default implementation of [
+`App#init_tracing`](https://docs.rs/roadster/latest/roadster/app/trait.App.html#method.init_tracing). Some of the
+initialization logic can be configured via the app's config files. The app can also provide its own custom tracing
+initialization logic.
 
 If the `otel` feature is enabled, this method will also initialize some OpenTelemetry resources. See
 the [OpenTelemetry chapter](otel.md) for more details.

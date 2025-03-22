@@ -1,0 +1,8 @@
+[tracing]
+# Explicitly provide the service name. If not provided, will
+# use the `app.name` config field, converted to `snake_case`.
+service-name = "example-service-name"
+trace-propagation = true
+otlp-endpoint = "localhost:1234"
+# Export metrics every 5 minutes. Adjust based on your app's needs.
+metrics-export-interval = 300000
