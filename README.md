@@ -13,7 +13,7 @@
 
 A "Batteries Included" web framework for rust designed to get you moving fast 🏎️. Inspired by other fully-featured
 frameworks such
-as [Rails](https://rubyonrails.org/), [Django](https://www.djangoproject.com/), [Laravel](https://laravel.com/), [Loco](https://github.com/loco-rs/loco).
+as [Rails](https://rubyonrails.org/), [Django](https://www.djangoproject.com/), [Laravel](https://laravel.com/), and [Loco](https://github.com/loco-rs/loco).
 
 ## Features
 
