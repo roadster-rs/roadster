@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-beta.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta.2...roadster-v0.7.0-beta.3) - 2025-03-22
+
+### Other
+
+- Write tracing chapter ([#696](https://github.com/roadster-rs/roadster/pull/696))
+- Write Sendgrid chapter ([#695](https://github.com/roadster-rs/roadster/pull/695))
+- Write smtp chapter ([#693](https://github.com/roadster-rs/roadster/pull/693))
+- Write the email chapter intro ([#692](https://github.com/roadster-rs/roadster/pull/692))
+
 ## [0.7.0-beta.2](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta.1...roadster-v0.7.0-beta.2) - 2025-03-15
 
 ### Fixed
