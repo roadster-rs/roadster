@@ -1,0 +1,5 @@
+[tracing]
+trace-propagation = true
+otlp-endpoint = "http://localhost:4318"
+# Export metrics every 1 second in dev. Adjust based on your app's needs.
+metrics-export-interval = 1000
