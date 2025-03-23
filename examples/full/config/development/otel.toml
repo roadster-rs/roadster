@@ -3,12 +3,19 @@ trace-propagation = true
 
 metrics-export-interval = 1000
 
+# Set the endpoint to use for traces
 [tracing.otlp.trace-endpoint]
 # The `http` protocol is enabled by default when the `otel` feature is enabled.
 protocol = "http"
 url = "http://localhost:4318/v1/traces"
+# Traces can also be exported via grpc
+#protocol = "grpc"
+#url = "http://localhost:4317"
 
 [tracing.otlp.metric-endpoint]
-# The `grpc` protocol requires the `otel-grpc` feature to be enabled.
-protocol = "grpc"
-url = "http://localhost:4317"
+# The `http` protocol is enabled by default when the `otel` feature is enabled.
+protocol = "http"
+url = "http://localhost:4318/v1/metrics"
+# Traces can also be exported via grpc
+#protocol = "grpc"
+#url = "http://localhost:4317"
