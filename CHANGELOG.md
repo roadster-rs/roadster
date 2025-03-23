@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-beta.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta.2...roadster-v0.7.0-beta.3) - 2025-03-23
+
+### Added
+
+- [**breaking**] Allow either http or grpc OTLP endpoints ([#701](https://github.com/roadster-rs/roadster/pull/701))
+
 ## [0.7.0-beta.2](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta.1...roadster-v0.7.0-beta.2) - 2025-03-15
 
 ### Fixed
