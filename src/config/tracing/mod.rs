@@ -77,6 +77,7 @@ pub struct Otlp {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", tag = "protocol")]
 #[non_exhaustive]
+#[cfg(feature = "otel")]
 pub enum OtlpProtocol {
     Http(OtlpEndpoint),
     #[cfg(feature = "otel-grpc")]
@@ -86,10 +87,12 @@ pub enum OtlpProtocol {
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
+#[cfg(feature = "otel")]
 pub struct OtlpEndpoint {
     pub url: Url,
 }
 
+#[cfg(feature = "otel")]
 impl Otlp {
     pub fn trace_endpoint(&self) -> Option<&OtlpProtocol> {
         self.trace_endpoint.as_ref().or(self.endpoint.as_ref())

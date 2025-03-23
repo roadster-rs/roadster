@@ -1,6 +1,6 @@
 use crate::app::metadata::AppMetadata;
 use crate::config::AppConfig;
-use crate::config::tracing::{Format, OtlpProtocol};
+use crate::config::tracing::Format;
 use crate::error::RoadsterResult;
 #[cfg(feature = "otel")]
 use convert_case::{Case, Casing};
@@ -115,12 +115,12 @@ pub fn init_tracing(
         .and_then(|otlp| otlp.trace_endpoint())
     {
         let exporter = match otlp_endpoint {
-            OtlpProtocol::Http(endpoint) => SpanExporter::builder()
+            crate::config::tracing::OtlpProtocol::Http(endpoint) => SpanExporter::builder()
                 .with_http()
                 .with_endpoint(endpoint.url.to_string())
                 .build()?,
             #[cfg(feature = "otel-grpc")]
-            OtlpProtocol::Grpc(endpoint) => SpanExporter::builder()
+            crate::config::tracing::OtlpProtocol::Grpc(endpoint) => SpanExporter::builder()
                 .with_tonic()
                 .with_endpoint(endpoint.url.to_string())
                 .build()?,
@@ -147,12 +147,12 @@ pub fn init_tracing(
         .and_then(|otlp| otlp.metric_endpoint())
     {
         let exporter = match otlp_endpoint {
-            OtlpProtocol::Http(endpoint) => MetricExporter::builder()
+            crate::config::tracing::OtlpProtocol::Http(endpoint) => MetricExporter::builder()
                 .with_http()
                 .with_endpoint(endpoint.url.to_string())
                 .build()?,
             #[cfg(feature = "otel-grpc")]
-            OtlpProtocol::Grpc(endpoint) => MetricExporter::builder()
+            crate::config::tracing::OtlpProtocol::Grpc(endpoint) => MetricExporter::builder()
                 .with_tonic()
                 .with_endpoint(endpoint.url.to_string())
                 .build()?,
