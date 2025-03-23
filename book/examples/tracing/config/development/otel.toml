@@ -4,5 +4,27 @@
 service-name = "example-service-name"
 trace-propagation = true
 otlp-endpoint = "localhost:1234"
-# Export metrics every 5 minutes. Adjust based on your app's needs.
-metrics-export-interval = 300000
+# Export metrics every 1 minute. Adjust based on your app's needs.
+metrics-export-interval = 60000
+
+# Set the endpoint to use as a fallback if the trace/metric endpoint is not provided
+[tracing.otlp.endpoint]
+protocol = "grpc"
+url = "http://localhost:4317"
+
+# Set the endpoint to use for traces
+[tracing.otlp.trace-endpoint]
+# The `http` protocol is enabled by default when the `otel` feature is enabled.
+protocol = "http"
+url = "http://localhost:4318/v1/traces"
+# Traces can also be exported via grpc
+#protocol = "grpc"
+#url = "http://localhost:4317"
+
+[tracing.otlp.metric-endpoint]
+# The `grpc` protocol requires the `otel-grpc` feature to be enabled.
+protocol = "grpc"
+url = "http://localhost:4317"
+# Metrics can also be exported via http
+#protocol = "http"
+#url = "http://localhost:4318/v1/metrics"

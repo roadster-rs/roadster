@@ -5,4 +5,6 @@ expression: tracing
 level = 'debug'
 format = 'none'
 trace-propagation = true
-otlp-endpoint = 'https://example.com:1234/'
+[otlp.endpoint]
+protocol = 'grpc'
+url = 'https://example.com:1234/'

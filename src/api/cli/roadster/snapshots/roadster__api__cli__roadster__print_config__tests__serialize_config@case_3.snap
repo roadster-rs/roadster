@@ -177,8 +177,8 @@ expression: serialized
     "format": "compact",
     "service-name": null,
     "trace-propagation": true,
-    "otlp-endpoint": null,
-    "metrics-export-interval": null
+    "metrics-export-interval": null,
+    "otlp": null
   },
   "database": {
     "uri": "postgres://[Sensitive]",

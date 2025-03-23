@@ -131,6 +131,8 @@ docker:
     docker run -d -p 8025:8025 -p 1025:1025 axllent/mailpit:v1.21
     docker run -d -p 5432:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=example_dev -e POSTGRES_PASSWORD=roadster postgres:15.3-alpine
 
+#    docker run -p 4001:3000 -p 4317:4317 -p 4318:4318 --rm -ti grafana/otel-lgtm
+
 install_libpq := if os() == "macos" { "brew install libpq && brew link --force libpq" } else { "" }
 
 # Initialize a new installation of the repo (e.g., install deps)
