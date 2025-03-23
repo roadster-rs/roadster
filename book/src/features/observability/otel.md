@@ -22,8 +22,7 @@ Probably the easiest way to view OpenTelemetry Traces locally is by
 running [Jaeger](https://www.jaegertracing.io/docs/2.4/getting-started/). Jaeger only supports traces, however. To
 visualize metrics, use one of the other options mentioned in this section.
 
-1. Set `ROADSTER__TRACING__OTLP_ENDPOINT="http://localhost:4317"` in your `.env` file, or in
-   your `config/development.toml` or `config/test.toml` configs as appropriate.
+1. Configure your OTLP endpoint in your app's configs. An example is provided above.
 2. Run the following command:
     ```shell
    docker run --rm --name jaeger \
@@ -38,14 +37,23 @@ visualize metrics, use one of the other options mentioned in this section.
 
 ### Grafana
 
-🛠️ todo 🛠️
+Another option to view traces and metrics locally is to
+run [Grafana's "LGTM" docker image](https://github.com/grafana/docker-otel-lgtm/), which is a pre-built image intended
+for use in development environments. It's not intended for production use, but is useful for viewing traces and metrics
+locally.
+
+1. Configure your OTLP endpoint in your app's configs. An example is provided above.
+2. Run the following command:
+    ```shell
+   docker run -p 4000:3000 -p 4317:4317 -p 4318:4318 --rm -ti grafana/otel-lgtm
+   ```
+3. Navigate to the UI, which is available at [localhost:4000](http://localhost:4000).
 
 ### Signoz
 
 Another option to view traces and metrics locally is to run [Signoz](https://signoz.io/docs/install/docker/).
 
-1. Set `ROADSTER__TRACING__OTLP_ENDPOINT="http://localhost:4317"` in your `.env` file, or in
-   your `config/development.toml` or `config/test.toml` configs as appropriate.
+1. Configure your OTLP endpoint in your app's configs. An example is provided above.
 2. Install and run Signoz in a directory of your choice
    ```shell
    # Clone the repo

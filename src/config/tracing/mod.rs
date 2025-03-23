@@ -32,14 +32,16 @@ pub struct Tracing {
     #[cfg(feature = "otel")]
     pub trace_propagation: bool,
 
-    /// URI of the OTLP exporter where traces/metrics/logs will be sent.
-    #[cfg(feature = "otel")]
-    pub otlp_endpoint: Option<Url>,
-
     /// The interval (in milliseconds) at which OTEL metrics are exported.
     #[cfg(feature = "otel")]
     #[serde_as(as = "Option<serde_with::DurationMilliSeconds>")]
     pub metrics_export_interval: Option<std::time::Duration>,
+
+    /// Configuration for OTLP exporters.
+    #[validate(nested)]
+    #[serde(default)]
+    #[cfg(feature = "otel")]
+    pub otlp: Option<Otlp>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, EnumString, IntoStaticStr)]
@@ -53,8 +55,56 @@ pub enum Format {
     Json,
 }
 
+/// Configuration for OTLP exporters.
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+#[cfg(feature = "otel")]
+pub struct Otlp {
+    /// The endpoint to use for OTLP exporters if no trace/metric endpoint is provided.
+    #[serde(default)]
+    endpoint: Option<OtlpProtocol>,
+
+    /// The endpoint to use for exporting traces via OTLP. If not provided, will use `endpoint`.
+    #[serde(default)]
+    trace_endpoint: Option<OtlpProtocol>,
+
+    /// The endpoint to use for exporting metrics via OTLP. If not provided, will use `endpoint`.
+    #[serde(default)]
+    metric_endpoint: Option<OtlpProtocol>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case", tag = "protocol")]
+#[non_exhaustive]
+#[cfg(feature = "otel")]
+pub enum OtlpProtocol {
+    Http(OtlpEndpoint),
+    #[cfg(feature = "otel-grpc")]
+    Grpc(OtlpEndpoint),
+}
+
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+#[cfg(feature = "otel")]
+pub struct OtlpEndpoint {
+    pub url: Url,
+}
+
+#[cfg(feature = "otel")]
+impl Otlp {
+    pub fn trace_endpoint(&self) -> Option<&OtlpProtocol> {
+        self.trace_endpoint.as_ref().or(self.endpoint.as_ref())
+    }
+
+    pub fn metric_endpoint(&self) -> Option<&OtlpProtocol> {
+        self.metric_endpoint.as_ref().or(self.endpoint.as_ref())
+    }
+}
+
 // To simplify testing, these are only run when all of the config fields are available
-#[cfg(all(test, feature = "otel"))]
+#[cfg(all(test, feature = "otel", feature = "otel-grpc"))]
 mod deserialize_tests {
     use super::*;
     use crate::testing::snapshot::TestCase;
@@ -92,7 +142,61 @@ mod deserialize_tests {
         r#"
         level = "debug"
         format = "none"
-        otlp-endpoint = "https://example.com:1234"
+        metrics-export-interval = 60000
+        "#
+    )]
+    #[case(
+        r#"
+        level = "debug"
+        format = "none"
+        [otlp.endpoint]
+        protocol = "http"
+        url = "https://example.com:1234"
+        "#
+    )]
+    #[case(
+        r#"
+        level = "debug"
+        format = "none"
+        [otlp.endpoint]
+        protocol = "grpc"
+        url = "https://example.com:1234"
+        "#
+    )]
+    #[case(
+        r#"
+        level = "debug"
+        format = "none"
+        [otlp.trace-endpoint]
+        protocol = "http"
+        url = "https://example.com:1234"
+        "#
+    )]
+    #[case(
+        r#"
+        level = "debug"
+        format = "none"
+        [otlp.trace-endpoint]
+        protocol = "grpc"
+        url = "https://example.com:1234"
+        "#
+    )]
+    #[case(
+        r#"
+        level = "debug"
+        format = "none"
+        [otlp.metric-endpoint]
+        protocol = "http"
+        url = "https://example.com:1234"
+        "#
+    )]
+    #[case(
+        r#"
+        level = "debug"
+        format = "none"
+        [otlp.metric-endpoint]
+        protocol = "grpc"
+        url = "https://example.com:1234"
         "#
     )]
     #[cfg_attr(coverage_nightly, coverage(off))]

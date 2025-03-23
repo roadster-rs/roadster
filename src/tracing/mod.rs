@@ -108,11 +108,23 @@ pub fn init_tracing(
 
     // Trace layer
     #[cfg(feature = "otel")]
-    let oltp_traces_layer = if let Some(otlp_endpoint) = config.tracing.otlp_endpoint.as_ref() {
-        let exporter = SpanExporter::builder()
-            .with_http()
-            .with_endpoint(otlp_endpoint.to_string())
-            .build()?;
+    let oltp_traces_layer = if let Some(otlp_endpoint) = config
+        .tracing
+        .otlp
+        .as_ref()
+        .and_then(|otlp| otlp.trace_endpoint())
+    {
+        let exporter = match otlp_endpoint {
+            crate::config::tracing::OtlpProtocol::Http(endpoint) => SpanExporter::builder()
+                .with_http()
+                .with_endpoint(endpoint.url.to_string())
+                .build()?,
+            #[cfg(feature = "otel-grpc")]
+            crate::config::tracing::OtlpProtocol::Grpc(endpoint) => SpanExporter::builder()
+                .with_tonic()
+                .with_endpoint(endpoint.url.to_string())
+                .build()?,
+        };
         let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
             .with_resource(otel_resource.clone())
             .with_batch_exporter(exporter)
@@ -128,11 +140,23 @@ pub fn init_tracing(
 
     // Metric layer
     #[cfg(feature = "otel")]
-    let otlp_metrics_layer = if let Some(otlp_endpoint) = config.tracing.otlp_endpoint.as_ref() {
-        let exporter = MetricExporter::builder()
-            .with_http()
-            .with_endpoint(otlp_endpoint.clone())
-            .build()?;
+    let otlp_metrics_layer = if let Some(otlp_endpoint) = config
+        .tracing
+        .otlp
+        .as_ref()
+        .and_then(|otlp| otlp.metric_endpoint())
+    {
+        let exporter = match otlp_endpoint {
+            crate::config::tracing::OtlpProtocol::Http(endpoint) => MetricExporter::builder()
+                .with_http()
+                .with_endpoint(endpoint.url.to_string())
+                .build()?,
+            #[cfg(feature = "otel-grpc")]
+            crate::config::tracing::OtlpProtocol::Grpc(endpoint) => MetricExporter::builder()
+                .with_tonic()
+                .with_endpoint(endpoint.url.to_string())
+                .build()?,
+        };
         let reader = PeriodicReader::builder(exporter);
         let reader = if let Some(interval) = config.tracing.metrics_export_interval {
             reader.with_interval(interval)
