@@ -104,7 +104,7 @@ impl Otlp {
 }
 
 // To simplify testing, these are only run when all of the config fields are available
-#[cfg(all(test, feature = "otel"))]
+#[cfg(all(test, feature = "otel", feature = "otel-grpc"))]
 mod deserialize_tests {
     use super::*;
     use crate::testing::snapshot::TestCase;
