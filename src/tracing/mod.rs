@@ -15,6 +15,8 @@ use opentelemetry_sdk::metrics::{PeriodicReader, SdkMeterProvider};
 #[cfg(feature = "otel")]
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 #[cfg(feature = "otel")]
+use opentelemetry_sdk::trace::Sampler;
+#[cfg(feature = "otel")]
 use opentelemetry_semantic_conventions::resource::SERVICE_VERSION;
 use std::str::FromStr;
 use tracing::Level;
@@ -125,10 +127,20 @@ pub fn init_tracing(
                 .with_endpoint(endpoint.url.to_string())
                 .build()?,
         };
+
         let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
             .with_resource(otel_resource.clone())
-            .with_batch_exporter(exporter)
-            .build();
+            .with_batch_exporter(exporter);
+
+        let provider = config
+            .tracing
+            .trace_sampling_ratio
+            .iter()
+            .fold(provider, |provider, ratio| {
+                provider.with_sampler(Sampler::TraceIdRatioBased(*ratio))
+            });
+
+        let provider = provider.build();
         opentelemetry::global::set_tracer_provider(provider.clone());
         // Create a tracing layer with the configured tracer
         Some(OpenTelemetryLayer::new(
