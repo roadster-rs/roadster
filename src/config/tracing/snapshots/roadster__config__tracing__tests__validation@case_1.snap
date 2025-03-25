@@ -1,7 +1,0 @@
----
-source: src/config/tracing/mod.rs
-expression: validate_result
----
-Ok(
-    (),
-)

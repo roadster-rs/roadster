@@ -278,7 +278,6 @@ mod deserialize_tests {
 #[cfg(test)]
 mod tests {
     use crate::testing::snapshot::TestCase;
-    use insta::assert_debug_snapshot;
     use rstest::{fixture, rstest};
     use validator::Validate;
 
@@ -310,7 +309,6 @@ mod tests {
 
         let validate_result = tracing.validate();
 
-        // assert_eq!(validate_result.is_err(), error);
-        assert_debug_snapshot!(validate_result);
+        assert_eq!(validate_result.is_err(), error);
     }
 }
