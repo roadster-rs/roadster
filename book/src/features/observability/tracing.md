@@ -26,7 +26,7 @@ implementation is provided, none of the default tracing setup
 from [`init_tracing`](https://docs.rs/roadster/latest/roadster/tracing/fn.init_tracing.html) will be applied.
 
 ```rust,ignore
-{{#include ../../../examples/tracing/src/lib.rs}}
+{{#include ../../../examples/tracing/src/lib.rs:4:}}
 ```
 
 ## Provided trace events/logic for HTTP requests
