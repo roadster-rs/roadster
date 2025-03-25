@@ -185,12 +185,15 @@ pub fn init_tracing(
         None
     };
 
-    // Hide some noisy logs from traces
     let env_filter = EnvFilter::builder()
         .with_default_directive(Level::from_str(&config.tracing.level)?.into())
-        .from_env()?
-        .add_directive("h2=warn".parse()?)
-        .add_directive("tower::buffer::worker=warn".parse()?);
+        .from_env()?;
+    let env_filter = config.tracing.trace_filters.iter().try_fold(
+        env_filter,
+        |env_filter, directive| -> RoadsterResult<EnvFilter> {
+            Ok(env_filter.add_directive(directive.parse()?))
+        },
+    )?;
 
     let registry = tracing_subscriber::Registry::default()
         .with(env_filter)

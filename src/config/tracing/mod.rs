@@ -54,6 +54,14 @@ pub struct Tracing {
     #[serde_as(as = "Option<serde_with::DurationMilliSeconds>")]
     pub metrics_export_interval: Option<std::time::Duration>,
 
+    /// Filter directives to provide to the `tracing-subscriber`
+    /// [EnvFilter](https://docs.rs/tracing-subscriber/latest/tracing_subscriber/filter/struct.EnvFilter.html).
+    ///
+    /// Useful for filtering out noisy debug/trace logs from dev environments, or setting a
+    /// different log level for a specific crate in all environments
+    #[serde(default)]
+    pub trace_filters: Vec<String>,
+
     /// Configuration for OTLP exporters.
     #[validate(nested)]
     #[serde(default)]
