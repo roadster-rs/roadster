@@ -32,6 +32,23 @@ pub struct Tracing {
     #[cfg(feature = "otel")]
     pub trace_propagation: bool,
 
+    /// [Head sampling](https://opentelemetry.io/docs/concepts/sampling/#head-sampling) ratio.
+    /// Many applications will not need this and instead may benefit more from
+    /// [tail sampling](https://opentelemetry.io/docs/concepts/sampling/#tail-sampling), which
+    /// allows different sampling policies depending on the state of the trace at the end of the
+    /// trace, e.g., sampling 100% of error traces and 10% of success traces. Tail sampling is
+    /// generally not configured in the application and instead is configured in the OTEL collector
+    /// or your specific observability vendor.
+    ///
+    /// If an application emits a sufficiently massive number of traces, head sampling may be
+    /// needed in addition to tail sampling.
+    ///
+    /// If provided, a [Sampler::TraceIdRatioBased](https://docs.rs/opentelemetry_sdk/latest/opentelemetry_sdk/trace/enum.Sampler.html#variant.TraceIdRatioBased)
+    /// will be added to the OTLP trace layer.
+    #[serde(default)]
+    #[cfg(feature = "otel")]
+    pub trace_sampling_ratio: Option<f64>,
+
     /// The interval (in milliseconds) at which OTEL metrics are exported.
     #[cfg(feature = "otel")]
     #[serde_as(as = "Option<serde_with::DurationMilliSeconds>")]
