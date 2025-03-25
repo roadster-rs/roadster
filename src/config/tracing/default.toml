@@ -1,3 +1,10 @@
 [tracing]
 format = "compact"
 trace-propagation = true
+
+# Hide some noisy logs from traces
+trace-filters = [
+    "h2=warn",
+    "tower::buffer::worker=warn",
+    "opentelemetry_sdk=warn",
+]
