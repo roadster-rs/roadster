@@ -5,6 +5,7 @@ expression: tracing
 level = 'debug'
 format = 'none'
 trace-propagation = true
+trace-filters = []
 [otlp.trace-endpoint]
 protocol = 'http'
 url = 'https://example.com:1234/'

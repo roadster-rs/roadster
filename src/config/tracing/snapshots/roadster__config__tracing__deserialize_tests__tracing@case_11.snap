@@ -3,6 +3,6 @@ source: src/config/tracing/mod.rs
 expression: tracing
 ---
 level = 'debug'
-format = 'compact'
+format = 'none'
 trace-propagation = true
-trace-filters = []
+trace-filters = ['foo=warn']

@@ -179,6 +179,11 @@ expression: serialized
     "trace-propagation": true,
     "trace-sampling-ratio": null,
     "metrics-export-interval": null,
+    "trace-filters": [
+      "h2=warn",
+      "tower::buffer::worker=warn",
+      "opentelemetry_sdk=warn"
+    ],
     "otlp": null
   },
   "database": {

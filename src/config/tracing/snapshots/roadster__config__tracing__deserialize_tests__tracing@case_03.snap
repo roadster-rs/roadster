@@ -5,3 +5,4 @@ expression: tracing
 level = 'error'
 format = 'pretty'
 trace-propagation = false
+trace-filters = []

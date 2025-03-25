@@ -6,3 +6,4 @@ level = 'info'
 format = 'json'
 service-name = 'foo'
 trace-propagation = true
+trace-filters = []

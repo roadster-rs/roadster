@@ -171,6 +171,11 @@ required-claims = []
 level = 'debug'
 format = 'compact'
 trace-propagation = true
+trace-filters = [
+    'h2=warn',
+    'tower::buffer::worker=warn',
+    'opentelemetry_sdk=warn',
+]
 
 [database]
 uri = 'postgres://example:example@invalid_host:5432/example_test'

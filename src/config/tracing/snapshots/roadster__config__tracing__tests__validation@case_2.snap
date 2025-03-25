@@ -1,0 +1,30 @@
+---
+source: src/config/tracing/mod.rs
+expression: validate_result
+---
+Err(
+    ValidationErrors(
+        {
+            "trace_filters": Field(
+                [
+                    ValidationError {
+                        code: "Invalid env filter(s)",
+                        message: None,
+                        params: {
+                            "filters": Array [
+                                String("invalid filter"),
+                            ],
+                            "value": Array [
+                                String("foo=warn"),
+                                String("invalid filter"),
+                            ],
+                            "errors": Array [
+                                String("invalid filter directive"),
+                            ],
+                        },
+                    },
+                ],
+            ),
+        },
+    ),
+)

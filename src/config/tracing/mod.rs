@@ -1,12 +1,15 @@
 #[cfg(feature = "otel")]
 use crate::util::serde::default_true;
 use config::{FileFormat, FileSourceString};
+use itertools::Itertools;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::serde_as;
+use std::borrow::Cow;
 use strum_macros::{EnumString, IntoStaticStr};
+use tracing_subscriber::EnvFilter;
 #[cfg(feature = "otel")]
 use url::Url;
-use validator::Validate;
+use validator::{Validate, ValidationError};
 
 pub fn default_config() -> config::File<FileSourceString, FileFormat> {
     config::File::from_str(include_str!("default.toml"), FileFormat::Toml)
@@ -60,6 +63,7 @@ pub struct Tracing {
     /// Useful for filtering out noisy debug/trace logs from dev environments, or setting a
     /// different log level for a specific crate in all environments
     #[serde(default)]
+    #[validate(custom(function = "validate_env_filter_str"))]
     pub trace_filters: Vec<String>,
 
     /// Configuration for OTLP exporters.
@@ -67,6 +71,38 @@ pub struct Tracing {
     #[serde(default)]
     #[cfg(feature = "otel")]
     pub otlp: Option<Otlp>,
+}
+
+fn validate_env_filter_str(trace_filters: &[String]) -> Result<(), ValidationError> {
+    let invalid_filters = trace_filters
+        .iter()
+        .filter_map(|filter| {
+            let parsed_filter: Result<EnvFilter, _> = filter.parse();
+            if let Err(err) = parsed_filter {
+                Some((filter, err.to_string()))
+            } else {
+                None
+            }
+        })
+        .collect_vec();
+
+    if !invalid_filters.is_empty() {
+        let mut err = ValidationError::new("Invalid env filter(s)");
+        let (filters, errors) = invalid_filters.into_iter().fold(
+            (Vec::new(), Vec::new()),
+            |(mut filters, mut errors), (filter, error)| {
+                filters.push(filter);
+                errors.push(error);
+                (filters, errors)
+            },
+        );
+        err.add_param(Cow::from("filters"), &filters);
+        err.add_param(Cow::from("errors"), &errors);
+
+        return Err(err);
+    }
+
+    Ok(())
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, EnumString, IntoStaticStr)]
@@ -224,10 +260,57 @@ mod deserialize_tests {
         url = "https://example.com:1234"
         "#
     )]
+    #[case(
+        r#"
+        level = "debug"
+        format = "none"
+        trace-filters = [ "foo=warn" ]
+        "#
+    )]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn tracing(_case: TestCase, #[case] config: &str) {
         let tracing: Tracing = toml::from_str(config).unwrap();
 
         assert_toml_snapshot!(tracing);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::testing::snapshot::TestCase;
+    use insta::assert_debug_snapshot;
+    use rstest::{fixture, rstest};
+    use validator::Validate;
+
+    #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn case() -> TestCase {
+        Default::default()
+    }
+
+    #[rstest]
+    #[case(
+        r#"
+        level = "debug"
+        format = "none"
+        trace-filters = [ "foo=warn" ]
+        "#,
+        false
+    )]
+    #[case(
+        r#"
+        level = "debug"
+        format = "none"
+        trace-filters = [ "foo=warn", "invalid filter"  ]
+        "#,
+        true
+    )]
+    fn validation(_case: TestCase, #[case] config: &str, #[case] error: bool) {
+        let tracing: super::Tracing = toml::from_str(config).unwrap();
+
+        let validate_result = tracing.validate();
+
+        // assert_eq!(validate_result.is_err(), error);
+        assert_debug_snapshot!(validate_result);
     }
 }
