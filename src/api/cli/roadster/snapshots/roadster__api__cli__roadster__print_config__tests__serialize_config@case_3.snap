@@ -177,6 +177,7 @@ expression: serialized
     "format": "compact",
     "service-name": null,
     "trace-propagation": true,
+    "trace-sampling-ratio": null,
     "metrics-export-interval": null,
     "otlp": null
   },
