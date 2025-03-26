@@ -1,0 +1,12 @@
+[package]
+name = "cli-example"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+roadster = { path = "../../..", default-features = false, features = ["cli"] }
+clap = { workspace = true }
+async-trait = { workspace = true }
+tracing = { workspace = true }
+tokio = { workspace = true }
