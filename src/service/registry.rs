@@ -117,7 +117,7 @@ where
     ///
     /// # Examples
     #[cfg_attr(
-        feature = "open-api",
+        all(feature = "open-api", feature = "otel-grpc"),
         doc = r##"
   ```rust
 # tokio_test::block_on(async {
