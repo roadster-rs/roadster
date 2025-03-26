@@ -16,11 +16,15 @@ pub enum TracingError {
 pub enum TracingInitError {
     #[cfg(feature = "otel")]
     #[error(transparent)]
-    OtelTrace(#[from] opentelemetry::trace::TraceError),
+    OtelTrace(#[from] opentelemetry_sdk::trace::TraceError),
 
     #[cfg(feature = "otel")]
     #[error(transparent)]
     OtelMetrics(#[from] opentelemetry_sdk::metrics::MetricError),
+
+    #[cfg(feature = "otel")]
+    #[error(transparent)]
+    ExporterBuilder(#[from] opentelemetry_otlp::ExporterBuildError),
 
     #[error(transparent)]
     ParseLevel(#[from] tracing::metadata::ParseLevelError),
@@ -36,8 +40,8 @@ pub enum TracingInitError {
 }
 
 #[cfg(feature = "otel")]
-impl From<opentelemetry::trace::TraceError> for Error {
-    fn from(value: opentelemetry::trace::TraceError) -> Self {
+impl From<opentelemetry_sdk::trace::TraceError> for Error {
+    fn from(value: opentelemetry_sdk::trace::TraceError) -> Self {
         Self::Tracing(TracingError::from(TracingInitError::from(value)))
     }
 }
@@ -45,6 +49,13 @@ impl From<opentelemetry::trace::TraceError> for Error {
 #[cfg(feature = "otel")]
 impl From<opentelemetry_sdk::metrics::MetricError> for Error {
     fn from(value: opentelemetry_sdk::metrics::MetricError) -> Self {
+        Self::Tracing(TracingError::from(TracingInitError::from(value)))
+    }
+}
+
+#[cfg(feature = "otel")]
+impl From<opentelemetry_otlp::ExporterBuildError> for Error {
+    fn from(value: opentelemetry_otlp::ExporterBuildError) -> Self {
         Self::Tracing(TracingError::from(TracingInitError::from(value)))
     }
 }

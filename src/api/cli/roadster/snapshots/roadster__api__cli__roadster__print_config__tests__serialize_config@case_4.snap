@@ -158,7 +158,7 @@ required-claims = []
 level = "debug"
 format = "compact"
 trace-propagation = true
-trace-filters = ["h2=warn", "tower::buffer::worker=warn", "opentelemetry_sdk=warn"]
+trace-filters = ["h2=warn", "tower::buffer::worker=warn", "opentelemetry_sdk=warn", "opentelemetry-otlp=warn", "hyper_util::client::legacy::connect::http=warn"]
 
 [database]
 uri = "postgres://[Sensitive]"
