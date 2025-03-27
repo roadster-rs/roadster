@@ -150,6 +150,7 @@ where
 }
 
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct CustomOnRequest {
     /// Allow all HTTP request headers to be added as trace attributes. Useful for development and
     /// test environments. Not recommended to be enabled in production.
@@ -196,6 +197,7 @@ impl<B> OnRequest<B> for CustomOnRequest {
 }
 
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct CustomOnResponse {
     /// Allow all HTTP response headers to be added as trace attributes. Useful for development and
     /// test environments. Not recommended to be enabled in production.
