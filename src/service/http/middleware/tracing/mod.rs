@@ -229,12 +229,12 @@ impl<B> OnResponse<B> for CustomOnResponse {
         );
 
         /*
-        The OTEL semantic conventions allow for providing request headers via the
-        `http.request.header.<key>` span key. However, this is difficult to support with
+        The OTEL semantic conventions allow for providing response headers via the
+        `http.response.header.<key>` span key. However, this is difficult to support with
         the tracing crate we're using because it requires specifying all span keys up front with
         static keys. This means we would need to manually list out all of the possible header
         names vs dynamically adding span keys. Instead, we include the headers as an attribute
-        on the "request started" event.
+        on the "response started" event.
 
         See: <https://docs.rs/tracing/latest/tracing/#recording-fields>
         See: <https://opentelemetry.io/docs/specs/semconv/attributes-registry/http/>
