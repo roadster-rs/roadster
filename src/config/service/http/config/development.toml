@@ -3,3 +3,7 @@ enable = false
 
 [service.http.middleware.sensitive-response-headers]
 enable = false
+
+[service.http.middleware.tracing]
+request-headers-allow-all = true
+response-headers-allow-all = true

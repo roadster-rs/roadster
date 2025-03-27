@@ -74,6 +74,10 @@ header-name = 'request-id'
 
 [service.http.middleware.tracing]
 priority = -9980
+request-headers-allow-all = false
+response-headers-allow-all = false
+request-header-names = []
+response-header-names = []
 
 [service.http.middleware.catch-panic]
 priority = 0

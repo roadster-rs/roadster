@@ -68,7 +68,11 @@ expression: serialized
           "header-name": "request-id"
         },
         "tracing": {
-          "priority": -9980
+          "priority": -9980,
+          "request-headers-allow-all": false,
+          "response-headers-allow-all": false,
+          "request-header-names": [],
+          "response-header-names": []
         },
         "catch-panic": {
           "priority": 0
