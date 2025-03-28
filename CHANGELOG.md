@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-beta.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta.3...roadster-v0.7.0-beta.4) - 2025-03-28
+
+### Added
+
+- [**breaking**] Follow OTEL conventions for http spans and events ([#710](https://github.com/roadster-rs/roadster/pull/710))
+- Allow providing trace env filter directives in app config ([#706](https://github.com/roadster-rs/roadster/pull/706))
+- Enable "head sampling" for OTEL traces ([#703](https://github.com/roadster-rs/roadster/pull/703))
+
+### Other
+
+- Mark tracing middleware structs non-exhaustive ([#713](https://github.com/roadster-rs/roadster/pull/713))
+- Fix a copy/paste error in a comment ([#711](https://github.com/roadster-rs/roadster/pull/711))
+- Update dependencies ([#708](https://github.com/roadster-rs/roadster/pull/708))
+- Write CLI chapter ([#707](https://github.com/roadster-rs/roadster/pull/707))
+- Update tracing.md ([#704](https://github.com/roadster-rs/roadster/pull/704))
+
 ## [0.7.0-beta.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta.2...roadster-v0.7.0-beta.3) - 2025-03-23
 
 ### Added
