@@ -8,7 +8,19 @@ and before the health checks, lifecycle handlers, and services are run. This mea
 configuration in order to run a CLI command, but otherwise the app's resources (e.g. DB, Redis) don't need to be
 healthy (unless, of course, the specific CLI command requires the resource).
 
+## Commands provided by Roadster
+
+Roadster defines some top-level CLI options that can apply to all commands, but otherwise everything provided by
+Roadster is scoped under the `roadster` sub-command and its alias `r`.
+
 ## Adding custom CLI commands
+
+Custom CLI commands and options can be defined using [clap](https://docs.rs/clap/latest/clap/). Custom commands
+can be provided either at the top level, or scoped a sub-command, similar to how Roadster's commands are scoped.
+
+Once the custom commands are defined using `clap`,
+the [RunCommand](https://docs.rs/roadster/latest/roadster/api/cli/trait.RunCommand.html) trait needs to be implemented
+for the top-level command struct. This is what allows Roadster to invoke your custom CLI commands.
 
 ```rust,ignore
 {{#include ../../examples/cli/src/cli.rs:9:}}
