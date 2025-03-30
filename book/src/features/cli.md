@@ -26,7 +26,7 @@ for the top-level command struct. This is what allows Roadster to invoke your cu
 {{#include ../../examples/cli/src/cli.rs:9:}}
 ```
 
-## Sample CLI help text the above example
+## Sample CLI help text for the above example
 
 ```text
 $> ROADSTER__ENVIRONMENT=dev cargo run -- -h
