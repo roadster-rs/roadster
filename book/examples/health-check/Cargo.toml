@@ -1,0 +1,9 @@
+[package]
+name = "health-check-example"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+roadster = { path = "../../.." }
+async-trait = { workspace = true }
