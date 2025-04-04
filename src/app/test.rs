@@ -95,6 +95,7 @@ where
 
     tracing::debug!("Starting test");
 
+    // Todo: catch panic?
     let test_result = test_fn(&pre_run_app_state).await;
 
     tracing::debug!("Test complete");

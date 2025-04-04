@@ -11,6 +11,19 @@ use axum_core::extract::FromRef;
 
 /// Trait used to hook into various stages of the app's lifecycle.
 ///
+/// This trait has some overlap with the [`crate::health::check::HealthCheck`]. For example, both
+/// traits have methods that are called during app startup before the app's services are started.
+/// However, health checks are intended to be used both during app startup and in the
+/// `/api/_health` API endpoint. This enforces a constraint on the
+/// [`crate::health::check::HealthCheck`] trait that doesn't exist for the [`AppLifecycleHandler`]
+/// trait -- the [`crate::health::check::HealthCheck`] is stored in the
+/// [`crate::app::context::AppContext`], which means it can't take the state as a type parameter and
+/// therefore also can't take it as parameter to its methods. Because this constraint only exists
+/// for the health check use case, we split out the other lifecycle hooks into a separate trait that
+/// allows better ergonomics -- instead of needing to store a weak reference to the app context as
+/// in a health check, [`AppLifecycleHandler`] can simply accept the context as a parameter on its
+/// methods.
+///
 /// The app's lifecycle generally looks something like this:
 /// 1. Parse the [`crate::config::AppConfig`]
 /// 2. Initialize tracing to enable logs/traces

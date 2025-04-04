@@ -51,7 +51,7 @@ cli = ["dep:clap"]
 otel = ["dep:opentelemetry", "dep:opentelemetry_sdk", "dep:opentelemetry-otlp", "dep:tracing-opentelemetry", "dep:prost"]
 otel-grpc = ["otel", "opentelemetry-otlp/grpc-tonic"]
 grpc = ["dep:tonic", "dep:tonic-reflection"]
-testing = ["dep:insta", "dep:rstest"]
+testing = ["dep:insta", "dep:rstest", "dep:regex"]
 test-containers = ["testing", "dep:testcontainers-modules"]
 testing-mocks = ["testing", "dep:mockall", "sea-orm?/mock"]
 config-yml = ["config/yaml"]
@@ -155,8 +155,10 @@ validator = { workspace = true }
 thiserror = { workspace = true }
 cfg-if = { workspace = true }
 reqwest = { workspace = true }
+regex = { workspace = true, optional = true }
 
 [dev-dependencies]
+roadster = { path = ".", features = ["testing"] }
 cargo-husky = { workspace = true }
 insta = { workspace = true, features = ["json", "redactions"] }
 mockall = { workspace = true }
@@ -271,6 +273,7 @@ thiserror = "2.0.9"
 uuid = { version = "1.11.0", features = ["v4", "serde"] }
 chrono = { version = "0.4.34", features = ["serde"] }
 async-trait = "0.1.81"
+regex = "1.11.1"
 
 # Build dependencies
 rustc_version = "0.4.1"

@@ -54,7 +54,8 @@ pub struct Database {
     pub temporary_test_db: bool,
 
     /// Automatically clean up (drop) the temporary test DB that was created by setting
-    /// `temporary_test_db` to `true`.
+    /// `temporary_test_db` to `true`. Note that the test DB will only be cleaned up if the closure
+    /// passed to [`crate::app::run_test`] or [`crate::app::run_test_with_result`] doesn't panic.
     #[serde(default = "default_true")]
     pub temporary_test_db_clean_up: bool,
 
