@@ -4,6 +4,9 @@ use crate::util::regex::UUID_REGEX;
 use insta::Settings;
 use insta::internals::SettingsBindDropGuard;
 use itertools::Itertools;
+use regex::Regex;
+use std::str::FromStr;
+use std::sync::LazyLock;
 use std::thread::current;
 use typed_builder::TypedBuilder;
 
@@ -256,6 +259,7 @@ pub fn snapshot_redact_bearer_tokens(settings: &mut Settings) -> &mut Settings {
 
 /// Redact instances of Postgres URIs in snapshots. Applies a filter on the [Settings] to replace
 /// sub-strings matching [`POSTGRES_URI_REGEX`] with `postgres://[Sensitive]`.
+// Todo: Add mysql filter
 pub fn snapshot_redact_postgres_uri(settings: &mut Settings) -> &mut Settings {
     settings.add_filter(POSTGRES_URI_REGEX, "postgres://[Sensitive]");
     settings
@@ -291,6 +295,8 @@ fn description_from_current_thread() -> String {
     description_from_thread_name(&thread_name)
 }
 
+// Todo: Add leading zeros for number-based thread names. Otherwise, going from 9 to 10 rstest cases
+//  causes cases 1-9 to have new snapshot files created.
 fn description_from_thread_name(name: &str) -> String {
     let description = name
         .split("::")
@@ -303,8 +309,28 @@ fn description_from_thread_name(name: &str) -> String {
         })
         .last()
         .filter(|s| !s.is_empty())
-        .unwrap_or(name.split("::").last().unwrap().to_string());
+        .unwrap_or_else(|| fallback_description(name));
+
+    // let description = if let Ok(i) = description.parse::<usize>() {
+    //     format!("{i:2}")
+    // } else {
+    //     description
+    // };
+
     description
+}
+
+const CASE_PREFIX: &str = "case_";
+static CASE_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::from_str(&format!(r"{CASE_PREFIX}(\d+)")).unwrap());
+
+fn fallback_description(name: &str) -> String {
+    let last = name.split("::").last().unwrap().to_string();
+    CASE_REGEX
+        .captures(&last)
+        .and_then(|captures| captures.get(1))
+        .map(|m| format!("{CASE_PREFIX}{:0>2}", m.as_str()))
+        .unwrap_or(last)
 }
 
 #[cfg(test)]
@@ -425,8 +451,21 @@ mod tests {
     #[case("foo::bar")]
     #[case("foo::bar::x_y_z_1_2_3")]
     #[case("foo::bar::case_1_x_y_z_1_2_3")]
+    #[case("foo::bar::case_1")]
+    #[case("foo::bar::case_11")]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn description_from_thread_name(_case: TestCase, #[case] name: &str) {
+        let description = super::description_from_thread_name(name);
+
+        assert_snapshot!(description);
+    }
+
+    #[rstest]
+    #[case("case_1")]
+    #[case("foo::bar::case_1")]
+    #[case("foo::bar::case_11")]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn fallback_description(_case: TestCase, #[case] name: &str) {
         let description = super::description_from_thread_name(name);
 
         assert_snapshot!(description);

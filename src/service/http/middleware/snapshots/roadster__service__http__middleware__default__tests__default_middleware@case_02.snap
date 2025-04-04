@@ -1,7 +1,6 @@
 ---
 source: src/service/http/middleware/default.rs
 expression: middleware
-snapshot_kind: text
 ---
 [
     'cache-control',

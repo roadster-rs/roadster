@@ -1,5 +1,5 @@
 ---
-source: src/config/email/smtp.rs
+source: src/config/email/smtp/mod.rs
 expression: smtp
 ---
 [connection]

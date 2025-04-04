@@ -19,7 +19,7 @@ impl ExampleCheck {
 #[async_trait]
 impl HealthCheck for ExampleCheck {
     fn name(&self) -> String {
-        "example".to_string()
+        "example".to_owned()
     }
 
     fn enabled(&self) -> bool {
