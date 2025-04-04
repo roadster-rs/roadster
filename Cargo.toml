@@ -158,6 +158,7 @@ reqwest = { workspace = true }
 regex = { workspace = true, optional = true }
 
 [dev-dependencies]
+roadster = { path = ".", features = ["testing"] }
 cargo-husky = { workspace = true }
 insta = { workspace = true, features = ["json", "redactions"] }
 mockall = { workspace = true }
