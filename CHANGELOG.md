@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-beta.5](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta.4...roadster-v0.7.0-beta.5) - 2025-04-05
+
+### Added
+
+- [**breaking**] Pad snapshot case number with leading zeros in file name ([#718](https://github.com/roadster-rs/roadster/pull/718))
+
+### Other
+
+- Write health check chapter ([#716](https://github.com/roadster-rs/roadster/pull/716))
+- Minor update to cli chapter ([#715](https://github.com/roadster-rs/roadster/pull/715))
+
 ## [0.7.0-beta.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta.3...roadster-v0.7.0-beta.4) - 2025-03-28
 
 ### Added
