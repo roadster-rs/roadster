@@ -76,15 +76,19 @@ where
 pub struct PrepareOptions {
     #[builder(default, setter(strip_option))]
     pub env: Option<Environment>,
+
     #[builder(default = true)]
     pub parse_cli: bool,
+
     #[builder(default, setter(strip_option))]
     pub config_dir: Option<PathBuf>,
+
     /// Manually provide custom config sources. This is mostly intended to allow overriding
     /// specific app config fields for tests (e.g., using the [`ConfigOverrideSource`]), but it
     /// can also be used to provide other custom config sources outside of tests.
     #[builder(via_mutators)]
     pub config_sources: Vec<Box<dyn config::Source + Send + Sync>>,
+
     /// Explicitly override the entire [`AppConfig`] to run the app with. If provided, the other
     /// config-related fields in this struct will not be used.
     #[builder(default, setter(strip_option))]

@@ -187,3 +187,6 @@ uri = "smtps://username:password@smtp.example.com:425"
 api-key = "api-key"
 sandbox = true
 https-only = true
+
+[testing]
+catch-panic = true
