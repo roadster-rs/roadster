@@ -77,9 +77,9 @@ jobs:
     strategy:
       max-parallel: 10
       matrix:
-        index: ${{ fromJson(needs.test_matrix.outputs.data).indexes }}
+        index: ${{ fromJson(needs.generate_test_matrix.outputs.data).indexes }}
     env:
-      features: ${{ join(fromJson(needs.test_matrix.outputs.data).powersets[ matrix.index ], ' ') }}
+      features: ${{ join(fromJson(needs.generate_test_matrix.outputs.data).powersets[ matrix.index ], ' ') }}
     steps:
       - uses: actions/checkout@v4
       - uses: rui314/setup-mold@v1
