@@ -59,7 +59,7 @@ jobs:
       - name: Test
         run: just test-private
 
-  test_matrix:
+  generate_test_matrix:
     runs-on: ubuntu-latest
     outputs:
       data: ${{ steps.build_data.outputs.data }}
@@ -71,9 +71,9 @@ jobs:
           cd private/powerset_matrix
           echo "data=$(cargo run -- -d 1 -s 8 -f json)" >> "$GITHUB_OUTPUT"
 
-  test:
-    name: Tests
-    needs: test_matrix
+  test_matrix:
+    name: Test Matrix
+    needs: generate_test_matrix
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 10
@@ -104,6 +104,13 @@ jobs:
             i=$(expr $i + 1)
             echo "::endgroup::"
           done
+
+  test:
+    name: Tests
+    needs: test_matrix
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo Success
 
   doc_test:
     name: Doc tests
