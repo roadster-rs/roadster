@@ -1,9 +1,5 @@
 # Introduction
 
-> ***This book is a work in progress. If you can't find the information you need here, check
-> the [doc.rs documentation](https://docs.rs/roadster/latest/roadster/)
-> or [open a GitHub discussion](https://github.com/roadster-rs/roadster/discussions/new/choose).***
-
 This book is intended as a guide for how to use [Roadster](https://crates.io/crates/roadster), a "batteries included"
 web framework for Rust designed to get you moving fast 🏎️. Compared to low-level web frameworks such
 as [Axum](https://github.com/tokio-rs/axum) or [Actix](https://actix.rs/), which only provide the functionality to
