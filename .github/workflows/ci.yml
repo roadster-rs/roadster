@@ -59,7 +59,7 @@ jobs:
       - name: Test
         run: just test-private
 
-  generate_test_matrix:
+  generate_feature_matrix:
     runs-on: ubuntu-latest
     outputs:
       data: ${{ steps.build_data.outputs.data }}
@@ -72,14 +72,14 @@ jobs:
           echo "data=$(cargo run -- -d 1 -s 8 -f json)" >> "$GITHUB_OUTPUT"
 
   test_matrix:
-    needs: generate_test_matrix
+    needs: generate_feature_matrix
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 10
       matrix:
-        index: ${{ fromJson(needs.generate_test_matrix.outputs.data).indexes }}
+        index: ${{ fromJson(needs.generate_feature_matrix.outputs.data).indexes }}
     env:
-      features: ${{ join(fromJson(needs.generate_test_matrix.outputs.data).powersets[ matrix.index ], ' ') }}
+      features: ${{ join(fromJson(needs.generate_feature_matrix.outputs.data).powersets[ matrix.index ], ' ') }}
     steps:
       - uses: actions/checkout@v4
       - uses: rui314/setup-mold@v1
@@ -137,9 +137,15 @@ jobs:
       - name: Check
         run: cargo hack check --each-feature --no-dev-deps --log-group github-actions
 
-  clippy:
-    name: Clippy
+  clippy_matrix:
+    needs: generate_feature_matrix
     runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 10
+      matrix:
+        index: ${{ fromJson(needs.generate_feature_matrix.outputs.data).indexes }}
+    env:
+      features: ${{ join(fromJson(needs.generate_feature_matrix.outputs.data).powersets[ matrix.index ], ' ') }}
     steps:
       - uses: actions/checkout@v4
       - uses: rui314/setup-mold@v1
@@ -148,7 +154,24 @@ jobs:
       # protoc is needed to build examples that have grpc enabled
       - uses: taiki-e/install-action@protoc
       - name: Clippy
-        run: cargo hack clippy --all-targets --each-feature --log-group github-actions -- -D warnings
+        run: |
+          features=($features)
+          length=${#features[@]}
+          i=1
+          for feature_list in "${features[@]}"; do
+            echo "::group::[$i/$length]: cargo clippy --features $feature_list -- -D warnings"
+            cargo clippy --features "$feature_list" -- -D warnings
+            cargo clean -p roadster
+            i=$(expr $i + 1)
+            echo "::endgroup::"
+          done
+
+  clippy:
+    name: Clippy
+    needs: clippy_matrix
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo Success
 
   deny:
     name: Deny
