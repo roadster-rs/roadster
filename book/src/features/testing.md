@@ -53,9 +53,8 @@ For these cases, Roadster provides the [`run_test`](https://docs.rs/roadster/0.7
 and [`run_test_with_result`](https://docs.rs/roadster/0.7.0-beta/roadster/app/fn.run_test_with_result.html) methods
 to run a test with a fully initialized app. Both methods will initialize the app before running the provided test
 closure, and tear down the app when the test closure completes. Note, however, that if the test closure panics, the
-app will not be torn down. If it's vital that the app is town down on test failure, `run_test_with_result` should be
-used and care should be taken not to panic inside the test closure and instead unwrap the `Result` returned from
-`run_test_with_result`.
+app may not be torn down. If it's vital that the app is town down on test failure, either set the `testing.catch-panic`
+config to `true`, or use `run_test_with_result` and take care not to panic inside the test closure.
 
 ## Test isolation
 

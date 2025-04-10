@@ -6,7 +6,9 @@ use crate::config::AppConfig;
 use crate::error::RoadsterResult;
 use crate::service::registry::ServiceRegistry;
 use axum_core::extract::FromRef;
+use futures::FutureExt;
 use std::convert::Infallible;
+use std::panic::{AssertUnwindSafe, resume_unwind};
 
 #[non_exhaustive]
 pub struct TestAppState<A, S>
@@ -24,7 +26,8 @@ where
 /// teardown logic as [`run`], but does not actually run the registered
 /// [`crate::service::AppService`]s.
 ///
-/// Note: If the test panics, the teardown logic will not be run.
+/// Note: If the test panics, the teardown logic will only be run if the `testing.catch-panic`
+/// config is set to `true`.
 pub async fn run_test<A, S>(
     app: A,
     options: PrepareOptions,
@@ -54,8 +57,9 @@ where
 /// test returns an [`Err`], it will then be returned in the [`Err`] returned by
 /// [`run_test_with_result`] itself.
 ///
-/// Note: If the test panics, the teardown logic will not be run. To ensure the teardown logic runs,
-/// return an error instead of panicking.
+/// Note: If the test panics, the teardown logic will only be run if the `testing.catch-panic`
+/// config is set to `true`. To ensure the teardown logic runs, either set the config or return an
+/// error instead of panicking.
 pub async fn run_test_with_result<A, S, T, E>(
     app: A,
     options: PrepareOptions,
@@ -95,25 +99,38 @@ where
 
     tracing::debug!("Starting test");
 
-    // Todo: catch panic?
-    let test_result = test_fn(&pre_run_app_state).await;
+    let context = AppContext::from_ref(&pre_run_app_state.state);
+    let (test_panic, test_result) = if context.config().testing.catch_panic {
+        let test_panic = AssertUnwindSafe(test_fn(&pre_run_app_state))
+            .catch_unwind()
+            .await;
+        (Some(test_panic), None)
+    } else {
+        let test_result = test_fn(&pre_run_app_state).await;
+        (None, Some(test_result))
+    };
 
     tracing::debug!("Test complete");
 
     let after_app_result =
         run::after_app(&prepared.lifecycle_handler_registry, &prepared.state).await;
 
-    let after_app_result = if let Err(err) = after_app_result {
+    let test_result = if let Some(test_panic) = test_panic {
+        match test_panic {
+            Ok(ok) => Some(ok),
+            Err(err) => resume_unwind(err),
+        }
+    } else {
+        test_result
+    };
+
+    let test_result = if let Some(Err(err)) = test_result {
         Some(err)
     } else {
         None
     };
 
-    let test_result = if let Err(err) = test_result {
-        Some(err)
-    } else {
-        None
-    };
+    let after_app_result = after_app_result.err();
 
     if after_app_result.is_some() || test_result.is_some() {
         return Err((after_app_result, test_result));

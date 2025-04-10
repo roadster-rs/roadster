@@ -6,7 +6,7 @@ use strum_macros::{EnumString, IntoStaticStr};
 use url::Url;
 use validator::Validate;
 
-pub fn default_config() -> config::File<FileSourceString, FileFormat> {
+pub(crate) fn default_config() -> config::File<FileSourceString, FileFormat> {
     config::File::from_str(include_str!("default.toml"), FileFormat::Toml)
 }
 
