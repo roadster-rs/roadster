@@ -72,7 +72,6 @@ jobs:
           echo "data=$(cargo run -- -d 1 -s 8 -f json)" >> "$GITHUB_OUTPUT"
 
   test_matrix:
-    name: Test Matrix
     needs: generate_test_matrix
     runs-on: ubuntu-latest
     strategy:
