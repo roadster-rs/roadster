@@ -295,8 +295,6 @@ fn description_from_current_thread() -> String {
     description_from_thread_name(&thread_name)
 }
 
-// Todo: Add leading zeros for number-based thread names. Otherwise, going from 9 to 10 rstest cases
-//  causes cases 1-9 to have new snapshot files created.
 fn description_from_thread_name(name: &str) -> String {
     let description = name
         .split("::")
@@ -311,21 +309,22 @@ fn description_from_thread_name(name: &str) -> String {
         .filter(|s| !s.is_empty())
         .unwrap_or_else(|| fallback_description(name));
 
-    // let description = if let Ok(i) = description.parse::<usize>() {
-    //     format!("{i:2}")
-    // } else {
-    //     description
-    // };
-
     description
 }
 
 const CASE_PREFIX: &str = "case_";
-static CASE_REGEX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::from_str(&format!(r"{CASE_PREFIX}(\d+)")).unwrap());
+static CASE_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    #[allow(clippy::expect_used)]
+    Regex::from_str(&format!(r"{CASE_PREFIX}(\d+)")).expect("Unable to parse regex")
+});
 
 fn fallback_description(name: &str) -> String {
-    let last = name.split("::").last().unwrap().to_string();
+    #[allow(clippy::expect_used)]
+    let last = name
+        .split("::")
+        .last()
+        .expect("No string segments after splitting by `::`")
+        .to_string();
     CASE_REGEX
         .captures(&last)
         .and_then(|captures| captures.get(1))
