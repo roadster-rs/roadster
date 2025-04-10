@@ -7,11 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.7.0-beta.6](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta.5...roadster-v0.7.0-beta.6) - 2025-04-10
+## [0.7.0-gamma](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta.5...roadster-v0.7.0-gamma) - 2025-04-10
 
 ### Added
 
-- [**breaking**] Enable running app clean up if test closure panics ([#722](https://github.com/roadster-rs/roadster/pull/722))
+- [**breaking**] Enable running app clean up if test closure
+  panics ([#722](https://github.com/roadster-rs/roadster/pull/722))
 
 ### Other
 
