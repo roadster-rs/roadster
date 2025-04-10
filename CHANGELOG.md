@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-gamma](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta.5...roadster-v0.7.0-gamma) - 2025-04-10
+
+### Added
+
+- [**breaking**] Enable running app clean up if test closure
+  panics ([#722](https://github.com/roadster-rs/roadster/pull/722))
+
+### Other
+
+- Update introduction.md ([#724](https://github.com/roadster-rs/roadster/pull/724))
+- Split feature test runs into job matrix ([#723](https://github.com/roadster-rs/roadster/pull/723))
+- Remove leptos ui chapter ([#720](https://github.com/roadster-rs/roadster/pull/720))
+
 ## [0.7.0-beta.5](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta.4...roadster-v0.7.0-beta.5) - 2025-04-05
 
 ### Added
