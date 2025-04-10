@@ -2,9 +2,9 @@ name: Checks
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -59,9 +59,27 @@ jobs:
       - name: Test
         run: just test-private
 
-  test:
-    name: Tests
+  generate_test_matrix:
     runs-on: ubuntu-latest
+    outputs:
+      data: ${{ steps.build_data.outputs.data }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build powerset data
+        id: build_data
+        run: |
+          cd private/powerset_matrix
+          echo "data=$(cargo run -- -d 1 -s 8 -f json)" >> "$GITHUB_OUTPUT"
+
+  test_matrix:
+    needs: generate_test_matrix
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 10
+      matrix:
+        index: ${{ fromJson(needs.generate_test_matrix.outputs.data).indexes }}
+    env:
+      features: ${{ join(fromJson(needs.generate_test_matrix.outputs.data).powersets[ matrix.index ], ' ') }}
     steps:
       - uses: actions/checkout@v4
       - uses: rui314/setup-mold@v1
@@ -71,7 +89,27 @@ jobs:
       # protoc is needed to build examples that have grpc enabled
       - uses: taiki-e/install-action@protoc
       - name: Test
-        run: cargo hack nextest run --no-fail-fast --each-feature --clean-per-run --log-group github-actions
+        run: |
+          features=($features)
+          length=${#features[@]}
+          i=1
+          for feature_list in "${features[@]}"; do
+            echo "::group::[$i/$length]: cargo nextest run --no-fail-fast --features $feature_list"
+            cargo nextest run --no-fail-fast --features "$feature_list"
+            echo "::endgroup::"
+            echo "::group::[$i/$length]: cargo test --doc --no-fail-fast --features $feature_list"
+            cargo test --doc --no-fail-fast --features "$feature_list"
+            cargo clean -p roadster
+            i=$(expr $i + 1)
+            echo "::endgroup::"
+          done
+
+  test:
+    name: Tests
+    needs: test_matrix
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo Success
 
   doc_test:
     name: Doc tests

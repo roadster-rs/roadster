@@ -68,8 +68,8 @@ fn powerset_impl(
 
     let mut sets: Vec<Vec<&String>> = Default::default();
 
-    // Start the powerset size at 2 because we already test each feature individually on each PR.
-    for i in 1..cli.limited_depth {
+    let min = if cli.limited_depth == 1 { 0 } else { 1 };
+    for i in min..cli.limited_depth {
         sets.extend(
             features
                 .iter()
