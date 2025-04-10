@@ -115,12 +115,6 @@ where
     let after_app_result =
         run::after_app(&prepared.lifecycle_handler_registry, &prepared.state).await;
 
-    let after_app_result = if let Err(err) = after_app_result {
-        Some(err)
-    } else {
-        None
-    };
-
     let test_result = if let Some(test_panic) = test_panic {
         match test_panic {
             Ok(ok) => Some(ok),
@@ -135,6 +129,8 @@ where
     } else {
         None
     };
+
+    let after_app_result = after_app_result.err();
 
     if after_app_result.is_some() || test_result.is_some() {
         return Err((after_app_result, test_result));
