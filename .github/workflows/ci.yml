@@ -69,8 +69,7 @@ jobs:
         id: build_data
         run: |
           cd private/powerset_matrix
-          echo "data=$(cargo run -- -d 1 -s 8 -f json" >> "$GITHUB_OUTPUT"
-
+          echo "data=$(cargo run -- -d 1 -s 8 -f json)" >> "$GITHUB_OUTPUT"
 
   test:
     name: Tests
@@ -82,7 +81,6 @@ jobs:
         index: ${{ fromJson(needs.test_matrix.outputs.data).indexes }}
     env:
       features: ${{ join(fromJson(needs.test_matrix.outputs.data).powersets[ matrix.index ], ' ') }}
-
     steps:
       - uses: actions/checkout@v4
       - uses: rui314/setup-mold@v1
