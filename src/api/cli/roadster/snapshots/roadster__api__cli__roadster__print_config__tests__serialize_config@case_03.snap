@@ -222,5 +222,8 @@ expression: serialized
       "sandbox": true,
       "https-only": true
     }
+  },
+  "testing": {
+    "catch-panic": true
   }
 }

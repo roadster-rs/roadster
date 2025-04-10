@@ -4,7 +4,7 @@ use config::{FileFormat, FileSourceString};
 use serde_derive::{Deserialize, Serialize};
 use validator::Validate;
 
-pub fn default_config() -> config::File<FileSourceString, FileFormat> {
+pub(crate) fn default_config() -> config::File<FileSourceString, FileFormat> {
     config::File::from_str(include_str!("config/default.toml"), FileFormat::Toml)
 }
 

@@ -43,18 +43,10 @@ where
 
     #[instrument(skip_all)]
     async fn on_shutdown(&self, #[allow(unused_variables)] state: &S) -> RoadsterResult<()> {
-        #[cfg(not(feature = "testing-mocks"))]
-        {
-            tracing::info!("Closing the DB connection pool.");
-            let context = AppContext::from_ref(state);
-            context.sea_orm().clone().close().await?;
-        }
-        #[cfg(feature = "testing-mocks")]
-        {
-            tracing::warn!(
-                "Unable to manually close the db connection pool when `testing-mocks` feature is enabled."
-            );
-        }
+        tracing::info!("Closing the DB connection pool.");
+
+        let context = AppContext::from_ref(state);
+        context.sea_orm().close_by_ref().await?;
 
         Ok(())
     }

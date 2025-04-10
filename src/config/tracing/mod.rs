@@ -1,3 +1,4 @@
+use crate::config::environment::Environment;
 #[cfg(feature = "otel")]
 use crate::util::serde::default_true;
 use config::{FileFormat, FileSourceString};
@@ -11,8 +12,19 @@ use tracing_subscriber::EnvFilter;
 use url::Url;
 use validator::{Validate, ValidationError};
 
-pub fn default_config() -> config::File<FileSourceString, FileFormat> {
-    config::File::from_str(include_str!("default.toml"), FileFormat::Toml)
+pub(crate) fn default_config() -> config::File<FileSourceString, FileFormat> {
+    config::File::from_str(include_str!("config/default.toml"), FileFormat::Toml)
+}
+
+pub(crate) fn default_config_per_env(
+    environment: Environment,
+) -> Option<config::File<FileSourceString, FileFormat>> {
+    let config = match environment {
+        Environment::Development => Some(include_str!("config/development.toml")),
+        Environment::Test => Some(include_str!("config/test.toml")),
+        _ => None,
+    };
+    config.map(|c| config::File::from_str(c, FileFormat::Toml))
 }
 
 #[serde_as]

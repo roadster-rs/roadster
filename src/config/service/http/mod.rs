@@ -13,7 +13,7 @@ pub mod default_routes;
 pub mod initializer;
 pub mod middleware;
 
-pub fn default_config() -> config::File<FileSourceString, FileFormat> {
+pub(crate) fn default_config() -> config::File<FileSourceString, FileFormat> {
     config::File::from_str(include_str!("config/default.toml"), FileFormat::Toml)
 }
 

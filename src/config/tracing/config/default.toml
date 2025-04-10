@@ -1,4 +1,5 @@
 [tracing]
+level = "info"
 format = "compact"
 trace-propagation = true
 

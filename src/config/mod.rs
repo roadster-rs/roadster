@@ -6,6 +6,8 @@ use crate::config::email::Email;
 use crate::config::environment::{ENVIRONMENT_ENV_VAR_NAME, Environment};
 use crate::config::lifecycle::LifecycleHandler;
 use crate::config::service::Service;
+#[cfg(feature = "testing")]
+use crate::config::testing::Testing;
 use crate::config::tracing::Tracing;
 use crate::error::RoadsterResult;
 use crate::util::serde::default_true;
@@ -35,6 +37,8 @@ pub mod environment;
 pub mod health;
 pub mod lifecycle;
 pub mod service;
+#[cfg(feature = "testing")]
+pub mod testing;
 pub mod tracing;
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
@@ -60,6 +64,9 @@ pub struct AppConfig {
     #[cfg(feature = "email")]
     #[validate(nested)]
     pub email: Email,
+    #[cfg(feature = "testing")]
+    #[validate(nested)]
+    pub testing: Testing,
     /// Allows providing custom config values. Any configs that aren't pre-defined above
     /// will be collected here.
     ///
@@ -317,8 +324,15 @@ impl AppConfig {
             .add_source(config::File::from_str(
                 include_str!("default.toml"),
                 FileFormat::Toml,
-            ))
-            .add_source(tracing::default_config());
+            ));
+
+        let config = {
+            let config = config.add_source(tracing::default_config());
+            let config = tracing::default_config_per_env(environment.clone())
+                .into_iter()
+                .fold(config, |config, source| config.add_source(source));
+            config
+        };
 
         #[cfg(feature = "http")]
         let config = {
@@ -352,6 +366,9 @@ impl AppConfig {
                 .fold(config, |config, source| config.add_source(source));
             config
         };
+
+        #[cfg(feature = "testing")]
+        let config = config.add_source(testing::default_config());
 
         Ok(config)
     }
