@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-gamma.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-gamma...roadster-v0.7.0-gamma.1) - 2025-04-12
+
+### Other
+
+- Remove protoc from jobs where it isn't needed ([#731](https://github.com/roadster-rs/roadster/pull/731))
+- Update CHANGELOG.md ([#728](https://github.com/roadster-rs/roadster/pull/728))
+- Split clippy runs into job matrix ([#727](https://github.com/roadster-rs/roadster/pull/727))
+- Use expect instead of unwrap in a couple places ([#726](https://github.com/roadster-rs/roadster/pull/726))
+
 ## [0.7.0-gamma](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta.5...roadster-v0.7.0-gamma) - 2025-04-10
 
 ### Added
