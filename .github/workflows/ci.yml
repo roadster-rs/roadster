@@ -86,8 +86,6 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-hack
       - uses: taiki-e/install-action@nextest
-      # protoc is needed to build examples that have grpc enabled
-      - uses: taiki-e/install-action@protoc
       - name: Test
         run: |
           features=($features)
@@ -119,8 +117,6 @@ jobs:
       - uses: rui314/setup-mold@v1
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-hack
-      # protoc is needed to build examples that have grpc enabled
-      - uses: taiki-e/install-action@protoc
       - name: Doc test
         run: cargo hack test --doc --no-fail-fast --each-feature --log-group github-actions
 
@@ -132,8 +128,6 @@ jobs:
       - uses: rui314/setup-mold@v1
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-hack
-      # protoc is needed to build examples that have grpc enabled
-      - uses: taiki-e/install-action@protoc
       - name: Check
         run: cargo hack check --each-feature --no-dev-deps --log-group github-actions
 
@@ -151,8 +145,6 @@ jobs:
       - uses: rui314/setup-mold@v1
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-hack
-      # protoc is needed to build examples that have grpc enabled
-      - uses: taiki-e/install-action@protoc
       - name: Clippy
         run: |
           features=($features)
