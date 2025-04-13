@@ -7,11 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-gamma...roadster-v0.7.0) - 2025-04-13
+
+v0.7.0 is a fairly large internal refactor that introduces a decent number of breaking changes to the public API.
+Some notable changes include:
+
+- Add support for Diesel as an alternative to SeaORM
+- Add `run_test*` methods to enable running tests against a fully set up app
+- Replace the `M` migrator type parameter for the `App` trait with a method to provide the migrator
+- API changes to the `RunCommand` trait and the `AppContext` struct
+- Update to rust 2024 edition in order to use `AsyncFn`
+- Allow either http or grpc OTLP endpoints
+- Add support for custom config sources, including async config sources
+- Enable fetching a concrete `AppService` from the `ServiceRegistry`
+
+See the changelog for the 0.7.0-* pre-release versions for more details and the full list of breaking changes.
+All of the examples are updated to 0.7.0 as well if a reference for how to use 0.7.0 is needed.
+
 ## [0.7.0-gamma](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta.5...roadster-v0.7.0-gamma) - 2025-04-10
 
 ### Added
 
-- [**breaking**] Enable running app cleanup if test closure panics ([#722](https://github.com/roadster-rs/roadster/pull/722))
+- [**breaking**] Enable running app cleanup if test closure
+  panics ([#722](https://github.com/roadster-rs/roadster/pull/722))
 
 ## [0.7.0-beta.5](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-beta.4...roadster-v0.7.0-beta.5) - 2025-04-05
 
