@@ -36,7 +36,7 @@ Creating a snapshot with a db url
 
 Results in the following snapshot file:
 
-```
+```text
 {{#include ../../examples/testing/src/snapshots/snapshots/testing_example__snapshots__redact_db_url__redact_sensitive_db_url@redact_sensitive_db_url.snap}}
 ```
 
@@ -48,7 +48,7 @@ Creating a snapshot with a uuid
 
 Results in the following snapshot file:
 
-```
+```text
 {{#include ../../examples/testing/src/snapshots/snapshots/testing_example__snapshots__redact_uuid__normalize_dynamic_uuid@normalize_dynamic_uuid.snap}}
 ```
 
