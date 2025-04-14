@@ -1,0 +1,5 @@
+---
+source: book/examples/testing/src/snapshots/redact_db_url.rs
+expression: db_url
+---
+postgres://[Sensitive]

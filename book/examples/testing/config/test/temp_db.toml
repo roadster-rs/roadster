@@ -1,0 +1,9 @@
+[database]
+# Hard-coded DB uri for demonstration purposes only
+uri = "postgres://localhost:1234/example_test"
+# Defaults to `false`; set to `true` to enable creating a test DB when
+# using the `run_test*` methods.
+temporary-test-db = true
+# Defaults to true; optionally set to `false` to prevent deleting test DBs.
+# Only has an effect if `temporary-test-db` is set to `true`
+temporary-test-db-clean-up = false

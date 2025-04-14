@@ -1,7 +1,6 @@
 # Testing
 
 <!-- Todo: add docs.rs links -->
-<!-- Todo: add examples -->
 
 Roadster provides various utilities to make it easier to test your app, including [`insta`](https://docs.rs/insta)
 snapshot utilities, temporary DB creation, and the [
@@ -27,6 +26,32 @@ Insta allows defining filters to redact data from snapshots based on regexes, an
 via the `TestCase` struct, including redacting bearer tokens and postgres connection details and normalizing UUIDs and
 timestamps.
 
+#### Examples
+
+Creating a snapshot with a db url
+
+```rust,ignore
+{{#include ../../examples/testing/src/snapshots/redact_db_url.rs:4:}}
+```
+
+Results in the following snapshot file:
+
+```
+{{#include ../../examples/testing/src/snapshots/snapshots/testing_example__snapshots__redact_db_url__redact_sensitive_db_url@redact_sensitive_db_url.snap}}
+```
+
+Creating a snapshot with a uuid
+
+```rust,ignore
+{{#include ../../examples/testing/src/snapshots/redact_uuid.rs:5:}}
+```
+
+Results in the following snapshot file:
+
+```
+{{#include ../../examples/testing/src/snapshots/snapshots/testing_example__snapshots__redact_uuid__normalize_dynamic_uuid@normalize_dynamic_uuid.snap}}
+```
+
 ### `insta` + `rstest`
 
 The [`rstest`](https://docs.rs/rstest) crate allows writing tests using a concept known
@@ -35,11 +60,25 @@ generating snapshot names doesn't work well with `rstest` -- `insta` uses the te
 `rstest` causes the same test to run multiple times. This means each `rstest`-based test needs to have a different
 snapshot name in order to avoid each `insta` invocation overwriting a previous snapshot for the test.
 
-<!-- Todo: confirm this works with normal `cargo test` and not just `cargo nextest` -->
-
 Roadster's `TestCase` struct allows customizing `insta`'s logic for generating snapshot names in a way that works well
 with `rstest`. Roadster's logic appends either the `rstest` case number or name/description as a suffix to the snapshot
 name. This allows `insta` create unique snapshot files for each `rstest` case.
+
+#### Examples
+
+Using a `TestCase` when using `insta` together with `rstest` to write parameterized snapshot tests
+
+```rust,ignore
+{{#include ../../examples/testing/src/snapshots/rstest.rs:5:}}
+```
+
+Generates the following snapshot files:
+
+```text
+<crate_name>__snapshots__rstest__normalize_dynamic_uuid@case_01.snap
+<crate_name>__snapshots__rstest__normalize_dynamic_uuid@case_02.snap
+<crate_name>__snapshots__rstest__normalize_dynamic_uuid@case_name.snap
+```
 
 ## Testing with an initialized app
 
@@ -56,6 +95,10 @@ closure, and tear down the app when the test closure completes. Note, however, t
 app may not be torn down. If it's vital that the app is town down on test failure, either set the `testing.catch-panic`
 config to `true`, or use `run_test_with_result` and take care not to panic inside the test closure.
 
+```rust,ignore
+{{#include ../../../examples/app-builder/tests/ping.rs:8:}}
+```
+
 ## Test isolation
 
 In order to maintain an efficient test suite, it's important for tests to be stable and parallelizable. For tests that
@@ -70,7 +113,7 @@ a crate such as [`fake`](https://docs.rs/fake). This crate allows creating plaus
 various types of data, such as emails, usernames, and passwords. Compared to the other approaches mentioned below, this
 approach has the benefit of being the most efficient as no additional resources need to be initialized. However, this
 approach requires diligence to ensure hard-coded/conflicting data is not used in tests. If a more fool-proof approach is
-desired, the below approaches may be preferred.
+desired, the below approaches may be preferred. See the [`fake`](https://docs.rs/fake) docs for examples.
 
 ### Temporary DB
 
@@ -86,6 +129,14 @@ passed to the `run_test*` method(s) panics, the DB will not be deleted.
 
 Note: This feature is only supported on Postgres and Mysql at the moment.
 
+#### Examples
+
+Example config to enable creating a temporary db in tests that use the `run_test*` methods
+
+```toml
+{{ #include ../../examples/testing/config/test/temp_db.toml}}
+```
+
 ### Test Containers
 
 In addition to the above temporary DB approach, temporary DBs (or any other external docker-based resource) can be
@@ -97,6 +148,14 @@ Note that compared to the temporary DB solution discussed above, test containers
 to the operations needed to initialize a new docker container for each test container instance. This means that this is
 the slowest option for ensuring tests are isolated. However, this solution supports other resources that your tests
 may need to interact with besides just databases (e.g. Redis and SMPT servers).
+
+#### Examples
+
+Example config to enable [Test Containers](https://testcontainers.com/) in tests that use the `run_test*` methods
+
+```toml
+{{ #include ../../examples/testing/config/test/test_container.toml}}
+```
 
 ## Docs.rs links
 

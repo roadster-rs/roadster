@@ -12,6 +12,7 @@ use typed_builder::TypedBuilder;
 
 const BEARER_TOKEN_REGEX: &str = r"Bearer [\w\.-]+";
 const POSTGRES_URI_REGEX: &str = r"postgres://(\w|\d|@|:|\/|\.)+";
+const MYSQL_URI_REGEX: &str = r"mysql://(\w|\d|@|:|\/|\.)+";
 const REDIS_URI_REGEX: &str = r"redis://(\w|\d|@|:|\/|\.)+";
 const SMTP_URI_REGEX: &str = r"smtp://(\w|\d|@|:|\/|\.)+";
 // https://stackoverflow.com/questions/3143070/regex-to-match-an-iso-8601-datetime-string
@@ -101,6 +102,12 @@ pub struct TestCaseConfig {
     /// real Postgres instances that you don't want leaked in your source code.
     #[builder(default = true)]
     pub redact_postgres_uri: bool,
+
+    /// Whether to redact Mysql URIs from snapshots. This is useful for tests involving
+    /// dynamically created Mysql instances that will be different on every test run, or involve
+    /// real Mysql instances that you don't want leaked in your source code.
+    #[builder(default = true)]
+    pub redact_mysql_uri: bool,
 
     /// Whether to redact Redis URIs from snapshots. This is useful for tests involving
     /// dynamically created Redis instances that will be different on every test run, or involve
@@ -210,6 +217,9 @@ impl From<TestCaseConfig> for TestCase {
         if value.redact_postgres_uri {
             snapshot_redact_postgres_uri(&mut settings);
         }
+        if value.redact_mysql_uri {
+            snapshot_redact_mysql_uri(&mut settings);
+        }
         if value.redact_redis_uri {
             snapshot_redact_redis_uri(&mut settings);
         }
@@ -259,9 +269,15 @@ pub fn snapshot_redact_bearer_tokens(settings: &mut Settings) -> &mut Settings {
 
 /// Redact instances of Postgres URIs in snapshots. Applies a filter on the [Settings] to replace
 /// sub-strings matching [`POSTGRES_URI_REGEX`] with `postgres://[Sensitive]`.
-// Todo: Add mysql filter
 pub fn snapshot_redact_postgres_uri(settings: &mut Settings) -> &mut Settings {
     settings.add_filter(POSTGRES_URI_REGEX, "postgres://[Sensitive]");
+    settings
+}
+
+/// Redact instances of Mysql URIs in snapshots. Applies a filter on the [Settings] to replace
+/// sub-strings matching [`MYSQL_URI_REGEX`] with `mysql://[Sensitive]`.
+pub fn snapshot_redact_mysql_uri(settings: &mut Settings) -> &mut Settings {
+    settings.add_filter(MYSQL_URI_REGEX, "mysql://[Sensitive]");
     settings
 }
 
@@ -417,6 +433,18 @@ mod tests {
     #[case("postgres://192.168.1.1:3000/example")]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn postgres_uri(_case: TestCase, #[case] uri: &str) {
+        assert_snapshot!(format!("uri = {uri}"));
+    }
+
+    #[rstest]
+    #[case("mysql://example:example@example.com:1234/example")]
+    #[case("mysql://example:1234")]
+    #[case("mysql://localhost")]
+    #[case("mysql://example.com")]
+    #[case("mysql://192.168.1.1:3000")]
+    #[case("mysql://192.168.1.1:3000/example")]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn mysql_uri(_case: TestCase, #[case] uri: &str) {
         assert_snapshot!(format!("uri = {uri}"));
     }
 
