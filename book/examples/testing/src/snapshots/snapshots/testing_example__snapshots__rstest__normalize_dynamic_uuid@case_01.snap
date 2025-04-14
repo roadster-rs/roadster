@@ -1,0 +1,5 @@
+---
+source: book/examples/testing/src/snapshots/rstest.rs
+expression: value
+---
+1

@@ -1,0 +1,5 @@
+---
+source: book/examples/testing/src/snapshots/redact_uuid.rs
+expression: uuid
+---
+[uuid]

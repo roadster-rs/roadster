@@ -6,7 +6,7 @@ env*/
 gen/
 
 # Ignore Cargo.lock because this is a lib crate
-Cargo.lock
+#Cargo.lock
 
 # Code coverage
 lcov.info

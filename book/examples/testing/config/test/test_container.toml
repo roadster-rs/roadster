@@ -1,0 +1,7 @@
+[database.test-container]
+enable = true
+tag = "15.3-alpine"
+
+[service.sidekiq.redis.test-container]
+enable = true
+tag = "7.2-alpine"
