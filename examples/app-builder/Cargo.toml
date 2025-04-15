@@ -12,7 +12,7 @@ cli = ["roadster/cli", "clap"]
 db-sea-orm = ["roadster/db-sea-orm", "app-builder-migration", "sea-orm"]
 
 [dependencies]
-roadster = { version = "0.7.0", path = "../..", default-features = false, features = ["open-api", "sidekiq"] }
+roadster = { version = "0.7.1", path = "../..", default-features = false, features = ["open-api", "sidekiq"] }
 tokio = { workspace = true }
 tokio-util = { workspace = true }
 anyhow = { workspace = true }
@@ -40,7 +40,7 @@ serde = { workspace = true, features = ["derive"] }
 config = { workspace = true, features = ["async"] }
 
 [dev-dependencies]
-roadster = { version = "0.7.0", path = "../..", default-features = false, features = ["testing"] }
+roadster = { version = "0.7.1", path = "../..", default-features = false, features = ["testing"] }
 tower-util = { workspace = true }
 
 [build-dependencies]
