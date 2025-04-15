@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0...roadster-v0.7.1) - 2025-04-15
+
+### Added
+
+- Enable redacting Mysql URIs from `insta` snapshots ([#733](https://github.com/roadster-rs/roadster/pull/733))
+
 ## [0.7.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.0-gamma...roadster-v0.7.0) - 2025-04-13
 
 v0.7.0 is a fairly large internal refactor that introduces a decent number of breaking changes to the public API.
