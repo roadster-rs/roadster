@@ -4623,7 +4623,7 @@ dependencies = [
 
 [[package]]
 name = "roadster"
-version = "0.7.1"
+version = "0.7.2"
 dependencies = [
  "aide",
  "anyhow",
