@@ -62,8 +62,10 @@ header-name = "request-id"
 priority = -9980
 request-headers-allow-all = false
 response-headers-allow-all = false
+query-params-allow-all = false
 request-header-names = []
 response-header-names = []
+query-param-names = []
 
 [service.http.middleware.catch-panic]
 priority = 0
