@@ -114,7 +114,8 @@ impl CustomMakeSpan {
     pub fn new(request_id_header_name: &str) -> Self {
         Self {
             request_id_header_name: request_id_header_name.to_owned(),
-            ..Default::default()
+            query_params_allow_all: false,
+            query_param_names: Default::default(),
         }
     }
 
