@@ -90,7 +90,10 @@ where
 
         let router = router.layer(
             TraceLayer::new_for_http()
-                .make_span_with(CustomMakeSpan::new(request_id_header_name, tracing_config))
+                .make_span_with(
+                    CustomMakeSpan::new(request_id_header_name)
+                        .with_tracing_config(&tracing_config),
+                )
                 .on_request(CustomOnRequest::new(tracing_config))
                 .on_response(CustomOnResponse::new(tracing_config)),
         );
@@ -108,16 +111,21 @@ pub struct CustomMakeSpan {
 }
 
 impl CustomMakeSpan {
-    pub fn new(request_id_header_name: &str, tracing_config: &TracingConfig) -> Self {
+    pub fn new(request_id_header_name: &str) -> Self {
         Self {
             request_id_header_name: request_id_header_name.to_owned(),
-            query_params_allow_all: tracing_config.query_params_allow_all,
-            query_param_names: tracing_config
-                .query_param_names
-                .iter()
-                .map(|name| name.to_lowercase())
-                .collect(),
+            ..Default::default()
         }
+    }
+
+    pub fn with_tracing_config(mut self, tracing_config: &TracingConfig) -> Self {
+        self.query_params_allow_all = tracing_config.query_params_allow_all;
+        self.query_param_names = tracing_config
+            .query_param_names
+            .iter()
+            .map(|name| name.to_lowercase())
+            .collect();
+        self
     }
 }
 
