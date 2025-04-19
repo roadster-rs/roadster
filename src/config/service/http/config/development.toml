@@ -7,3 +7,4 @@ enable = false
 [service.http.middleware.tracing]
 request-headers-allow-all = true
 response-headers-allow-all = true
+query-params-allow-all = true
