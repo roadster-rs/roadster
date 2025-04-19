@@ -91,8 +91,7 @@ where
         let router = router.layer(
             TraceLayer::new_for_http()
                 .make_span_with(
-                    CustomMakeSpan::new(request_id_header_name)
-                        .with_tracing_config(&tracing_config),
+                    CustomMakeSpan::new(request_id_header_name).with_tracing_config(tracing_config),
                 )
                 .on_request(CustomOnRequest::new(tracing_config))
                 .on_response(CustomOnResponse::new(tracing_config)),
