@@ -6,15 +6,20 @@ use crate::service::http::middleware::Middleware;
 use axum::Router;
 use axum::extract::{FromRef, MatchedPath};
 use axum::http::{HeaderMap, HeaderName, HeaderValue, Request, Response};
+use itertools::Itertools;
 use opentelemetry_semantic_conventions::trace::{
-    HTTP_REQUEST_METHOD, HTTP_RESPONSE_STATUS_CODE, HTTP_ROUTE, NETWORK_PROTOCOL_VERSION,
+    HTTP_REQUEST_METHOD, HTTP_RESPONSE_STATUS_CODE, HTTP_ROUTE, NETWORK_PROTOCOL_VERSION, URL_PATH,
+    URL_QUERY,
 };
 use serde_derive::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::collections::{BTreeMap, HashSet};
+use std::iter::{IntoIterator, Iterator};
 use std::str::FromStr;
 use std::time::Duration;
 use tower_http::trace::{MakeSpan, OnRequest, OnResponse, TraceLayer};
 use tracing::{Span, Value, field, info, info_span};
+use url::Url;
 use validator::Validate;
 
 #[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
@@ -29,12 +34,18 @@ pub struct TracingConfig {
     /// test environments. Not recommended to be enabled in production.
     #[serde(default)]
     pub response_headers_allow_all: bool,
+    /// Allow all HTTP query params in trace attributes.
+    #[serde(default)]
+    pub query_params_allow_all: bool,
     /// Allow-list of HTTP request headers to add as trace attributes.
     #[serde(default)]
     pub request_header_names: Vec<String>,
     /// Allow-list of HTTP response headers to add as trace attributes.
     #[serde(default)]
     pub response_header_names: Vec<String>,
+    /// Allow-list of HTTP query params to include in trace attributes.
+    #[serde(default)]
+    pub query_param_names: Vec<String>,
 }
 
 pub struct TracingMiddleware;
@@ -79,7 +90,7 @@ where
 
         let router = router.layer(
             TraceLayer::new_for_http()
-                .make_span_with(CustomMakeSpan::new(request_id_header_name))
+                .make_span_with(CustomMakeSpan::new(request_id_header_name, tracing_config))
                 .on_request(CustomOnRequest::new(tracing_config))
                 .on_response(CustomOnResponse::new(tracing_config)),
         );
@@ -92,12 +103,20 @@ where
 #[non_exhaustive]
 pub struct CustomMakeSpan {
     pub request_id_header_name: String,
+    pub query_params_allow_all: bool,
+    pub query_param_names: HashSet<String>,
 }
 
 impl CustomMakeSpan {
-    pub fn new(request_id_header_name: &str) -> Self {
+    pub fn new(request_id_header_name: &str, tracing_config: &TracingConfig) -> Self {
         Self {
             request_id_header_name: request_id_header_name.to_owned(),
+            query_params_allow_all: tracing_config.query_params_allow_all,
+            query_param_names: tracing_config
+                .query_param_names
+                .iter()
+                .map(|name| name.to_lowercase())
+                .collect(),
         }
     }
 }
@@ -106,6 +125,12 @@ impl<B> MakeSpan<B> for CustomMakeSpan {
     fn make_span(&mut self, request: &Request<B>) -> Span {
         let matched_path = get_matched_path(request);
         let request_id = get_request_id(&self.request_id_header_name, request);
+
+        let redacted_uri_query = get_query_redacted(
+            self.query_params_allow_all,
+            &self.query_param_names,
+            request,
+        );
 
         /*
         The OTEL semantic conventions allow the span name to be `{method} {target}`,
@@ -116,6 +141,8 @@ impl<B> MakeSpan<B> for CustomMakeSpan {
             { HTTP_REQUEST_METHOD } = %request.method(),
             { HTTP_ROUTE } = optional_trace_field(matched_path),
             { NETWORK_PROTOCOL_VERSION } = ?request.version(),
+            { URL_PATH } = %request.uri().path(),
+            { URL_QUERY } = optional_trace_field(redacted_uri_query),
             request_id = optional_trace_field(request_id),
             // Fields that aren't know at request time, but may be known at response time
             { HTTP_RESPONSE_STATUS_CODE } = field::Empty,
@@ -138,6 +165,40 @@ fn get_request_id<'a, B>(
         .headers()
         .get(request_id_header_name)
         .and_then(|v| v.to_str().ok())
+}
+
+fn get_query_redacted<B>(
+    allow_all: bool,
+    allowed_names: &HashSet<String>,
+    request: &Request<B>,
+) -> Option<String> {
+    // The `request.uri()` isn't always fully formed, so we need to use a hard-coded base url
+    // to start with, then add the query params to it.
+    let uri = if let Ok(mut uri) = Url::from_str("https://example.com") {
+        uri.set_query(request.uri().query());
+        uri
+    } else {
+        return None;
+    };
+
+    // Redact any query params that are not allowed per the `allow_all` or `allowed_names` params.
+    let redacted = uri
+        .query_pairs()
+        .into_iter()
+        .map(|(key, value)| {
+            #[allow(clippy::if_same_then_else)]
+            let value = if allow_all {
+                value
+            } else if !allowed_names.is_empty() && allowed_names.contains(&key.to_lowercase()) {
+                value
+            } else {
+                Cow::from("REDACTED")
+            };
+            format!("{key}={value}")
+        })
+        .join("&");
+
+    Some(redacted)
 }
 
 fn optional_trace_field<T>(value: Option<T>) -> Box<dyn Value>
