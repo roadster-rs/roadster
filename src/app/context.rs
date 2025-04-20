@@ -5,6 +5,7 @@ use crate::error::RoadsterResult;
 use crate::health::check::HealthCheck;
 use crate::health::check::registry::HealthCheckRegistry;
 use axum_core::extract::FromRef;
+#[cfg(all(feature = "db-sql", feature = "testing"))]
 use itertools::Itertools;
 #[cfg(feature = "db-sea-orm")]
 use sea_orm::DatabaseConnection;
@@ -825,6 +826,7 @@ async fn sidekiq_redis_test_container(
     Ok(container)
 }
 
+#[cfg(all(feature = "db-sql", feature = "testing"))]
 const MAX_DB_NAME_LENGTH: usize = 63;
 
 #[cfg(all(feature = "db-sql", feature = "testing"))]
