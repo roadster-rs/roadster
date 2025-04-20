@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.2...roadster-v0.7.3) - 2025-04-20
+
+### Added
+
+- Use the test name as the test db name ([#741](https://github.com/roadster-rs/roadster/pull/741))
+- Remove usages of `anyhow` ([#740](https://github.com/roadster-rs/roadster/pull/740))
+
 ## [0.7.2](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.1...roadster-v0.7.2) - 2025-04-19
 
 ### Added
