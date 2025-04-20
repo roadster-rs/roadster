@@ -4,7 +4,14 @@ use crate::error::Error;
 #[non_exhaustive]
 pub enum OtherError {
     #[error(transparent)]
+    #[deprecated(
+        since = "0.7.3",
+        note = "`anyhow` is no longer used internally. This enum variant will be removed in the next semver breaking release."
+    )]
     Anyhow(#[from] anyhow::Error),
+
+    #[error("{0}")]
+    Message(String),
 
     #[error(transparent)]
     Other(#[from] Box<dyn std::error::Error + Send + Sync>),

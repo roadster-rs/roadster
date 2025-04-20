@@ -15,7 +15,6 @@ use crate::lifecycle::registry::LifecycleHandlerRegistry;
 use crate::service::AppService;
 use crate::service::registry::ServiceRegistry;
 use crate::util::empty::Empty;
-use anyhow::anyhow;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use config::AsyncSource;
@@ -367,10 +366,9 @@ where
     }
 
     async fn provide_state(&self, context: AppContext) -> RoadsterResult<S> {
-        let state_provider = self
-            .state_provider
-            .as_ref()
-            .ok_or_else(|| anyhow!("State builder missing"))?;
+        let state_provider = self.state_provider.as_ref().ok_or_else(|| {
+            crate::error::other::OtherError::Message("State builder missing".to_string())
+        })?;
         state_provider(context)
     }
 

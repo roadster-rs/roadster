@@ -8,7 +8,6 @@ use crate::service::worker::sidekiq::app_worker::{AppWorker, AppWorkerConfig};
 use crate::service::worker::sidekiq::processor_wrapper::ProcessorWrapper;
 use crate::service::worker::sidekiq::roadster_worker::RoadsterWorker;
 use crate::service::worker::sidekiq::service::{NAME, SidekiqWorkerService, enabled};
-use anyhow::anyhow;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use itertools::Itertools;
@@ -72,8 +71,9 @@ where
                 processor: processor.into_sidekiq_processor(),
             },
             BuilderState::Disabled => {
-                return Err(anyhow!(
-                    "This builder is not enabled; it's build method should not have been called."
+                return Err(crate::error::other::OtherError::Message(
+                    "This builder is not enabled; its build method should not have been called."
+                        .to_owned(),
                 )
                 .into());
             }
@@ -120,10 +120,10 @@ where
             let processor = {
                 let config = context.config().service.sidekiq.custom.clone();
                 let num_workers = config.num_workers.to_usize().ok_or_else(|| {
-                    anyhow!(
+                    crate::error::other::OtherError::Message(format!(
                         "Unable to convert num_workers `{}` to usize",
                         context.config().service.sidekiq.custom.num_workers
-                    )
+                    ))
                 })?;
                 let processor_config: ProcessorConfig = Default::default();
                 let processor_config = processor_config
@@ -209,7 +209,7 @@ where
         } = &self.state
         {
             if !registered_periodic_workers.is_empty() {
-                return Err(anyhow!("Can only clean up previous periodic jobs if no periodic jobs have been registered yet.").into());
+                return Err(crate::error::other::OtherError::Message("Can only clean up previous periodic jobs if no periodic jobs have been registered yet.".to_owned()).into());
             }
             let context = AppContext::from_ref(context);
             periodic::destroy_all(context.redis_enqueue().inner.clone()).await?;
@@ -274,7 +274,10 @@ where
             let class_name = W::class_name();
             debug!(worker = %class_name, "Registering worker");
             if !registered_workers.insert(class_name.clone()) {
-                return Err(anyhow!("Worker `{class_name}` was already registered").into());
+                return Err(crate::error::other::OtherError::Message(format!(
+                    "Worker `{class_name}` was already registered"
+                ))
+                .into());
             }
             let roadster_worker = RoadsterWorker::new(&context, worker, config);
             processor.register(roadster_worker);
@@ -359,9 +362,9 @@ where
             let builder = builder.args(args)?;
             let job_json = serde_json::to_string(&builder.into_periodic_job(class_name.clone())?)?;
             if !registered_periodic_workers.insert(job_json.clone()) {
-                return Err(anyhow!(
+                return Err(crate::error::other::OtherError::Message(format!(
                     "Periodic worker `{class_name}` was already registered; full job: {job_json}"
-                )
+                ))
                 .into());
             }
             processor

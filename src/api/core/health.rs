@@ -3,8 +3,6 @@ use crate::error::RoadsterResult;
 use crate::health::check::{CheckResponse, ErrorData, HealthCheck, Status};
 #[cfg(feature = "open-api")]
 use aide::OperationIo;
-#[cfg(any(feature = "sidekiq", feature = "email-smtp"))]
-use anyhow::anyhow;
 use axum_core::extract::FromRef;
 use futures::future::join_all;
 #[cfg(feature = "open-api")]
@@ -357,7 +355,10 @@ async fn ping_smtp(
     if connected {
         Ok(())
     } else {
-        Err(anyhow!("Not connected to the SMTP server").into())
+        Err(
+            crate::error::other::OtherError::Message("Not connected to the SMTP server".to_owned())
+                .into(),
+        )
     }
 }
 
@@ -413,7 +414,10 @@ async fn ping_redis(
     if pong == msg {
         Ok((acquire_conn_latency, ping_latency))
     } else {
-        Err(anyhow!("Ping response does not match input.").into())
+        Err(crate::error::other::OtherError::Message(
+            "Ping response does not match input.".to_owned(),
+        )
+        .into())
     }
 }
 
@@ -421,7 +425,6 @@ async fn ping_redis(
 mod tests {
     use crate::health::check::{CheckResponse, ErrorData, MockHealthCheck, Status};
     use crate::testing::snapshot::TestCase;
-    use anyhow::anyhow;
     use insta::assert_json_snapshot;
     use rstest::{fixture, rstest};
     use std::sync::Arc;
@@ -468,9 +471,9 @@ mod tests {
         // Arrange
         let mut check = MockHealthCheck::default();
         check.expect_name().return_const("example".to_string());
-        check
-            .expect_check()
-            .return_once(move || Err(anyhow!("Error").into()));
+        check.expect_check().return_once(move || {
+            Err(crate::error::other::OtherError::Message("Error".to_owned()).into())
+        });
 
         // Act
         let health_response = super::health_check_with_checks(vec![Arc::new(check)], None)

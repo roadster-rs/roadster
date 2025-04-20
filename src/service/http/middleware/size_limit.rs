@@ -1,7 +1,6 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
-use anyhow::anyhow;
 use axum::Router;
 use axum_core::extract::FromRef;
 use byte_unit::Byte;
@@ -74,12 +73,13 @@ where
             .as_u64()
             .to_usize();
 
-        let limit = match limit {
-            Some(limit) => limit,
-            None => return Err(anyhow!("Unable to convert bytes from u64 to usize").into()),
-        };
+        let limit = limit.ok_or_else(|| {
+            crate::error::other::OtherError::Message(
+                "Unable to convert bytes from u64 to usize".to_owned(),
+            )
+        })?;
 
-        let router = router.layer(RequestBodyLimitLayer::new(*limit));
+        let router = router.layer(RequestBodyLimitLayer::new(limit));
 
         Ok(router)
     }

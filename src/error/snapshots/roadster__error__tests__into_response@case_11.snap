@@ -1,5 +1,0 @@
----
-source: src/error/mod.rs
-expression: error.into_response().status()
----
-500

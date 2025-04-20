@@ -31,6 +31,9 @@ pub enum DbError {
     #[error(transparent)]
     DieselAsyncBb8Pool(#[from] diesel_async::pooled_connection::bb8::RunError),
 
+    #[error("{0}")]
+    Message(String),
+
     #[error(transparent)]
     Other(#[from] Box<dyn std::error::Error + Send + Sync>),
 }

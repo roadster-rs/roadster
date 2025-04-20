@@ -4,7 +4,6 @@ use crate::app::App;
 use crate::app::context::AppContext;
 use crate::db::migration::{DownArgs, MigrationInfo, UpArgs};
 use crate::error::RoadsterResult;
-use anyhow::anyhow;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use clap::{Parser, Subcommand};
@@ -58,7 +57,10 @@ where
         let allow_dangerous = cli.roadster_cli.allow_dangerous(&context);
 
         if is_destructive(self) && !allow_dangerous {
-            return Err(anyhow!("Running destructive command `{:?}` is not allowed in environment `{:?}`. To override, provide the `--allow-dangerous` CLI arg.", self, context.config().environment).into());
+            return Err(crate::error::cli::CliError::DestructiveCmdNotAllowed(
+                context.config().environment.clone(),
+            )
+            .into());
         } else if is_destructive(self) {
             warn!(
                 "Running destructive command `{:?}` in environment `{:?}`",

@@ -4,7 +4,6 @@ use crate::config::AppConfig;
 use crate::error::RoadsterResult;
 use crate::health::check::HealthCheck;
 use crate::health::check::registry::HealthCheckRegistry;
-use anyhow::anyhow;
 use axum_core::extract::FromRef;
 #[cfg(feature = "db-sea-orm")]
 use sea_orm::DatabaseConnection;
@@ -739,8 +738,8 @@ impl DbTestContainer {
     }
 
     async fn get_uri(&self) -> RoadsterResult<url::Url> {
-        let host = self.get_host().await.map_err(|err| anyhow!("{err}"))?;
-        let port = self.get_port().await.map_err(|err| anyhow!("{err}"))?;
+        let host = self.get_host().await?;
+        let port = self.get_port().await?;
         let uri = match self {
             DbTestContainer::Postgres(_) => {
                 format!("postgres://postgres:postgres@{host}:{port}/postgres").parse()?
@@ -765,15 +764,13 @@ async fn db_test_container(config: &mut AppConfig) -> RoadsterResult<Option<DbTe
                 let container = testcontainers_modules::postgres::Postgres::default()
                     .with_tag(test_container.tag.to_string())
                     .start()
-                    .await
-                    .map_err(|err| anyhow!("{err}"))?;
+                    .await?;
                 Some(DbTestContainer::Postgres(container))
             } else if uri_scheme == "mysql" {
                 let container = testcontainers_modules::mysql::Mysql::default()
                     .with_tag(test_container.tag.to_string())
                     .start()
-                    .await
-                    .map_err(|err| anyhow!("{err}"))?;
+                    .await?;
                 Some(DbTestContainer::Mysql(container))
             } else {
                 None
@@ -808,20 +805,18 @@ async fn sidekiq_redis_test_container(
             let container = testcontainers_modules::redis::Redis::default()
                 .with_tag(test_container.tag.to_string())
                 .start()
-                .await
-                .map_err(|err| anyhow!("{err}"))?;
+                .await?;
             Some(container)
         } else {
             None
         };
 
     if let Some(container) = container.as_ref() {
-        let host_ip = container.get_host().await.map_err(|err| anyhow!("{err}"))?;
+        let host_ip = container.get_host().await?;
 
         let host_port = container
             .get_host_port_ipv4(testcontainers_modules::redis::REDIS_PORT)
-            .await
-            .map_err(|err| anyhow!("{err}"))?;
+            .await?;
 
         config.service.sidekiq.custom.redis.uri =
             format!("redis://{host_ip}:{host_port}").parse()?;
@@ -946,9 +941,11 @@ impl AppContextInner {
     }
 
     fn set_health_checks(&self, health_checks: HealthCheckRegistry) -> RoadsterResult<()> {
-        self.health_checks
-            .set(health_checks)
-            .map_err(|_| anyhow!("Unable to set health check registry"))?;
+        self.health_checks.set(health_checks).map_err(|_| {
+            crate::error::other::OtherError::Message(
+                "Unable to set health check registry".to_owned(),
+            )
+        })?;
 
         Ok(())
     }

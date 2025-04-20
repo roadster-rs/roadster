@@ -2,6 +2,8 @@ pub mod api;
 pub mod auth;
 #[cfg(feature = "http")]
 pub mod axum;
+#[cfg(feature = "cli")]
+pub mod cli;
 pub mod config;
 #[cfg(feature = "db-sql")]
 pub mod db;
@@ -25,6 +27,8 @@ use crate::error::api::ApiError;
 use crate::error::auth::AuthError;
 #[cfg(feature = "http")]
 use crate::error::axum::AxumError;
+#[cfg(feature = "cli")]
+use crate::error::cli::CliError;
 #[cfg(feature = "db-sql")]
 use crate::error::db::DbError;
 #[cfg(feature = "email")]
@@ -42,6 +46,8 @@ use crate::error::tokio::TokioError;
 #[cfg(feature = "grpc")]
 use crate::error::tonic::TonicError;
 use crate::error::tracing::TracingError;
+use crate::health::check::registry::HealthCheckRegistryError;
+use crate::lifecycle::registry::LifecycleHandlerRegistryError;
 use crate::service::registry::ServiceRegistryError;
 #[cfg(feature = "http")]
 use ::axum::http::StatusCode;
@@ -116,6 +122,12 @@ pub enum Error {
     Email(#[from] EmailError),
 
     #[error(transparent)]
+    HealthCheckRegistry(#[from] HealthCheckRegistryError),
+
+    #[error(transparent)]
+    LifecycleHandlerRegistry(#[from] LifecycleHandlerRegistryError),
+
+    #[error(transparent)]
     ServiceRegistry(#[from] ServiceRegistryError),
 
     #[error(transparent)]
@@ -123,6 +135,16 @@ pub enum Error {
 
     #[error(transparent)]
     Infallible(#[from] Infallible),
+
+    #[cfg(feature = "test-containers")]
+    #[error(transparent)]
+    TestContainers(
+        #[from] testcontainers_modules::testcontainers::core::error::TestcontainersError,
+    ),
+
+    #[cfg(feature = "cli")]
+    #[error(transparent)]
+    Cli(#[from] CliError),
 
     #[error(transparent)]
     Other(#[from] OtherError),
@@ -182,13 +204,7 @@ mod tests {
         axum::http::StatusCode::BAD_REQUEST.into()
     )]
     #[case(
-        crate::error::api::ApiError::Other(Box::new(crate::error::Error::from(anyhow::anyhow!("error")))).into()
-    )]
-    #[case(
-        crate::error::auth::AuthError::Other(Box::new(crate::error::Error::from(anyhow::anyhow!("error")))).into()
-    )]
-    #[case(
-        anyhow::anyhow!("error").into()
+        crate::error::api::ApiError::Other(Box::new(crate::error::other::OtherError::Message("error".to_owned()))).into()
     )]
     #[cfg(feature = "http")]
     #[cfg_attr(coverage_nightly, coverage(off))]

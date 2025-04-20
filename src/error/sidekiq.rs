@@ -12,6 +12,9 @@ pub enum SidekiqError {
     #[error(transparent)]
     Bb8(#[from] bb8::RunError<sidekiq::RedisError>),
 
+    #[error("{0}")]
+    Message(String),
+
     #[error(transparent)]
     Other(#[from] Box<dyn std::error::Error + Send + Sync>),
 }

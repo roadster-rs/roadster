@@ -2,7 +2,6 @@ use crate::app::App;
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::AppService;
-use anyhow::anyhow;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use std::sync::Mutex;
@@ -52,11 +51,13 @@ where
 
         self.router
             .into_inner()
-            .map_err(|e| anyhow!("Unable to start GrpcService, mutex was poisoned: {e}"))?
+            .map_err(|e| {
+                crate::error::other::OtherError::Message(format!(
+                    "Unable to start GrpcService, mutex was poisoned: {e}"
+                ))
+            })?
             .serve_with_shutdown(
-                server_addr
-                    .parse()
-                    .map_err(|err| anyhow!("Unable to parse server address: {}", err))?,
+                server_addr.parse()?,
                 Box::pin(async move { cancel_token.cancelled().await }),
             )
             .await?;
