@@ -1,6 +1,5 @@
 use crate::config::{ENV_VAR_PREFIX, ENV_VAR_SEPARATOR};
 use crate::error::RoadsterResult;
-use anyhow::anyhow;
 #[cfg(feature = "cli")]
 use clap::ValueEnum;
 #[cfg(feature = "cli")]
@@ -43,8 +42,11 @@ impl Environment {
         dotenv().ok();
 
         // Get the stage, and validate it by parsing to the Environment enum
-        let environment = env::var(ENV_VAR_WITH_PREFIX)
-            .map_err(|_| anyhow!("Env var `{ENV_VAR_WITH_PREFIX}` not defined."))?;
+        let environment = env::var(ENV_VAR_WITH_PREFIX).map_err(|_| {
+            crate::error::other::OtherError::Message(format!(
+                "Env var `{ENV_VAR_WITH_PREFIX}` not defined."
+            ))
+        })?;
         let environment = Self::from_str_impl(&environment, true);
         println!("Using environment from `{ENV_VAR_WITH_PREFIX}` env var: {environment:?}");
         Ok(environment)

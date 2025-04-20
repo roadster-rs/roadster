@@ -5,7 +5,6 @@ use crate::error::RoadsterResult;
 use crate::health::check::HealthCheck;
 use crate::health::check::Status;
 use crate::service::registry::ServiceRegistry;
-use anyhow::anyhow;
 use axum_core::extract::FromRef;
 use itertools::Itertools;
 use std::future::Future;
@@ -30,7 +29,10 @@ pub(crate) async fn health_checks(checks: Vec<Arc<dyn HealthCheck>>) -> Roadster
         Ok(())
     } else {
         let names = error_responses.iter().map(|(name, _)| name).collect_vec();
-        Err(anyhow!("Health checks failed: {names:?}").into())
+        Err(
+            crate::error::other::OtherError::Message(format!("Health checks failed: {names:?}"))
+                .into(),
+        )
     }
 }
 

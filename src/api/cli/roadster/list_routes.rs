@@ -4,7 +4,6 @@ use crate::app::App;
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::http::service::HttpService;
-use anyhow::anyhow;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use clap::Parser;
@@ -24,9 +23,7 @@ where
     A: App<S>,
 {
     async fn run(&self, cli: &CliState<A, S>) -> RoadsterResult<bool> {
-        let http_service = cli.service_registry.get::<HttpService>().map_err(|err| {
-            anyhow!("Unable to get HttpService from registry. Was it registered? Err: {err}")
-        })?;
+        let http_service = cli.service_registry.get::<HttpService>()?;
 
         let routes = http_service
             .list_routes()

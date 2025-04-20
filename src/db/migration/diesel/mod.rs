@@ -187,7 +187,7 @@ impl<DB: Backend> MigrationSource<DB> for DieselMigrationSourceWrapper<DB> {
 
         match migrations.take() {
             Some(migrations) => Ok(migrations),
-            None => Err(anyhow::anyhow!("DieselMigrationSourceWrapper#migrations was called twice! This is not supported as the migrations were removed by the first call.").into()),
+            None => Err(crate::error::db::DbError::Message("DieselMigrationSourceWrapper#migrations was called twice! This is not supported as the migrations were removed by the first call.".to_owned()).into()),
         }
     }
 }

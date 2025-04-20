@@ -2,12 +2,24 @@ use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::health::check::HealthCheck;
 use crate::health::check::default::default_health_checks;
-use anyhow::anyhow;
 use std::collections::BTreeMap;
 use std::sync::Arc;
+use thiserror::Error;
 use tracing::info;
 
-/// Registry for [HealthCheck]s that will be run in the app.
+#[derive(Debug, Error)]
+#[non_exhaustive]
+pub enum HealthCheckRegistryError {
+    /// The provided [`HealthCheck`] was already registered. Contains the [`HealthCheck::name`]
+    /// of the provided service.
+    #[error("The provided `HealthCheck` was already registered: `{0}`")]
+    AlreadyRegistered(String),
+
+    #[error(transparent)]
+    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+}
+
+/// Registry for [`HealthCheck`]s that will be run in the app.
 ///
 /// Health checks are used in multiple parts of the app, for example:
 /// 1. As pre-boot checks to ensure the app's resource dependencies are healthy.
@@ -46,7 +58,7 @@ impl HealthCheckRegistry {
             .insert(name.clone(), health_check)
             .is_some()
         {
-            return Err(anyhow!("Health check `{}` was already registered", name).into());
+            return Err(HealthCheckRegistryError::AlreadyRegistered(name).into());
         }
         Ok(())
     }

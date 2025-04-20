@@ -3,12 +3,24 @@ use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::lifecycle::AppLifecycleHandler;
 use crate::lifecycle::default::default_lifecycle_handlers;
-use anyhow::anyhow;
 use axum_core::extract::FromRef;
 use itertools::Itertools;
 use std::collections::BTreeMap;
 use std::ops::Deref;
+use thiserror::Error;
 use tracing::info;
+
+#[derive(Debug, Error)]
+#[non_exhaustive]
+pub enum LifecycleHandlerRegistryError {
+    /// The provided [`AppLifecycleHandler`] was already registered. Contains the
+    /// [`AppLifecycleHandler::name`] of the provided service.
+    #[error("The provided `AppLifecycleHandler` was already registered: `{0}`")]
+    AlreadyRegistered(String),
+
+    #[error(transparent)]
+    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+}
 
 /// Registry for the app's [`AppLifecycleHandler`]s.
 ///
@@ -86,7 +98,7 @@ where
         info!(name=%name, "Registering lifecycle handler");
 
         if self.handlers.insert(name.clone(), handler).is_some() {
-            return Err(anyhow!("Handler `{}` was already registered", name).into());
+            return Err(LifecycleHandlerRegistryError::AlreadyRegistered(name).into());
         }
 
         Ok(())

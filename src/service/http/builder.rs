@@ -17,7 +17,6 @@ use aide::axum::ApiRouter;
 use aide::openapi::OpenApi;
 #[cfg(feature = "open-api")]
 use aide::transform::TransformOpenApi;
-use anyhow::anyhow;
 use async_trait::async_trait;
 #[cfg(feature = "open-api")]
 use axum::Extension;
@@ -130,7 +129,10 @@ where
             .insert(name.clone(), Box::new(initializer))
             .is_some()
         {
-            return Err(anyhow!("Initializer `{name}` was already registered").into());
+            return Err(crate::error::other::OtherError::Message(format!(
+                "Initializer `{name}` was already registered"
+            ))
+            .into());
         }
         Ok(self)
     }
@@ -148,7 +150,10 @@ where
             .insert(name.clone(), Box::new(middleware))
             .is_some()
         {
-            return Err(anyhow!("Middleware `{name}` was already registered").into());
+            return Err(crate::error::other::OtherError::Message(format!(
+                "Middleware `{name}` was already registered"
+            ))
+            .into());
         }
         Ok(self)
     }
