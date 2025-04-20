@@ -5,6 +5,8 @@ use crate::error::RoadsterResult;
 use crate::health::check::HealthCheck;
 use crate::health::check::registry::HealthCheckRegistry;
 use axum_core::extract::FromRef;
+#[cfg(all(feature = "db-sql", feature = "testing"))]
+use itertools::Itertools;
 #[cfg(feature = "db-sea-orm")]
 use sea_orm::DatabaseConnection;
 use std::sync::{Arc, OnceLock, Weak};
@@ -825,6 +827,9 @@ async fn sidekiq_redis_test_container(
 }
 
 #[cfg(all(feature = "db-sql", feature = "testing"))]
+const MAX_DB_NAME_LENGTH: usize = 63;
+
+#[cfg(all(feature = "db-sql", feature = "testing"))]
 #[cfg_attr(test, allow(dead_code))]
 async fn create_temporary_test_db(
     config: &mut AppConfig,
@@ -834,7 +839,49 @@ async fn create_temporary_test_db(
     }
 
     let original_uri = config.database.uri.clone();
-    let db_name = uuid::Uuid::new_v4().to_string();
+
+    let thread_name = std::thread::current()
+        .name()
+        .ok_or_else(|| crate::error::other::OtherError::Message("Thread name missing".to_owned()))?
+        .to_string();
+    let mod_path = thread_name
+        .split("::")
+        .filter(|segment| !segment.starts_with("case_"))
+        .map(|segment| segment.get(0..1).unwrap_or(""))
+        .collect_vec()
+        .into_iter()
+        .rev()
+        .get(1..)
+        .rev()
+        .join("/");
+    let prefix = format!("tmp/{mod_path}/");
+    let suffix = format!("/{}", chrono::Utc::now().timestamp());
+
+    let test_name = thread_name
+        .split("::")
+        .filter(|segment| !segment.starts_with("case_"))
+        .last()
+        .unwrap_or("");
+    let case_name = thread_name
+        .split("::")
+        .filter(|segment| segment.starts_with("case_"))
+        .last()
+        .map(|case_name| format!("/{case_name}"))
+        .unwrap_or_else(|| "".to_owned());
+    let test_name = format!("{test_name}{case_name}");
+
+    let name_len = prefix.len() + suffix.len() + test_name.len();
+    let start_index = if name_len > MAX_DB_NAME_LENGTH {
+        name_len - MAX_DB_NAME_LENGTH
+    } else {
+        0
+    };
+    let test_name_truncated = test_name.get(start_index..test_name.len()).ok_or_else(|| {
+        crate::error::other::OtherError::Message(
+            "Invalid indexes used to truncate test name".to_owned(),
+        )
+    })?;
+    let db_name = format!("{prefix}{test_name_truncated}{suffix}");
     tracing::debug!("Creating test db {db_name} using connection {original_uri}");
 
     #[allow(unused_variables)]

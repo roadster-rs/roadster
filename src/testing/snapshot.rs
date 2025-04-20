@@ -306,7 +306,7 @@ pub fn snapshot_redact_timestamp(settings: &mut Settings) -> &mut Settings {
 ///
 /// See: <https://github.com/adriangb/pgpq/blob/b0b0f8c77c862c0483d81571e76f3a2b746136fc/pgpq/src/lib.rs#L649-L669>
 /// See: <https://github.com/la10736/rstest/issues/177>
-fn description_from_current_thread() -> String {
+pub(crate) fn description_from_current_thread() -> String {
     let thread_name = current().name().unwrap_or("").to_string();
     description_from_thread_name(&thread_name)
 }
