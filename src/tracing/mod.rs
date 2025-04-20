@@ -204,11 +204,11 @@ pub fn init_tracing(
     #[cfg(feature = "otel")]
     let registry = { registry.with(oltp_traces_layer).with(otlp_metrics_layer) };
 
-    #[cfg_attr(test, allow(unused_variables))]
+    #[cfg_attr(any(test, feature = "testing"), allow(unused_variables))]
     let result = registry.try_init();
 
     // When running with cargo test, the registry is not reset between tests.
-    #[cfg(not(test))]
+    #[cfg(not(any(test, feature = "testing")))]
     result?;
 
     Ok(())
