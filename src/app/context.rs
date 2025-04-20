@@ -5,9 +5,7 @@ use crate::error::RoadsterResult;
 use crate::health::check::HealthCheck;
 use crate::health::check::registry::HealthCheckRegistry;
 use axum_core::extract::FromRef;
-use http_body_util::BodyExt;
 use itertools::Itertools;
-use num_traits::Saturating;
 #[cfg(feature = "db-sea-orm")]
 use sea_orm::DatabaseConnection;
 use std::sync::{Arc, OnceLock, Weak};
