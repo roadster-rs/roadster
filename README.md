@@ -141,7 +141,7 @@ If you're using our SMTP integration to send emails, you can test locally using 
 # Tracing + OpenTelemetry
 
 Roadster allows reporting traces and metrics using the `tracing` and `opentelemetry_rust` integrations. Provide the URL
-of your OTLP exporter in order to report the trace/metric data to your telemetry provider (e.g., SigNoz, New Relic,
+of your OTLP exporter in order to report the trace/metric data to your telemetry provider (e.g., Grafana, SigNoz, New Relic,
 Datadog, etc).
 
 # Background/async job queue using [Sidekiq.rs](https://crates.io/crates/rusty-sidekiq)
