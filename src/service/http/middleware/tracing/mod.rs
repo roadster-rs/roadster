@@ -140,12 +140,22 @@ impl<B> MakeSpan<B> for CustomMakeSpan {
             request,
         );
 
+        let span_name = [Some(request.method().as_str()), matched_path]
+            .into_iter()
+            .flatten()
+            .join(" ");
+
         /*
         The OTEL semantic conventions allow the span name to be `{method} {target}`,
         e.g., `GET /some/http/route`. However, the tracing crate we use requires the span name
         to be static. So, we use `HTTP` instead, which is the fallback value specified by OTEL.
          */
         info_span!("HTTP",
+            // The `otel.name` field allows setting the span name to a dynamic value, which normally
+            // isn't allowed by the `tracing` macros. See the following for more details on the special
+            // `otel.*` fields: https://docs.rs/tracing-opentelemetry/latest/tracing_opentelemetry/#special-fields
+            "otel.name" = span_name,
+            "otel.kind" = "SERVER",
             { HTTP_REQUEST_METHOD } = %request.method(),
             { HTTP_ROUTE } = optional_trace_field(matched_path),
             { NETWORK_PROTOCOL_VERSION } = ?request.version(),
