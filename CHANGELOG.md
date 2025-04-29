@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.3...roadster-v0.7.4) - 2025-04-29
+
+### Added
+
+- Set HTTP request span name as `{method} {route}` ([#748](https://github.com/roadster-rs/roadster/pull/748))
+
 ## [0.7.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.2...roadster-v0.7.3) - 2025-04-20
 
 ### Added
