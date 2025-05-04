@@ -15,9 +15,21 @@ pub mod registry;
 pub(crate) mod runner;
 pub mod worker;
 
-/// Trait to represent a service (e.g., a persistent task) to run in the app. Example services
-/// include, but are not limited to: an [http API][crate::service::http::service::HttpService],
-/// a sidekiq processor, or a gRPC API.
+/// Trait to represent a service (e.g., a persistent task) to run in the app.
+///
+/// # Examples
+#[cfg_attr(
+    feature = "http",
+    doc = r"- [HTTP API][crate::service::http::service::HttpService]"
+)]
+#[cfg_attr(
+    feature = "sidekiq",
+    doc = r"- [Sidekiq processor][crate::service::worker::sidekiq::service::SidekiqWorkerService]"
+)]
+#[cfg_attr(
+    feature = "grpc",
+    doc = r"- [gRPC API][crate::service::grpc::service::GrpcService]"
+)]
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
 pub trait AppService<A, S>: Send + Sync + AppServiceAsAny<A, S>

@@ -214,7 +214,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
-      - name: Docs
+      - uses: taiki-e/install-action@just
+      - uses: taiki-e/install-action@cargo-hack
+      - name: Install zsh
+        run: sudo apt install -y zsh
+      - name: Docs all features
+        # Our justfile requires zsh
+        shell: zsh {0}
+        run: just check-docs
+      - name: Docs each feature
         env:
           RUSTDOCFLAGS: "-D rustdoc::all -A rustdoc::private_intra_doc_links"
-        run: cargo doc --all-features
+        run: cargo hack doc --ignore-private --log-group github-actions --each-feature --no-deps
