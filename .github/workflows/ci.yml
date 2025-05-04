@@ -225,4 +225,4 @@ jobs:
       - name: Docs each feature
         env:
           RUSTDOCFLAGS: "-D rustdoc::all -A rustdoc::private_intra_doc_links"
-        run: cargo hack doc --rust-version --ignore-private --log-group github-actions --each-feature --no-deps
+        run: cargo hack doc --ignore-private --log-group github-actions --each-feature --no-deps
