@@ -214,7 +214,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
-      - name: Docs
+      - uses: taiki-e/install-action@cargo-hack
+      - name: Docs all features
         env:
           RUSTDOCFLAGS: "-D rustdoc::all -A rustdoc::private_intra_doc_links"
         run: cargo doc --all-features
+      - name: Docs each feature
+        env:
+          RUSTDOCFLAGS: "-D rustdoc::all -A rustdoc::private_intra_doc_links"
+        run: cargo hack doc --rust-version --all-targets --ignore-private --log-group github-actions --each-feature
