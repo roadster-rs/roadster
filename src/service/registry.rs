@@ -110,10 +110,16 @@ where
     /// Get a reference to a previously registered [`AppService`] of the specified type.
     ///
     /// This is useful to call a method that only exists on a concrete [`AppService`]
-    /// implementor after the app was prepared. For example, to get the OpenAPI schema for an app,
-    /// setup and register the [`crate::service::http::service::HttpService`], get the service
-    /// from the registry with this method ([`ServiceRegistry::get`]), and call
-    /// [`crate::service::http::service::HttpService::print_open_api_schema`] to get the schema.
+    /// implementor after the app was prepared.
+    #[cfg_attr(
+        all(feature = "http", feature = "open-api"),
+        doc = r##"
+For example, to get the OpenAPI schema for an app,
+setup and register the [`crate::service::http::service::HttpService`], get the service
+from the registry with this method ([`ServiceRegistry::get`]), and call
+[`crate::service::http::service::HttpService::print_open_api_schema`] to get the schema.
+    "##
+    )]
     ///
     /// # Examples
     #[cfg_attr(

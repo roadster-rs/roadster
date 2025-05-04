@@ -7,16 +7,18 @@ use validator::Validate;
 #[non_exhaustive]
 pub struct Auth {
     #[validate(nested)]
+    #[cfg(feature = "jwt")]
     pub jwt: Jwt,
 }
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
+#[cfg(feature = "jwt")]
 pub struct Jwt {
     /// Name of the cookie used to pass the JWT access token. If provided, the default
     /// [`Jwt`][crate::middleware::http::auth::jwt::Jwt] will extract the access token from the
-    /// provided cookie name if it wasn't present in the [`axum::http::header::AUTHORIZATION`]
+    /// provided cookie name if it wasn't present in the `authorization`
     /// request header. If not provided, the extractor will only consider the request header.
     ///
     /// Warning: Providing this field opens up an application to CSRF vulnerabilities unless the
@@ -35,6 +37,7 @@ pub struct Jwt {
 #[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
 #[non_exhaustive]
+#[cfg(feature = "jwt")]
 pub struct JwtClaims {
     // Todo: Default to the server URL?
     #[serde(default)]
@@ -44,7 +47,7 @@ pub struct JwtClaims {
     pub required_claims: Vec<String>,
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "jwt"))]
 mod tests {
     use super::*;
     use crate::testing::snapshot::TestCase;
