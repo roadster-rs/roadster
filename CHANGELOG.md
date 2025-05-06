@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.5](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.4...roadster-v0.7.5) - 2025-05-06
+
+### Other
+
+- Run doc checks with `carg hack --each-feature` ([#750](https://github.com/roadster-rs/roadster/pull/750))
+
 ## [0.7.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.3...roadster-v0.7.4) - 2025-04-29
 
 ### Added
