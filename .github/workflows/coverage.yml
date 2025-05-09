@@ -2,7 +2,7 @@ name: Test coverage
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
     branches:
       - main
@@ -22,17 +22,27 @@ jobs:
       RUSTFLAGS: -D warnings -A unexpected_cfgs
       CARGO_TERM_COLOR: always
     steps:
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@888c2e1ea69ab0d4330cbf0af1ecc7b68f368cc1
         with:
+          toolchain: nightly
           components: llvm-tools-preview
-      - uses: actions/checkout@v4
-      - uses: rui314/setup-mold@v1
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - name: Install zsh
         run: sudo apt install -y zsh
-      - uses: taiki-e/install-action@just
-      - uses: taiki-e/install-action@nextest
-      - uses: taiki-e/install-action@cargo-llvm-cov
+      - uses: taiki-e/install-action@86c23eed46c17b80677df6d8151545ce3e236c61
+        with:
+          tool: just
+
+      - uses: taiki-e/install-action@86c23eed46c17b80677df6d8151545ce3e236c61
+        with:
+          tool: nextest
+
+      - uses: taiki-e/install-action@86c23eed46c17b80677df6d8151545ce3e236c61
+        with:
+          tool: cargo-llvm-cov
+
 
       - name: Collect coverage data
         # Generate coverage report using nextest.
@@ -40,7 +50,7 @@ jobs:
           just coverage-tests
           cargo llvm-cov report --doctests --lcov --output-path lcov.info
       - name: Upload coverage data to codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:

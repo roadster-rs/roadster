@@ -4,9 +4,9 @@ name: Book
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -29,13 +29,22 @@ jobs:
   test-book:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: rui314/setup-mold@v1
-      - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@mdbook
-      - uses: taiki-e/install-action@just
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+      - uses: taiki-e/install-action@86c23eed46c17b80677df6d8151545ce3e236c61
+        with:
+          tool: mdbook
+
+      - uses: taiki-e/install-action@86c23eed46c17b80677df6d8151545ce3e236c61
+        with:
+          tool: just
+
       # protoc is needed to build examples that have grpc enabled
-      - uses: taiki-e/install-action@protoc
+      - uses: taiki-e/install-action@86c23eed46c17b80677df6d8151545ce3e236c61
+        with:
+          tool: protoc
+
 
       - name: Test mdbook
         run: just test-book

@@ -39,12 +39,17 @@ jobs:
           - 8025:8025
           - 1025:1025
     steps:
-      - uses: actions/checkout@v4
-      - uses: rui314/setup-mold@v1
-      - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@just
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+      - uses: taiki-e/install-action@86c23eed46c17b80677df6d8151545ce3e236c61
+        with:
+          tool: just
       # protoc is needed to build examples that have grpc enabled
-      - uses: taiki-e/install-action@protoc
+      - uses: taiki-e/install-action@86c23eed46c17b80677df6d8151545ce3e236c61
+        with:
+          tool: protoc
+
       - name: Test
         run: just test-examples
 
@@ -52,10 +57,13 @@ jobs:
     name: Test private
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: rui314/setup-mold@v1
-      - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@just
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+      - uses: taiki-e/install-action@86c23eed46c17b80677df6d8151545ce3e236c61
+        with:
+          tool: just
+
       - name: Test
         run: just test-private
 
@@ -64,7 +72,7 @@ jobs:
     outputs:
       data: ${{ steps.build_data.outputs.data }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Build powerset data
         id: build_data
         run: |
@@ -81,11 +89,17 @@ jobs:
     env:
       features: ${{ join(fromJson(needs.generate_feature_matrix.outputs.data).powersets[ matrix.index ], ' ') }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: rui314/setup-mold@v1
-      - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@cargo-hack
-      - uses: taiki-e/install-action@nextest
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+      - uses: taiki-e/install-action@86c23eed46c17b80677df6d8151545ce3e236c61
+        with:
+          tool: cargo-hack
+
+      - uses: taiki-e/install-action@86c23eed46c17b80677df6d8151545ce3e236c61
+        with:
+          tool: nextest
+
       - name: Test
         run: |
           features=($features)
@@ -113,10 +127,13 @@ jobs:
     name: Doc tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: rui314/setup-mold@v1
-      - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@cargo-hack
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+      - uses: taiki-e/install-action@86c23eed46c17b80677df6d8151545ce3e236c61
+        with:
+          tool: cargo-hack
+
       - name: Doc test
         run: cargo hack test --doc --no-fail-fast --each-feature --log-group github-actions
 
@@ -124,10 +141,13 @@ jobs:
     name: Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: rui314/setup-mold@v1
-      - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@cargo-hack
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+      - uses: taiki-e/install-action@86c23eed46c17b80677df6d8151545ce3e236c61
+        with:
+          tool: cargo-hack
+
       - name: Check
         run: cargo hack check --each-feature --no-dev-deps --log-group github-actions
 
@@ -141,10 +161,13 @@ jobs:
     env:
       features: ${{ join(fromJson(needs.generate_feature_matrix.outputs.data).powersets[ matrix.index ], ' ') }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: rui314/setup-mold@v1
-      - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@cargo-hack
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+      - uses: taiki-e/install-action@86c23eed46c17b80677df6d8151545ce3e236c61
+        with:
+          tool: cargo-hack
+
       - name: Clippy
         run: |
           features=($features)
@@ -169,8 +192,8 @@ jobs:
     name: Deny
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: EmbarkStudios/cargo-deny-action@v2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: EmbarkStudios/cargo-deny-action@34899fc7ba81ca6268d5947a7a16b4649013fea1
         with:
           command: check
           arguments: --all-features
@@ -181,10 +204,13 @@ jobs:
     name: Check MSRV
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: rui314/setup-mold@v1
-      - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@cargo-hack
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+      - uses: taiki-e/install-action@86c23eed46c17b80677df6d8151545ce3e236c61
+        with:
+          tool: cargo-hack
+
       - run: cargo hack check --rust-version --all-targets --ignore-private --log-group github-actions
 
   # https://doc.rust-lang.org/cargo/guide/continuous-integration.html#verifying-rust-version
@@ -192,19 +218,25 @@ jobs:
     name: Direct dep min version check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: rui314/setup-mold@v1
-      - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@cargo-hack
-      - uses: taiki-e/install-action@cargo-minimal-versions
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+      - uses: taiki-e/install-action@86c23eed46c17b80677df6d8151545ce3e236c61
+        with:
+          tool: cargo-hack
+
+      - uses: taiki-e/install-action@86c23eed46c17b80677df6d8151545ce3e236c61
+        with:
+          tool: cargo-minimal-versions
+
       - run: cargo minimal-versions check --direct --all-features
 
   check_formatting:
     name: Formatting
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - name: Formatting
         run: cargo fmt --all --check
 
@@ -212,10 +244,16 @@ jobs:
     name: Docs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@just
-      - uses: taiki-e/install-action@cargo-hack
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+      - uses: taiki-e/install-action@86c23eed46c17b80677df6d8151545ce3e236c61
+        with:
+          tool: just
+
+      - uses: taiki-e/install-action@86c23eed46c17b80677df6d8151545ce3e236c61
+        with:
+          tool: cargo-hack
+
       - name: Install zsh
         run: sudo apt install -y zsh
       - name: Docs all features

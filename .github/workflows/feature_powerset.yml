@@ -12,8 +12,8 @@ on:
     - cron: "0 23 * * 1"
   workflow_dispatch:
   pull_request:
-    branches: [main]
-    types: [labeled]
+    branches: [ main ]
+    types: [ labeled ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -32,7 +32,7 @@ jobs:
       should_run1: ${{ steps.schedule_trigger.outputs.should_run }}
       should_run2: ${{ steps.label_trigger.outputs.should_run }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: print latest_commit
         run: echo ${{ github.sha }}
 
@@ -55,7 +55,7 @@ jobs:
     outputs:
       data: ${{ steps.build_data.outputs.data }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Random seed
         id: random_seed
         run: |
@@ -83,9 +83,12 @@ jobs:
     env:
       features: ${{ join(fromJson(needs.generate_powerset.outputs.data).powersets[ matrix.index ], ' ') }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: rui314/setup-mold@v1
-      - uses: taiki-e/install-action@nextest
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: taiki-e/install-action@86c23eed46c17b80677df6d8151545ce3e236c61
+        with:
+          tool: nextest
+
       - name: Test
         run: |
           features=($features)
@@ -113,8 +116,8 @@ jobs:
     env:
       features: ${{ join(fromJson(needs.generate_powerset.outputs.data).powersets[ matrix.index ], ' ') }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: rui314/setup-mold@v1
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
       - name: Check
         run: |
           features=($features)
@@ -139,8 +142,8 @@ jobs:
     env:
       features: ${{ join(fromJson(needs.generate_powerset.outputs.data).powersets[ matrix.index ], ' ') }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: rui314/setup-mold@v1
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
       - name: Clippy
         run: |
           features=($features)
