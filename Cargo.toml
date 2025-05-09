@@ -175,7 +175,7 @@ members = [".", "examples/*", "book/examples/*", "private/*"]
 [workspace.dependencies]
 # Config
 config = { version = "0.15.8", default-features = false, features = ["toml", "convert-case"] }
-dotenvy = "0.15.5"
+dotenvy = "0.15.7"
 
 # Tracing
 tracing = { version = "0.1.40", features = ["async-await"] }
@@ -202,8 +202,8 @@ mime = "0.3.17"
 http-body-util = { version = "0.1.2" }
 
 # DB - SeaORM
-sea-orm = { version = "1.1.7" }
-sea-orm-migration = { version = "1.1.2" }
+sea-orm = { version = "1.1.11" }
+sea-orm-migration = { version = "1.1.11" }
 
 # DB - Diesel
 diesel = { version = "2.2.3" }

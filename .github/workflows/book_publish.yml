@@ -2,7 +2,7 @@ name: Book publish
 
 on:
   workflow_run:
-    workflows: [Book]
+    workflows: [ Book ]
     branches:
       - "main"
     types:
@@ -32,21 +32,23 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: taiki-e/install-action@mdbook
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: taiki-e/install-action@86c23eed46c17b80677df6d8151545ce3e236c61
+        with:
+          tool: mdbook
 
       - name: Setup Pages
         id: pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
 
       - name: Build
         run: mdbook build book
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
           path: ./book/book
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e
