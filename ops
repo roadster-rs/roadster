@@ -1,0 +1,1 @@
+{"author":{"id":"b588886e8ed752fadf1299e138ac3436c5eb556ee8e02466cae19fa663a1a8d8"},"ops":[{"type":1,"timestamp":1718037405,"nonce":"nxHqIpn4BgQJO9Qi5pj11Ohmedg=","metadata":{"github-id":"I_kwDOLg8lJc6LvFVF","github-url":"https://github.com/roadster-rs/roadster/issues/208","origin":"github"},"title":"Add #[non_exhaustive] to public structs/enums","message":"","files":null}]}
