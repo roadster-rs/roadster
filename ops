@@ -1,0 +1,1 @@
+{"author":{"id":"b588886e8ed752fadf1299e138ac3436c5eb556ee8e02466cae19fa663a1a8d8"},"ops":[{"type":1,"timestamp":1714789284,"nonce":"O2ZVV3p6IkU6JjwmpTQWY2bRWn8=","metadata":{"github-id":"I_kwDOLg8lJc6H0brr","github-url":"https://github.com/roadster-rs/roadster/issues/60","origin":"github"},"title":"Implement the Sidekiq processor as an `AppService`","message":"","files":null}]}
