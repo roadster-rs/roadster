@@ -13,11 +13,16 @@ use std::marker::PhantomData;
 use std::sync::Mutex;
 use tracing::info;
 
+pub enum MigrationSortOrder {
+    None,
+    Name,
+}
+
 pub struct DieselMigrator<C>
 where
     C: Send + Connection + MigrationHarness<C::Backend>,
 {
-    migrator: Box<dyn MigrationSource<C::Backend> + Send + Sync>,
+    migrators: Vec<Box<dyn MigrationSource<C::Backend> + Send + Sync>>,
     // Diesel connections don't implement `Sync`, so we need to wrap the `PhantomData` in a
     // `Mutex` to satisfy `Sync` trait bounds elsewhere.
     // https://github.com/diesel-rs/diesel/issues/190
@@ -30,9 +35,17 @@ where
 {
     pub fn new(migrator: impl 'static + MigrationSource<C::Backend> + Send + Sync) -> Self {
         Self {
-            migrator: Box::new(migrator),
+            migrators: vec![Box::new(migrator)],
             _conn: Default::default(),
         }
+    }
+
+    pub fn add(
+        mut self,
+        migrator: impl 'static + MigrationSource<C::Backend> + Send + Sync,
+    ) -> Self {
+        self.migrators.push(migrator);
+        self
     }
 }
 
@@ -54,7 +67,7 @@ where
         //  See: https://github.com/weiznich/diesel_async/blob/main/CHANGELOG.md#051---2024-11-01
         let mut conn: C = Connection::establish(context.config().database.uri.as_ref())?;
         let pending =
-            conn.pending_migrations(DieselMigrationSourceWrapper::try_from(&self.migrator)?)?;
+            conn.pending_migrations(DieselMigrationSourceWrapper::try_from(&self.migrators)?)?;
         let pending = if let Some(steps) = args.steps {
             let steps = min(steps, pending.len());
             pending.into_iter().take(steps).collect()
@@ -92,11 +105,13 @@ where
             .into_iter()
             .take(to_roll_back)
             .collect_vec();
-        let mut migrations: HashMap<_, _> = self
-            .migrator
-            .migrations()?
+        let mut migrations = Vec::new();
+        for migrator in self.migrators {
+            migrations.extend(migrator.migrations()?);
+        }
+        let mut migrations: HashMap<_, _> = migrations
             .into_iter()
-            .map(|m| (m.name().version().as_owned(), m))
+            .map(|m: Box<dyn Migration<C::Backend>>| (m.name().version().as_owned(), m))
             .collect();
 
         for version in applied_versions {
@@ -118,7 +133,7 @@ where
         let mut conn: C = Connection::establish(context.config().database.uri.as_ref())?;
 
         let pending = conn
-            .pending_migrations(DieselMigrationSourceWrapper::try_from(&self.migrator)?)?
+            .pending_migrations(DieselMigrationSourceWrapper::try_from(&self.migrators)?)?
             .into_iter()
             .map(|migration| {
                 MigrationInfo::builder()
@@ -127,9 +142,11 @@ where
                     .build()
             });
 
-        let migrations: HashMap<_, _> = self
-            .migrator
-            .migrations()?
+        let mut migrations = Vec::new();
+        for migrator in self.migrators {
+            migrations.extend(migrator.migrations()?);
+        }
+        let migrations: HashMap<_, _> = migrations
             .into_iter()
             .map(|m: Box<dyn Migration<C::Backend>>| (m.name().version().as_owned(), m))
             .collect();
@@ -173,6 +190,26 @@ where
     fn try_from(value: &Box<dyn MigrationSource<DB> + Send + Sync>) -> Result<Self, Self::Error> {
         Ok(Self {
             migrations: Mutex::new(Some(value.migrations()?)),
+        })
+    }
+}
+
+impl<DB> TryFrom<&Vec<Box<dyn MigrationSource<DB> + Send + Sync>>>
+    for DieselMigrationSourceWrapper<DB>
+where
+    DB: Backend,
+{
+    type Error = Box<dyn std::error::Error + Send + Sync>;
+    fn try_from(
+        value: &Vec<Box<dyn MigrationSource<DB> + Send + Sync>>,
+    ) -> Result<Self, Self::Error> {
+        let mut migrations = vec![];
+        for migrator in value {
+            migrations.extend(migrator.migrations()?);
+        }
+        migrations.sort_by(|a, b| a.name().to_string().cmp(&b.name().to_string()))
+        Ok(Self {
+            migrations: Mutex::new(Some(migrations)),
         })
     }
 }
