@@ -48,6 +48,16 @@ pub enum MigrationStatus {
     Pending,
 }
 
+/// How to order migrations when multiple migrators are used together.
+#[derive(Debug, Default, Serialize, EnumString, IntoStaticStr)]
+pub enum MigrationSortOrder {
+    /// Do not modify the order of migrations.
+    #[default]
+    None,
+    /// Order the migrations by name.
+    Name,
+}
+
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
 pub trait Migrator<S>: Send + Sync
