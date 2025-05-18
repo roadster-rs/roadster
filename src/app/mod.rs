@@ -50,7 +50,10 @@ use std::future;
 use std::sync::Arc;
 
 #[cfg_attr(all(test, feature = "cli"), mockall::automock(type Cli = MockTestCli<S>;))]
-#[cfg_attr(all(test, not(feature = "cli")), mockall::automock(type Cli = crate::util::empty::Empty;))]
+#[cfg_attr(
+    all(test, not(feature = "cli")),
+    mockall::automock(type Cli = crate::util::empty::Empty;)
+)]
 #[async_trait]
 pub trait App<S>: Send + Sync + Sized
 where
@@ -153,6 +156,18 @@ where
         >,
     > {
         Ok(Box::new(crate::util::empty::Empty))
+    }
+
+    #[cfg(feature = "worker-pg")]
+    fn worker_pg_sqlx_pool_options(
+        &self,
+        config: &AppConfig,
+    ) -> RoadsterResult<sqlx::pool::PoolOptions<sqlx::Postgres>> {
+        if let Some(pool_config) = &config.service.worker_pg.custom.db_pool {
+            Ok(pool_config.into())
+        } else {
+            Ok((&config.database).into())
+        }
     }
 
     /// Provide the app state that will be used throughout the app. The state can simply be the

@@ -31,6 +31,10 @@ pub enum DbError {
     #[error(transparent)]
     DieselAsyncBb8Pool(#[from] diesel_async::pooled_connection::bb8::RunError),
 
+    #[cfg(feature = "worker-pg")]
+    #[error(transparent)]
+    Sqlx(#[from] sqlx::error::Error),
+
     #[error("{0}")]
     Message(String),
 
@@ -83,6 +87,13 @@ impl From<diesel_async::pooled_connection::PoolError> for Error {
 #[cfg(feature = "db-diesel-pool-async")]
 impl From<diesel_async::pooled_connection::bb8::RunError> for Error {
     fn from(value: diesel_async::pooled_connection::bb8::RunError) -> Self {
+        Self::Db(DbError::from(value))
+    }
+}
+
+#[cfg(feature = "worker-pg")]
+impl From<sqlx::error::Error> for Error {
+    fn from(value: sqlx::error::Error) -> Self {
         Self::Db(DbError::from(value))
     }
 }

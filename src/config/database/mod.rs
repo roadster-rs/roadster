@@ -70,11 +70,11 @@ pub struct Database {
 }
 
 impl Database {
-    fn default_connect_timeout() -> Duration {
+    pub(crate) fn default_connect_timeout() -> Duration {
         Duration::from_millis(1000)
     }
 
-    fn default_acquire_timeout() -> Duration {
+    pub(crate) fn default_acquire_timeout() -> Duration {
         Duration::from_millis(1000)
     }
 }
@@ -105,6 +105,26 @@ impl From<&Database> for sea_orm::ConnectOptions {
             options.max_lifetime(max_lifetime);
         }
         options
+    }
+}
+
+#[cfg(feature = "worker-pg")]
+impl From<Database> for sqlx::pool::PoolOptions<sqlx::Postgres> {
+    fn from(value: Database) -> Self {
+        Self::from(&value)
+    }
+}
+
+#[cfg(feature = "worker-pg")]
+impl From<&Database> for sqlx::pool::PoolOptions<sqlx::Postgres> {
+    fn from(value: &Database) -> Self {
+        sqlx::pool::PoolOptions::new()
+            .test_before_acquire(value.test_on_checkout)
+            .acquire_timeout(value.acquire_timeout)
+            .min_connections(value.min_connections)
+            .max_connections(value.max_connections)
+            .idle_timeout(value.idle_timeout)
+            .max_lifetime(value.max_lifetime)
     }
 }
 

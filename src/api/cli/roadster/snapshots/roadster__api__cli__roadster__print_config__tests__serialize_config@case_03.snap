@@ -166,6 +166,14 @@ expression: serialized
         "max-duration": 60
       },
       "queue-config": {}
+    },
+    "worker-pg": {
+      "num-workers": 16,
+      "worker-config": {
+        "max-retries": 25,
+        "timeout": true,
+        "max-duration": 60
+      }
     }
   },
   "auth": {
