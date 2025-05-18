@@ -42,14 +42,10 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
-      - uses: taiki-e/install-action@83254c543806f3224380bf1001d6fac8feaf2d0b
-        with:
-          tool: just
       # protoc is needed to build examples that have grpc enabled
       - uses: taiki-e/install-action@83254c543806f3224380bf1001d6fac8feaf2d0b
         with:
-          tool: protoc
-
+          tool: just,protoc
       - name: Test
         run: just test-examples
 
@@ -94,12 +90,7 @@ jobs:
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - uses: taiki-e/install-action@83254c543806f3224380bf1001d6fac8feaf2d0b
         with:
-          tool: cargo-hack
-
-      - uses: taiki-e/install-action@83254c543806f3224380bf1001d6fac8feaf2d0b
-        with:
-          tool: nextest
-
+          tool: cargo-hack,nextest
       - name: Test
         run: |
           features=($features)
@@ -223,12 +214,7 @@ jobs:
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - uses: taiki-e/install-action@83254c543806f3224380bf1001d6fac8feaf2d0b
         with:
-          tool: cargo-hack
-
-      - uses: taiki-e/install-action@83254c543806f3224380bf1001d6fac8feaf2d0b
-        with:
-          tool: cargo-minimal-versions
-
+          tool: cargo-hack,cargo-minimal-versions
       - run: cargo minimal-versions check --direct --all-features
 
   check_formatting:
@@ -248,12 +234,7 @@ jobs:
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - uses: taiki-e/install-action@83254c543806f3224380bf1001d6fac8feaf2d0b
         with:
-          tool: just
-
-      - uses: taiki-e/install-action@83254c543806f3224380bf1001d6fac8feaf2d0b
-        with:
-          tool: cargo-hack
-
+          tool: just,cargo-hack
       - name: Install zsh
         run: sudo apt install -y zsh
       - name: Docs all features
