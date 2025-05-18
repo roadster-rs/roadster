@@ -20,3 +20,5 @@ pub mod service;
 pub mod testing;
 pub mod tracing;
 pub mod util;
+#[cfg(feature = "worker")]
+pub mod worker;

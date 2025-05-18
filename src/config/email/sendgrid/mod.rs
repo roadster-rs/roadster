@@ -50,23 +50,21 @@ impl From<&Email> for Message {
             MailSettings::new()
                 .set_sandbox_mode(SandboxMode::new().set_enable(value.sendgrid.sandbox)),
         );
-        let message = if let Some(reply_to) = value.reply_to.as_ref() {
+        if let Some(reply_to) = value.reply_to.as_ref() {
             message.set_reply_to(mailbox_to_email(reply_to))
         } else {
             message
-        };
-        message
+        }
     }
 }
 
 fn mailbox_to_email(mailbox: &Mailbox) -> sendgrid::v3::Email {
     let email = sendgrid::v3::Email::new(mailbox.email.to_string());
-    let email = if let Some(name) = mailbox.name.as_ref() {
+    if let Some(name) = mailbox.name.as_ref() {
         email.set_name(name)
     } else {
         email
-    };
-    email
+    }
 }
 
 impl TryFrom<&Sendgrid> for Sender {

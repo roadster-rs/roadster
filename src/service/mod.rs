@@ -13,6 +13,7 @@ pub mod grpc;
 pub mod http;
 pub mod registry;
 pub(crate) mod runner;
+#[cfg(feature = "worker")]
 pub mod worker;
 
 /// Trait to represent a service (e.g., a persistent task) to run in the app.

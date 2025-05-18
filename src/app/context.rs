@@ -106,7 +106,7 @@ impl AppContext {
             )
             .await?;
 
-            #[cfg(feature = "sidekiq")]
+            #[cfg(feature = "worker-sidekiq")]
             let (redis_enqueue, redis_fetch) = {
                 let sidekiq_config = &config.service.sidekiq;
                 let redis_config = &sidekiq_config.custom.redis;
@@ -148,6 +148,44 @@ impl AppContext {
             #[cfg(feature = "email-sendgrid")]
             let sendgrid = sendgrid::v3::Sender::try_from(&config.email.sendgrid)?;
 
+            #[cfg(feature = "worker-pg")]
+            let pgmq_queue = {
+                #[allow(unused_variables)]
+                let pool: Option<sqlx::Pool<sqlx::Postgres>> = None;
+
+                #[cfg(feature = "db-sea-orm")]
+                let pool = if config.service.worker_pg.custom.db_pool.is_none() {
+                    Some(sea_orm.get_postgres_connection_pool().clone())
+                } else {
+                    None
+                };
+
+                let pool = if let Some(pool) = pool {
+                    pool
+                } else {
+                    let pool_config = config.service.worker_pg.custom.db_pool.as_ref();
+
+                    let uri = pool_config
+                        .and_then(|config| config.uri.as_ref())
+                        .unwrap_or(&config.database.uri)
+                        .as_str();
+
+                    let connect_lazy = pool_config
+                        .map(|config| config.connect_lazy)
+                        .unwrap_or(config.database.connect_lazy);
+
+                    let pool = app.worker_pg_sqlx_pool_options(&config)?;
+
+                    if connect_lazy {
+                        pool.connect_lazy(uri)
+                    } else {
+                        pool.connect(uri).await
+                    }?
+                };
+
+                pgmq::PGMQueue::new_with_pool(pool).await
+            };
+
             let inner = AppContextInner {
                 config,
                 metadata,
@@ -168,12 +206,14 @@ impl AppContext {
                 db_test_container,
                 #[cfg(all(feature = "db-sql", feature = "testing"))]
                 temporary_test_db,
-                #[cfg(feature = "sidekiq")]
+                #[cfg(feature = "worker-sidekiq")]
                 redis_enqueue,
-                #[cfg(feature = "sidekiq")]
+                #[cfg(feature = "worker-sidekiq")]
                 redis_fetch,
                 #[cfg(all(feature = "sidekiq", feature = "test-containers"))]
                 sidekiq_redis_test_container,
+                #[cfg(feature = "worker-pg")]
+                pgmq_queue,
                 #[cfg(feature = "email-smtp")]
                 smtp,
                 #[cfg(feature = "email-sendgrid")]
@@ -204,7 +244,7 @@ impl AppContext {
         config: Option<AppConfig>,
         metadata: Option<AppMetadata>,
         #[cfg(not(feature = "sidekiq"))] _redis: Option<()>,
-        #[cfg(feature = "sidekiq")] redis: Option<sidekiq::RedisPool>,
+        #[cfg(feature = "worker-sidekiq")] redis: Option<sidekiq::RedisPool>,
     ) -> RoadsterResult<Self> {
         let mut inner = MockAppContextInner::default();
         inner
@@ -215,7 +255,7 @@ impl AppContext {
             .expect_metadata()
             .return_const(metadata.unwrap_or_default());
 
-        #[cfg(feature = "sidekiq")]
+        #[cfg(feature = "worker-sidekiq")]
         if let Some(redis) = redis {
             inner
                 .expect_redis_enqueue()
@@ -286,16 +326,21 @@ impl AppContext {
     }
 
     /// Get the Redis connection pool used to enqueue Sidekiq jobs.
-    #[cfg(feature = "sidekiq")]
+    #[cfg(feature = "worker-sidekiq")]
     pub fn redis_enqueue(&self) -> &RedisEnqueue {
         self.inner.redis_enqueue()
     }
 
     /// Get the Redis connection pool used to fetch Sidekiq jobs. This shouldn't be needed by most
     /// applications but is provided as a convenience in case it is.
-    #[cfg(feature = "sidekiq")]
+    #[cfg(feature = "worker-sidekiq")]
     pub fn redis_fetch(&self) -> &Option<RedisFetch> {
         self.inner.redis_fetch()
+    }
+
+    #[cfg(feature = "worker-pg")]
+    pub fn pgmq(&self) -> &pgmq::PGMQueue {
+        self.inner.pgmq()
     }
 
     /// Get the SMTP client. Used to send emails via the SMTP protocol
@@ -640,35 +685,35 @@ impl Provide<sendgrid::v3::Sender> for AppContext {
     }
 }
 
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 #[derive(Clone)]
 #[non_exhaustive]
 pub struct RedisEnqueue {
     pub inner: sidekiq::RedisPool,
 }
 
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 impl From<sidekiq::RedisPool> for RedisEnqueue {
     fn from(value: sidekiq::RedisPool) -> Self {
         Self { inner: value }
     }
 }
 
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 #[derive(Clone)]
 #[non_exhaustive]
 pub struct RedisFetch {
     pub inner: sidekiq::RedisPool,
 }
 
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 impl From<sidekiq::RedisPool> for RedisFetch {
     fn from(value: sidekiq::RedisPool) -> Self {
         Self { inner: value }
     }
 }
 
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 impl std::ops::Deref for RedisEnqueue {
     type Target = sidekiq::RedisPool;
 
@@ -677,7 +722,7 @@ impl std::ops::Deref for RedisEnqueue {
     }
 }
 
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 impl std::ops::Deref for RedisFetch {
     type Target = sidekiq::RedisPool;
 
@@ -686,21 +731,21 @@ impl std::ops::Deref for RedisFetch {
     }
 }
 
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 impl Provide<RedisEnqueue> for AppContext {
     fn provide(&self) -> RedisEnqueue {
         self.redis_enqueue().clone()
     }
 }
 
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 impl ProvideRef<RedisEnqueue> for AppContext {
     fn provide(&self) -> &RedisEnqueue {
         self.inner.redis_enqueue()
     }
 }
 
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 impl Provide<Option<RedisFetch>> for AppContext {
     fn provide(&self) -> Option<RedisFetch> {
         self.redis_fetch().as_ref().cloned()
@@ -871,11 +916,7 @@ async fn create_temporary_test_db(
     let test_name = format!("{test_name}{case_name}");
 
     let name_len = prefix.len() + suffix.len() + test_name.len();
-    let start_index = if name_len > MAX_DB_NAME_LENGTH {
-        name_len - MAX_DB_NAME_LENGTH
-    } else {
-        0
-    };
+    let start_index = name_len.saturating_sub(MAX_DB_NAME_LENGTH);
     let test_name_truncated = test_name.get(start_index..test_name.len()).ok_or_else(|| {
         crate::error::other::OtherError::Message(
             "Invalid indexes used to truncate test name".to_owned(),
@@ -939,12 +980,12 @@ struct AppContextInner {
     db_test_container: Option<DbTestContainer>,
     #[cfg(all(feature = "db-sql", feature = "testing"))]
     temporary_test_db: Option<TemporaryTestDb>,
-    #[cfg(feature = "sidekiq")]
+    #[cfg(feature = "worker-sidekiq")]
     redis_enqueue: RedisEnqueue,
     /// The Redis connection pool used by [sidekiq::Processor] to fetch Sidekiq jobs from Redis.
     /// May be `None` if the [fetch_pool.max_connections][crate::config::service::worker::sidekiq::ConnectionPool]
     /// config is set to zero, in which case the [sidekiq::Processor] would also not be started.
-    #[cfg(feature = "sidekiq")]
+    #[cfg(feature = "worker-sidekiq")]
     redis_fetch: Option<RedisFetch>,
     #[cfg(all(feature = "sidekiq", feature = "test-containers"))]
     #[allow(dead_code)]
@@ -953,6 +994,8 @@ struct AppContextInner {
             testcontainers_modules::redis::Redis,
         >,
     >,
+    #[cfg(feature = "worker-pg")]
+    pgmq_queue: pgmq::PGMQueue,
     #[cfg(feature = "email-smtp")]
     smtp: lettre::SmtpTransport,
     #[cfg(feature = "email-sendgrid")]
@@ -1027,14 +1070,19 @@ impl AppContextInner {
         &self.diesel_mysql_pool_async
     }
 
-    #[cfg(feature = "sidekiq")]
+    #[cfg(feature = "worker-sidekiq")]
     fn redis_enqueue(&self) -> &RedisEnqueue {
         &self.redis_enqueue
     }
 
-    #[cfg(feature = "sidekiq")]
+    #[cfg(feature = "worker-sidekiq")]
     fn redis_fetch(&self) -> &Option<RedisFetch> {
         &self.redis_fetch
+    }
+
+    #[cfg(feature = "worker-pg")]
+    fn pgmq(&self) -> &pgmq::PGMQueue {
+        &self.pgmq_queue
     }
 
     #[cfg(feature = "email-smtp")]

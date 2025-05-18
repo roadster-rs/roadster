@@ -3,6 +3,7 @@ mod common;
 pub mod grpc;
 #[cfg(feature = "http")]
 pub mod http;
+#[cfg(feature = "worker")]
 pub mod worker;
 
 use crate::app::context::AppContext;
@@ -11,7 +12,9 @@ use crate::config::CustomConfig;
 use crate::config::service::grpc::GrpcServiceConfig;
 #[cfg(feature = "http")]
 use crate::config::service::http::HttpServiceConfig;
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-pg")]
+use crate::config::service::worker::pg::WorkerPgServiceConfig;
+#[cfg(feature = "worker-sidekiq")]
 use crate::config::service::worker::sidekiq::SidekiqServiceConfig;
 use crate::util::serde::default_true;
 use serde_derive::{Deserialize, Serialize};
@@ -33,9 +36,13 @@ pub struct Service {
     #[validate(nested)]
     pub grpc: ServiceConfig<GrpcServiceConfig>,
 
-    #[cfg(feature = "sidekiq")]
+    #[cfg(feature = "worker-sidekiq")]
     #[validate(nested)]
     pub sidekiq: ServiceConfig<SidekiqServiceConfig>,
+
+    #[cfg(feature = "worker-pg")]
+    #[validate(nested)]
+    pub worker_pg: ServiceConfig<WorkerPgServiceConfig>,
 
     #[serde(flatten)]
     #[validate(nested)]
