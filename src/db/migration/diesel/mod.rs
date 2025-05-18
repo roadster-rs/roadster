@@ -214,7 +214,7 @@ where
         match value.order {
             MigrationSortOrder::None => {}
             MigrationSortOrder::Name => {
-                migrations.sort_by(|a, b| a.name().to_string().cmp(&b.name().to_string()));
+                migrations.sort_by_key(|a| a.name().to_string());
             }
         }
         Ok(Self {
