@@ -7,17 +7,32 @@ use diesel::backend::Backend;
 use diesel::migration::{Migration, MigrationSource};
 use diesel_migrations::{MigrationError, MigrationHarness};
 use itertools::Itertools;
+use serde_derive::Serialize;
 use std::cmp::min;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::sync::Mutex;
+use strum_macros::{EnumString, IntoStaticStr};
 use tracing::info;
+
+/// How to order migrations when a [`DieselMigrator`] has multiple [`MigrationSource`]s added to it.
+#[derive(Debug, Default, Serialize, EnumString, IntoStaticStr)]
+pub enum MigrationSortOrder {
+    /// Do not modify the order of migrations. Migrations will run in the order they exist in the
+    /// original [`MigrationSource`]s, and each [`MigrationSource`]'s migrations will run in the
+    /// order that the [`MigrationSource`] was added to the [`DieselMigrator`].
+    #[default]
+    None,
+    /// Order the migrations by name.
+    Name,
+}
 
 pub struct DieselMigrator<C>
 where
     C: Send + Connection + MigrationHarness<C::Backend>,
 {
-    migrator: Box<dyn MigrationSource<C::Backend> + Send + Sync>,
+    migrators: Vec<Box<dyn MigrationSource<C::Backend> + Send + Sync>>,
+    order: MigrationSortOrder,
     // Diesel connections don't implement `Sync`, so we need to wrap the `PhantomData` in a
     // `Mutex` to satisfy `Sync` trait bounds elsewhere.
     // https://github.com/diesel-rs/diesel/issues/190
@@ -30,9 +45,26 @@ where
 {
     pub fn new(migrator: impl 'static + MigrationSource<C::Backend> + Send + Sync) -> Self {
         Self {
-            migrator: Box::new(migrator),
+            migrators: vec![Box::new(migrator)],
+            order: Default::default(),
             _conn: Default::default(),
         }
+    }
+
+    /// Add another [`MigrationSource`] to run as part of this [`DieselMigrator`].
+    pub fn add_migrator(
+        mut self,
+        migrator: impl 'static + MigrationSource<C::Backend> + Send + Sync,
+    ) -> Self {
+        self.migrators.push(Box::new(migrator));
+        self
+    }
+
+    /// Set how to order migrations when a [`DieselMigrator`] has multiple
+    /// [`MigrationSource`]s added to it.
+    pub fn order(mut self, order: MigrationSortOrder) -> Self {
+        self.order = order;
+        self
     }
 }
 
@@ -53,8 +85,7 @@ where
         //  `Deref`/`DerefMut` which is supposed to allow using it in an async context.
         //  See: https://github.com/weiznich/diesel_async/blob/main/CHANGELOG.md#051---2024-11-01
         let mut conn: C = Connection::establish(context.config().database.uri.as_ref())?;
-        let pending =
-            conn.pending_migrations(DieselMigrationSourceWrapper::try_from(&self.migrator)?)?;
+        let pending = conn.pending_migrations(DieselMigrationSourceWrapper::try_from(self)?)?;
         let pending = if let Some(steps) = args.steps {
             let steps = min(steps, pending.len());
             pending.into_iter().take(steps).collect()
@@ -92,11 +123,13 @@ where
             .into_iter()
             .take(to_roll_back)
             .collect_vec();
-        let mut migrations: HashMap<_, _> = self
-            .migrator
-            .migrations()?
+        let mut migrations = Vec::new();
+        for migrator in &self.migrators {
+            migrations.extend(migrator.migrations()?);
+        }
+        let mut migrations: HashMap<_, _> = migrations
             .into_iter()
-            .map(|m| (m.name().version().as_owned(), m))
+            .map(|m: Box<dyn Migration<C::Backend>>| (m.name().version().as_owned(), m))
             .collect();
 
         for version in applied_versions {
@@ -118,7 +151,7 @@ where
         let mut conn: C = Connection::establish(context.config().database.uri.as_ref())?;
 
         let pending = conn
-            .pending_migrations(DieselMigrationSourceWrapper::try_from(&self.migrator)?)?
+            .pending_migrations(DieselMigrationSourceWrapper::try_from(self)?)?
             .into_iter()
             .map(|migration| {
                 MigrationInfo::builder()
@@ -127,9 +160,11 @@ where
                     .build()
             });
 
-        let migrations: HashMap<_, _> = self
-            .migrator
-            .migrations()?
+        let mut migrations = Vec::new();
+        for migrator in &self.migrators {
+            migrations.extend(migrator.migrations()?);
+        }
+        let migrations: HashMap<_, _> = migrations
             .into_iter()
             .map(|m: Box<dyn Migration<C::Backend>>| (m.name().version().as_owned(), m))
             .collect();
@@ -165,14 +200,25 @@ struct DieselMigrationSourceWrapper<DB: Backend> {
     migrations: Mutex<Option<Vec<Box<dyn Migration<DB>>>>>,
 }
 
-impl<DB> TryFrom<&Box<dyn MigrationSource<DB> + Send + Sync>> for DieselMigrationSourceWrapper<DB>
+impl<C> TryFrom<&DieselMigrator<C>> for DieselMigrationSourceWrapper<C::Backend>
 where
-    DB: Backend,
+    C: Connection + Send + MigrationHarness<C::Backend>,
 {
     type Error = Box<dyn std::error::Error + Send + Sync>;
-    fn try_from(value: &Box<dyn MigrationSource<DB> + Send + Sync>) -> Result<Self, Self::Error> {
+
+    fn try_from(value: &DieselMigrator<C>) -> Result<Self, Self::Error> {
+        let mut migrations = vec![];
+        for migrator in &value.migrators {
+            migrations.extend(migrator.migrations()?);
+        }
+        match value.order {
+            MigrationSortOrder::None => {}
+            MigrationSortOrder::Name => {
+                migrations.sort_by_key(|a| a.name().to_string());
+            }
+        }
         Ok(Self {
-            migrations: Mutex::new(Some(value.migrations()?)),
+            migrations: Mutex::new(Some(migrations)),
         })
     }
 }

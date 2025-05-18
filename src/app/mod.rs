@@ -162,6 +162,9 @@ where
     /// See the following for more details regarding [`FromRef`]: <https://docs.rs/axum/0.7.5/axum/extract/trait.FromRef.html>
     async fn provide_state(&self, context: AppContext) -> RoadsterResult<S>;
 
+    /// Note: SeaORM and Diesel migrations expect all of the applied migrations to be available
+    /// to the provided migrator, so multiple SeaORM or Diesel migrators should not be provided
+    /// via this method.
     #[cfg(feature = "db-sql")]
     fn migrators(&self, _state: &S) -> RoadsterResult<Vec<Box<dyn Migrator<S>>>> {
         Ok(Default::default())
