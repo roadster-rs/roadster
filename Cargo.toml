@@ -21,6 +21,7 @@ default-diesel = ["default-common", "db-diesel-postgres-pool-async"]
 http = ["dep:axum", "dep:axum-extra", "dep:tower", "dep:tower-http", "dep:http-body-util", "dep:mime"]
 open-api = ["http", "dep:aide", "dep:schemars"]
 sidekiq = ["dep:rusty-sidekiq", "dep:bb8", "dep:num_cpus"]
+pg-queue = ["dep:pgmq"]
 db-sql = []
 db-sea-orm = ["db-sql", "dep:sea-orm", "dep:sea-orm-migration"]
 
@@ -107,9 +108,12 @@ lettre = { workspace = true, features = ["serde"], optional = true }
 sendgrid = { workspace = true, optional = true }
 
 # Workers
+## Sidekiq
 rusty-sidekiq = { workspace = true, optional = true }
 bb8 = { workspace = true, optional = true }
 num_cpus = { workspace = true, optional = true }
+## Postgres queue
+pgmq = { workspace = true, optional = true }
 
 # Rust async
 tokio = { workspace = true, features = ["full"] }
@@ -228,11 +232,14 @@ tonic = { version = "0.13.0" }
 tonic-build = { version = "0.13.0" }
 tonic-reflection = { version = "0.13.0" }
 
-# Sidekiq
+# Workers
+## Sidekiq
 # The default `rss-stats` feature has a dependency that currently can't be satisfied on macos (memchr: ~2.3)
 rusty-sidekiq = { version = "0.13.1", default-features = false }
 bb8 = { version = "0.9.0" }
 num_cpus = { version = "1.13.0" }
+## Postgres queue
+pgmq = "0.30.0"
 
 # Testing
 insta = { version = "1.39.0", features = ["toml", "filters"] }

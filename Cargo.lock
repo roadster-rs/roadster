@@ -3834,6 +3834,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "pgmq"
+version = "0.30.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2bb32965d2015d67a0d769dee884875d4d85218201791f74576507966167569f"
+dependencies = [
+ "chrono",
+ "log",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 1.0.69",
+ "tokio",
+ "url",
+]
+
+[[package]]
 name = "pgvector"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4660,6 +4676,7 @@ dependencies = [
  "opentelemetry-otlp",
  "opentelemetry-semantic-conventions",
  "opentelemetry_sdk",
+ "pgmq",
  "prost",
  "r2d2",
  "regex",
