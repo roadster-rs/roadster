@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.5](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.4...roadster-v0.7.5) - 2025-05-20
+
+### Added
+
+- Allow running multiple Diesel migration sources ([#761](https://github.com/roadster-rs/roadster/pull/761))
+
+### Other
+
+- Combine multiple taiki-e tasks into one ([#762](https://github.com/roadster-rs/roadster/pull/762))
+- *(deps)* bump taiki-e/install-action from 2.50.7 to 2.50.10 ([#754](https://github.com/roadster-rs/roadster/pull/754))
+- *(deps)* bump MarcoIeni/release-plz-action to 0.3.134 ([#755](https://github.com/roadster-rs/roadster/pull/755))
+- Pin github actions to specific SHAs ([#752](https://github.com/roadster-rs/roadster/pull/752))
+- Run doc checks with `carg hack --each-feature` ([#750](https://github.com/roadster-rs/roadster/pull/750))
+
 ## [0.7.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.3...roadster-v0.7.4) - 2025-04-29
 
 ### Added
