@@ -165,6 +165,8 @@ mockall = { workspace = true }
 mockall_double = { workspace = true }
 rstest = { workspace = true }
 tokio-test = { workspace = true }
+tokio = { workspace = true, features = ["rt-multi-thread"] }
+sea-orm = { workspace = true, features = ["sqlx-postgres"] }
 
 [build-dependencies]
 rustc_version = { workspace = true }
@@ -237,7 +239,7 @@ num_cpus = { version = "1.13.0" }
 # Testing
 insta = { version = "1.39.0", features = ["toml", "filters", "json", "redactions"] }
 rstest = { version = "0.25.0", default-features = false }
-testcontainers-modules = { version = "0.12.0", features = ["postgres", "mysql", "redis"] }
+testcontainers-modules = { version = "0.11.3", features = ["postgres", "mysql", "redis"] }
 mockall = "0.13.0"
 tower-util = "0.3.1"
 
