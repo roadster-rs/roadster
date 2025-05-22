@@ -30,7 +30,7 @@ prost = { workspace = true, optional = true }
 
 # DB
 migration = { path = "migration" }
-sea-orm = { workspace = true }
+sea-orm = { workspace = true, features = ["runtime-tokio-rustls", "macros", "with-chrono", "with-uuid"] }
 clap = { workspace = true, features = ["derive"] }
 
 # The default `rss-stats` feature has a dependency that currently can't be satisfied (memchr: ~2.3)

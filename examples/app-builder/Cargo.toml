@@ -27,7 +27,7 @@ schemars = { workspace = true }
 
 # DB
 app-builder-migration = { path = "migration", optional = true }
-sea-orm = { workspace = true, features = ["chrono", "uuid"], optional = true }
+sea-orm = { workspace = true, features = ["runtime-tokio-rustls", "macros", "with-chrono", "with-uuid"], optional = true }
 
 # Cli
 clap = { workspace = true, features = ["derive"], optional = true }
