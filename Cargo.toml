@@ -240,7 +240,7 @@ rusty-sidekiq = { version = "0.13.1", default-features = false }
 bb8 = { version = "0.9.0" }
 num_cpus = { version = "1.13.0" }
 ## Postgres queue
-pgmq = "0.30.0"
+pgmq = "0.30.1"
 
 # Testing
 insta = { version = "1.39.0", features = ["toml", "filters"] }
