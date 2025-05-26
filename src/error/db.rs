@@ -1,4 +1,5 @@
 use crate::error::Error;
+use sea_orm::sqlx;
 
 #[derive(Debug, Error)]
 #[non_exhaustive]
@@ -30,6 +31,10 @@ pub enum DbError {
     #[cfg(feature = "db-diesel-pool-async")]
     #[error(transparent)]
     DieselAsyncBb8Pool(#[from] diesel_async::pooled_connection::bb8::RunError),
+
+    #[cfg(feature = "worker-pg")]
+    #[error(transparent)]
+    Sqlx(#[from] sqlx::error::Error),
 
     #[error("{0}")]
     Message(String),

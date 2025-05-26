@@ -23,7 +23,7 @@ open-api = ["http", "dep:aide", "dep:schemars"]
 worker = []
 sidekiq = ["worker", "dep:rusty-sidekiq", "dep:bb8", "dep:num_cpus"]
 worker-sidekiq = ["sidekiq"]
-worker-pg = ["worker", "dep:pgmq", "db-sql"]
+worker-pg = ["worker", "db-sql", "dep:pgmq", "dep:sqlx"]
 db-sql = []
 db-sea-orm = ["db-sql", "dep:sea-orm", "dep:sea-orm-migration"]
 
@@ -116,6 +116,7 @@ bb8 = { workspace = true, optional = true }
 num_cpus = { workspace = true, optional = true }
 ## Postgres queue
 pgmq = { workspace = true, optional = true }
+sqlx = { workspace = true, optional = true }
 
 # Rust async
 tokio = { workspace = true, features = ["full"] }
@@ -242,6 +243,7 @@ bb8 = { version = "0.9.0" }
 num_cpus = { version = "1.13.0" }
 ## Postgres queue
 pgmq = "0.30.1"
+sqlx = { version = "0.8.0", features = ["postgres"] }
 
 # Testing
 insta = { version = "1.39.0", features = ["toml", "filters"] }

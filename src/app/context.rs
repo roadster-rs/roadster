@@ -148,6 +148,26 @@ impl AppContext {
             #[cfg(feature = "email-sendgrid")]
             let sendgrid = sendgrid::v3::Sender::try_from(&config.email.sendgrid)?;
 
+            #[cfg(feature = "worker-pg")]
+            let pgmq_queue = {
+                let pg_config = config.service.worker_pg.custom.postgres;
+                let options = sqlx::pool::PoolOptions::new()
+                    .acquire_timeout(pg_config.acquire_timeout)
+                    .idle_timeout(pg_config.idle_timeout)
+                    .max_lifetime(pg_config.max_lifetime)
+                    .min_connections(pg_config.min_connections)
+                    .max_connections(pg_config.max_connections)
+                    .test_before_acquire(pg_config.test_on_checkout);
+
+                let uri = pg_config.uri.unwrap_or(config.database.uri).as_str();
+                let pool = if pg_config.connect_lazy {
+                    options.connect_lazy(uri)?
+                } else {
+                    options.connect(uri).await?
+                };
+                pgmq::PGMQueue::new_with_pool(pool).await
+            };
+
             let inner = AppContextInner {
                 config,
                 metadata,
@@ -174,6 +194,8 @@ impl AppContext {
                 redis_fetch,
                 #[cfg(all(feature = "sidekiq", feature = "test-containers"))]
                 sidekiq_redis_test_container,
+                #[cfg(feature = "worker-pg")]
+                pgmq: pgmq_queue,
                 #[cfg(feature = "email-smtp")]
                 smtp,
                 #[cfg(feature = "email-sendgrid")]
