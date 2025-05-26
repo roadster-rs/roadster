@@ -59,6 +59,16 @@ impl WorkerPgServiceConfig {
     }
 }
 
+#[derive(Debug, Default, Validate, Clone, Serialize, Deserialize)]
+#[serde(default, rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct QueueConfig {
+    /// Similar to `WorkerPgServiceConfig#num_workers`, except allows configuring the number of
+    /// additional workers to dedicate to a specific queue. If provided, `num_workers` additional
+    /// workers will be created for this specific queue.
+    pub num_workers: Option<u32>,
+}
+
 /// Action to take when a job completes processing, either by being processed successfully, or by
 /// running out of retry attempts.
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
@@ -69,16 +79,6 @@ pub enum CompletedAction {
     Archive,
     /// Delete the message.
     Delete,
-}
-
-#[derive(Debug, Default, Validate, Clone, Serialize, Deserialize)]
-#[serde(default, rename_all = "kebab-case")]
-#[non_exhaustive]
-pub struct QueueConfig {
-    /// Similar to `WorkerPgServiceConfig#num_workers`, except allows configuring the number of
-    /// additional workers to dedicate to a specific queue. If provided, `num_workers` additional
-    /// workers will be created for this specific queue.
-    pub num_workers: Option<u32>,
 }
 
 // Todo: consolidate with `service::worker::sidekiq::app_worker::AppWorkerConfig`?
