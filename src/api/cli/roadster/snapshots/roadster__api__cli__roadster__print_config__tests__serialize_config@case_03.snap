@@ -181,6 +181,11 @@ expression: serialized
         "max-connections": 1,
         "test-on-checkout": true
       },
+      "worker-config": {
+        "max-retries": 25,
+        "timeout": true,
+        "max-duration": 60
+      },
       "queue-config": null
     }
   },

@@ -2,9 +2,10 @@ use crate::config::database::Database;
 use crate::util::serde::default_true;
 use config::{FileFormat, FileSourceString};
 use serde_derive::{Deserialize, Serialize};
-use serde_with::serde_as;
+use serde_with::{serde_as, skip_serializing_none};
 use std::collections::BTreeMap;
 use std::time::Duration;
+use strum_macros::EnumString;
 use url::Url;
 use validator::Validate;
 
@@ -39,11 +40,12 @@ pub struct WorkerPgServiceConfig {
     #[validate(nested)]
     pub postgres: Postgres,
 
-    // /// The default app worker config. Values can be overridden on a per-worker basis by
-    // /// implementing the corresponding [crate::service::worker::sidekiq::app_worker::AppWorker] methods.
-    // #[serde(default)]
-    // #[validate(nested)]
-    // pub app_worker: AppWorkerConfig,
+    /// The default app worker config. Values can be overridden on a per-worker basis by
+    /// implementing the corresponding methods.
+    #[serde(default)]
+    #[validate(nested)]
+    pub worker_config: WorkerConfig,
+
     /// Queue-specific configurations. The queues specified in this field do not need to match
     /// the list of queues listed in the `queues` field.
     #[serde(default)]
@@ -55,6 +57,59 @@ impl WorkerPgServiceConfig {
     fn default_num_workers() -> u32 {
         num_cpus::get() as u32
     }
+}
+
+/// Action to take when a job completes processing, either by being processed successfully, or by
+/// running out of retry attempts.
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub enum CompletedAction {
+    /// Move the message to the queue's archive table.
+    Archive,
+    /// Delete the message.
+    Delete,
+}
+
+#[derive(Debug, Default, Validate, Clone, Serialize, Deserialize)]
+#[serde(default, rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct QueueConfig {
+    /// Similar to `WorkerPgServiceConfig#num_workers`, except allows configuring the number of
+    /// additional workers to dedicate to a specific queue. If provided, `num_workers` additional
+    /// workers will be created for this specific queue.
+    pub num_workers: Option<u32>,
+}
+
+// Todo: consolidate with `service::worker::sidekiq::app_worker::AppWorkerConfig`?
+#[serde_as]
+#[skip_serializing_none]
+#[derive(Debug, Default, Validate, Clone, Serialize, Deserialize)]
+#[serde(default, rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct WorkerConfig {
+    /// The maximum number of times a job should be retried on failure.
+    #[serde(default)]
+    pub max_retries: Option<usize>,
+
+    /// True if Roadster should enforce a timeout on the app's workers. The default duration of
+    /// the timeout can be configured with the `max-duration` option.
+    #[serde(default)]
+    pub timeout: Option<bool>,
+
+    /// The maximum duration workers should run for. The timeout is only enforced if `timeout`
+    /// is `true`.
+    #[serde(default)]
+    #[serde_as(as = "Option<serde_with::DurationSeconds>")]
+    pub max_duration: Option<Duration>,
+
+    /// The action to take when a job in the queue completes successfully.
+    #[serde(default)]
+    pub success_action: Option<CompletedAction>,
+
+    /// The action to take when a job in the queue fails and has no more retry attempts.
+    #[serde(default)]
+    pub failure_action: Option<CompletedAction>,
 }
 
 #[serde_as]
@@ -93,16 +148,6 @@ pub struct Postgres {
 
     #[serde(default = "default_true")]
     pub test_on_checkout: bool,
-}
-
-#[derive(Debug, Default, Validate, Clone, Serialize, Deserialize)]
-#[serde(default, rename_all = "kebab-case")]
-#[non_exhaustive]
-pub struct QueueConfig {
-    /// Similar to `SidekiqServiceConfig#num_workers`, except allows configuring the number of
-    /// additional workers to dedicate to a specific queue. If provided, `num_workers` additional
-    /// workers will be created for this specific queue.
-    pub num_workers: Option<u32>,
 }
 
 impl From<Postgres> for sqlx::pool::PoolOptions<sqlx::Postgres> {
@@ -184,6 +229,19 @@ mod deserialize_tests {
         min-connections = 5
         max-connections = 6
         test-on-checkout = true
+        "#
+    )]
+    #[case(
+        r#"
+        num-workers = 1
+        [postgres]
+        max-connections = 1
+        [worker-config]
+        max-retries = 25
+        timeout = true
+        max-duration = 60
+        success-action = "delete"
+        failure-action = "archive"
         "#
     )]
     #[cfg_attr(coverage_nightly, coverage(off))]

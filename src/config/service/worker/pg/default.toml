@@ -1,3 +1,8 @@
 [service.worker-pg]
 
+[service.worker-pg.worker-config]
+max-retries = 25
+timeout = true
+max-duration = 60
+
 [service.worker-pg.postgres]

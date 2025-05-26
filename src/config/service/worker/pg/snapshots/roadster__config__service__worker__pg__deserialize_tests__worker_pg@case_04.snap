@@ -13,3 +13,5 @@ acquire-timeout = 1000
 min-connections = 0
 max-connections = 1
 test-on-checkout = true
+
+[worker-config]

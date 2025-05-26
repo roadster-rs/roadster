@@ -13,3 +13,8 @@ max-connections = 1
 test-on-checkout = true
 
 [worker-config]
+max-retries = 25
+timeout = true
+max-duration = 60
+success-action = 'delete'
+failure-action = 'archive'
