@@ -20,8 +20,8 @@ pub trait Worker<Args> {
 /*
 Lifecycle
     Init
-        Create DB conn pool based on config
-        Create PGMQueue instance
+        x Create DB conn pool based on config
+        x Create PGMQueue instance
         Register workers
         Create queue tables
         Start worker threads/executors based on config
