@@ -112,6 +112,7 @@ pub struct WorkerConfig {
     pub failure_action: Option<CompletedAction>,
 }
 
+// Todo: consolidate with the sea-orm connection options?
 #[serde_as]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
