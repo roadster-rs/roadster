@@ -1,0 +1,15 @@
+---
+source: src/config/service/worker/pg/mod.rs
+expression: worker_pg
+---
+num-workers = 1
+queues = ['foo']
+
+[postgres]
+uri = 'postgres://[Sensitive]'
+connect-timeout = 1000
+connect-lazy = true
+acquire-timeout = 1000
+min-connections = 0
+max-connections = 1
+test-on-checkout = true

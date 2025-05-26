@@ -297,6 +297,15 @@ impl AppConfig {
                     [service.sidekiq.redis]
                     uri = "redis://invalid_host:1234"
 
+                    [service.worker-pg]
+                    # This field normally is determined by the number of CPU cores if not provided.
+                    # We provide it in the test config to avoid snapshot failures when running
+                    # on varying hardware.
+                    num-workers = 16
+
+                    [service.worker-pg.postgres]
+                    max-connections = 1
+
                     [email.from]
                     email = "no-reply@example.com"
 
@@ -354,6 +363,9 @@ impl AppConfig {
 
         #[cfg(feature = "sidekiq")]
         let config = config.add_source(service::worker::sidekiq::default_config());
+
+        #[cfg(feature = "worker-pg")]
+        let config = config.add_source(service::worker::pg::default_config());
 
         let config = config.add_source(lifecycle::default_config());
 
