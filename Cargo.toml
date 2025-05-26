@@ -23,7 +23,7 @@ open-api = ["http", "dep:aide", "dep:schemars"]
 worker = []
 sidekiq = ["worker", "dep:rusty-sidekiq", "dep:bb8", "dep:num_cpus"]
 worker-sidekiq = ["sidekiq"]
-worker-pg = ["worker", "dep:pgmq"]
+worker-pg = ["worker", "dep:pgmq", "db-sql"]
 db-sql = []
 db-sea-orm = ["db-sql", "dep:sea-orm", "dep:sea-orm-migration"]
 

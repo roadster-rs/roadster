@@ -70,11 +70,11 @@ pub struct Database {
 }
 
 impl Database {
-    fn default_connect_timeout() -> Duration {
+    pub(crate) fn default_connect_timeout() -> Duration {
         Duration::from_millis(1000)
     }
 
-    fn default_acquire_timeout() -> Duration {
+    pub(crate) fn default_acquire_timeout() -> Duration {
         Duration::from_millis(1000)
     }
 }
