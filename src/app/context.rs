@@ -953,6 +953,8 @@ struct AppContextInner {
             testcontainers_modules::redis::Redis,
         >,
     >,
+    #[cfg(feature = "worker-pg")]
+    pgmq: pgmq::PGMQueue,
     #[cfg(feature = "email-smtp")]
     smtp: lettre::SmtpTransport,
     #[cfg(feature = "email-sendgrid")]
