@@ -32,6 +32,9 @@ type AsyncConfigSourceProvider =
 type MetadataProvider = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<AppMetadata>;
 #[cfg(feature = "db-sea-orm")]
 type DbConnOptionsProvider = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<ConnectOptions>;
+#[cfg(feature = "worker-pg")]
+type SqlxPgPoolOptionsProvider =
+    dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<sqlx::pool::PoolOptions<sqlx::Postgres>>;
 #[cfg(any(
     feature = "db-diesel-postgres-pool",
     feature = "db-diesel-mysql-pool",
@@ -111,6 +114,10 @@ struct Inner<
     #[cfg(feature = "db-diesel-mysql-pool-async")]
     diesel_mysql_async_connection_customizer_provider:
         Option<Box<DieselAsyncConnectionCustomizerProvider<crate::db::DieselMysqlConnAsync>>>,
+    #[cfg(feature = "worker-pg")]
+    worker_pg_sqlx_pool_options: Option<sqlx::pool::PoolOptions<sqlx::Postgres>>,
+    #[cfg(feature = "worker-pg")]
+    worker_pg_sqlx_pool_options_provider: Option<Box<SqlxPgPoolOptionsProvider>>,
     #[cfg(feature = "db-sql")]
     migrator_providers: Vec<Box<MigratorProvider<S>>>,
     health_checks: Vec<Arc<dyn HealthCheck>>,
@@ -150,6 +157,10 @@ where
             diesel_pg_async_connection_customizer_provider: Default::default(),
             #[cfg(feature = "db-diesel-mysql-pool-async")]
             diesel_mysql_async_connection_customizer_provider: Default::default(),
+            #[cfg(feature = "db-sea-orm")]
+            worker_pg_sqlx_pool_options: Default::default(),
+            #[cfg(feature = "db-sea-orm")]
+            worker_pg_sqlx_pool_options_provider: Default::default(),
             #[cfg(feature = "db-sql")]
             migrator_providers: Default::default(),
             health_checks: Default::default(),
@@ -301,6 +312,30 @@ where
             Some(Box::new(connection_customizer));
     }
 
+    #[cfg(feature = "worker-pg")]
+    fn worker_pg_sqlx_pool_options(
+        &mut self,
+        worker_pg_sqlx_pool_options: sqlx::pool::PoolOptions<sqlx::Postgres>,
+    ) {
+        self.worker_pg_sqlx_pool_options = Some(worker_pg_sqlx_pool_options);
+    }
+
+    #[cfg(feature = "worker-pg")]
+    fn worker_pg_sqlx_pool_options_provider(
+        &mut self,
+        worker_pg_sqlx_pool_options_provider: impl 'static
+        + Send
+        + Sync
+        + Fn(
+            &AppConfig,
+        ) -> RoadsterResult<
+            sqlx::pool::PoolOptions<sqlx::Postgres>,
+        >,
+    ) {
+        self.worker_pg_sqlx_pool_options_provider =
+            Some(Box::new(worker_pg_sqlx_pool_options_provider));
+    }
+
     #[cfg(feature = "db-sql")]
     fn add_migrator_provider(
         &mut self,
@@ -362,6 +397,22 @@ where
             sea_orm_conn_options_provider(config)
         } else {
             Ok(ConnectOptions::from(&config.database))
+        }
+    }
+
+    #[cfg(feature = "worker-pg")]
+    fn build_worker_pg_sqlx_pool_options(
+        &self,
+        config: &AppConfig,
+    ) -> RoadsterResult<sqlx::pool::PoolOptions<sqlx::Postgres>> {
+        if let Some(worker_pg_sqlx_pool_options) = self.worker_pg_sqlx_pool_options.as_ref() {
+            Ok(worker_pg_sqlx_pool_options.clone())
+        } else if let Some(worker_pg_sqlx_pool_options_provider) =
+            self.worker_pg_sqlx_pool_options_provider.as_ref()
+        {
+            worker_pg_sqlx_pool_options_provider(config)
+        } else {
+            Ok((&config.service.worker_pg.custom.postgres).into())
         }
     }
 
@@ -766,6 +817,36 @@ where
         self
     }
 
+    /// Provide the [`sqlx::pool::PoolOptions`] for the [`RoadsterApp`] to use with the PG-backed
+    /// worker service.
+    #[cfg(feature = "worker-pg")]
+    pub fn worker_pg_sqlx_pool_options(
+        mut self,
+        worker_pg_sqlx_pool_options: sqlx::pool::PoolOptions<sqlx::Postgres>,
+    ) -> Self {
+        self.inner
+            .worker_pg_sqlx_pool_options(worker_pg_sqlx_pool_options);
+        self
+    }
+
+    /// Provide the logic to build the [`sqlx::pool::PoolOptions`] for the [`RoadsterApp`] to use
+    /// with the PG-backed worker service.
+    #[cfg(feature = "worker-pg")]
+    pub fn worker_pg_sqlx_pool_options_provider(
+        mut self,
+        worker_pg_sqlx_pool_options: impl 'static
+        + Send
+        + Sync
+        + Fn(
+            &AppConfig,
+        )
+            -> RoadsterResult<sqlx::pool::PoolOptions<sqlx::Postgres>>,
+    ) -> Self {
+        self.inner
+            .worker_pg_sqlx_pool_options_provider(worker_pg_sqlx_pool_options);
+        self
+    }
+
     /// Provide the logic to build the custom state for the [`RoadsterApp`].
     pub fn state_provider(
         mut self,
@@ -1023,10 +1104,6 @@ where
         self.inner.sea_orm_connection_options(config)
     }
 
-    async fn provide_state(&self, context: AppContext) -> RoadsterResult<S> {
-        self.inner.provide_state(context).await
-    }
-
     #[cfg(feature = "db-diesel-postgres-pool")]
     fn diesel_pg_connection_customizer(
         &self,
@@ -1168,6 +1245,18 @@ where
         };
 
         Ok(Box::new(Empty))
+    }
+
+    #[cfg(feature = "worker-pg")]
+    fn worker_pg_sqlx_pool_options(
+        &self,
+        config: &AppConfig,
+    ) -> RoadsterResult<sqlx::pool::PoolOptions<sqlx::Postgres>> {
+        self.inner.build_worker_pg_sqlx_pool_options(config)
+    }
+
+    async fn provide_state(&self, context: AppContext) -> RoadsterResult<S> {
+        self.inner.provide_state(context).await
     }
 
     #[cfg(feature = "db-sql")]

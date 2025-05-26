@@ -91,3 +91,10 @@ impl From<diesel_async::pooled_connection::bb8::RunError> for Error {
         Self::Db(DbError::from(value))
     }
 }
+
+#[cfg(feature = "worker-pg")]
+impl From<sqlx::error::Error> for Error {
+    fn from(value: sqlx::error::Error) -> Self {
+        Self::Db(DbError::from(value))
+    }
+}

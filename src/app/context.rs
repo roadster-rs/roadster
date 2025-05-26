@@ -150,22 +150,22 @@ impl AppContext {
 
             #[cfg(feature = "worker-pg")]
             let pgmq_queue = {
-                let pg_config = config.service.worker_pg.custom.postgres;
-                // let options = sqlx::pool::PoolOptions::new()
-                //     .acquire_timeout(pg_config.acquire_timeout)
-                //     .idle_timeout(pg_config.idle_timeout)
-                //     .max_lifetime(pg_config.max_lifetime)
-                //     .min_connections(pg_config.min_connections)
-                //     .max_connections(pg_config.max_connections)
-                //     .test_before_acquire(pg_config.test_on_checkout);
+                let pg_config = &config.service.worker_pg.custom.postgres;
+                let pool = app.worker_pg_sqlx_pool_options(&config)?;
 
-                // let uri = pg_config.uri.unwrap_or(config.database.uri).as_str();
-                // let pool = if pg_config.connect_lazy {
-                //     options.connect_lazy(uri)?
-                // } else {
-                //     options.connect(uri).await?
-                // };
-                // pgmq::PGMQueue::new_with_pool(pool).await
+                let uri = pg_config
+                    .uri
+                    .as_ref()
+                    .unwrap_or(&config.database.uri)
+                    .as_str();
+
+                let pool = if pg_config.connect_lazy {
+                    pool.connect_lazy(uri)
+                } else {
+                    pool.connect(uri).await
+                }?;
+
+                pgmq::PGMQueue::new_with_pool(pool).await
             };
 
             let inner = AppContextInner {
@@ -318,6 +318,11 @@ impl AppContext {
     #[cfg(feature = "sidekiq")]
     pub fn redis_fetch(&self) -> &Option<RedisFetch> {
         self.inner.redis_fetch()
+    }
+
+    #[cfg(feature = "worker-pg")]
+    pub fn pgmq(&self) -> &pgmq::PGMQueue {
+        self.inner.pgmq()
     }
 
     /// Get the SMTP client. Used to send emails via the SMTP protocol
@@ -1059,6 +1064,10 @@ impl AppContextInner {
     #[cfg(feature = "sidekiq")]
     fn redis_fetch(&self) -> &Option<RedisFetch> {
         &self.redis_fetch
+    }
+
+    fn pgmq(&self) -> &pgmq::PGMQueue {
+        &self.pgmq
     }
 
     #[cfg(feature = "email-smtp")]

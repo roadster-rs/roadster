@@ -105,20 +105,21 @@ pub struct QueueConfig {
     pub num_workers: Option<u32>,
 }
 
-impl From<&QueueConfig> for sidekiq::QueueConfig {
-    fn from(value: &QueueConfig) -> Self {
-        value
-            .num_workers
-            .iter()
-            .fold(Default::default(), |config, num_workers| {
-                config.num_workers(*num_workers as usize)
-            })
+impl From<Postgres> for sqlx::pool::PoolOptions<sqlx::Postgres> {
+    fn from(value: Postgres) -> Self {
+        Self::from(&value)
     }
 }
 
-impl From<QueueConfig> for sidekiq::QueueConfig {
-    fn from(value: QueueConfig) -> Self {
-        sidekiq::QueueConfig::from(&value)
+impl From<&Postgres> for sqlx::pool::PoolOptions<sqlx::Postgres> {
+    fn from(value: &Postgres) -> Self {
+        sqlx::pool::PoolOptions::new()
+            .acquire_timeout(value.acquire_timeout)
+            .idle_timeout(value.idle_timeout)
+            .max_lifetime(value.max_lifetime)
+            .min_connections(value.min_connections)
+            .max_connections(value.max_connections)
+            .test_before_acquire(value.test_on_checkout)
     }
 }
 
