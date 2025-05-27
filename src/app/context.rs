@@ -151,6 +151,7 @@ impl AppContext {
             #[cfg(feature = "worker-pg")]
             let pgmq_queue = {
                 let pg_config = &config.service.worker_pg.custom.postgres;
+                // Todo: Allow re-using the sqlx pool from sea-orm?
                 let pool = app.worker_pg_sqlx_pool_options(&config)?;
 
                 let uri = pg_config
