@@ -8,8 +8,3 @@ publish = false
 roadster = { path = "../../.." }
 uuid = { workspace = true, features = ["v4"] }
 async-trait = { workspace = true }
-
-[dev-dependencies]
-roadster = { path = "../../..", features = ["testing"] }
-insta = { workspace = true }
-rstest = { workspace = true }

@@ -165,15 +165,6 @@ cfg-if = { workspace = true }
 reqwest = { workspace = true }
 regex = { workspace = true, optional = true }
 
-[dev-dependencies]
-roadster = { path = ".", features = ["testing"] }
-cargo-husky = { workspace = true }
-insta = { workspace = true, features = ["json", "redactions"] }
-mockall = { workspace = true }
-mockall_double = { workspace = true }
-rstest = { workspace = true }
-tokio-test = { workspace = true }
-
 [build-dependencies]
 rustc_version = { workspace = true }
 
@@ -244,7 +235,7 @@ bb8 = { version = "0.9.0" }
 num_cpus = { version = "1.13.0" }
 ## Postgres queue
 pgmq = "0.30.1"
-sqlx = { version = "0.8.0", features = ["postgres"] }
+sqlx = { version = "0.8.5", features = ["postgres"] }
 
 # Testing
 insta = { version = "1.39.0", features = ["toml", "filters"] }
