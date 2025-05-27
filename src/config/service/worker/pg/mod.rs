@@ -5,7 +5,6 @@ use serde_derive::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
 use std::collections::BTreeMap;
 use std::time::Duration;
-use strum_macros::EnumString;
 use url::Url;
 use validator::Validate;
 
@@ -13,6 +12,7 @@ pub(crate) fn default_config() -> config::File<FileSourceString, FileFormat> {
     config::File::from_str(include_str!("default.toml"), FileFormat::Toml)
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -37,8 +37,12 @@ pub struct WorkerPgServiceConfig {
     #[serde(default)]
     pub queues: Option<Vec<String>>,
 
+    /// Configuration for the DB pool. If not provided, will re-use the configuration from
+    /// [`crate::config::database::Database`], including the DB URI. If not provided and the
+    /// `db-sea-orm` feature is enabled, the underlying [`sqlx::Pool`] from `sea-orm` will be
+    /// used.
     #[validate(nested)]
-    pub postgres: Postgres,
+    pub db_pool: Option<DbPoolConfig>,
 
     /// The default app worker config. Values can be overridden on a per-worker basis by
     /// implementing the corresponding methods.
@@ -114,10 +118,11 @@ pub struct WorkerConfig {
 
 // Todo: consolidate with the sea-orm connection options?
 #[serde_as]
+#[skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
-pub struct Postgres {
+pub struct DbPoolConfig {
     /// The URI of the postgres BD to use for the PG worker service. If not provided, will use the
     /// URI from the main database config.
     #[serde(default)]
@@ -151,14 +156,14 @@ pub struct Postgres {
     pub test_on_checkout: bool,
 }
 
-impl From<Postgres> for sqlx::pool::PoolOptions<sqlx::Postgres> {
-    fn from(value: Postgres) -> Self {
+impl From<DbPoolConfig> for sqlx::pool::PoolOptions<sqlx::Postgres> {
+    fn from(value: DbPoolConfig) -> Self {
         Self::from(&value)
     }
 }
 
-impl From<&Postgres> for sqlx::pool::PoolOptions<sqlx::Postgres> {
-    fn from(value: &Postgres) -> Self {
+impl From<&DbPoolConfig> for sqlx::pool::PoolOptions<sqlx::Postgres> {
+    fn from(value: &DbPoolConfig) -> Self {
         sqlx::pool::PoolOptions::new()
             .acquire_timeout(value.acquire_timeout)
             .idle_timeout(value.idle_timeout)
@@ -188,14 +193,19 @@ mod deserialize_tests {
         # The default `num-workers` is the same as the number of cpu cores, so we always set
         # this in our tests so they always pass regardless of the host's hardware.
         num-workers = 1
-        [postgres]
+        "#
+    )]
+    #[case(
+        r#"
+        num-workers = 1
+        [db-pool]
         max-connections = 1
         "#
     )]
     #[case(
         r#"
         num-workers = 1
-        [postgres]
+        [db-pool]
         uri = "redis://localhost:6379"
         max-connections = 1
         "#
@@ -204,7 +214,7 @@ mod deserialize_tests {
         r#"
         num-workers = 1
         queues = ["foo"]
-        [postgres]
+        [db-pool]
         max-connections = 1
         "#
     )]
@@ -212,7 +222,7 @@ mod deserialize_tests {
         r#"
         num-workers = 1
         queues = ["foo"]
-        [postgres]
+        [db-pool]
         uri = "postgres://localhost:5432/example"
         max-connections = 1
         "#
@@ -221,7 +231,7 @@ mod deserialize_tests {
         r#"
         num-workers = 1
         queues = ["foo"]
-        [postgres]
+        [db-pool]
         connect-timeout = 1
         connect-lazy = true
         acquire-timeout = 2
@@ -235,7 +245,7 @@ mod deserialize_tests {
     #[case(
         r#"
         num-workers = 1
-        [postgres]
+        [db-pool]
         max-connections = 1
         [worker-config]
         max-retries = 25

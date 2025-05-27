@@ -150,21 +150,38 @@ impl AppContext {
 
             #[cfg(feature = "worker-pg")]
             let pgmq_queue = {
-                let pg_config = &config.service.worker_pg.custom.postgres;
-                // Todo: Allow re-using the sqlx pool from sea-orm?
-                let pool = app.worker_pg_sqlx_pool_options(&config)?;
+                #[allow(unused_variables)]
+                let pool: Option<sqlx::Pool<sqlx::Postgres>> = None;
 
-                let uri = pg_config
-                    .uri
-                    .as_ref()
-                    .unwrap_or(&config.database.uri)
-                    .as_str();
-
-                let pool = if pg_config.connect_lazy {
-                    pool.connect_lazy(uri)
+                #[cfg(feature = "db-sea-orm")]
+                let pool = if config.service.worker_pg.custom.db_pool.is_none() {
+                    Some(sea_orm.get_postgres_connection_pool().clone())
                 } else {
-                    pool.connect(uri).await
-                }?;
+                    None
+                };
+
+                let pool = if let Some(pool) = pool {
+                    pool
+                } else {
+                    let pool_config = config.service.worker_pg.custom.db_pool.as_ref();
+
+                    let uri = pool_config
+                        .and_then(|config| config.uri.as_ref())
+                        .unwrap_or(&config.database.uri)
+                        .as_str();
+
+                    let connect_lazy = pool_config
+                        .map(|config| config.connect_lazy)
+                        .unwrap_or(config.database.connect_lazy);
+
+                    let pool = app.worker_pg_sqlx_pool_options(&config)?;
+
+                    if connect_lazy {
+                        pool.connect_lazy(uri)
+                    } else {
+                        pool.connect(uri).await
+                    }?
+                };
 
                 pgmq::PGMQueue::new_with_pool(pool).await
             };

@@ -156,14 +156,6 @@ max-duration = 60
 [service.worker-pg]
 num-workers = 16
 
-[service.worker-pg.postgres]
-connect-timeout = 1000
-connect-lazy = true
-acquire-timeout = 1000
-min-connections = 0
-max-connections = 1
-test-on-checkout = true
-
 [service.worker-pg.worker-config]
 max-retries = 25
 timeout = true

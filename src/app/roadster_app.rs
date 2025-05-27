@@ -411,8 +411,10 @@ where
             self.worker_pg_sqlx_pool_options_provider.as_ref()
         {
             worker_pg_sqlx_pool_options_provider(config)
+        } else if let Some(pool_config) = &config.service.worker_pg.custom.db_pool {
+            Ok(pool_config.into())
         } else {
-            Ok((&config.service.worker_pg.custom.postgres).into())
+            Ok((&config.database).into())
         }
     }
 

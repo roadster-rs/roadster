@@ -5,8 +5,7 @@ expression: worker_pg
 num-workers = 1
 queues = ['foo']
 
-[postgres]
-uri = 'postgres://[Sensitive]'
+[db-pool]
 connect-timeout = 1000
 connect-lazy = true
 acquire-timeout = 1000

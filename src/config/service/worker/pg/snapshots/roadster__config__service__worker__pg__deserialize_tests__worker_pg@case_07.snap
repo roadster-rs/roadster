@@ -5,7 +5,6 @@ expression: worker_pg
 num-workers = 1
 
 [db-pool]
-uri = 'redis://[Sensitive]'
 connect-timeout = 1000
 connect-lazy = true
 acquire-timeout = 1000
@@ -14,3 +13,8 @@ max-connections = 1
 test-on-checkout = true
 
 [worker-config]
+max-retries = 25
+timeout = true
+max-duration = 60
+success-action = 'delete'
+failure-action = 'archive'

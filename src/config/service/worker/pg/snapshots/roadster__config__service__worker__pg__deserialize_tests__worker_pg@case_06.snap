@@ -3,18 +3,16 @@ source: src/config/service/worker/pg/mod.rs
 expression: worker_pg
 ---
 num-workers = 1
+queues = ['foo']
 
-[postgres]
-connect-timeout = 1000
+[db-pool]
+connect-timeout = 1
 connect-lazy = true
-acquire-timeout = 1000
-min-connections = 0
-max-connections = 1
+acquire-timeout = 2
+idle-timeout = 3
+max-lifetime = 4
+min-connections = 5
+max-connections = 6
 test-on-checkout = true
 
 [worker-config]
-max-retries = 25
-timeout = true
-max-duration = 60
-success-action = 'delete'
-failure-action = 'archive'

@@ -5,14 +5,13 @@ expression: worker_pg
 num-workers = 1
 queues = ['foo']
 
-[postgres]
-connect-timeout = 1
+[db-pool]
+uri = 'postgres://[Sensitive]'
+connect-timeout = 1000
 connect-lazy = true
-acquire-timeout = 2
-idle-timeout = 3
-max-lifetime = 4
-min-connections = 5
-max-connections = 6
+acquire-timeout = 1000
+min-connections = 0
+max-connections = 1
 test-on-checkout = true
 
 [worker-config]

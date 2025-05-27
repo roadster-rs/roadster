@@ -169,24 +169,11 @@ expression: serialized
     },
     "worker-pg": {
       "num-workers": 16,
-      "queues": null,
-      "postgres": {
-        "uri": null,
-        "connect-timeout": 1000,
-        "connect-lazy": true,
-        "acquire-timeout": 1000,
-        "idle-timeout": null,
-        "max-lifetime": null,
-        "min-connections": 0,
-        "max-connections": 1,
-        "test-on-checkout": true
-      },
       "worker-config": {
         "max-retries": 25,
         "timeout": true,
         "max-duration": 60
-      },
-      "queue-config": null
+      }
     }
   },
   "auth": {
