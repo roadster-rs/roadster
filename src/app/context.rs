@@ -213,7 +213,7 @@ impl AppContext {
                 #[cfg(all(feature = "sidekiq", feature = "test-containers"))]
                 sidekiq_redis_test_container,
                 #[cfg(feature = "worker-pg")]
-                pgmq_queue: pgmq_queue,
+                pgmq_queue,
                 #[cfg(feature = "email-smtp")]
                 smtp,
                 #[cfg(feature = "email-sendgrid")]
