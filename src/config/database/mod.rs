@@ -108,12 +108,14 @@ impl From<&Database> for sea_orm::ConnectOptions {
     }
 }
 
+#[cfg(feature = "worker-pg")]
 impl From<Database> for sqlx::pool::PoolOptions<sqlx::Postgres> {
     fn from(value: Database) -> Self {
         Self::from(&value)
     }
 }
 
+#[cfg(feature = "worker-pg")]
 impl From<&Database> for sqlx::pool::PoolOptions<sqlx::Postgres> {
     fn from(value: &Database) -> Self {
         sqlx::pool::PoolOptions::new()

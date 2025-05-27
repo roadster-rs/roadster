@@ -16,7 +16,7 @@ pub mod other;
 pub mod parse;
 pub mod reqwest;
 pub mod serde;
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 pub mod sidekiq;
 pub mod tokio;
 #[cfg(feature = "grpc")]
@@ -40,7 +40,7 @@ use crate::error::other::OtherError;
 use crate::error::parse::ParseError;
 use crate::error::reqwest::ReqwestError;
 use crate::error::serde::SerdeError;
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 use crate::error::sidekiq::SidekiqError;
 use crate::error::tokio::TokioError;
 #[cfg(feature = "grpc")]
@@ -76,7 +76,7 @@ pub enum Error {
     #[error(transparent)]
     Db(#[from] DbError),
 
-    #[cfg(feature = "sidekiq")]
+    #[cfg(feature = "worker-sidekiq")]
     #[error(transparent)]
     Sidekiq(#[from] SidekiqError),
 

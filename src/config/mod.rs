@@ -361,7 +361,7 @@ impl AppConfig {
             config
         };
 
-        #[cfg(feature = "sidekiq")]
+        #[cfg(feature = "worker-sidekiq")]
         let config = config.add_source(service::worker::sidekiq::default_config());
 
         #[cfg(feature = "worker-pg")]

@@ -1,5 +1,4 @@
 use crate::error::Error;
-use sea_orm::sqlx;
 
 #[derive(Debug, Error)]
 #[non_exhaustive]

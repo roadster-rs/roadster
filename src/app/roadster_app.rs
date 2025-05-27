@@ -157,9 +157,9 @@ where
             diesel_pg_async_connection_customizer_provider: Default::default(),
             #[cfg(feature = "db-diesel-mysql-pool-async")]
             diesel_mysql_async_connection_customizer_provider: Default::default(),
-            #[cfg(feature = "db-sea-orm")]
+            #[cfg(feature = "worker-pg")]
             worker_pg_sqlx_pool_options: Default::default(),
-            #[cfg(feature = "db-sea-orm")]
+            #[cfg(feature = "worker-pg")]
             worker_pg_sqlx_pool_options_provider: Default::default(),
             #[cfg(feature = "db-sql")]
             migrator_providers: Default::default(),

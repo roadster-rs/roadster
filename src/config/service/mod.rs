@@ -14,7 +14,7 @@ use crate::config::service::grpc::GrpcServiceConfig;
 use crate::config::service::http::HttpServiceConfig;
 #[cfg(feature = "worker-pg")]
 use crate::config::service::worker::pg::WorkerPgServiceConfig;
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 use crate::config::service::worker::sidekiq::SidekiqServiceConfig;
 use crate::util::serde::default_true;
 use serde_derive::{Deserialize, Serialize};
@@ -36,7 +36,7 @@ pub struct Service {
     #[validate(nested)]
     pub grpc: ServiceConfig<GrpcServiceConfig>,
 
-    #[cfg(feature = "sidekiq")]
+    #[cfg(feature = "worker-sidekiq")]
     #[validate(nested)]
     pub sidekiq: ServiceConfig<SidekiqServiceConfig>,
 

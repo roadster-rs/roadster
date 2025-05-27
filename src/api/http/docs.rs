@@ -38,7 +38,7 @@ where
         router
     };
 
-    let router = if redoc_enabled(&context) {
+    if redoc_enabled(&context) {
         router.route(
             &build_path(parent, redoc_route(&context)),
             get(Redoc::new(&open_api_schema_path)
@@ -47,9 +47,7 @@ where
         )
     } else {
         router
-    };
-
-    router
+    }
 }
 
 async fn docs_get(Extension(api): Extension<Arc<OpenApi>>) -> impl IntoApiResponse {
