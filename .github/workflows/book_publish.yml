@@ -33,7 +33,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: taiki-e/install-action@83254c543806f3224380bf1001d6fac8feaf2d0b
+      - uses: taiki-e/install-action@84c20235bedc3797c7e1ddf685c574a4a6c666da
         with:
           tool: mdbook
 
