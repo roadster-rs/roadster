@@ -84,7 +84,7 @@ jobs:
       features: ${{ join(fromJson(needs.generate_powerset.outputs.data).powersets[ matrix.index ], ' ') }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: rui314/setup-mold@b3958095189f34b95d402a680b6e96b7f194f7b9
       - uses: taiki-e/install-action@83254c543806f3224380bf1001d6fac8feaf2d0b
         with:
           tool: nextest
@@ -117,7 +117,7 @@ jobs:
       features: ${{ join(fromJson(needs.generate_powerset.outputs.data).powersets[ matrix.index ], ' ') }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: rui314/setup-mold@b3958095189f34b95d402a680b6e96b7f194f7b9
       - name: Check
         run: |
           features=($features)
@@ -143,7 +143,7 @@ jobs:
       features: ${{ join(fromJson(needs.generate_powerset.outputs.data).powersets[ matrix.index ], ' ') }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: rui314/setup-mold@b3958095189f34b95d402a680b6e96b7f194f7b9
       - name: Clippy
         run: |
           features=($features)
