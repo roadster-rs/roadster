@@ -7,5 +7,6 @@ updates:
       interval: "monthly"
   - package-ecosystem: "cargo"
     directory: "/"
+    versioning-strategy: "lockfile-only"
     schedule:
       interval: "monthly"
