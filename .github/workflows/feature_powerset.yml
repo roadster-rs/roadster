@@ -85,7 +85,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
-      - uses: taiki-e/install-action@83254c543806f3224380bf1001d6fac8feaf2d0b
+      - uses: taiki-e/install-action@735e5933943122c5ac182670a935f54a949265c1
         with:
           tool: nextest
 
