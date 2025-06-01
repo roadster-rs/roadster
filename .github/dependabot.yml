@@ -1,12 +1,14 @@
 version: 2
 
+# Dependabot is triggering our `Release PR` workflow for some reason. So, for now we'll manually manage
+# updating dependencies.
 updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "monthly"
-  - package-ecosystem: "cargo"
-    directory: "/"
-    versioning-strategy: "lockfile-only"
-    schedule:
-      interval: "monthly"
+#  - package-ecosystem: "github-actions"
+#    directory: "/"
+#    schedule:
+#      interval: "monthly"
+#  - package-ecosystem: "cargo"
+#    directory: "/"
+#    versioning-strategy: "lockfile-only"
+#    schedule:
+#      interval: "monthly"
