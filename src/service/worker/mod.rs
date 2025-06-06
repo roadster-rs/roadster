@@ -110,7 +110,11 @@ where
         // todo: can we get rid of the `Arc` (and the `clones` below)?
         let worker = Arc::new(worker);
         self.workers.insert(
+            // Todo: this will be encoded in the job data, so it needs to be
+            //  resilient to refactoring. We also need to have a common place where
+            //  the logic for creating this name lives.
             type_name_of_val(&worker).to_string(),
+            // Todo: instrument to allow recording spans/metrics
             Box::new(move |state: &S, args: String| {
                 let worker = worker.clone();
                 Box::pin(async move {
