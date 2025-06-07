@@ -95,12 +95,18 @@ where
     >,
 }
 
+#[derive(Serialize, Deserialize)]
+struct JobMetadata {
+    worker_name: String,
+    args: String,
+}
+
 impl<S> Processor<S>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    fn register<W, Args, E>(mut self, worker: W)
+    fn register<W, Args, E>(mut self, worker: W) -> RoadsterResult<()>
     where
         // todo: can we get rid of the `'static`?
         W: 'static + Worker<S, Args, Error = E>,
@@ -110,10 +116,7 @@ where
         // todo: can we get rid of the `Arc` (and the `clones` below)?
         let worker = Arc::new(worker);
         self.workers.insert(
-            // Todo: this will be encoded in the job data, so it needs to be
-            //  resilient to refactoring. We also need to have a common place where
-            //  the logic for creating this name lives.
-            type_name_of_val(&worker).to_string(),
+            Self::worker_name(worker.as_ref()).to_string(),
             // Todo: instrument to allow recording spans/metrics
             Box::new(move |state: &S, args: String| {
                 let worker = worker.clone();
@@ -128,5 +131,40 @@ where
                 })
             }),
         );
+        Ok(())
+    }
+
+    // Todo: don't require a worker instance to enqueue
+    // Todo: the `enqueue` method maybe shouldn't be on the Processor?
+    // Todo: allow configuring the queue backend (sidekiq/faktory/pgmq/etc)
+    async fn enqueue<W, Args, E>(&self, worker: W, args: Args) -> RoadsterResult<()>
+    where
+        // todo: can we get rid of the `'static`?
+        W: 'static + Worker<S, Args, Error = E>,
+        AppContext: FromRef<S>,
+        Args: Serialize + for<'de> Deserialize<'de>,
+    {
+        let worker_name = Self::worker_name(&worker).to_string();
+        // Todo: allow the worker to configure the queue name
+        let queue_name = worker_name.clone();
+        let args = serde_json::to_string(&args)?;
+        let metadata = JobMetadata { worker_name, args };
+        let context = AppContext::from_ref(&self.state);
+        context.pgmq().send(&queue_name, &metadata).await?;
+        Ok(())
+    }
+
+    // Todo: this will be encoded in the job data, so it needs to be
+    //  resilient to refactoring. We also need to have a common place where
+    //  the logic for creating this name lives.
+    // Todo: Allow the worker to override this.
+    fn worker_name<W, Args, E>(worker: &W) -> &str
+    where
+        // todo: can we get rid of the `'static`?
+        W: 'static + Worker<S, Args, Error = E>,
+        AppContext: FromRef<S>,
+        Args: Serialize + for<'de> Deserialize<'de>,
+    {
+        type_name_of_val(worker)
     }
 }

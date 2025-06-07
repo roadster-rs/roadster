@@ -14,6 +14,7 @@ pub mod mime;
 mod mutex;
 pub mod other;
 pub mod parse;
+mod pgmq;
 pub mod reqwest;
 pub mod serde;
 #[cfg(feature = "worker-sidekiq")]
@@ -38,6 +39,7 @@ use crate::error::mime::MimeError;
 use crate::error::mutex::MutexError;
 use crate::error::other::OtherError;
 use crate::error::parse::ParseError;
+use crate::error::pgmq::PgmqError;
 use crate::error::reqwest::ReqwestError;
 use crate::error::serde::SerdeError;
 #[cfg(feature = "worker-sidekiq")]
@@ -79,6 +81,10 @@ pub enum Error {
     #[cfg(feature = "worker-sidekiq")]
     #[error(transparent)]
     Sidekiq(#[from] SidekiqError),
+
+    #[cfg(feature = "worker-pg")]
+    #[error(transparent)]
+    Pgmq(#[from] PgmqError),
 
     #[cfg(feature = "cli")]
     #[error(transparent)]
