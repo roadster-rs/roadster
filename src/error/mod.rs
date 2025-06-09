@@ -11,10 +11,11 @@ pub mod db;
 pub mod email;
 #[cfg(feature = "http")]
 pub mod mime;
-mod mutex;
+pub mod mutex;
 pub mod other;
 pub mod parse;
-mod pgmq;
+#[cfg(feature = "worker-pg")]
+pub mod pgmq;
 pub mod reqwest;
 pub mod serde;
 #[cfg(feature = "worker-sidekiq")]
@@ -39,6 +40,7 @@ use crate::error::mime::MimeError;
 use crate::error::mutex::MutexError;
 use crate::error::other::OtherError;
 use crate::error::parse::ParseError;
+#[cfg(feature = "worker-pg")]
 use crate::error::pgmq::PgmqError;
 use crate::error::reqwest::ReqwestError;
 use crate::error::serde::SerdeError;
