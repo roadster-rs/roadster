@@ -39,12 +39,12 @@ pub struct EnqueueConfig {
     /// this queue name is not too long or else the queue name will be truncated when used
     /// with `pgmq`.
     #[serde(default)]
-    #[builder(default, setter(strip_option))]
+    #[builder(default, setter(strip_option(fallback = queue_opt)))]
     pub queue: Option<String>,
 
     /// The queue backend to use to enqueue the job.
     #[serde(default)]
-    #[builder(default, setter(strip_option))]
+    #[builder(default, setter(strip_option(fallback = backend_opt)))]
     pub backend: Option<QueueBackend>,
 }
 
