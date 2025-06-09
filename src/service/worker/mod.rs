@@ -19,25 +19,33 @@ pub mod pg;
 #[cfg(feature = "worker-sidekiq")]
 pub mod sidekiq;
 
-/// Worker configuration options. Default values for these options can be set via the app's
-/// configuration files. The options can also be overridden on a per-worker basis by implementing
-/// the [`Worker::config`] method.
-///
-/// The [`Worker::config`] method will be called once for each worker when it is registered, and
-/// the config will be stored by the [`Processor`] to be used when the worker handles a job.
+/// Worker configuration options to use when enqueuing a job. Default values for these options can
+/// be set via the app's configuration files. The options can also be overridden on a per-worker
+/// basis by implementing the [`Worker::enqueue_config`] method.
 #[serde_as]
 #[skip_serializing_none]
 #[derive(Debug, Default, Clone, Validate, Serialize, Deserialize, TypedBuilder)]
 #[serde(default, rename_all = "kebab-case")]
 #[non_exhaustive]
-pub struct WorkerConfig {
+pub struct EnqueueConfig {
     /// The name of the queue used to enqueue jobs. Multiple workers can enqueue jobs on the same
     /// queue, which is particularly useful for workers that may not have many jobs. However,
     /// workers can also be configured to use a dedicated queue.
     #[serde(default)]
     #[builder(default, setter(strip_option))]
     pub queue: Option<String>,
+}
 
+/// Worker configuration options to use when handling a job. Default values for these options can
+/// be set via the app's configuration files. The options can also be overridden on a per-worker
+/// basis by implementing the [`Worker::worker_config`] method.
+///
+#[serde_as]
+#[skip_serializing_none]
+#[derive(Debug, Default, Clone, Validate, Serialize, Deserialize, TypedBuilder)]
+#[serde(default, rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct WorkerConfig {
     /// The maximum number of times a job should be retried on failure.
     #[serde(default)]
     #[builder(default, setter(strip_option))]
@@ -69,6 +77,8 @@ where
     //  this will be encoded in the job data, so it needs to be
     //  resilient to refactoring. We also need to have a common place where
     //  the logic for creating this name lives.
+    // this is not in EnqueueConfig because EnqueueConfig is also used in the appconfig, but the
+    // worker name is different for every worker class
     fn name() -> String
     where
         Self: Sized,
@@ -76,7 +86,23 @@ where
         worker_name::<Self>()
     }
 
-    fn config(&self, _state: &S) -> WorkerConfig {
+    /// Get worker-specific configuration options to use when enqueuing a job. Any value not
+    /// provided in the returned [`WorkerConfig`] will fall back to the value from the
+    /// [`crate::config::AppConfig`].
+    ///
+    /// The [`Worker::enqueue_config`] method will be called when enqueuing a job for the worker.
+    fn enqueue_config(state: &S) -> EnqueueConfig {
+        EnqueueConfig::default()
+    }
+
+    /// Get worker-specific configuration options to use when handling a job. Any value not provided
+    /// in the returned [`WorkerConfig`] will fall back to the value from the
+    /// [`crate::config::AppConfig`].
+    ///
+    /// The [`Worker::worker_config`] method will be called once for each worker when it is
+    /// registered, and the config will be stored by the [`Processor`] to be used when the worker
+    /// handles a job.
+    fn worker_config(&self, _state: &S) -> WorkerConfig {
         WorkerConfig::default()
     }
 
