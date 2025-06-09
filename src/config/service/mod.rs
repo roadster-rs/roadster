@@ -12,6 +12,7 @@ use crate::config::CustomConfig;
 use crate::config::service::grpc::GrpcServiceConfig;
 #[cfg(feature = "http")]
 use crate::config::service::http::HttpServiceConfig;
+use crate::config::service::worker::WorkerServiceConfig;
 #[cfg(feature = "worker-pg")]
 use crate::config::service::worker::pg::WorkerPgServiceConfig;
 #[cfg(feature = "worker-sidekiq")]
@@ -36,13 +37,9 @@ pub struct Service {
     #[validate(nested)]
     pub grpc: ServiceConfig<GrpcServiceConfig>,
 
-    #[cfg(feature = "worker-sidekiq")]
+    #[cfg(feature = "worker")]
     #[validate(nested)]
-    pub sidekiq: ServiceConfig<SidekiqServiceConfig>,
-
-    #[cfg(feature = "worker-pg")]
-    #[validate(nested)]
-    pub worker_pg: ServiceConfig<WorkerPgServiceConfig>,
+    pub worker: WorkerServiceConfig,
 
     #[serde(flatten)]
     #[validate(nested)]

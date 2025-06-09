@@ -1,4 +1,5 @@
 use crate::config::database::Database;
+use crate::service::worker::EnqueueConfig;
 use crate::util::serde::default_true;
 use config::{FileFormat, FileSourceString};
 use serde_derive::{Deserialize, Serialize};
@@ -28,14 +29,20 @@ pub struct WorkerPgServiceConfig {
     #[serde(default = "WorkerPgServiceConfig::default_num_workers")]
     pub num_workers: u32,
 
-    /// The names of the worker queues to handle. If not provided, handle all the queues that are
-    /// registered in the PG worker service. If a list is provided, only the queues specified in the
-    /// list will be handled, even if other worker queues are registered with the PG worker service.
-    /// Note that an empty list will result in no queues being handled.
+    /// The names of the worker queues to handle. If the field is not provided, handle all the
+    /// queues that are registered in the PG worker service. If a list is provided, only the queues
+    /// specified in the list will be handled, even if other worker queues are registered with the
+    /// PG worker service. Note that an empty list will result in no queues being handled.
     ///
     /// Queues can also be specified in the `queue_config` map.
     #[serde(default)]
     pub queues: Option<Vec<String>>,
+
+    /// Queue-specific configurations. The queues specified in this field do not need to match
+    /// the list of queues listed in the `queues` field.
+    #[serde(default)]
+    #[validate(nested)]
+    pub queue_config: Option<BTreeMap<String, QueueConfig>>,
 
     /// Configuration for the DB pool. If not provided, will re-use the configuration from
     /// [`crate::config::database::Database`], including the DB URI. If not provided and the
@@ -44,17 +51,17 @@ pub struct WorkerPgServiceConfig {
     #[validate(nested)]
     pub db_pool: Option<DbPoolConfig>,
 
-    /// The default app worker config. Values can be overridden on a per-worker basis by
-    /// implementing the corresponding methods.
+    /// The default worker enqueue config. Values can be overridden on a per-worker basis by
+    /// implementing [`crate::service::worker::Worker::enqueue_config`].
+    #[serde(default)]
+    #[validate(nested)]
+    pub enqueue_config: EnqueueConfig,
+
+    /// The default worker config. Values can be overridden on a per-worker basis by
+    /// implementing [`crate::service::worker::Worker::worker_config`].
     #[serde(default)]
     #[validate(nested)]
     pub worker_config: WorkerConfig,
-
-    /// Queue-specific configurations. The queues specified in this field do not need to match
-    /// the list of queues listed in the `queues` field.
-    #[serde(default)]
-    #[validate(nested)]
-    pub queue_config: Option<BTreeMap<String, QueueConfig>>,
 }
 
 impl WorkerPgServiceConfig {

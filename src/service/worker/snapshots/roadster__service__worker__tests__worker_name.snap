@@ -1,5 +1,0 @@
----
-source: src/service/worker/mod.rs
-expression: worker_name
----
-"FooWorker"

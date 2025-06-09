@@ -11,9 +11,11 @@ use std::ops::Neg;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
+use tracing::warn;
 use typed_builder::TypedBuilder;
 use validator::Validate;
 
+mod enqueuer;
 #[cfg(feature = "worker-pg")]
 pub mod pg;
 #[cfg(feature = "worker-sidekiq")]
@@ -31,9 +33,31 @@ pub struct EnqueueConfig {
     /// The name of the queue used to enqueue jobs. Multiple workers can enqueue jobs on the same
     /// queue, which is particularly useful for workers that may not have many jobs. However,
     /// workers can also be configured to use a dedicated queue.
+    ///
+    /// Note: when used with a Postgres backend with `pgmq`, this will be used in table names.
+    /// Postgres generally has a length limit for table names, so care should be taken to ensure
+    /// this queue name is not too long or else the queue name will be truncated when used
+    /// with `pgmq`.
     #[serde(default)]
     #[builder(default, setter(strip_option))]
     pub queue: Option<String>,
+
+    /// The queue backend to use to enqueue the job.
+    #[serde(default)]
+    #[builder(default, setter(strip_option))]
+    pub backend: Option<QueueBackend>,
+}
+
+/// Supported queue backends.
+// todo: add a trait to allow consumers to extend?
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub enum QueueBackend {
+    #[cfg(feature = "worker-sidekiq")]
+    Sidekiq,
+    #[cfg(feature = "worker-pg")]
+    Pg,
 }
 
 /// Worker configuration options to use when handling a job. Default values for these options can
@@ -74,16 +98,22 @@ where
 {
     type Error: std::error::Error;
 
-    //  this will be encoded in the job data, so it needs to be
-    //  resilient to refactoring. We also need to have a common place where
-    //  the logic for creating this name lives.
-    // this is not in EnqueueConfig because EnqueueConfig is also used in the appconfig, but the
-    // worker name is different for every worker class
+    /// The name of the worker. This will be encoded in the job data when it's enqueued the backing
+    /// database (Redis/Postgres), and used to identify which type should handle a job when it's
+    /// fetched from the queue. Therefore, it should be unique across the app, and care should be
+    /// taken when refactoring.
+    ///
+    /// By default, [`Self::name`] returns the name of the type that implements the [`Worker`]
+    /// trait. See [`simple_type_name`].
+    ///
+    /// This is not included in the [`EnqueueConfig`] because [`EnqueueConfig`] is included in
+    /// the [`crate::config::AppConfig`] to allow defining defaults for the config values, but
+    /// the name needs to be specified separately for each [`Worker`].
     fn name() -> String
     where
         Self: Sized,
     {
-        worker_name::<Self>()
+        simple_type_name::<Self>()
     }
 
     /// Get worker-specific configuration options to use when enqueuing a job. Any value not
@@ -91,7 +121,7 @@ where
     /// [`crate::config::AppConfig`].
     ///
     /// The [`Worker::enqueue_config`] method will be called when enqueuing a job for the worker.
-    fn enqueue_config(state: &S) -> EnqueueConfig {
+    fn enqueue_config(_state: &S) -> EnqueueConfig {
         EnqueueConfig::default()
     }
 
@@ -117,7 +147,8 @@ where
         Self: Sized;
 }
 
-pub fn worker_name<T>() -> String
+/// Get the name of the type with its module prefix stripped.
+pub fn simple_type_name<T>() -> String
 where
 {
     type_name::<T>()
@@ -125,6 +156,69 @@ where
         .last()
         .unwrap_or(type_name::<T>())
         .to_owned()
+}
+
+#[derive(Serialize, Deserialize)]
+struct Job {
+    metadata: JobMetadata,
+    // Todo: use `serde_json::Value` instead?
+    args: String,
+}
+
+#[derive(Serialize, Deserialize)]
+struct JobMetadata {
+    worker_name: String,
+}
+
+async fn enqueue<W, S, Args, E>(state: &S, args: &Args) -> RoadsterResult<()>
+where
+    W: 'static + Worker<S, Args, Error = E>,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+{
+    let context = AppContext::from_ref(state);
+    let worker_enqueue_config = W::enqueue_config(state);
+    let enqueue_config = &context.config().service.worker.enqueue_config;
+    let worker_name = W::name();
+
+    let backend = if let Some(backend) = worker_enqueue_config.backend.as_ref() {
+        backend
+    } else if let Some(backend) = enqueue_config.backend.as_ref() {
+        backend
+    } else {
+        warn!(worker_name, "Unable to enqueue job, no backend configured");
+        return Ok(());
+    };
+
+    let queue = if let Some(queue) = worker_enqueue_config.queue.as_ref() {
+        queue
+    } else if let Some(queue) = enqueue_config.queue.as_ref() {
+        queue
+    } else {
+        warn!(worker_name, "Unable to enqueue job, no queue configured");
+        return Ok(());
+    };
+
+    // todo: delayed versions
+    match backend {
+        #[cfg(feature = "worker-sidekiq")]
+        QueueBackend::Sidekiq => {
+            ::sidekiq::perform_async(context.redis_enqueue(), worker_name, queue.to_owned(), args)
+                .await?;
+        }
+        #[cfg(feature = "worker-pg")]
+        QueueBackend::Pg => {
+            let args = serde_json::to_string(&args)?;
+            let metadata = Job {
+                metadata: JobMetadata { worker_name },
+                args,
+            };
+            context.pgmq().send(&queue, &metadata).await?;
+        }
+    }
+
+    Ok(())
 }
 
 type WorkerFn<S> = Box<
@@ -142,12 +236,6 @@ where
     workers: HashMap<String, WorkerFn<S>>,
 }
 
-#[derive(Serialize, Deserialize)]
-struct JobMetadata {
-    worker_name: String,
-    args: String,
-}
-
 impl<S> Processor<S>
 where
     S: Clone + Send + Sync + 'static,
@@ -157,7 +245,6 @@ where
     where
         // todo: can we get rid of the `'static`?
         W: 'static + Worker<S, Args, Error = E>,
-        AppContext: FromRef<S>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
     {
         // todo: can we get rid of the `Arc` (and the `clones` below)?
@@ -188,7 +275,6 @@ where
     where
         // todo: can we get rid of the `'static`?
         W: 'static + Worker<S, Args, Error = E>,
-        AppContext: FromRef<S>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
     {
         // let worker_name = Self::worker_name(&worker).to_string();
@@ -250,8 +336,8 @@ mod tests {
     }
 
     #[test]
-    fn worker_name() {
-        let worker_name = super::worker_name::<FooWorker>();
-        assert_debug_snapshot!(worker_name);
+    fn simple_type_name() {
+        let simple_type_name = super::simple_type_name::<FooWorker>();
+        assert_debug_snapshot!(simple_type_name);
     }
 }
