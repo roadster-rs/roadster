@@ -3,6 +3,7 @@ use crate::error::RoadsterResult;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
+use serde::__private::ser::constrain;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
 use std::any::{Any, type_name, type_name_of_val};
@@ -12,7 +13,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
 use thiserror::Error;
-use tracing::{error, warn};
+use tracing::{debug, error, info, warn};
 use typed_builder::TypedBuilder;
 use validator::Validate;
 
@@ -238,10 +239,8 @@ where
 {
     let enqueue_config = enqueue_config::<W, S, Args, E>(state)?;
     let worker_name = W::name();
-
     let context = AppContext::from_ref(state);
 
-    // todo: delayed versions
     match enqueue_config.backend {
         #[cfg(feature = "worker-sidekiq")]
         QueueBackend::Sidekiq => {
@@ -252,69 +251,63 @@ where
                 args,
             )
             .await?;
+            debug!("Job enqueued");
         }
         #[cfg(feature = "worker-pg")]
         QueueBackend::Pg => {
             let args = serde_json::to_string(&args)?;
-            let metadata = Job {
+            let job = Job {
                 metadata: JobMetadata { worker_name },
                 args,
             };
-            context
-                .pgmq()
-                .send(&enqueue_config.queue, &metadata)
-                .await?;
+            let id = context.pgmq().send(&enqueue_config.queue, &job).await?;
+            debug!(id, "Job enqueued");
         }
     }
 
     Ok(())
 }
 
-async fn enqueue_delayed<W, S, Args, E>(state: &S, args: &Args) -> RoadsterResult<()>
+async fn enqueue_delayed<W, S, Args, E>(
+    state: &S,
+    args: &Args,
+    delay: Duration,
+) -> RoadsterResult<()>
 where
     W: 'static + Worker<S, Args, Error = E>,
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
     Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
 {
-    let context = AppContext::from_ref(state);
-    let worker_enqueue_config = W::enqueue_config(state);
-    let enqueue_config = &context.config().service.worker.enqueue_config;
+    let enqueue_config = enqueue_config::<W, S, Args, E>(state)?;
     let worker_name = W::name();
+    let context = AppContext::from_ref(state);
 
-    let backend = if let Some(backend) = worker_enqueue_config.backend.as_ref() {
-        backend
-    } else if let Some(backend) = enqueue_config.backend.as_ref() {
-        backend
-    } else {
-        warn!(worker_name, "Unable to enqueue job, no backend configured");
-        return Ok(());
-    };
-
-    let queue = if let Some(queue) = worker_enqueue_config.queue.as_ref() {
-        queue
-    } else if let Some(queue) = enqueue_config.queue.as_ref() {
-        queue
-    } else {
-        warn!(worker_name, "Unable to enqueue job, no queue configured");
-        return Ok(());
-    };
-
-    // todo: delayed versions
-    match backend {
+    match enqueue_config.backend {
         #[cfg(feature = "worker-sidekiq")]
         QueueBackend::Sidekiq => {
-            ::sidekiq::perform_async(context.redis_enqueue(), worker_name, queue.to_owned(), args)
-                .await?;
+            ::sidekiq::perform_in(
+                context.redis_enqueue(),
+                delay,
+                worker_name,
+                enqueue_config.queue,
+                args,
+            )
+            .await?;
+            debug!(delay = delay.as_secs(), "Job enqueued");
         }
         #[cfg(feature = "worker-pg")]
         QueueBackend::Pg => {
             let args = serde_json::to_string(&args)?;
-            let metadata = Job {
+            let job = Job {
                 metadata: JobMetadata { worker_name },
                 args,
             };
-            context.pgmq().send(&queue, &metadata).await?;
+            let id = context
+                .pgmq()
+                .send_delay(&enqueue_config.queue, &job, delay.as_secs())
+                .await?;
+            debug!(id, delay = delay.as_secs(), "Job enqueued");
         }
     }
 
@@ -367,25 +360,6 @@ where
         );
         Ok(())
     }
-
-    // Todo: don't require a worker instance to enqueue
-    // Todo: the `enqueue` method maybe shouldn't be on the Processor?
-    // Todo: allow configuring the queue backend (sidekiq/faktory/pgmq/etc)
-    async fn enqueue<W, Args, E>(&self, worker: W, args: Args) -> RoadsterResult<()>
-    where
-        // todo: can we get rid of the `'static`?
-        W: 'static + Worker<S, Args, Error = E>,
-        Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-    {
-        // let worker_name = Self::worker_name(&worker).to_string();
-        // // Todo: allow the worker to configure the queue name
-        // let queue_name = worker_name.clone();
-        // let args = serde_json::to_string(&args)?;
-        // let metadata = JobMetadata { worker_name, args };
-        // let context = AppContext::from_ref(&self.state);
-        // context.pgmq().send(&queue_name, &metadata).await?;
-        Ok(())
-    }
 }
 
 #[cfg(test)]
@@ -415,24 +389,6 @@ mod tests {
         ) -> Result<(), Self::Error> {
             todo!()
         }
-
-        // async fn enqueue(state: &AppContext, args: &FooWorkerArgs) -> Result<(), Self::Error>
-        // where
-        //     Self: Sized,
-        // {
-        //     todo!()
-        // }
-        //
-        // async fn enqueue_delayed(
-        //     state: &AppContext,
-        //     args: &FooWorkerArgs,
-        //     delay: Duration,
-        // ) -> Result<(), Self::Error>
-        // where
-        //     Self: Sized,
-        // {
-        //     todo!()
-        // }
     }
 
     #[test]
