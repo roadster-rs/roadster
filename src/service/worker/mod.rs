@@ -1,5 +1,6 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
+use crate::error::worker::EnqueueError;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
@@ -98,7 +99,7 @@ where
     AppContext: FromRef<S>,
     Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
 {
-    type Error: std::error::Error;
+    type Error: std::error::Error + Send + Sync;
 
     /// The name of the worker. This will be encoded in the job data when it's enqueued the backing
     /// database (Redis/Postgres), and used to identify which type should handle a job when it's
@@ -173,16 +174,6 @@ struct Job {
 #[derive(Serialize, Deserialize)]
 struct JobMetadata {
     worker_name: String,
-}
-
-#[derive(Debug, Error)]
-#[non_exhaustive]
-pub enum EnqueueError {
-    #[error("No backend configured for worker `{0}`.")]
-    NoBackend(String),
-
-    #[error("No queue configured for worker `{0}`.")]
-    NoQueue(String),
 }
 
 /// Same as [`EnqueueConfig`], except that all the required fields are not [`Option`].
@@ -339,6 +330,7 @@ where
         // todo: can we get rid of the `'static`?
         W: 'static + Worker<S, Args, Error = E>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+        E: std::error::Error + Send + Sync,
     {
         // todo: can we get rid of the `Arc` (and the `clones` below)?
         let worker = Arc::new(worker);
@@ -351,9 +343,12 @@ where
                     let args: Args = serde_json::from_str(args)?;
                     match worker.clone().handle(&state, &args).await {
                         Ok(_) => Ok(()),
-                        // Todo: better error handling
                         // todo: timeouts, etc
-                        Err(err) => Err(anyhow!("foo").into()),
+                        Err(err) => Err(crate::error::worker::WorkerError::Handle(
+                            W::name(),
+                            Box::new(err),
+                        )
+                        .into()),
                     }
                 })
             }),
