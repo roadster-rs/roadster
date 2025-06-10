@@ -11,7 +11,8 @@ use std::ops::Neg;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
-use tracing::warn;
+use thiserror::Error;
+use tracing::{error, warn};
 use typed_builder::TypedBuilder;
 use validator::Validate;
 
@@ -137,14 +138,17 @@ where
     }
 
     async fn handle(&self, state: &S, args: &Args) -> Result<(), Self::Error>;
-
-    async fn enqueue(state: &S, args: &Args) -> Result<(), Self::Error>
-    where
-        Self: Sized;
-
-    async fn enqueue_delayed(state: &S, args: &Args, delay: Duration) -> Result<(), Self::Error>
-    where
-        Self: Sized;
+    //
+    // async fn enqueue(state: &S, args: &Args) -> Result<(), Self::Error>
+    // where
+    //     Self: Sized,
+    // {
+    //     enqueue::<Self, S, Args, Self::Error>(state, args).await
+    // }
+    //
+    // async fn enqueue_delayed(state: &S, args: &Args, delay: Duration) -> Result<(), Self::Error>
+    // where
+    //     Self: Sized;
 }
 
 /// Get the name of the type with its module prefix stripped.
@@ -170,7 +174,103 @@ struct JobMetadata {
     worker_name: String,
 }
 
+#[derive(Debug, Error)]
+#[non_exhaustive]
+pub enum EnqueueError {
+    #[error("No backend configured for worker `{0}`.")]
+    NoBackend(String),
+
+    #[error("No queue configured for worker `{0}`.")]
+    NoQueue(String),
+}
+
+/// Same as [`EnqueueConfig`], except that all the required fields are not [`Option`].
+#[derive(Debug, TypedBuilder)]
+#[non_exhaustive]
+struct EnqueueConfigRequired {
+    pub queue: String,
+    pub backend: QueueBackend,
+}
+
+fn enqueue_config<W, S, Args, E>(state: &S) -> Result<EnqueueConfigRequired, EnqueueError>
+where
+    W: 'static + Worker<S, Args, Error = E>,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+{
+    let context = AppContext::from_ref(state);
+    let worker_enqueue_config = W::enqueue_config(state);
+    let enqueue_config = &context.config().service.worker.enqueue_config;
+
+    let backend = if let Some(backend) = worker_enqueue_config.backend {
+        backend
+    } else if let Some(backend) = enqueue_config.backend.as_ref() {
+        backend.to_owned()
+    } else {
+        let worker_name = W::name();
+        error!(worker_name, "Unable to enqueue job, no backend configured");
+        return Err(EnqueueError::NoBackend(worker_name).into());
+    };
+
+    let queue = if let Some(queue) = worker_enqueue_config.queue {
+        queue
+    } else if let Some(queue) = enqueue_config.queue.as_ref() {
+        queue.to_owned()
+    } else {
+        let worker_name = W::name();
+        error!(worker_name, "Unable to enqueue job, no queue configured");
+        return Err(EnqueueError::NoQueue(worker_name).into());
+    };
+
+    Ok(EnqueueConfigRequired::builder()
+        .backend(backend)
+        .queue(queue)
+        .build())
+}
+
 async fn enqueue<W, S, Args, E>(state: &S, args: &Args) -> RoadsterResult<()>
+where
+    W: 'static + Worker<S, Args, Error = E>,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+{
+    let enqueue_config = enqueue_config::<W, S, Args, E>(state)?;
+    let worker_name = W::name();
+
+    let context = AppContext::from_ref(state);
+
+    // todo: delayed versions
+    match enqueue_config.backend {
+        #[cfg(feature = "worker-sidekiq")]
+        QueueBackend::Sidekiq => {
+            ::sidekiq::perform_async(
+                context.redis_enqueue(),
+                worker_name,
+                enqueue_config.queue,
+                args,
+            )
+            .await?;
+        }
+        #[cfg(feature = "worker-pg")]
+        QueueBackend::Pg => {
+            let args = serde_json::to_string(&args)?;
+            let metadata = Job {
+                metadata: JobMetadata { worker_name },
+                args,
+            };
+            context
+                .pgmq()
+                .send(&enqueue_config.queue, &metadata)
+                .await?;
+        }
+    }
+
+    Ok(())
+}
+
+async fn enqueue_delayed<W, S, Args, E>(state: &S, args: &Args) -> RoadsterResult<()>
 where
     W: 'static + Worker<S, Args, Error = E>,
     S: Clone + Send + Sync + 'static,
@@ -316,23 +416,23 @@ mod tests {
             todo!()
         }
 
-        async fn enqueue(state: &AppContext, args: &FooWorkerArgs) -> Result<(), Self::Error>
-        where
-            Self: Sized,
-        {
-            todo!()
-        }
-
-        async fn enqueue_delayed(
-            state: &AppContext,
-            args: &FooWorkerArgs,
-            delay: Duration,
-        ) -> Result<(), Self::Error>
-        where
-            Self: Sized,
-        {
-            todo!()
-        }
+        // async fn enqueue(state: &AppContext, args: &FooWorkerArgs) -> Result<(), Self::Error>
+        // where
+        //     Self: Sized,
+        // {
+        //     todo!()
+        // }
+        //
+        // async fn enqueue_delayed(
+        //     state: &AppContext,
+        //     args: &FooWorkerArgs,
+        //     delay: Duration,
+        // ) -> Result<(), Self::Error>
+        // where
+        //     Self: Sized,
+        // {
+        //     todo!()
+        // }
     }
 
     #[test]

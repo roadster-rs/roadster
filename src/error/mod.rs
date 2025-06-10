@@ -24,6 +24,8 @@ pub mod tokio;
 #[cfg(feature = "grpc")]
 pub mod tonic;
 pub mod tracing;
+#[cfg(feature = "worker")]
+pub mod worker;
 
 use crate::error::api::ApiError;
 use crate::error::auth::AuthError;
@@ -50,6 +52,8 @@ use crate::error::tokio::TokioError;
 #[cfg(feature = "grpc")]
 use crate::error::tonic::TonicError;
 use crate::error::tracing::TracingError;
+#[cfg(feature = "worker")]
+use crate::error::worker::WorkerError;
 use crate::health::check::registry::HealthCheckRegistryError;
 use crate::lifecycle::registry::LifecycleHandlerRegistryError;
 use crate::service::registry::ServiceRegistryError;
@@ -87,6 +91,10 @@ pub enum Error {
     #[cfg(feature = "worker-pg")]
     #[error(transparent)]
     Pgmq(#[from] PgmqError),
+
+    #[cfg(feature = "worker")]
+    #[error(transparent)]
+    Worker(#[from] WorkerError),
 
     #[cfg(feature = "cli")]
     #[error(transparent)]
