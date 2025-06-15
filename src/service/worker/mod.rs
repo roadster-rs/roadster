@@ -181,7 +181,90 @@ struct JobMetadata {
 #[non_exhaustive]
 struct EnqueueConfigRequired {
     pub queue: String,
+    // Todo: this might not be needed depending on how we end up liking the Enqueue trait.
     pub backend: QueueBackend,
+}
+
+// Todo: do we like this trait?
+#[async_trait]
+trait Enqueue {
+    type Error: std::error::Error;
+
+    async fn enqueue<W, S, Args, E>(state: &S, args: &Args) -> Result<(), Self::Error>
+    where
+        W: 'static + Worker<S, Args, Error = E>,
+        S: Clone + Send + Sync + 'static,
+        AppContext: FromRef<S>,
+        Args: Send + Sync + Serialize + for<'de> Deserialize<'de>;
+
+    async fn enqueue_delayed<W, S, Args, E>(
+        state: &S,
+        args: &Args,
+        delay: Duration,
+    ) -> Result<(), Self::Error>
+    where
+        W: 'static + Worker<S, Args, Error = E>,
+        S: Clone + Send + Sync + 'static,
+        AppContext: FromRef<S>,
+        Args: Send + Sync + Serialize + for<'de> Deserialize<'de>;
+}
+
+struct PgmqBackend;
+
+#[async_trait]
+impl Enqueue for PgmqBackend {
+    type Error = crate::error::Error;
+
+    async fn enqueue<W, S, Args, E>(state: &S, args: &Args) -> Result<(), Self::Error>
+    where
+        W: 'static + Worker<S, Args, Error = E>,
+        S: Clone + Send + Sync + 'static,
+        AppContext: FromRef<S>,
+        Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+    {
+        let enqueue_config = enqueue_config::<W, S, Args, E>(state)?;
+        let worker_name = W::name();
+        let context = AppContext::from_ref(state);
+
+        let args = serde_json::to_string(&args)?;
+        let job = Job {
+            metadata: JobMetadata { worker_name },
+            args,
+        };
+        let id = context.pgmq().send(&enqueue_config.queue, &job).await?;
+        debug!(id, "Job enqueued");
+
+        Ok(())
+    }
+
+    async fn enqueue_delayed<W, S, Args, E>(
+        state: &S,
+        args: &Args,
+        delay: Duration,
+    ) -> Result<(), Self::Error>
+    where
+        W: 'static + Worker<S, Args, Error = E>,
+        S: Clone + Send + Sync + 'static,
+        AppContext: FromRef<S>,
+        Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+    {
+        let enqueue_config = enqueue_config::<W, S, Args, E>(state)?;
+        let worker_name = W::name();
+        let context = AppContext::from_ref(state);
+
+        let args = serde_json::to_string(&args)?;
+        let job = Job {
+            metadata: JobMetadata { worker_name },
+            args,
+        };
+        let id = context
+            .pgmq()
+            .send_delay(&enqueue_config.queue, &job, delay.as_secs())
+            .await?;
+        debug!(id, delay = delay.as_secs(), "Job enqueued");
+
+        Ok(())
+    }
 }
 
 fn enqueue_config<W, S, Args, E>(state: &S) -> Result<EnqueueConfigRequired, EnqueueError>
