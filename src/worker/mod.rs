@@ -1,4 +1,6 @@
 use crate::app::context::AppContext;
+use crate::error::RoadsterResult;
+use crate::error::worker::EnqueueError;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use serde::{Deserialize, Serialize};
@@ -11,8 +13,6 @@ use std::time::Duration;
 use tracing::{debug, error};
 use typed_builder::TypedBuilder;
 use validator::Validate;
-use crate::error::RoadsterResult;
-use crate::error::worker::EnqueueError;
 
 pub mod enqueuer;
 #[cfg(feature = "worker-pg")]
