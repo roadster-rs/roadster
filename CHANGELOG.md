@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.5](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.4...roadster-v0.7.5) - 2025-06-16
+
+### Added
+
+- Allow running multiple Diesel migration sources ([#761](https://github.com/roadster-rs/roadster/pull/761))
+
+### Other
+
+- Disable dependabot ([#797](https://github.com/roadster-rs/roadster/pull/797))
+- *(deps)* bump lettre from 0.11.15 to 0.11.16 ([#789](https://github.com/roadster-rs/roadster/pull/789))
+- *(deps)* bump leptos_config from 0.8.0-rc1 to 0.8.2 ([#791](https://github.com/roadster-rs/roadster/pull/791))
+- *(deps)* bump axum from 0.8.3 to 0.8.4 ([#792](https://github.com/roadster-rs/roadster/pull/792))
+- *(deps)* bump taiki-e/install-action from 2.50.10 to 2.52.4 ([#795](https://github.com/roadster-rs/roadster/pull/795))
+- *(deps)* bump chrono from 0.4.40 to 0.4.41 ([#782](https://github.com/roadster-rs/roadster/pull/782))
+- *(deps)* bump uuid from 1.16.0 to 1.17.0 ([#781](https://github.com/roadster-rs/roadster/pull/781))
+- *(deps)* bump tonic-reflection from 0.13.0 to 0.13.1 ([#780](https://github.com/roadster-rs/roadster/pull/780))
+- dependabot.yml montly updates ([#775](https://github.com/roadster-rs/roadster/pull/775))
+- Add `clean` justfile command ([#769](https://github.com/roadster-rs/roadster/pull/769))
+- Combine multiple taiki-e tasks into one ([#762](https://github.com/roadster-rs/roadster/pull/762))
+- *(deps)* bump taiki-e/install-action from 2.50.7 to 2.50.10 ([#754](https://github.com/roadster-rs/roadster/pull/754))
+- *(deps)* bump MarcoIeni/release-plz-action to 0.3.134 ([#755](https://github.com/roadster-rs/roadster/pull/755))
+- Pin github actions to specific SHAs ([#752](https://github.com/roadster-rs/roadster/pull/752))
+- Run doc checks with `carg hack --each-feature` ([#750](https://github.com/roadster-rs/roadster/pull/750))
+
 ## [0.7.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.3...roadster-v0.7.4) - 2025-04-29
 
 ### Added
