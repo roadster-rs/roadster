@@ -2,9 +2,9 @@ use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::worker;
 use crate::worker::backend::pg::PgBackend;
-use crate::worker::enqueuer::enqueue_config;
+use crate::worker::enqueue::enqueue_config;
 use crate::worker::job::{Job, JobMetadata};
-use crate::worker::{Enqueuer, Worker, enqueuer};
+use crate::worker::{Enqueuer, Worker, enqueue};
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use itertools::Itertools;
@@ -26,7 +26,7 @@ impl Enqueuer for PgBackend {
         AppContext: FromRef<S>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
     {
-        enqueuer::enqueue::<W, _, _, _, _>(
+        enqueue::enqueue::<W, _, _, _, _>(
             state,
             args,
             async |state, queue, job| -> RoadsterResult<()> {
@@ -51,7 +51,7 @@ impl Enqueuer for PgBackend {
         AppContext: FromRef<S>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
     {
-        enqueuer::enqueue::<W, _, _, _, _>(
+        enqueue::enqueue::<W, _, _, _, _>(
             state,
             args,
             async move |state, queue, job| -> RoadsterResult<()> {
@@ -75,7 +75,7 @@ impl Enqueuer for PgBackend {
         AppContext: FromRef<S>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
     {
-        enqueuer::enqueue_batch::<W, _, _, _, _>(
+        enqueue::enqueue_batch::<W, _, _, _, _>(
             state,
             args,
             async |state, queue, jobs| -> RoadsterResult<()> {
@@ -101,7 +101,7 @@ impl Enqueuer for PgBackend {
         AppContext: FromRef<S>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
     {
-        enqueuer::enqueue_batch::<W, _, _, _, _>(
+        enqueue::enqueue_batch::<W, _, _, _, _>(
             state,
             args,
             async move |state, queue, jobs| -> RoadsterResult<()> {

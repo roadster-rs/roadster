@@ -9,11 +9,11 @@ use std::sync::Arc;
 use validator::Validate;
 
 pub mod backend;
-pub(crate) mod enqueuer;
+pub(crate) mod enqueue;
 pub(crate) mod job;
 pub(crate) mod worker;
 
-pub use enqueuer::Enqueuer;
+pub use enqueue::Enqueuer;
 pub use worker::{EnqueueConfig, QueueBackend, Worker, WorkerConfig};
 
 type WorkerFn<S> = Box<

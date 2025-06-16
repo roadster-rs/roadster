@@ -1,7 +1,7 @@
 use crate::app::context::AppContext;
 use crate::util::types;
 use crate::worker::Processor;
-use crate::worker::enqueuer::Enqueuer;
+use crate::worker::enqueue::Enqueuer;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use serde::{Deserialize, Serialize};
