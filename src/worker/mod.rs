@@ -38,7 +38,6 @@ where
 {
     fn register<W, Args, E>(mut self, worker: W) -> RoadsterResult<()>
     where
-        // todo: can we get rid of the `'static`?
         W: 'static + Worker<S, Args, Error = E>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
         E: std::error::Error + Send + Sync,

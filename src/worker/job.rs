@@ -1,9 +1,11 @@
-use serde_derive::{Deserialize, Serialize};
+use crate::worker::Worker;
+use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use typed_builder::TypedBuilder;
 
+// Todo: Not sure if this should be public yet.
 #[derive(Serialize, Deserialize, TypedBuilder)]
-pub struct Job<'a> {
+pub(crate) struct Job<'a> {
     #[serde(borrow)]
     metadata: JobMetadata<'a>,
     // Using [`Cow`] instead of `&str` because `&str` will fail to deserialize if the string
@@ -12,7 +14,8 @@ pub struct Job<'a> {
     args: Cow<'a, str>,
 }
 
+// Todo: Not sure if this should be public yet.
 #[derive(Serialize, Deserialize, TypedBuilder)]
-pub struct JobMetadata<'a> {
+pub(crate) struct JobMetadata<'a> {
     worker_name: &'a str,
 }

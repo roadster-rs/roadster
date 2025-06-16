@@ -7,7 +7,7 @@
 pub mod enqueuer;
 pub mod processor;
 
-pub struct PgmqBackend;
+pub struct PgBackend;
 
 /*
 Lifecycle

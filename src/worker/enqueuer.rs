@@ -1,10 +1,13 @@
 use crate::app::context::AppContext;
+use crate::error::RoadsterResult;
 use crate::error::worker::EnqueueError;
-use crate::worker::job::JobMetadata;
+use crate::worker::job::{Job, JobMetadata};
 use crate::worker::{QueueBackend, Worker};
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::time::Duration;
 use tracing::{error, instrument};
 use typed_builder::TypedBuilder;
@@ -96,4 +99,69 @@ where
         .backend(backend)
         .queue(queue)
         .build())
+}
+
+/// Helper function to prepare a job to be enqueued and then enqueue it using the provided `enqueue_fn`.
+pub(crate) async fn enqueue<W, S, Args, E, F>(
+    state: &S,
+    args: &Args,
+    enqueue_fn: F,
+) -> RoadsterResult<()>
+where
+    W: 'static + Worker<S, Args, Error = E>,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+    F: for<'a> AsyncFn(&S, &str, &Job<'a>) -> RoadsterResult<()>,
+{
+    let worker_name = W::name();
+
+    let args = serde_json::to_string(&args)?;
+    let job = Job::builder()
+        .metadata(JobMetadata::builder().worker_name(&worker_name).build())
+        .args(Cow::from(&args))
+        .build();
+
+    let enqueue_config = enqueue_config::<W, S, Args, E>(state)?;
+
+    enqueue_fn(state, &enqueue_config.queue, &job).await?;
+
+    Ok(())
+}
+
+/// Helper function to prepare a batch of jobs to be enqueued and then enqueue them using the
+/// provided `enqueue_fn`.
+pub(crate) async fn enqueue_batch<W, S, Args, E, F>(
+    state: &S,
+    args: &[Args],
+    enqueue_fn: F,
+) -> RoadsterResult<()>
+where
+    W: 'static + Worker<S, Args, Error = E>,
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+    F: for<'a> AsyncFn(&S, &str, &[Job<'a>]) -> RoadsterResult<()>,
+{
+    let worker_name = W::name();
+
+    let mut arg_strs: Vec<String> = Vec::with_capacity(args.len());
+    for arg in args.iter() {
+        arg_strs.push(serde_json::to_string(arg)?);
+    }
+    let jobs = arg_strs
+        .iter()
+        .map(|arg| {
+            Job::builder()
+                .metadata(JobMetadata::builder().worker_name(&worker_name).build())
+                .args(Cow::from(arg))
+                .build()
+        })
+        .collect_vec();
+
+    let enqueue_config = enqueue_config::<W, S, Args, E>(state)?;
+
+    enqueue_fn(state, &enqueue_config.queue, &jobs).await?;
+
+    Ok(())
 }
