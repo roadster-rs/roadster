@@ -554,6 +554,13 @@ mod custom_config_tests {
         let config: CustomConfig = CustomConfig { inner };
         assert_eq!(config.get("foo").unwrap(), "bar");
     }
+
+    #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn build() {
+        let mut config = CustomConfig::default();
+        config.insert("key".to_owned(), Value::String("value".to_owned()));
+    }
 }
 
 #[cfg(test)]

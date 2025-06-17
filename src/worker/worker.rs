@@ -1,4 +1,5 @@
 use crate::app::context::AppContext;
+use crate::config::CustomConfig;
 use crate::util::types;
 use crate::worker::Processor;
 use crate::worker::enqueue::Enqueuer;
@@ -60,6 +61,41 @@ pub struct WorkerConfig {
     #[serde_as(as = "Option<serde_with::DurationSeconds>")]
     #[builder(default, setter(strip_option))]
     pub max_duration: Option<Duration>,
+
+    #[serde(flatten, default)]
+    #[builder(default, setter(strip_option))]
+    pub pg: Option<PgWorkerConfig>,
+
+    #[serde(flatten, default)]
+    #[builder(default)]
+    pub custom: CustomConfig,
+}
+
+#[serde_as]
+#[skip_serializing_none]
+#[derive(Debug, Default, Clone, Validate, Serialize, Deserialize, TypedBuilder)]
+#[serde(default, rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct PgWorkerConfig {
+    /// The action to take when a job in the queue completes successfully.
+    #[serde(default)]
+    pub success_action: Option<CompletedAction>,
+
+    /// The action to take when a job in the queue fails and has no more retry attempts.
+    #[serde(default)]
+    pub failure_action: Option<CompletedAction>,
+}
+
+/// Action to take when a job completes processing, either by being processed successfully, or by
+/// running out of retry attempts.
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub enum CompletedAction {
+    /// Move the message to the queue's archive table.
+    Archive,
+    /// Delete the message.
+    Delete,
 }
 
 // Todo: add on_success/on_failure handlers?

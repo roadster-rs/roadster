@@ -1,5 +1,4 @@
 use crate::config::database::Database;
-use crate::service::worker::EnqueueConfig;
 use crate::util::serde::default_true;
 use config::{FileFormat, FileSourceString};
 use serde_derive::{Deserialize, Serialize};
@@ -24,34 +23,6 @@ pub struct WorkerPgServiceConfig {
     /// used.
     #[validate(nested)]
     pub db_pool: Option<DbPoolConfig>,
-}
-
-/// Action to take when a job completes processing, either by being processed successfully, or by
-/// running out of retry attempts.
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-#[non_exhaustive]
-pub enum CompletedAction {
-    /// Move the message to the queue's archive table.
-    Archive,
-    /// Delete the message.
-    Delete,
-}
-
-// Todo: consolidate with `service::worker::sidekiq::app_worker::AppWorkerConfig`?
-#[serde_as]
-#[skip_serializing_none]
-#[derive(Debug, Default, Validate, Clone, Serialize, Deserialize)]
-#[serde(default, rename_all = "kebab-case")]
-#[non_exhaustive]
-pub struct WorkerConfig {
-    /// The action to take when a job in the queue completes successfully.
-    #[serde(default)]
-    pub success_action: Option<CompletedAction>,
-
-    /// The action to take when a job in the queue fails and has no more retry attempts.
-    #[serde(default)]
-    pub failure_action: Option<CompletedAction>,
 }
 
 // Todo: consolidate with the sea-orm connection options?
