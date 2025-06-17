@@ -31,11 +31,6 @@ pub struct EnqueueConfig {
     #[serde(default)]
     #[builder(default, setter(strip_option(fallback = queue_opt)))]
     pub queue: Option<String>,
-
-    /// The queue backend to use to enqueue the job.
-    #[serde(default)]
-    #[builder(default, setter(strip_option(fallback = backend_opt)))]
-    pub backend: Option<QueueBackend>,
 }
 
 /// Supported queue backends.

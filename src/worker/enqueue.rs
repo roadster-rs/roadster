@@ -75,16 +75,6 @@ where
     let worker_enqueue_config = W::enqueue_config(state);
     let enqueue_config = &context.config().service.worker.enqueue_config;
 
-    let backend = if let Some(backend) = worker_enqueue_config.backend {
-        backend
-    } else if let Some(backend) = enqueue_config.backend.as_ref() {
-        backend.to_owned()
-    } else {
-        let worker_name = W::name();
-        error!(worker_name, "Unable to enqueue job, no backend configured");
-        return Err(EnqueueError::NoBackend(worker_name).into());
-    };
-
     let queue = if let Some(queue) = worker_enqueue_config.queue {
         queue
     } else if let Some(queue) = enqueue_config.queue.as_ref() {
@@ -95,10 +85,7 @@ where
         return Err(EnqueueError::NoQueue(worker_name).into());
     };
 
-    Ok(EnqueueConfigRequired::builder()
-        .backend(backend)
-        .queue(queue)
-        .build())
+    Ok(EnqueueConfigRequired::builder().queue(queue).build())
 }
 
 /// Helper function to prepare a job to be enqueued and then enqueue it using the provided `enqueue_fn`.
