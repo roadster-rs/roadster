@@ -14,7 +14,7 @@ pub(crate) mod job;
 pub(crate) mod worker;
 
 pub use enqueue::Enqueuer;
-pub use worker::{EnqueueConfig, QueueBackend, Worker, WorkerConfig};
+pub use worker::{EnqueueConfig, Worker, WorkerConfig};
 
 type WorkerFn<S> = Box<
     dyn Send

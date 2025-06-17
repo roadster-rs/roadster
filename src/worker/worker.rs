@@ -33,19 +33,6 @@ pub struct EnqueueConfig {
     pub queue: Option<String>,
 }
 
-/// Supported queue backends.
-// todo: add a trait to allow consumers to extend?
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-#[non_exhaustive]
-pub enum QueueBackend {
-    #[cfg(feature = "worker-sidekiq")]
-    Sidekiq,
-    #[cfg(feature = "worker-pg")]
-    Pg,
-    Other(String),
-}
-
 /// Worker configuration options to use when handling a job. Default values for these options can
 /// be set via the app's configuration files. The options can also be overridden on a per-worker
 /// basis by implementing the [`Worker::worker_config`] method.
