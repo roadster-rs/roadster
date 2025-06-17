@@ -37,7 +37,6 @@ pub struct Service {
     #[validate(nested)]
     pub grpc: ServiceConfig<GrpcServiceConfig>,
 
-    // Todo: update config in a way that doesn't introduce a semver breaking change?
     #[cfg(feature = "worker")]
     #[validate(nested)]
     pub worker: WorkerServiceConfig,

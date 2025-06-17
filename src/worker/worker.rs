@@ -36,7 +36,7 @@ pub struct EnqueueConfig {
 /// Worker configuration options to use when handling a job. Default values for these options can
 /// be set via the app's configuration files. The options can also be overridden on a per-worker
 /// basis by implementing the [`Worker::worker_config`] method.
-///
+// Todo: Add success/failure actions? They might by Pgmq-specific...
 #[serde_as]
 #[skip_serializing_none]
 #[derive(Debug, Default, Clone, Validate, Serialize, Deserialize, TypedBuilder)]
@@ -62,6 +62,7 @@ pub struct WorkerConfig {
     pub max_duration: Option<Duration>,
 }
 
+// Todo: add on_success/on_failure handlers?
 #[async_trait]
 pub trait Worker<S, Args>: Send + Sync
 where
