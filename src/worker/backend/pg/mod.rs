@@ -4,7 +4,7 @@
 - job/task/message
 - runner/worker/handler/processor
  */
-pub mod enqueuer;
+pub mod enqueue;
 pub mod processor;
 
 pub struct PgBackend;
