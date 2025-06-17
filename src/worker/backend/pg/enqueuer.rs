@@ -2,7 +2,7 @@ use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::worker;
 use crate::worker::backend::pg::PgBackend;
-use crate::worker::enqueue::enqueue_config;
+use crate::worker::enqueue::queue_from_config;
 use crate::worker::job::{Job, JobMetadata};
 use crate::worker::{Enqueuer, Worker, enqueue};
 use async_trait::async_trait;

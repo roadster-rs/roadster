@@ -53,18 +53,7 @@ pub trait Enqueuer {
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>;
 }
 
-/// Same as [`crate::worker::EnqueueConfig`], except that all the required fields are not [`Option`].
-#[derive(Debug, TypedBuilder)]
-#[non_exhaustive]
-struct EnqueueConfigRequired {
-    pub queue: String,
-    // Todo: this might not be needed depending on how we end up liking the Enqueue trait.
-    pub backend: QueueBackend,
-}
-
-pub(crate) fn enqueue_config<W, S, Args, E>(
-    state: &S,
-) -> Result<EnqueueConfigRequired, EnqueueError>
+pub(crate) fn queue_from_config<W, S, Args, E>(state: &S) -> Result<Cow<str>, EnqueueError>
 where
     W: 'static + Worker<S, Args, Error = E>,
     S: Clone + Send + Sync + 'static,
@@ -76,16 +65,16 @@ where
     let enqueue_config = &context.config().service.worker.enqueue_config;
 
     let queue = if let Some(queue) = worker_enqueue_config.queue {
-        queue
+        Cow::from(queue)
     } else if let Some(queue) = enqueue_config.queue.as_ref() {
-        queue.to_owned()
+        Cow::from(queue)
     } else {
         let worker_name = W::name();
         error!(worker_name, "Unable to enqueue job, no queue configured");
         return Err(EnqueueError::NoQueue(worker_name).into());
     };
 
-    Ok(EnqueueConfigRequired::builder().queue(queue).build())
+    Ok(queue)
 }
 
 /// Helper function to prepare a job to be enqueued and then enqueue it using the provided `enqueue_fn`.
@@ -109,9 +98,9 @@ where
         .args(Cow::from(&args))
         .build();
 
-    let enqueue_config = enqueue_config::<W, S, Args, E>(state)?;
+    let queue = queue_from_config::<W, S, Args, E>(state)?;
 
-    enqueue_fn(state, &enqueue_config.queue, &job).await?;
+    enqueue_fn(state, &queue, &job).await?;
 
     Ok(())
 }
@@ -146,9 +135,9 @@ where
         })
         .collect_vec();
 
-    let enqueue_config = enqueue_config::<W, S, Args, E>(state)?;
+    let queue = queue_from_config::<W, S, Args, E>(state)?;
 
-    enqueue_fn(state, &enqueue_config.queue, &jobs).await?;
+    enqueue_fn(state, &queue, &jobs).await?;
 
     Ok(())
 }
