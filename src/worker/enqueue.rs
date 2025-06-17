@@ -12,6 +12,7 @@ use std::time::Duration;
 use tracing::{error, instrument};
 use typed_builder::TypedBuilder;
 
+// todo: How to allow external impls that may need a state value that isn't present in `AppContext`?
 #[async_trait]
 pub trait Enqueuer {
     type Error: std::error::Error;
