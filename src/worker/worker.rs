@@ -82,7 +82,7 @@ pub struct WorkerConfig {
 pub struct SidekiqWorkerConfig {
     /// See <https://docs.rs/rusty-sidekiq/latest/sidekiq/trait.Worker.html#method.disable_argument_coercion>
     #[serde(default)]
-    #[builder(default, setter(strip_option, fallback = disable_argument_coercion_opt))]
+    #[builder(default, setter(strip_option(fallback = disable_argument_coercion_opt)))]
     pub disable_argument_coercion: Option<bool>,
 }
 
@@ -216,13 +216,69 @@ where
 #[cfg(test)]
 mod tests {
     use crate::app::context::AppContext;
-    use crate::service::worker::Worker;
-    use crate::util;
-    use crate::util::types;
-    use insta::_macro_support::assert_snapshot;
+    use crate::config::AppConfig;
+    use crate::worker::{Enqueuer, Worker};
+    use async_trait::async_trait;
+    use axum_core::extract::FromRef;
     use insta::assert_debug_snapshot;
-    use serde_derive::{Deserialize, Serialize};
+    use rstest::{fixture, rstest};
+    use serde::{Deserialize, Serialize};
     use std::time::Duration;
+
+    struct FooBackend;
+
+    #[async_trait]
+    impl Enqueuer for FooBackend {
+        type Error = crate::error::Error;
+
+        async fn enqueue<W, S, Args, E>(state: &S, args: &Args) -> Result<(), Self::Error>
+        where
+            W: 'static + Worker<S, Args, Error = E>,
+            S: Clone + Send + Sync + 'static,
+            AppContext: FromRef<S>,
+            Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+        {
+            todo!()
+        }
+
+        async fn enqueue_delayed<W, S, Args, E>(
+            state: &S,
+            args: &Args,
+            delay: Duration,
+        ) -> Result<(), Self::Error>
+        where
+            W: 'static + Worker<S, Args, Error = E>,
+            S: Clone + Send + Sync + 'static,
+            AppContext: FromRef<S>,
+            Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+        {
+            todo!()
+        }
+
+        async fn enqueue_batch<W, S, Args, E>(state: &S, args: &[Args]) -> Result<(), Self::Error>
+        where
+            W: 'static + Worker<S, Args, Error = E>,
+            S: Clone + Send + Sync + 'static,
+            AppContext: FromRef<S>,
+            Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+        {
+            todo!()
+        }
+
+        async fn enqueue_batch_delayed<W, S, Args, E>(
+            state: &S,
+            args: &[Args],
+            delay: Duration,
+        ) -> Result<(), Self::Error>
+        where
+            W: 'static + Worker<S, Args, Error = E>,
+            S: Clone + Send + Sync + 'static,
+            AppContext: FromRef<S>,
+            Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+        {
+            todo!()
+        }
+    }
 
     #[derive(Serialize, Deserialize)]
     struct FooWorkerArgs {
@@ -232,8 +288,9 @@ mod tests {
     struct FooWorker;
 
     #[async_trait::async_trait]
-    impl Worker<AppContext, FooWorkerArgs> for FooWorker {
+    impl super::Worker<AppContext, FooWorkerArgs> for FooWorker {
         type Error = crate::error::Error;
+        type Enqueuer = FooBackend;
 
         #[cfg_attr(coverage_nightly, coverage(off))]
         async fn handle(
@@ -255,8 +312,8 @@ mod tests {
 
     #[rstest]
     #[cfg_attr(coverage_nightly, coverage(off))]
-    fn enqueue_config(context: AppContext) {
-        let enqueue_config = FooWorker::enqueue_config(&context);
+    fn enqueue_config(context: &AppContext) {
+        let enqueue_config = FooWorker::enqueue_config(context);
         assert_debug_snapshot!(enqueue_config);
     }
 }

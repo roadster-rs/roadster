@@ -151,7 +151,9 @@ async fn remove_stale_periodic_jobs<C: RedisCommands>(
     if context
         .config()
         .service
+        .worker
         .sidekiq
+        .custom
         .custom
         .periodic
         .stale_cleanup
@@ -205,9 +207,9 @@ mod tests {
     ) {
         let mut config = AppConfig::test(None).unwrap();
         config.service.default_enable = default_enabled;
-        config.service.sidekiq.common.enable = sidekiq_enabled;
-        config.service.sidekiq.custom.num_workers = num_workers;
-        config.service.sidekiq.custom.queues = queues;
+        config.service.worker.sidekiq.common.enable = sidekiq_enabled;
+        config.service.worker.sidekiq.custom.common.num_workers = num_workers;
+        config.service.worker.sidekiq.custom.common.queues = queues;
 
         let pool = if has_redis_fetch {
             let redis_fetch = RedisConnectionManager::new("redis://invalid_host:1234").unwrap();
@@ -239,10 +241,23 @@ mod tests {
     ) {
         let mut config = AppConfig::test(None).unwrap();
         if clean_stale {
-            config.service.sidekiq.custom.periodic.stale_cleanup =
-                StaleCleanUpBehavior::AutoCleanStale;
+            config
+                .service
+                .worker
+                .sidekiq
+                .custom
+                .custom
+                .periodic
+                .stale_cleanup = StaleCleanUpBehavior::AutoCleanStale;
         } else {
-            config.service.sidekiq.custom.periodic.stale_cleanup = StaleCleanUpBehavior::Manual;
+            config
+                .service
+                .worker
+                .sidekiq
+                .custom
+                .custom
+                .periodic
+                .stale_cleanup = StaleCleanUpBehavior::Manual;
         }
 
         let context = AppContext::test(Some(config), None, None).unwrap();

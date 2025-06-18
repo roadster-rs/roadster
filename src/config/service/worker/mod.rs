@@ -121,3 +121,15 @@ pub struct QueueConfig {
     /// workers will be created for this specific queue.
     pub num_workers: Option<u32>,
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn default_num_workers() {
+        assert_eq!(
+            super::CommonConfig::default_num_workers(),
+            num_cpus::get() as u32
+        );
+    }
+}

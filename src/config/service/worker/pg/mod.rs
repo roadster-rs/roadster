@@ -169,13 +169,4 @@ mod deserialize_tests {
 
         assert_toml_snapshot!(worker_pg);
     }
-
-    #[test]
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    fn default_num_workers() {
-        assert_eq!(
-            WorkerPgServiceConfig::default_num_workers(),
-            num_cpus::get() as u32
-        );
-    }
 }

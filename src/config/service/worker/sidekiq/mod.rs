@@ -226,15 +226,6 @@ mod deserialize_tests {
         assert_toml_snapshot!(sidekiq);
     }
 
-    #[test]
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    fn default_num_workers() {
-        assert_eq!(
-            SidekiqServiceConfig::default_num_workers(),
-            num_cpus::get() as u32
-        );
-    }
-
     #[rstest]
     #[case(BalanceStrategy::RoundRobin)]
     #[case(BalanceStrategy::None)]

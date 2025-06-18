@@ -847,16 +847,24 @@ async fn sidekiq_redis_test_container(
     use testcontainers_modules::testcontainers::ImageExt;
     use testcontainers_modules::testcontainers::runners::AsyncRunner;
 
-    let container =
-        if let Some(test_container) = config.service.sidekiq.custom.redis.test_container.as_ref() {
-            let container = testcontainers_modules::redis::Redis::default()
-                .with_tag(test_container.tag.to_string())
-                .start()
-                .await?;
-            Some(container)
-        } else {
-            None
-        };
+    let container = if let Some(test_container) = config
+        .service
+        .worker
+        .sidekiq
+        .custom
+        .custom
+        .redis
+        .test_container
+        .as_ref()
+    {
+        let container = testcontainers_modules::redis::Redis::default()
+            .with_tag(test_container.tag.to_string())
+            .start()
+            .await?;
+        Some(container)
+    } else {
+        None
+    };
 
     if let Some(container) = container.as_ref() {
         let host_ip = container.get_host().await?;
@@ -865,7 +873,7 @@ async fn sidekiq_redis_test_container(
             .get_host_port_ipv4(testcontainers_modules::redis::REDIS_PORT)
             .await?;
 
-        config.service.sidekiq.custom.redis.uri =
+        config.service.worker.sidekiq.custom.custom.redis.uri =
             format!("redis://{host_ip}:{host_port}").parse()?;
     }
     Ok(container)

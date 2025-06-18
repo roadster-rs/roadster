@@ -13,6 +13,7 @@ use tracing::{error, instrument};
 use typed_builder::TypedBuilder;
 
 // todo: How to allow external impls that may need a state value that isn't present in `AppContext`?
+// Todo: `mockall::automock`
 #[async_trait]
 pub trait Enqueuer {
     type Error: std::error::Error;
@@ -54,7 +55,7 @@ pub trait Enqueuer {
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>;
 }
 
-pub(crate) fn queue_from_config<W, S, Args, E>(state: &S) -> Result<Cow<str>, EnqueueError>
+pub(crate) fn queue_from_config<W, S, Args, E>(state: &S) -> Result<String, EnqueueError>
 where
     W: 'static + Worker<S, Args, Error = E>,
     S: Clone + Send + Sync + 'static,
@@ -66,9 +67,9 @@ where
     let enqueue_config = &context.config().service.worker.enqueue_config;
 
     let queue = if let Some(queue) = worker_enqueue_config.queue {
-        Cow::from(queue)
+        queue
     } else if let Some(queue) = enqueue_config.queue.as_ref() {
-        Cow::from(queue)
+        queue.to_owned()
     } else {
         let worker_name = W::name();
         error!(worker_name, "Unable to enqueue job, no queue configured");

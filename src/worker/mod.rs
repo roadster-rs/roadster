@@ -30,39 +30,39 @@ where
     state: S,
     workers: HashMap<String, WorkerFn<S>>,
 }
-
-impl<S> Processor<S>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-{
-    fn register<W, Args, E>(mut self, worker: W) -> RoadsterResult<()>
-    where
-        W: 'static + Worker<S, Args, Error = E>,
-        Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-        E: std::error::Error + Send + Sync,
-    {
-        // todo: can we get rid of the `Arc` (and the `clones` below)?
-        let worker = Arc::new(worker);
-        self.workers.insert(
-            W::name(),
-            // Todo: instrument to allow recording spans/metrics
-            Box::new(move |state: &S, args: &str| {
-                let worker = worker.clone();
-                Box::pin(async move {
-                    let args: Args = serde_json::from_str(args)?;
-                    match worker.clone().handle(&state, &args).await {
-                        Ok(_) => Ok(()),
-                        // todo: timeouts, etc
-                        Err(err) => Err(crate::error::worker::WorkerError::Handle(
-                            W::name(),
-                            Box::new(err),
-                        )
-                        .into()),
-                    }
-                })
-            }),
-        );
-        Ok(())
-    }
-}
+//
+// impl<S> Processor<S>
+// where
+//     S: Clone + Send + Sync + 'static,
+//     AppContext: FromRef<S>,
+// {
+//     fn register<W, Args, E>(mut self, worker: W) -> RoadsterResult<()>
+//     where
+//         W: 'static + Worker<S, Args, Error = E>,
+//         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+//         E: std::error::Error + Send + Sync,
+//     {
+//         // todo: can we get rid of the `Arc` (and the `clones` below)?
+//         let worker = Arc::new(worker);
+//         self.workers.insert(
+//             W::name(),
+//             // Todo: instrument to allow recording spans/metrics
+//             Box::new(move |state: &S, args: &str| {
+//                 let worker = worker.clone();
+//                 Box::pin(async move {
+//                     let args: Args = serde_json::from_str(args)?;
+//                     match worker.clone().handle(&state, &args).await {
+//                         Ok(_) => Ok(()),
+//                         // todo: timeouts, etc
+//                         Err(err) => Err(crate::error::worker::WorkerError::Handle(
+//                             W::name(),
+//                             Box::new(err),
+//                         )
+//                         .into()),
+//                     }
+//                 })
+//             }),
+//         );
+//         Ok(())
+//     }
+// }
