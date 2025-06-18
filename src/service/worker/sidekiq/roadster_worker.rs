@@ -81,9 +81,8 @@ where
                 self.context
                     .config()
                     .service
-                    .sidekiq
-                    .custom
-                    .app_worker
+                    .worker
+                    .worker_config
                     .max_retries
                     .unwrap_or_else(|| W::max_retries(&self.inner))
             })
@@ -131,9 +130,8 @@ where
                 self.context
                     .config()
                     .service
-                    .sidekiq
-                    .custom
-                    .app_worker
+                    .worker
+                    .worker_config
                     .timeout
                     .unwrap_or_default()
             });
@@ -147,9 +145,8 @@ where
                     self.context
                         .config()
                         .service
-                        .sidekiq
-                        .custom
-                        .app_worker
+                        .worker
+                        .worker_config
                         .max_duration
                         .unwrap_or(DEFAULT_MAX_DURATION)
                 });
@@ -178,6 +175,7 @@ mod tests {
     use crate::service::worker::sidekiq::app_worker::AppWorkerConfig;
     use crate::service::worker::sidekiq::roadster_worker::RoadsterWorker;
     use crate::testing::snapshot::TestCase;
+    use crate::worker::worker::SidekiqWorkerConfig;
     use async_trait::async_trait;
     use rstest::{fixture, rstest};
     use sidekiq::Worker;
@@ -236,12 +234,11 @@ mod tests {
     ) {
         // Arrange
         let mut config = AppConfig::test(None).unwrap();
-        config
-            .service
-            .sidekiq
-            .custom
-            .app_worker
-            .disable_argument_coercion = config_disable;
+        config.service.worker.worker_config.sidekiq = Some(
+            SidekiqWorkerConfig::builder()
+                .disable_argument_coercion_opt(config_disable)
+                .build(),
+        );
         let context = AppContext::test(Some(config), None, None).unwrap();
 
         let app_worker_config = worker_config_disable.map(|disable| {
@@ -279,7 +276,14 @@ mod tests {
     ) {
         // Arrange
         let mut config = AppConfig::test(None).unwrap();
-        config.service.sidekiq.custom.app_worker.max_retries = config_max_retries;
+        config
+            .service
+            .worker
+            .sidekiq
+            .custom
+            .common
+            .worker_config
+            .max_retries = config_max_retries;
         let context = AppContext::test(Some(config), None, None).unwrap();
 
         let app_worker_config = worker_config_max_retries
@@ -356,8 +360,22 @@ mod tests {
     ) {
         // Arrange
         let mut config = AppConfig::test(None).unwrap();
-        config.service.sidekiq.custom.app_worker.timeout = config_timeout;
-        config.service.sidekiq.custom.app_worker.max_duration = Some(Duration::from_secs(1));
+        config
+            .service
+            .worker
+            .sidekiq
+            .custom
+            .common
+            .worker_config
+            .timeout = config_timeout;
+        config
+            .service
+            .worker
+            .sidekiq
+            .custom
+            .common
+            .worker_config
+            .max_duration = Some(Duration::from_secs(1));
         let context = AppContext::test(Some(config), None, None).unwrap();
 
         let app_worker_config = worker_config_timeout

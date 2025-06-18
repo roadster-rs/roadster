@@ -17,7 +17,7 @@ use tracing::{debug, error, info, instrument, warn};
 pub(crate) const NAME: &str = "sidekiq";
 
 pub(crate) fn enabled(context: &AppContext) -> bool {
-    let sidekiq_config = &context.config().service.sidekiq;
+    let sidekiq_config = &context.config().service.worker.sidekiq;
     if !sidekiq_config.common.enabled(context) {
         debug!("Sidekiq is not enabled in the config.");
         return false;
@@ -26,18 +26,20 @@ pub(crate) fn enabled(context: &AppContext) -> bool {
     let dedicated_workers: u64 = context
         .config()
         .service
+        .worker
         .sidekiq
         .custom
+        .common
         .queue_config
         .values()
         .map(|config| config.num_workers.unwrap_or_default() as u64)
         .sum();
-    if sidekiq_config.custom.num_workers == 0 && dedicated_workers == 0 {
+    if sidekiq_config.custom.common.num_workers == 0 && dedicated_workers == 0 {
         debug!("Sidekiq configured with 0 worker tasks.");
         return false;
     }
 
-    if sidekiq_config.custom.queues.is_empty() && dedicated_workers == 0 {
+    if sidekiq_config.custom.common.queues.is_empty() && dedicated_workers == 0 {
         debug!("Sidekiq configured with 0 worker queues.");
         return false;
     }

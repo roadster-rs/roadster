@@ -82,7 +82,7 @@ pub struct WorkerConfig {
 pub struct SidekiqWorkerConfig {
     /// See <https://docs.rs/rusty-sidekiq/latest/sidekiq/trait.Worker.html#method.disable_argument_coercion>
     #[serde(default)]
-    #[builder(default, setter(strip_option))]
+    #[builder(default, setter(strip_option, fallback = disable_argument_coercion_opt))]
     pub disable_argument_coercion: Option<bool>,
 }
 
