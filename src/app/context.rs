@@ -108,8 +108,8 @@ impl AppContext {
 
             #[cfg(feature = "worker-sidekiq")]
             let (redis_enqueue, redis_fetch) = {
-                let sidekiq_config = &config.service.sidekiq;
-                let redis_config = &sidekiq_config.custom.redis;
+                let sidekiq_config = &config.service.worker.sidekiq;
+                let redis_config = &sidekiq_config.custom.custom.redis;
                 let redis = sidekiq::RedisConnectionManager::new(redis_config.uri.to_string())?;
                 let redis_enqueue = RedisEnqueue::from({
                     let pool = bb8::Pool::builder().min_idle(redis_config.enqueue_pool.min_idle);
@@ -154,7 +154,7 @@ impl AppContext {
                 let pool: Option<sqlx::Pool<sqlx::Postgres>> = None;
 
                 #[cfg(feature = "db-sea-orm")]
-                let pool = if config.service.worker_pg.custom.db_pool.is_none() {
+                let pool = if config.service.worker.pg.custom.custom.db_pool.is_none() {
                     Some(sea_orm.get_postgres_connection_pool().clone())
                 } else {
                     None
@@ -163,7 +163,7 @@ impl AppContext {
                 let pool = if let Some(pool) = pool {
                     pool
                 } else {
-                    let pool_config = config.service.worker_pg.custom.db_pool.as_ref();
+                    let pool_config = config.service.worker.pg.custom.custom.db_pool.as_ref();
 
                     let uri = pool_config
                         .and_then(|config| config.uri.as_ref())

@@ -51,10 +51,14 @@ where
                 self.context
                     .config()
                     .service
+                    .worker
                     .sidekiq
                     .custom
-                    .app_worker
-                    .disable_argument_coercion
+                    .common
+                    .worker_config
+                    .sidekiq
+                    .as_ref()
+                    .and_then(|config| config.disable_argument_coercion)
                     .unwrap_or_else(|| W::disable_argument_coercion(&self.inner))
             })
     }

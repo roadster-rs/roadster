@@ -33,7 +33,7 @@ pub struct WorkerServiceConfig {
     /// Worker configurations specific to postgres-backed (`pgmq`) queues.
     #[cfg(feature = "worker-pg")]
     #[validate(nested)]
-    pub worker_pg: ServiceConfig<WorkerConfig<WorkerPgServiceConfig>>,
+    pub pg: ServiceConfig<WorkerConfig<WorkerPgServiceConfig>>,
 }
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]

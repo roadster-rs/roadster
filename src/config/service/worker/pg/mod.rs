@@ -3,7 +3,6 @@ use crate::util::serde::default_true;
 use config::{FileFormat, FileSourceString};
 use serde_derive::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
-use std::collections::BTreeMap;
 use std::time::Duration;
 use url::Url;
 use validator::Validate;

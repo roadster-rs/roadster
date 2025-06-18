@@ -63,10 +63,27 @@ pub struct WorkerConfig {
     #[builder(default, setter(strip_option))]
     pub max_duration: Option<Duration>,
 
+    #[cfg(feature = "worker-sidekiq")]
+    #[serde(flatten, default)]
+    #[builder(default, setter(strip_option))]
+    pub sidekiq: Option<SidekiqWorkerConfig>,
+
     #[cfg(feature = "worker-pg")]
     #[serde(flatten, default)]
     #[builder(default, setter(strip_option))]
     pub pg: Option<PgWorkerConfig>,
+}
+
+#[serde_as]
+#[skip_serializing_none]
+#[derive(Debug, Default, Clone, Validate, Serialize, Deserialize, TypedBuilder)]
+#[serde(default, rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct SidekiqWorkerConfig {
+    /// See <https://docs.rs/rusty-sidekiq/latest/sidekiq/trait.Worker.html#method.disable_argument_coercion>
+    #[serde(default)]
+    #[builder(default, setter(strip_option))]
+    pub disable_argument_coercion: Option<bool>,
 }
 
 #[serde_as]

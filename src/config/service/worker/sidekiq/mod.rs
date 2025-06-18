@@ -1,8 +1,6 @@
 use crate::config::service::worker::{BalanceStrategy, QueueConfig};
-use crate::service::worker::sidekiq::app_worker::AppWorkerConfig;
 use config::{FileFormat, FileSourceString};
 use serde_derive::{Deserialize, Serialize};
-use std::collections::BTreeMap;
 use strum_macros::{EnumString, IntoStaticStr};
 use url::Url;
 use validator::Validate;
