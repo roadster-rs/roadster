@@ -9,6 +9,8 @@ use axum_core::extract::FromRef;
 use itertools::Itertools;
 #[cfg(feature = "db-sea-orm")]
 use sea_orm::DatabaseConnection;
+use std::any::{Any, TypeId};
+use std::collections::BTreeMap;
 use std::sync::{Arc, OnceLock, Weak};
 
 #[cfg(not(test))]
@@ -218,6 +220,7 @@ impl AppContext {
                 smtp,
                 #[cfg(feature = "email-sendgrid")]
                 sendgrid,
+                extensions: Default::default(),
             };
             AppContext {
                 inner: Arc::new(inner),
@@ -354,6 +357,13 @@ impl AppContext {
     pub fn sendgrid(&self) -> &sendgrid::v3::Sender {
         self.inner.sendgrid()
     }
+
+    // Todo: add extensions -- either need a oncelock or a mutex. If using a oncelock, need to
+    //  provide all extensions at once somehow.
+    // pub fn add_extension<T>(mut self, extension: T) -> Self {
+    //     self.inner.add_extension(extension);
+    //     self
+    // }
 }
 
 #[cfg(any(
@@ -1008,6 +1018,7 @@ struct AppContextInner {
     smtp: lettre::SmtpTransport,
     #[cfg(feature = "email-sendgrid")]
     sendgrid: sendgrid::v3::Sender,
+    // extensions: BTreeMap<TypeId, Box<dyn Any>>,
 }
 
 #[cfg_attr(test, mockall::automock)]
@@ -1102,6 +1113,11 @@ impl AppContextInner {
     fn sendgrid(&self) -> &sendgrid::v3::Sender {
         &self.sendgrid
     }
+
+    // fn add_extension<T: 'static>(&mut self, extension: T) {
+    //     self.extensions
+    //         .insert(TypeId::of::<T>(), Box::new(extension));
+    // }
 }
 
 #[cfg(all(feature = "db-sql", feature = "testing"))]
