@@ -358,7 +358,8 @@ impl AppContext {
         self.inner.sendgrid()
     }
 
-    // Todo: add extensions -- either need a oncelock or a mutex. If using a oncelock, need to
+    // Todo: add 'extensions' to the context to allow for external crates to build on top of
+    //  roadster. Either need a oncelock or a mutex. If using a oncelock, need to
     //  provide all extensions at once somehow.
     // pub fn add_extension<T>(mut self, extension: T) -> Self {
     //     self.inner.add_extension(extension);
