@@ -10,11 +10,8 @@ use crate::health::check::registry::HealthCheckRegistry;
 use axum_core::extract::FromRef;
 #[cfg(all(feature = "db-sql", feature = "testing"))]
 use itertools::Itertools;
-use mockall::automock;
 #[cfg(feature = "db-sea-orm")]
 use sea_orm::DatabaseConnection;
-use std::any::{Any, TypeId};
-use std::collections::BTreeMap;
 use std::sync::{Arc, OnceLock, Weak};
 
 #[cfg(not(test))]

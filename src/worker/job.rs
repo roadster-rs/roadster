@@ -1,4 +1,3 @@
-use crate::worker::Worker;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use typed_builder::TypedBuilder;

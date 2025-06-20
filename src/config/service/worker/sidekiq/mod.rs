@@ -1,5 +1,4 @@
 use crate::config::service::worker::{BalanceStrategy, QueueConfig};
-use config::{FileFormat, FileSourceString};
 use serde_derive::{Deserialize, Serialize};
 use strum_macros::{EnumString, IntoStaticStr};
 use url::Url;

@@ -1,9 +1,6 @@
-use crate::config::database::{Database, DbPoolConfig};
-use crate::util::serde::default_true;
-use config::{FileFormat, FileSourceString};
+use crate::config::database::DbPoolConfig;
 use serde_derive::{Deserialize, Serialize};
-use serde_with::{serde_as, skip_serializing_none};
-use std::time::Duration;
+use serde_with::skip_serializing_none;
 use url::Url;
 use validator::Validate;
 

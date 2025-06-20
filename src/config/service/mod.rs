@@ -13,10 +13,6 @@ use crate::config::service::grpc::GrpcServiceConfig;
 #[cfg(feature = "http")]
 use crate::config::service::http::HttpServiceConfig;
 use crate::config::service::worker::WorkerServiceConfig;
-#[cfg(feature = "worker-pg")]
-use crate::config::service::worker::pg::WorkerPgServiceConfig;
-#[cfg(feature = "worker-sidekiq")]
-use crate::config::service::worker::sidekiq::SidekiqServiceConfig;
 use crate::util::serde::default_true;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeMap;

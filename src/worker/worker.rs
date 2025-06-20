@@ -1,7 +1,6 @@
 use crate::app::context::AppContext;
 use crate::config::CustomConfig;
 use crate::util::types;
-use crate::worker::Processor;
 use crate::worker::enqueue::Enqueuer;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
@@ -314,7 +313,7 @@ mod tests {
     #[once]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn context() -> AppContext {
-        let mut config = AppConfig::test(None).unwrap();
+        let config = AppConfig::test(None).unwrap();
         AppContext::test(Some(config), None, None).unwrap()
     }
 
