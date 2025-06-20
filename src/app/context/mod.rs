@@ -161,7 +161,7 @@ impl AppContext {
                 let pool: Option<sqlx::Pool<sqlx::Postgres>> = None;
 
                 #[cfg(feature = "db-sea-orm")]
-                let pool = if config.service.worker.pg.custom.custom.db_pool.is_none() {
+                let pool = if config.service.worker.pg.custom.custom.db_config.is_none() {
                     Some(sea_orm.get_postgres_connection_pool().clone())
                 } else {
                     None
@@ -170,16 +170,17 @@ impl AppContext {
                 let pool = if let Some(pool) = pool {
                     pool
                 } else {
-                    let pool_config = config.service.worker.pg.custom.custom.db_pool.as_ref();
+                    let db_config = config.service.worker.pg.custom.custom.db_config.as_ref();
 
-                    let uri = pool_config
+                    let uri = db_config
                         .and_then(|config| config.uri.as_ref())
                         .unwrap_or(&config.database.uri)
                         .as_str();
 
-                    let connect_lazy = pool_config
+                    let connect_lazy = db_config
+                        .and_then(|config| config.pool_config.as_ref())
                         .map(|config| config.connect_lazy)
-                        .unwrap_or(config.database.connect_lazy);
+                        .unwrap_or(config.database.pool_config.connect_lazy);
 
                     let pool = app.worker_pg_sqlx_pool_options(&config)?;
 
@@ -445,13 +446,13 @@ where
     let builder = r2d2::Pool::builder()
         .error_handler(Box::new(TracingErrorHandler))
         .connection_customizer(connection_customizer)
-        .test_on_check_out(config.database.test_on_checkout)
-        .min_idle(Some(config.database.min_connections))
-        .max_size(config.database.max_connections)
-        .idle_timeout(config.database.idle_timeout)
-        .connection_timeout(config.database.connect_timeout)
-        .max_lifetime(config.database.max_lifetime);
-    let pool = if config.database.connect_lazy {
+        .test_on_check_out(config.database.pool_config.test_on_checkout)
+        .min_idle(Some(config.database.pool_config.min_connections))
+        .max_size(config.database.pool_config.max_connections)
+        .idle_timeout(config.database.pool_config.idle_timeout)
+        .connection_timeout(config.database.pool_config.connect_timeout)
+        .max_lifetime(config.database.pool_config.max_lifetime);
+    let pool = if config.database.pool_config.connect_lazy {
         builder.build_unchecked(manager)
     } else {
         builder.build(manager)?
@@ -480,14 +481,14 @@ async fn build_diesel_pg_async_pool(
     let builder = diesel_async::pooled_connection::bb8::Pool::builder()
         .error_sink(Box::new(TracingErrorHandler))
         .connection_customizer(connection_customizer)
-        .test_on_check_out(config.database.test_on_checkout)
-        .min_idle(Some(config.database.min_connections))
-        .max_size(config.database.max_connections)
-        .idle_timeout(config.database.idle_timeout)
-        .connection_timeout(config.database.connect_timeout)
-        .retry_connection(config.database.retry_connection)
-        .max_lifetime(config.database.max_lifetime);
-    let pool = if config.database.connect_lazy {
+        .test_on_check_out(config.database.pool_config.test_on_checkout)
+        .min_idle(Some(config.database.pool_config.min_connections))
+        .max_size(config.database.pool_config.max_connections)
+        .idle_timeout(config.database.pool_config.idle_timeout)
+        .connection_timeout(config.database.pool_config.connect_timeout)
+        .retry_connection(config.database.pool_config.retry_connection)
+        .max_lifetime(config.database.pool_config.max_lifetime);
+    let pool = if config.database.pool_config.connect_lazy {
         builder.build_unchecked(manager)
     } else {
         builder.build(manager).await?
@@ -516,14 +517,14 @@ async fn build_diesel_mysql_async_pool(
     let builder = diesel_async::pooled_connection::bb8::Pool::builder()
         .error_sink(Box::new(TracingErrorHandler))
         .connection_customizer(connection_customizer)
-        .test_on_check_out(config.database.test_on_checkout)
-        .min_idle(Some(config.database.min_connections))
-        .max_size(config.database.max_connections)
-        .idle_timeout(config.database.idle_timeout)
-        .connection_timeout(config.database.connect_timeout)
-        .retry_connection(config.database.retry_connection)
-        .max_lifetime(config.database.max_lifetime);
-    let pool = if config.database.connect_lazy {
+        .test_on_check_out(config.database.pool_config.test_on_checkout)
+        .min_idle(Some(config.database.pool_config.min_connections))
+        .max_size(config.database.pool_config.max_connections)
+        .idle_timeout(config.database.pool_config.idle_timeout)
+        .connection_timeout(config.database.pool_config.connect_timeout)
+        .retry_connection(config.database.pool_config.retry_connection)
+        .max_lifetime(config.database.pool_config.max_lifetime);
+    let pool = if config.database.pool_config.connect_lazy {
         builder.build_unchecked(manager)
     } else {
         builder.build(manager).await?

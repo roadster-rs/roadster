@@ -440,7 +440,16 @@ where
             self.worker_pg_sqlx_pool_options_provider.as_ref()
         {
             worker_pg_sqlx_pool_options_provider(config)
-        } else if let Some(pool_config) = &config.service.worker.pg.custom.custom.db_pool {
+        } else if let Some(pool_config) = config
+            .service
+            .worker
+            .pg
+            .custom
+            .custom
+            .db_config
+            .as_ref()
+            .and_then(|config| config.pool_config.as_ref())
+        {
             Ok(pool_config.into())
         } else {
             Ok((&config.database).into())

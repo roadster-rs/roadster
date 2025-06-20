@@ -128,24 +128,18 @@ mod deserialize_tests {
     #[rstest]
     #[case(
         r#"
-        # The default `num-workers` is the same as the number of cpu cores, so we always set
-        # this in our tests so they always pass regardless of the host's hardware.
-        num-workers = 1
         [redis]
         uri = "redis://localhost:6379"
         "#
     )]
     #[case(
         r#"
-        num-workers = 1
-        queues = ["foo"]
         [redis]
         uri = "redis://localhost:6379"
         "#
     )]
     #[case(
         r#"
-        num-workers = 1
         [redis]
         uri = "redis://localhost:6379"
         [redis.enqueue-pool]
@@ -156,7 +150,6 @@ mod deserialize_tests {
     )]
     #[case(
         r#"
-        num-workers = 1
         [redis]
         uri = "redis://localhost:6379"
         [redis.enqueue-pool]
@@ -167,7 +160,6 @@ mod deserialize_tests {
     )]
     #[case(
         r#"
-        num-workers = 1
         [redis]
         uri = "redis://localhost:6379"
         [periodic]
@@ -176,8 +168,6 @@ mod deserialize_tests {
     )]
     #[case(
         r#"
-        num-workers = 1
-        balance-strategy = "none"
         [redis]
         uri = "redis://localhost:6379"
         [periodic]
@@ -186,8 +176,6 @@ mod deserialize_tests {
     )]
     #[case(
         r#"
-        num-workers = 1
-        balance-strategy = "round-robin"
         [redis]
         uri = "redis://localhost:6379"
         [periodic]
@@ -196,27 +184,16 @@ mod deserialize_tests {
     )]
     #[case(
         r#"
-        num-workers = 1
         [redis]
         uri = "redis://localhost:6379"
         [periodic]
         stale-cleanup = "auto-clean-stale"
-        [queue-config]
-        "foo" = { num-workers = 10 }
-        [queue-config.bar]
-        num-workers = 100
         "#
     )]
     #[case(
         r#"
-        num-workers = 1
         [redis]
         uri = "redis://localhost:6379"
-        [app-worker]
-        max-retries = 10
-        timeout = true
-        max-duration = 100
-        disable-argument-coercion = true
         "#
     )]
     #[cfg_attr(coverage_nightly, coverage(off))]
