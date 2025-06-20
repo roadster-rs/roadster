@@ -233,12 +233,15 @@ where
     #[cfg(not(test))]
     let metadata = app.metadata(&config)?;
 
+    let mut extension_registry = Default::default();
+    app.context_extensions(&config, &mut extension_registry)?;
+
     // The `config.clone()` here is technically not necessary. However, without it, RustRover
     // is giving a "value used after move" error when creating an actual `AppContext` below.
     #[cfg(test)]
     let context = AppContext::test(Some(config.clone()), None, None)?;
     #[cfg(not(test))]
-    let context = AppContext::new::<A, S>(app, config, metadata).await?;
+    let context = AppContext::new::<A, S>(app, config, metadata, extension_registry).await?;
 
     app.provide_state(context).await
 }

@@ -1,4 +1,7 @@
+pub mod extension;
+
 use crate::app::App;
+use crate::app::context::extension::ExtensionRegistry;
 use crate::app::metadata::AppMetadata;
 use crate::config::AppConfig;
 use crate::error::RoadsterResult;
@@ -48,6 +51,7 @@ impl AppContext {
         #[allow(unused_mut)]
         mut config: AppConfig,
         metadata: AppMetadata,
+        extension_registry: ExtensionRegistry,
     ) -> RoadsterResult<Self>
     where
         S: Clone + Send + Sync + 'static,
@@ -220,7 +224,7 @@ impl AppContext {
                 smtp,
                 #[cfg(feature = "email-sendgrid")]
                 sendgrid,
-                // extensions: Default::default(),
+                extension_registry,
             };
             AppContext {
                 inner: Arc::new(inner),
@@ -361,10 +365,12 @@ impl AppContext {
     // Todo: add 'extensions' to the context to allow for external crates to build on top of
     //  roadster. Either need a oncelock or a mutex. If using a oncelock, need to
     //  provide all extensions at once somehow.
-    // pub fn add_extension<T>(mut self, extension: T) -> Self {
-    //     self.inner.add_extension(extension);
-    //     self
-    // }
+    pub fn get_extension<'a, T>(&'a self) -> RoadsterResult<&'a T>
+    where
+        T: 'static + Send + Sync,
+    {
+        self.inner.get_extension::<T>()
+    }
 }
 
 #[cfg(any(
@@ -1019,7 +1025,7 @@ struct AppContextInner {
     smtp: lettre::SmtpTransport,
     #[cfg(feature = "email-sendgrid")]
     sendgrid: sendgrid::v3::Sender,
-    // extensions: BTreeMap<TypeId, Box<dyn Any>>,
+    extension_registry: ExtensionRegistry,
 }
 
 #[cfg_attr(test, mockall::automock)]
@@ -1115,10 +1121,12 @@ impl AppContextInner {
         &self.sendgrid
     }
 
-    // fn add_extension<T: 'static>(&mut self, extension: T) {
-    //     self.extensions
-    //         .insert(TypeId::of::<T>(), Box::new(extension));
-    // }
+    fn get_extension<'a, T>(&'a self) -> RoadsterResult<&'a T>
+    where
+        T: 'static + Send + Sync,
+    {
+        self.extension_registry.get::<T>()
+    }
 }
 
 #[cfg(all(feature = "db-sql", feature = "testing"))]

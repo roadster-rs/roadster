@@ -27,6 +27,7 @@ pub mod tracing;
 #[cfg(feature = "worker")]
 pub mod worker;
 
+use crate::app::context::extension::ExtensionRegistryError;
 use crate::error::api::ApiError;
 use crate::error::auth::AuthError;
 #[cfg(feature = "http")]
@@ -145,6 +146,9 @@ pub enum Error {
 
     #[error(transparent)]
     ServiceRegistry(#[from] ServiceRegistryError),
+
+    #[error(transparent)]
+    ExtensionRegistry(#[from] ExtensionRegistryError),
 
     #[error(transparent)]
     Mutex(#[from] MutexError),
