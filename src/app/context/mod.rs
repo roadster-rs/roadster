@@ -10,6 +10,7 @@ use crate::health::check::registry::HealthCheckRegistry;
 use axum_core::extract::FromRef;
 #[cfg(all(feature = "db-sql", feature = "testing"))]
 use itertools::Itertools;
+use mockall::automock;
 #[cfg(feature = "db-sea-orm")]
 use sea_orm::DatabaseConnection;
 use std::any::{Any, TypeId};
@@ -365,7 +366,18 @@ impl AppContext {
     // Todo: add 'extensions' to the context to allow for external crates to build on top of
     //  roadster. Either need a oncelock or a mutex. If using a oncelock, need to
     //  provide all extensions at once somehow.
-    pub fn get_extension<'a, T>(&'a self) -> RoadsterResult<&'a T>
+    #[cfg(not(test))]
+    pub fn get_extension<T>(&self) -> RoadsterResult<&T>
+    where
+        T: 'static + Send + Sync,
+    {
+        self.inner.get_extension::<T>()
+    }
+
+    // Todo: This is a bit of a hack to get automock working while not requiring `'static` lifetime
+    //  for the actual method.
+    #[cfg(test)]
+    pub(crate) fn get_extension<T>(&'static self) -> RoadsterResult<&'static T>
     where
         T: 'static + Send + Sync,
     {
@@ -1121,7 +1133,18 @@ impl AppContextInner {
         &self.sendgrid
     }
 
-    fn get_extension<'a, T>(&'a self) -> RoadsterResult<&'a T>
+    #[cfg(not(test))]
+    fn get_extension<T>(&self) -> RoadsterResult<&T>
+    where
+        T: 'static + Send + Sync,
+    {
+        self.extension_registry.get::<T>()
+    }
+
+    // Todo: This is a bit of a hack to get automock working while not requiring `'static` lifetime
+    //  for the actual method.
+    #[cfg(test)]
+    fn get_extension<T>(&'static self) -> RoadsterResult<&'static T>
     where
         T: 'static + Send + Sync,
     {

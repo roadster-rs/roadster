@@ -1,6 +1,7 @@
 #[cfg(feature = "cli")]
 use crate::api::cli::RunCommand;
 use crate::app::context::AppContext;
+use crate::app::context::extension::ExtensionRegistry;
 use crate::app::metadata::AppMetadata;
 use crate::app::{App, run};
 use crate::config::AppConfig;
@@ -30,6 +31,16 @@ type TracingInitializer = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<()>
 type AsyncConfigSourceProvider =
     dyn Send + Sync + Fn(&Environment) -> RoadsterResult<Box<dyn AsyncSource + Send + Sync>>;
 type MetadataProvider = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<AppMetadata>;
+type ContextExtensionProviders = Vec<
+    Box<
+        dyn Send
+            + Sync
+            + for<'a> Fn(
+                &'a AppConfig,
+                &'a mut ExtensionRegistry,
+            ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>>,
+    >,
+>;
 #[cfg(feature = "db-sea-orm")]
 type DbConnOptionsProvider = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<ConnectOptions>;
 #[cfg(feature = "worker-pg")]
@@ -95,6 +106,7 @@ struct Inner<
     async_config_source_providers: Vec<Box<AsyncConfigSourceProvider>>,
     metadata: Option<AppMetadata>,
     metadata_provider: Option<Box<MetadataProvider>>,
+    context_extension_providers: ContextExtensionProviders,
     #[cfg(feature = "db-sea-orm")]
     sea_orm_conn_options: Option<ConnectOptions>,
     #[cfg(feature = "db-sea-orm")]
@@ -143,6 +155,7 @@ where
             async_config_source_providers: Default::default(),
             metadata: Default::default(),
             metadata_provider: Default::default(),
+            context_extension_providers: Default::default(),
             #[cfg(feature = "db-sea-orm")]
             sea_orm_conn_options: Default::default(),
             #[cfg(feature = "db-sea-orm")]
@@ -201,6 +214,22 @@ where
         metadata_provider: impl 'static + Send + Sync + Fn(&AppConfig) -> RoadsterResult<AppMetadata>,
     ) {
         self.metadata_provider = Some(Box::new(metadata_provider));
+    }
+
+    fn context_extension_provider(
+        &mut self,
+        context_extension_provider: impl 'static
+        + Send
+        + Sync
+        + for<'a> Fn(
+            &'a AppConfig,
+            &'a mut ExtensionRegistry,
+        ) -> Pin<
+            Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>,
+        >,
+    ) {
+        self.context_extension_providers
+            .push(Box::new(context_extension_provider));
     }
 
     #[cfg(feature = "db-sea-orm")]
@@ -635,6 +664,24 @@ where
         metadata_provider: impl 'static + Send + Sync + Fn(&AppConfig) -> RoadsterResult<AppMetadata>,
     ) -> Self {
         self.inner.metadata_provider(metadata_provider);
+        self
+    }
+
+    /// Provide the logic to add an [`AppContext`] extension to the [`ExtensionRegistry`].
+    pub fn context_extension_provider(
+        mut self,
+        context_extension_provider: impl 'static
+        + Send
+        + Sync
+        + for<'a> Fn(
+            &'a AppConfig,
+            &'a mut ExtensionRegistry,
+        ) -> Pin<
+            Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>,
+        >,
+    ) -> Self {
+        self.inner
+            .context_extension_provider(context_extension_provider);
         self
     }
 
@@ -1099,6 +1146,18 @@ where
 
     fn metadata(&self, config: &AppConfig) -> RoadsterResult<AppMetadata> {
         self.inner.get_metadata(config)
+    }
+
+    async fn provide_context_extensions(
+        &self,
+        config: &AppConfig,
+        extension_registry: &mut ExtensionRegistry,
+    ) -> RoadsterResult<()> {
+        for provider in self.inner.context_extension_providers.iter() {
+            provider(config, extension_registry).await?;
+        }
+
+        Ok(())
     }
 
     #[cfg(feature = "db-sea-orm")]

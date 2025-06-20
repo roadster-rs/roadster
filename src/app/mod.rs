@@ -83,7 +83,7 @@ where
         Ok(Default::default())
     }
 
-    fn context_extensions(
+    async fn provide_context_extensions(
         &self,
         _config: &AppConfig,
         _extension_registry: &mut ExtensionRegistry,

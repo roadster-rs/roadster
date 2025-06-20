@@ -234,7 +234,8 @@ where
     let metadata = app.metadata(&config)?;
 
     let mut extension_registry = Default::default();
-    app.context_extensions(&config, &mut extension_registry)?;
+    app.provide_context_extensions(&config, &mut extension_registry)
+        .await?;
 
     // The `config.clone()` here is technically not necessary. However, without it, RustRover
     // is giving a "value used after move" error when creating an actual `AppContext` below.
