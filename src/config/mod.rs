@@ -294,23 +294,20 @@ impl AppConfig {
                     host = "127.0.0.1"
                     port = 3001
 
-                    [service.sidekiq]
+                    [service.worker.sidekiq]
                     # This field normally is determined by the number of CPU cores if not provided.
                     # We provide it in the test config to avoid snapshot failures when running
                     # on varying hardware.
                     num-workers = 16
 
-                    [service.sidekiq.redis]
+                    [service.worker.sidekiq.redis]
                     uri = "redis://invalid_host:1234"
 
-                    [service.worker-pg]
+                    [service.worker.pg]
                     # This field normally is determined by the number of CPU cores if not provided.
                     # We provide it in the test config to avoid snapshot failures when running
                     # on varying hardware.
                     num-workers = 16
-
-                    [service.worker-pg.postgres]
-                    max-connections = 1
 
                     [email.from]
                     email = "no-reply@example.com"
@@ -367,11 +364,8 @@ impl AppConfig {
             config
         };
 
-        #[cfg(feature = "worker-sidekiq")]
-        let config = config.add_source(service::worker::sidekiq::default_config());
-
-        #[cfg(feature = "worker-pg")]
-        let config = config.add_source(service::worker::pg::default_config());
+        #[cfg(feature = "worker")]
+        let config = config.add_source(service::worker::default_config());
 
         let config = config.add_source(lifecycle::default_config());
 

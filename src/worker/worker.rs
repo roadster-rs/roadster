@@ -32,13 +32,16 @@ pub struct EnqueueConfig {
     #[serde(default)]
     #[builder(default, setter(strip_option(fallback = queue_opt)))]
     pub queue: Option<String>,
+
+    #[serde(flatten, default)]
+    #[builder(default)]
+    #[validate(nested)]
+    pub custom: CustomConfig,
 }
 
 /// Worker configuration options to use when handling a job. Default values for these options can
 /// be set via the app's configuration files. The options can also be overridden on a per-worker
 /// basis by implementing the [`Worker::worker_config`] method.
-// Todo: Add success/failure actions? They might by Pgmq-specific...
-// Todo: Add custom config for custom worker backends?
 #[serde_as]
 #[skip_serializing_none]
 #[derive(Debug, Default, Clone, Validate, Serialize, Deserialize, TypedBuilder)]
@@ -72,6 +75,11 @@ pub struct WorkerConfig {
     #[serde(flatten, default)]
     #[builder(default, setter(strip_option))]
     pub pg: Option<PgWorkerConfig>,
+
+    #[serde(flatten, default)]
+    #[builder(default)]
+    #[validate(nested)]
+    pub custom: CustomConfig,
 }
 
 #[serde_as]

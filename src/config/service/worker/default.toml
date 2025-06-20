@@ -1,0 +1,11 @@
+[service.worker]
+balance-strategy = "round-robin"
+
+[service.worker.worker-config]
+max-retries = 25
+timeout = true
+max-duration = 60
+
+[service.worker.sidekiq.periodic]
+stale-cleanup = "auto-clean-stale"
+

@@ -7,10 +7,6 @@ use std::time::Duration;
 use url::Url;
 use validator::Validate;
 
-pub(crate) fn default_config() -> config::File<FileSourceString, FileFormat> {
-    config::File::from_str(include_str!("default.toml"), FileFormat::Toml)
-}
-
 #[skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]

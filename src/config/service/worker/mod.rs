@@ -1,6 +1,7 @@
 use crate::config::service::ServiceConfig;
 use crate::config::service::worker::pg::WorkerPgServiceConfig;
 use crate::config::service::worker::sidekiq::SidekiqServiceConfig;
+use config::{FileFormat, FileSourceString};
 use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use strum_macros::{EnumString, IntoStaticStr};
@@ -10,6 +11,10 @@ use validator::Validate;
 pub mod pg;
 #[cfg(feature = "worker-sidekiq")]
 pub mod sidekiq;
+
+pub(crate) fn default_config() -> config::File<FileSourceString, FileFormat> {
+    config::File::from_str(include_str!("default.toml"), FileFormat::Toml)
+}
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -52,16 +57,6 @@ pub struct WorkerConfig<T: Validate> {
 #[serde(default, rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct CommonConfig {
-    /// Default [`crate::worker::EnqueueConfig`] to use for [`crate::worker::Worker`]s that don't
-    /// provide values to override the defaults defined here.
-    #[serde(default)]
-    pub enqueue_config: crate::worker::EnqueueConfig,
-
-    /// Default [`crate::worker::WorkerConfig`] to use for [`crate::worker::Worker`]s that don't
-    /// provide values to override the defaults defined here.
-    #[serde(default)]
-    pub worker_config: crate::worker::WorkerConfig,
-
     /// The number of workers that can run at the same time. Adjust as needed based on
     /// your workload and resource (cpu/memory/etc) usage.
     ///
