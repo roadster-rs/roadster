@@ -73,33 +73,27 @@ mod deserialize_tests {
     #[rstest]
     #[case(
         r#"
-        [db-pool]
+        [db-config]
         max-connections = 1
         "#
     )]
     #[case(
         r#"
-        [db-pool]
+        [db-config]
         uri = "redis://localhost:6379"
         max-connections = 1
         "#
     )]
     #[case(
         r#"
-        [db-pool]
-        max-connections = 1
-        "#
-    )]
-    #[case(
-        r#"
-        [db-pool]
+        [db-config]
         uri = "postgres://localhost:5432/example"
         max-connections = 1
         "#
     )]
     #[case(
         r#"
-        [db-pool]
+        [db-config]
         connect-timeout = 1
         connect-lazy = true
         acquire-timeout = 2
@@ -108,12 +102,6 @@ mod deserialize_tests {
         min-connections = 5
         max-connections = 6
         test-on-checkout = true
-        "#
-    )]
-    #[case(
-        r#"
-        [db-pool]
-        max-connections = 1
         "#
     )]
     #[cfg_attr(coverage_nightly, coverage(off))]

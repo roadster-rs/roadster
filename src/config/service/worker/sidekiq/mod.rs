@@ -136,12 +136,6 @@ mod deserialize_tests {
         r#"
         [redis]
         uri = "redis://localhost:6379"
-        "#
-    )]
-    #[case(
-        r#"
-        [redis]
-        uri = "redis://localhost:6379"
         [redis.enqueue-pool]
         min-idle = 1
         [redis.fetch-pool]
@@ -164,36 +158,6 @@ mod deserialize_tests {
         uri = "redis://localhost:6379"
         [periodic]
         stale-cleanup = "auto-clean-stale"
-        "#
-    )]
-    #[case(
-        r#"
-        [redis]
-        uri = "redis://localhost:6379"
-        [periodic]
-        stale-cleanup = "auto-clean-stale"
-        "#
-    )]
-    #[case(
-        r#"
-        [redis]
-        uri = "redis://localhost:6379"
-        [periodic]
-        stale-cleanup = "auto-clean-stale"
-        "#
-    )]
-    #[case(
-        r#"
-        [redis]
-        uri = "redis://localhost:6379"
-        [periodic]
-        stale-cleanup = "auto-clean-stale"
-        "#
-    )]
-    #[case(
-        r#"
-        [redis]
-        uri = "redis://localhost:6379"
         "#
     )]
     #[cfg_attr(coverage_nightly, coverage(off))]
