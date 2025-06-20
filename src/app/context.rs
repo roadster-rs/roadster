@@ -220,7 +220,7 @@ impl AppContext {
                 smtp,
                 #[cfg(feature = "email-sendgrid")]
                 sendgrid,
-                extensions: Default::default(),
+                // extensions: Default::default(),
             };
             AppContext {
                 inner: Arc::new(inner),
