@@ -32,6 +32,16 @@ where
     workers: HashMap<String, WorkerWrapper<S>>,
 }
 
+/*
+How to implement periodic jobs? Maybe something like this:
+
+1. Have a special "periodic" queue
+2. On app/server launch, destroy/purge the "periodic" queue before re-registering all the periodic jobs
+
+This might work, but it might need some experimentation to make sure it works wll with a lot of
+app instances being deployed at once.
+ */
+
 impl<S> Processor<S>
 where
     S: Clone + Send + Sync + 'static,
