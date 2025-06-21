@@ -29,7 +29,7 @@ pub struct EnqueueConfig {
     /// this queue name is not too long or else the queue name will be truncated when used
     /// with `pgmq`.
     #[serde(default)]
-    #[builder(default, setter(strip_option(fallback = queue_opt)))]
+    #[builder(default, setter(into, strip_option(fallback = queue_opt)))]
     pub queue: Option<String>,
 
     #[serde(flatten, default)]
@@ -224,7 +224,7 @@ where
 mod tests {
     use crate::app::context::AppContext;
     use crate::config::AppConfig;
-    use crate::worker::{Enqueuer, Worker};
+    use crate::worker::{EnqueueConfig, Enqueuer, Worker};
     use async_trait::async_trait;
     use axum_core::extract::FromRef;
     use insta::assert_debug_snapshot;
@@ -322,5 +322,15 @@ mod tests {
     fn enqueue_config(context: &AppContext) {
         let enqueue_config = FooWorker::enqueue_config(context);
         assert_debug_snapshot!(enqueue_config);
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    #[cfg(feature = "worker-pg")]
+    #[tokio::test]
+    async fn pg_processor_register(context: &AppContext) {
+        let mut processor = crate::worker::backend::pg::processor::Processor::new(context);
+        // Todo: add `unwrap` -- right now this is just to ensure things compile
+        processor.register(FooWorker).await;
     }
 }
