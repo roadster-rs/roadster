@@ -14,12 +14,12 @@ Lifecycle
     Init
         x Create DB conn pool based on config
         x Create PGMQueue instance
-        Register workers
-        Create queue tables
+        x Register workers
+        x Create queue tables
         Start worker threads/executors based on config
 
-    Enqueue jobs
-        Send* methods
+    x Enqueue jobs
+        x Send* methods
 
     Handle jobs
         For each queue

@@ -91,7 +91,7 @@ where
 {
     let worker_name = W::name();
 
-    let args = serde_json::to_string(&args)?;
+    let args = serde_json::to_string(&args).map_err(|err| EnqueueError::Serde(err))?;
     let job = Job::builder()
         .metadata(JobMetadata::builder().worker_name(&worker_name).build())
         .args(Cow::from(&args))
@@ -122,7 +122,7 @@ where
 
     let mut arg_strs: Vec<String> = Vec::with_capacity(args.len());
     for arg in args.iter() {
-        arg_strs.push(serde_json::to_string(arg)?);
+        arg_strs.push(serde_json::to_string(arg).map_err(|err| EnqueueError::Serde(err))?);
     }
     let jobs = arg_strs
         .iter()
