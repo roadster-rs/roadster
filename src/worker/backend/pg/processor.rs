@@ -183,8 +183,12 @@ where
                 }
 
                 let diff = max(TimeDelta::zero(), queue.next_fetch - Utc::now());
-                let duration = diff.to_std().unwrap_or_else(|_| Duration::from_secs(1));
-                sleep(duration).await;
+                let duration = diff.to_std().unwrap_or_else(|_| Duration::from_secs(0));
+                // Todo: do we need this check, or is `sleep` smart enough to do nothing if the duration is zero
+                // Todo: maybe don't sleep if duration is less than X milliseconds
+                if !duration.is_zero() {
+                    sleep(duration).await;
+                }
 
                 // Todo: We can't deserialize to a string, so we'll probably want to use serde_json::Value
                 //  for the job args instead of a json string
