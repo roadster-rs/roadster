@@ -3,15 +3,17 @@ use crate::error::RoadsterResult;
 use crate::worker::job::Job;
 use crate::worker::{EnqueueConfig, Worker, WorkerConfig};
 use axum_core::extract::FromRef;
-use chrono::Utc;
+use chrono::{DateTime, OutOfRangeError, TimeDelta, Utc};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, BTreeSet, HashSet};
+use std::cmp::{Ordering, max};
+use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashSet};
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
 use thiserror::Error;
 use tokio::task::JoinSet;
+use tokio::time::{sleep, sleep_until};
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info};
 
@@ -150,6 +152,14 @@ where
     }
 
     async fn process_queues(self, worker_num: u32, queues: Vec<String>) {
+        let mut queues: BinaryHeap<QueueItem> = queues
+            .into_iter()
+            .map(|name| QueueItem {
+                name,
+                next_fetch: Utc::now(),
+            })
+            .collect();
+
         let context = AppContext::from_ref(&self.inner.state);
         let default_max_duration = context.config().service.worker.worker_config.max_duration;
         let default_view_timeout = default_max_duration
@@ -163,28 +173,42 @@ where
                     duration as i32
                 }
             });
+
         loop {
-            // Todo: use a priority queue / binary heap to help with delaying queue fetches for empty queues
-            for queue in queues.iter() {
+            // todo: confirm that updating the `peek_mut` object updates the binary heap
+            while let Some(mut queue) = queues.peek_mut() {
                 if self.inner.cancellation_token.is_cancelled() {
                     info!(worker_num, "Exiting processor worker loop");
                     return;
                 }
 
+                let diff = max(TimeDelta::zero(), queue.next_fetch - Utc::now());
+                let duration = diff.to_std().unwrap_or_else(|_| Duration::from_secs(1));
+                sleep(duration).await;
+
                 // Todo: We can't deserialize to a string, so we'll probably want to use serde_json::Value
                 //  for the job args instead of a json string
                 let msg = match context
                     .pgmq()
-                    .read::<String>(queue, default_view_timeout)
+                    .read::<String>(&queue.name, default_view_timeout)
                     .await
                 {
                     Ok(Some(msg)) => msg,
-                    Ok(None) => continue,
+                    Ok(None) => {
+                        // Todo: make this configurable
+                        // Todo: consolidate the `next_fetch` update logic so we don't need to
+                        //  remember to do it before every `continue`
+                        queue.next_fetch = Utc::now() + Duration::from_secs(10);
+                        continue;
+                    }
                     Err(err) => {
                         error!(
                             worker_num,
-                            queue, "An error occurred while reading from pgmq: {err}"
+                            queue = queue.name,
+                            "An error occurred while reading from pgmq: {err}"
                         );
+                        // Todo: make this configurable
+                        queue.next_fetch = Utc::now() + Duration::from_secs(10);
                         continue;
                     }
                 };
@@ -196,18 +220,20 @@ where
                             msg_id = msg.msg_id,
                             read_count = msg.read_ct,
                             worker_num,
-                            queue,
+                            queue = queue.name,
                             "An error occurred while deserializing message from pgmq, archiving: {err}"
                         );
-                        if let Err(err) = context.pgmq().archive(queue, msg.msg_id).await {
+                        if let Err(err) = context.pgmq().archive(&queue.name, msg.msg_id).await {
                             error!(
                                 msg_id = msg.msg_id,
                                 read_count = msg.read_ct,
                                 worker_num,
-                                queue,
+                                queue = queue.name,
                                 "An error occurred while archiving message: {err}"
                             );
                         }
+                        // Todo: make this configurable
+                        queue.next_fetch = Utc::now() + Duration::from_secs(10);
                         continue;
                     }
                 };
@@ -216,15 +242,17 @@ where
                 {
                     worker
                 } else {
-                    // todo: treat this as a worker error and re-enqueue with backoff
+                    // Todo: set the vt of the job with exponential backoff
                     error!(
                         msg_id = msg.msg_id,
                         read_count = msg.read_ct,
                         worker_num,
-                        queue,
+                        queue = queue.name,
                         worker_name = job.metadata.worker_name,
                         "Unable to handle job, worker not registered"
                     );
+                    // Todo: make this configurable
+                    queue.next_fetch = Utc::now() + Duration::from_secs(10);
                     continue;
                 };
 
@@ -233,24 +261,56 @@ where
                 {
                     if let Err(err) = context
                         .pgmq()
-                        .set_vt::<serde_json::Value>(queue, msg.msg_id, Utc::now() + duration)
+                        .set_vt::<serde_json::Value>(&queue.name, msg.msg_id, Utc::now() + duration)
                         .await
                     {
                         error!(
                             msg_id = msg.msg_id,
                             read_count = msg.read_ct,
                             worker_num,
-                            queue,
+                            queue = queue.name,
                             worker_name = job.metadata.worker_name,
                             "An error occurred while updating the view timeout of a job: {err}"
                         );
                     }
                 }
 
-                // Todo: error handling
+                // Todo: error handling, here and for other "worker" errors above
                 worker.handle(&self.inner.state, &job.args).await.unwrap();
+
+                // On success, update the next_fetch to `now`
+                // Todo: make this configurable
+                queue.next_fetch = Utc::now();
             }
         }
+    }
+}
+
+struct QueueItem {
+    name: String,
+    next_fetch: DateTime<Utc>,
+}
+
+impl Eq for QueueItem {}
+
+impl PartialEq<Self> for QueueItem {
+    fn eq(&self, other: &Self) -> bool {
+        self.next_fetch == other.next_fetch
+    }
+}
+
+impl PartialOrd<Self> for QueueItem {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for QueueItem {
+    fn cmp(&self, other: &Self) -> Ordering {
+        // This is intentionally reversed so that `QueueItem` forms a min heap when used in
+        // a binary heap.
+        // todo: confirm that this create a min heaps
+        other.next_fetch.cmp(&self.next_fetch)
     }
 }
 
@@ -372,28 +432,3 @@ where
         Ok(())
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use insta::assert_debug_snapshot;
-//     use serde_derive::{Deserialize, Serialize};
-//
-//     #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
-//     struct Foo {
-//         foo: String,
-//     }
-//
-//     #[test]
-//     fn test() {
-//         let foo = Foo {
-//             foo: "foo".to_owned(),
-//         };
-//         // I think this is the same ser/de steps used by pgmq, so I think we should be able to
-//         // deserialize to a String first, then deserialize to the actual type second.
-//         let foo_json = serde_json::json!(foo);
-//         let foo_str: String = serde_json::from_value(foo_json).unwrap();
-//         let foo_de = serde_json::from_str(&foo_str).unwrap();
-//         assert_eq!(foo, foo_de);
-//         assert_debug_snapshot!(foo_de);
-//     }
-// }
