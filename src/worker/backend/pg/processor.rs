@@ -171,8 +171,10 @@ where
                     Err(err) => {
                         error!(
                             worker_num,
-                            queue, "An error occurred while deserializing message from pgmq: {err}"
+                            queue,
+                            "An error occurred while deserializing message from pgmq, archiving: {err}"
                         );
+                        let _ = context.pgmq().archive(queue, msg.msg_id).await;
                         continue;
                     }
                 };
