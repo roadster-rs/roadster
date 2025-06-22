@@ -329,8 +329,9 @@ mod tests {
     #[cfg(feature = "worker-pg")]
     #[tokio::test]
     async fn pg_processor_register(context: &AppContext) {
-        let mut processor = crate::worker::backend::pg::processor::Processor::new(context);
+        let mut processor = crate::worker::backend::pg::processor::Processor::builder(context);
         // Todo: add `unwrap` -- right now this is just to ensure things compile
         processor.register(FooWorker).await;
+        let processor = processor.build();
     }
 }

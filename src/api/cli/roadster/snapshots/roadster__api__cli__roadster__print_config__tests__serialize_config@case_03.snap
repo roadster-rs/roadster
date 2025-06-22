@@ -151,7 +151,6 @@ expression: serialized
       "sidekiq": {
         "num-workers": 16,
         "balance-strategy": "round-robin",
-        "queues": [],
         "queue-config": {},
         "redis": {
           "uri": "redis://[Sensitive]",
@@ -172,7 +171,6 @@ expression: serialized
       "pg": {
         "num-workers": 16,
         "balance-strategy": "round-robin",
-        "queues": [],
         "queue-config": {}
       }
     }

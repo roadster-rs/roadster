@@ -39,7 +39,13 @@ pub(crate) fn enabled(context: &AppContext) -> bool {
         return false;
     }
 
-    if sidekiq_config.custom.common.queues.is_empty() && dedicated_workers == 0 {
+    let queues_empty = if let Some(queues) = sidekiq_config.custom.common.queues.as_ref() {
+        queues.is_empty()
+    } else {
+        true
+    };
+
+    if queues_empty && dedicated_workers == 0 {
         debug!("Sidekiq configured with 0 worker queues.");
         return false;
     }
@@ -98,7 +104,7 @@ where
         join_set.spawn(processor.run());
 
         while let Some(result) = join_set.join_next().await {
-            // Once any of the tasks finishes, cancel the cancellation tokens to ensure
+            // Once any of the tasks finish, cancel all the cancellation tokens to ensure
             // the processor and the app shut down gracefully.
             cancel_token.cancel();
             sidekiq_cancel_token.cancel();
@@ -186,6 +192,7 @@ mod tests {
     use bb8::Pool;
     use rstest::rstest;
     use sidekiq::RedisConnectionManager;
+    use std::collections::BTreeSet;
 
     #[rstest]
     #[case(false, None, 0, Default::default(), false, false)]
@@ -209,7 +216,8 @@ mod tests {
         config.service.default_enable = default_enabled;
         config.service.worker.sidekiq.common.enable = sidekiq_enabled;
         config.service.worker.sidekiq.custom.common.num_workers = num_workers;
-        config.service.worker.sidekiq.custom.common.queues = queues;
+        config.service.worker.sidekiq.custom.common.queues =
+            Some(BTreeSet::from_iter(queues.into_iter()));
 
         let pool = if has_redis_fetch {
             let redis_fetch = RedisConnectionManager::new("redis://invalid_host:1234").unwrap();

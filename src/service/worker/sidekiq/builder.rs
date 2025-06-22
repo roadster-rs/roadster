@@ -111,6 +111,7 @@ where
                 .common
                 .queues
                 .clone()
+                .unwrap_or_default()
                 .into_iter()
                 .chain(worker_queues.unwrap_or_default())
                 .collect_vec();
@@ -409,6 +410,7 @@ mod tests {
     use futures::StreamExt;
     use rstest::rstest;
     use sidekiq::{RedisConnectionManager, Worker};
+    use std::collections::BTreeSet;
 
     #[rstest]
     #[case(true, 1, vec![MockTestAppWorker::class_name()])]
@@ -494,7 +496,8 @@ mod tests {
         let mut config = AppConfig::test(None).unwrap();
         config.service.default_enable = enabled;
         config.service.worker.sidekiq.custom.common.num_workers = 1;
-        config.service.worker.sidekiq.custom.common.queues = vec!["foo".to_string()];
+        config.service.worker.sidekiq.custom.common.queues =
+            Some(BTreeSet::from(["foo".to_string()]));
 
         let redis_fetch = RedisConnectionManager::new("redis://invalid_host:1234").unwrap();
         let pool = Pool::builder().build_unchecked(redis_fetch);

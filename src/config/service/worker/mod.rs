@@ -3,7 +3,8 @@ use crate::config::service::worker::pg::WorkerPgServiceConfig;
 use crate::config::service::worker::sidekiq::SidekiqServiceConfig;
 use config::{FileFormat, FileSourceString};
 use serde_derive::{Deserialize, Serialize};
-use std::collections::BTreeMap;
+use serde_with::{serde_as, skip_serializing_none};
+use std::collections::{BTreeMap, BTreeSet};
 use strum_macros::{EnumString, IntoStaticStr};
 use validator::Validate;
 
@@ -53,6 +54,8 @@ pub struct WorkerConfig<T: Validate> {
     pub custom: T,
 }
 
+#[serde_as]
+#[skip_serializing_none]
 #[derive(Debug, Default, Validate, Clone, Serialize, Deserialize)]
 #[serde(default, rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -74,8 +77,13 @@ pub struct CommonConfig {
     pub balance_strategy: BalanceStrategy,
 
     /// The names of the worker queues to handle.
+    ///
+    /// Note: Different queue backends may treat this differently. For example, if this is `None`,
+    /// the Postgres queue backend will handle the queues for all registered workers, but the
+    /// Sidekiq backend will not handle any queues.
+    /// todo: confirm if this is true and/or if we can have the sidekiq behavior match pg
     #[serde(default)]
-    pub queues: Vec<String>,
+    pub queues: Option<BTreeSet<String>>,
 
     /// Queue-specific configurations. The queues specified in this field do not need to match
     /// the list of queues listed in the `queues` field.

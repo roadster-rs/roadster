@@ -154,7 +154,6 @@ max-duration = 60
 [service.worker.sidekiq]
 num-workers = 16
 balance-strategy = 'round-robin'
-queues = []
 
 [service.worker.sidekiq.queue-config]
 
@@ -171,7 +170,6 @@ stale-cleanup = 'auto-clean-stale'
 [service.worker.pg]
 num-workers = 16
 balance-strategy = 'round-robin'
-queues = []
 
 [service.worker.pg.queue-config]
 [auth.jwt]
