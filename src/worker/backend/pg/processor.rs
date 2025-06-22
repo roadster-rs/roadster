@@ -3,15 +3,19 @@ use crate::error::RoadsterResult;
 use crate::worker::job::Job;
 use crate::worker::{EnqueueConfig, Worker, WorkerConfig};
 use axum_core::extract::FromRef;
+use chrono::Utc;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::pin::Pin;
 use std::sync::Arc;
+use std::time::Duration;
 use thiserror::Error;
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info};
+
+const DEFAULT_VIEW_TIMEOUT: Duration = Duration::from_secs(60 * 10);
 
 #[derive(Debug, Error)]
 #[non_exhaustive]
@@ -147,6 +151,17 @@ where
 
     async fn process_queues(self, worker_num: u32, queues: Vec<String>) {
         let context = AppContext::from_ref(&self.inner.state);
+        let default_max_duration = context.config().service.worker.worker_config.max_duration;
+        let default_view_timeout = default_max_duration
+            .as_ref()
+            .map(|duration| duration.as_secs())
+            .map(|duration| {
+                if duration > (i32::MAX as u64) {
+                    i32::MAX
+                } else {
+                    duration as i32
+                }
+            });
         loop {
             for queue in queues.iter() {
                 if self.inner.cancellation_token.is_cancelled() {
@@ -154,7 +169,13 @@ where
                     return;
                 }
 
-                let msg = match context.pgmq().read::<String>(queue, None).await {
+                // Todo: We can't deserialize to a string, so we'll probably want to use serde_json::Value
+                //  for the job args instead of a json string
+                let msg = match context
+                    .pgmq()
+                    .read::<String>(queue, default_view_timeout)
+                    .await
+                {
                     Ok(Some(msg)) => msg,
                     Ok(None) => continue,
                     Err(err) => {
@@ -170,11 +191,21 @@ where
                     Ok(job) => job,
                     Err(err) => {
                         error!(
+                            msg_id = msg.msg_id,
+                            read_count = msg.read_ct,
                             worker_num,
                             queue,
                             "An error occurred while deserializing message from pgmq, archiving: {err}"
                         );
-                        let _ = context.pgmq().archive(queue, msg.msg_id).await;
+                        if let Err(err) = context.pgmq().archive(queue, msg.msg_id).await {
+                            error!(
+                                msg_id = msg.msg_id,
+                                read_count = msg.read_ct,
+                                worker_num,
+                                queue,
+                                "An error occurred while archiving message: {err}"
+                            );
+                        }
                         continue;
                     }
                 };
@@ -183,7 +214,10 @@ where
                 {
                     worker
                 } else {
+                    // todo: treat this as a worker error and re-enqueue with backoff
                     error!(
+                        msg_id = msg.msg_id,
+                        read_count = msg.read_ct,
                         worker_num,
                         queue,
                         worker_name = job.metadata.worker_name,
@@ -191,6 +225,25 @@ where
                     );
                     continue;
                 };
+
+                if let Some(duration) = default_max_duration
+                    .or_else(|| context.config().service.worker.worker_config.max_duration)
+                {
+                    if let Err(err) = context
+                        .pgmq()
+                        .set_vt::<serde_json::Value>(queue, msg.msg_id, Utc::now() + duration)
+                        .await
+                    {
+                        error!(
+                            msg_id = msg.msg_id,
+                            read_count = msg.read_ct,
+                            worker_num,
+                            queue,
+                            worker_name = job.metadata.worker_name,
+                            "An error occurred while updating the view timeout of a job: {err}"
+                        );
+                    }
+                }
 
                 // Todo: error handling
                 worker.handle(&self.inner.state, &job.args).await.unwrap();
@@ -317,3 +370,28 @@ where
         Ok(())
     }
 }
+
+// #[cfg(test)]
+// mod tests {
+//     use insta::assert_debug_snapshot;
+//     use serde_derive::{Deserialize, Serialize};
+//
+//     #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
+//     struct Foo {
+//         foo: String,
+//     }
+//
+//     #[test]
+//     fn test() {
+//         let foo = Foo {
+//             foo: "foo".to_owned(),
+//         };
+//         // I think this is the same ser/de steps used by pgmq, so I think we should be able to
+//         // deserialize to a String first, then deserialize to the actual type second.
+//         let foo_json = serde_json::json!(foo);
+//         let foo_str: String = serde_json::from_value(foo_json).unwrap();
+//         let foo_de = serde_json::from_str(&foo_str).unwrap();
+//         assert_eq!(foo, foo_de);
+//         assert_debug_snapshot!(foo_de);
+//     }
+// }
