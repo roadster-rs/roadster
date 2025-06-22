@@ -156,6 +156,7 @@ where
             .as_ref()
             .map(|duration| duration.as_secs())
             .map(|duration| {
+                // Todo: is there a utility/crate to do this safely?
                 if duration > (i32::MAX as u64) {
                     i32::MAX
                 } else {
