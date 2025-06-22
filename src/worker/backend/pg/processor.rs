@@ -1,20 +1,17 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
-use crate::worker::enqueue::queue_from_worker;
 use crate::worker::job::Job;
 use crate::worker::{EnqueueConfig, Worker, WorkerConfig};
 use axum_core::extract::FromRef;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use sidekiq::redis_rs::ExpireOption::NONE;
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::pin::Pin;
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info};
-use typed_builder::TypedBuilder;
 
 #[derive(Debug, Error)]
 #[non_exhaustive]
@@ -101,35 +98,7 @@ where
     }
 
     pub async fn run(self) -> RoadsterResult<()> {
-        // let mut join_set = JoinSet::new();
-        // let cancellation_token = self.inner.cancellation_token.clone();
-        // join_set.spawn(Box::pin(async move {
-        //     cancellation_token.cancelled().await;
-        // }));
-        // let token = sidekiq_cancel_token.clone();
-        // join_set.spawn(Box::pin(async move {
-        //     token.cancelled().await;
-        // }));
-        // join_set.spawn(processor.run());
-        //
-        // while let Some(result) = join_set.join_next().await {
-        //     cancellation_token.cancel();
-        //     if let Err(join_err) = result {
-        //         error!(
-        //             "An error occurred when trying to join on one of the app's tasks. Error: {join_err}"
-        //         );
-        //     }
-        // }
-
-        // let mut join_set = JoinSet::new();
-
-        // self.inner.workers
-
         let mut join_set = JoinSet::new();
-
-        // for i in 0..context.config().service.worker.pg.custom.common.num_workers {
-        //     join_set.spawn(self.process_queues())
-        // }
 
         let context = AppContext::from_ref(&self.inner.state);
         let worker_config = &context.config().service.worker.pg.custom;
