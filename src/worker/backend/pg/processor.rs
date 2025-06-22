@@ -164,6 +164,7 @@ where
                 }
             });
         loop {
+            // Todo: use a priority queue / binary heap to help with delaying queue fetches for empty queues
             for queue in queues.iter() {
                 if self.inner.cancellation_token.is_cancelled() {
                     info!(worker_num, "Exiting processor worker loop");
