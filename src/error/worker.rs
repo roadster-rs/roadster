@@ -1,11 +1,11 @@
 use crate::error::Error;
-use crate::worker::backend::pg::processor::PgProcessorError;
 
 #[derive(Debug, Error)]
 #[non_exhaustive]
 pub enum WorkerError {
+    #[cfg(feature = "worker-pg")]
     #[error(transparent)]
-    PgProcessor(#[from] PgProcessorError),
+    PgProcessor(#[from] crate::worker::backend::pg::processor::PgProcessorError),
 
     #[error(transparent)]
     Enqueue(#[from] EnqueueError),
@@ -40,8 +40,9 @@ pub enum DequeueError {
     Serde(#[from] serde_json::Error),
 }
 
-impl From<PgProcessorError> for Error {
-    fn from(value: PgProcessorError) -> Self {
+#[cfg(feature = "worker-pg")]
+impl From<crate::worker::backend::pg::processor::PgProcessorError> for Error {
+    fn from(value: crate::worker::backend::pg::processor::PgProcessorError) -> Self {
         Self::Worker(WorkerError::from(value))
     }
 }

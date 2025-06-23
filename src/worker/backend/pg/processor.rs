@@ -283,7 +283,6 @@ where
                 worker.handle(&self.inner.state, &job.args).await.unwrap();
 
                 // On success, update the next_fetch to `now`
-                // Todo: make this configurable
                 queue.next_fetch = Utc::now();
             }
         }
@@ -434,5 +433,58 @@ where
         // todo: timeouts, etc
         (self.worker_fn)(state, args).await?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    mod queue_item {
+        use crate::worker::backend::pg::processor::QueueItem;
+        use chrono::Utc;
+        use std::collections::BinaryHeap;
+        use std::time::Duration;
+
+        #[test]
+        fn min_heap() {
+            let now = Utc::now();
+            let mut items = BinaryHeap::new();
+            items.push(QueueItem {
+                name: "a".to_owned(),
+                next_fetch: now + Duration::from_secs(1),
+            });
+            items.push(QueueItem {
+                name: "b".to_owned(),
+                next_fetch: now,
+            });
+            items.push(QueueItem {
+                name: "c".to_owned(),
+                next_fetch: now + Duration::from_secs(10),
+            });
+
+            assert_eq!(items.pop().unwrap().name, "b");
+            assert_eq!(items.pop().unwrap().name, "a");
+            assert_eq!(items.pop().unwrap().name, "c");
+        }
+
+        #[test]
+        fn peek_mut_change_order() {
+            let now = Utc::now();
+            let mut items = BinaryHeap::new();
+            items.push(QueueItem {
+                name: "a".to_owned(),
+                next_fetch: now,
+            });
+            items.push(QueueItem {
+                name: "b".to_owned(),
+                next_fetch: now + Duration::from_secs(1),
+            });
+
+            if let Some(mut item) = items.peek_mut() {
+                item.next_fetch = now + Duration::from_secs(10);
+            }
+
+            assert_eq!(items.pop().unwrap().name, "b");
+            assert_eq!(items.pop().unwrap().name, "a");
+        }
     }
 }
