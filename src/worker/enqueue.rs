@@ -108,19 +108,19 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
     Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-    F: for<'a> AsyncFn(&S, &str, &Job<'a>) -> RoadsterResult<()>,
+    F: AsyncFn(&S, &str, Job) -> RoadsterResult<()>,
 {
     let worker_name = W::name();
 
-    let args = serde_json::to_string(&args).map_err(|err| EnqueueError::Serde(err))?;
+    let args = serde_json::to_value(&args).map_err(|err| EnqueueError::Serde(err))?;
     let job = Job::builder()
-        .metadata(JobMetadata::builder().worker_name(&worker_name).build())
-        .args(Cow::from(&args))
+        .metadata(JobMetadata::builder().worker_name(worker_name).build())
+        .args(args)
         .build();
 
     let queue = queue_from_worker::<W, S, Args, E>(state)?;
 
-    enqueue_fn(state, &queue, &job).await?;
+    enqueue_fn(state, &queue, job).await?;
 
     Ok(())
 }
@@ -137,27 +137,35 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
     Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-    F: for<'a> AsyncFn(&S, &str, &[Job<'a>]) -> RoadsterResult<()>,
+    F: AsyncFn(&S, &str, Vec<Job>) -> RoadsterResult<()>,
 {
     let worker_name = W::name();
 
-    let mut arg_strs: Vec<String> = Vec::with_capacity(args.len());
+    let mut args_serialized: Vec<serde_json::Value> = Vec::with_capacity(args.len());
     for arg in args.iter() {
-        arg_strs.push(serde_json::to_string(arg).map_err(|err| EnqueueError::Serde(err))?);
+        args_serialized.push(serde_json::to_value(arg).map_err(|err| EnqueueError::Serde(err))?);
     }
-    let jobs = arg_strs
-        .iter()
+    let jobs = args_serialized
+        .into_iter()
         .map(|arg| {
             Job::builder()
-                .metadata(JobMetadata::builder().worker_name(&worker_name).build())
-                .args(Cow::from(arg))
+                .metadata(
+                    JobMetadata::builder()
+                        // Todo: We could optimize away this clone by borrowing instead of cloning
+                        //  but this would probably require having separate Job/JobMetadata structs
+                        //  for enqueue vs dequeue, because the type used for dequeuing needs to
+                        //  impl DeserializeOwned.
+                        .worker_name(worker_name.clone())
+                        .build(),
+                )
+                .args(arg)
                 .build()
         })
         .collect_vec();
 
     let queue = queue_from_worker::<W, S, Args, E>(state)?;
 
-    enqueue_fn(state, &queue, &jobs).await?;
+    enqueue_fn(state, &queue, jobs).await?;
 
     Ok(())
 }

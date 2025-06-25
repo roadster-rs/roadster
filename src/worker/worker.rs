@@ -217,7 +217,7 @@ where
         Ok(())
     }
 
-    async fn handle(&self, state: &S, args: &Args) -> Result<(), Self::Error>;
+    async fn handle(&self, state: &S, args: Args) -> Result<(), Self::Error>;
 }
 
 #[cfg(test)]
@@ -300,11 +300,7 @@ mod tests {
         type Enqueuer = FooBackend;
 
         #[cfg_attr(coverage_nightly, coverage(off))]
-        async fn handle(
-            &self,
-            state: &AppContext,
-            args: &FooWorkerArgs,
-        ) -> Result<(), Self::Error> {
+        async fn handle(&self, state: &AppContext, args: FooWorkerArgs) -> Result<(), Self::Error> {
             todo!()
         }
     }

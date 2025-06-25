@@ -183,17 +183,13 @@ where
 
                 let diff = max(TimeDelta::zero(), queue.next_fetch - Utc::now());
                 let duration = diff.to_std().unwrap_or_else(|_| Duration::from_secs(0));
-                // Todo: do we need this check, or is `sleep` smart enough to do nothing if the duration is zero
-                // Todo: maybe don't sleep if duration is less than X milliseconds
-                if !duration.is_zero() {
-                    sleep(duration).await;
-                }
+                sleep(duration).await;
 
                 // Todo: We can't deserialize to a string, so we'll probably want to use serde_json::Value
                 //  for the job args instead of a json string
                 let msg = match context
                     .pgmq()
-                    .read::<String>(&queue.name, default_view_timeout)
+                    .read::<Job>(&queue.name, default_view_timeout)
                     .await
                 {
                     Ok(Some(msg)) => msg,
@@ -216,32 +212,33 @@ where
                     }
                 };
 
-                let job: Job = match serde_json::from_str(&msg.message) {
-                    Ok(job) => job,
-                    Err(err) => {
-                        error!(
-                            msg_id = msg.msg_id,
-                            read_count = msg.read_ct,
-                            worker_num,
-                            queue = queue.name,
-                            "An error occurred while deserializing message from pgmq, archiving: {err}"
-                        );
-                        if let Err(err) = context.pgmq().archive(&queue.name, msg.msg_id).await {
-                            error!(
-                                msg_id = msg.msg_id,
-                                read_count = msg.read_ct,
-                                worker_num,
-                                queue = queue.name,
-                                "An error occurred while archiving message: {err}"
-                            );
-                        }
-                        // Todo: make this configurable
-                        queue.next_fetch = Utc::now() + Duration::from_secs(10);
-                        continue;
-                    }
-                };
+                // let job: Job = match serde_json::from_str(&msg.message) {
+                //     Ok(job) => job,
+                //     Err(err) => {
+                //         error!(
+                //             msg_id = msg.msg_id,
+                //             read_count = msg.read_ct,
+                //             worker_num,
+                //             queue = queue.name,
+                //             "An error occurred while deserializing message from pgmq, archiving: {err}"
+                //         );
+                //         if let Err(err) = context.pgmq().archive(&queue.name, msg.msg_id).await {
+                //             error!(
+                //                 msg_id = msg.msg_id,
+                //                 read_count = msg.read_ct,
+                //                 worker_num,
+                //                 queue = queue.name,
+                //                 "An error occurred while archiving message: {err}"
+                //             );
+                //         }
+                //         // Todo: make this configurable
+                //         queue.next_fetch = Utc::now() + Duration::from_secs(10);
+                //         continue;
+                //     }
+                // };
 
-                let worker = if let Some(worker) = self.inner.workers.get(job.metadata.worker_name)
+                let worker = if let Some(worker) =
+                    self.inner.workers.get(&msg.message.metadata.worker_name)
                 {
                     worker
                 } else {
@@ -251,7 +248,7 @@ where
                         read_count = msg.read_ct,
                         worker_num,
                         queue = queue.name,
-                        worker_name = job.metadata.worker_name,
+                        worker_name = msg.message.metadata.worker_name,
                         "Unable to handle job, worker not registered"
                     );
                     // Todo: make this configurable
@@ -272,14 +269,17 @@ where
                             read_count = msg.read_ct,
                             worker_num,
                             queue = queue.name,
-                            worker_name = job.metadata.worker_name,
+                            worker_name = msg.message.metadata.worker_name,
                             "An error occurred while updating the view timeout of a job: {err}"
                         );
                     }
                 }
 
                 // Todo: error handling, here and for other "worker" errors above
-                worker.handle(&self.inner.state, &job.args).await.unwrap();
+                worker
+                    .handle(&self.inner.state, msg.message.args)
+                    .await
+                    .unwrap();
 
                 // On success, update the next_fetch to `now`
                 queue.next_fetch = Utc::now();
@@ -381,7 +381,10 @@ where
 type WorkerFn<S> = Box<
     dyn Send
         + Sync
-        + for<'a> Fn(&'a S, &'a str) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>>,
+        + for<'a> Fn(
+            &'a S,
+            serde_json::Value,
+        ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>>,
 >;
 
 struct WorkerWrapper<S>
@@ -411,13 +414,13 @@ where
         Ok(Self {
             enqueue_config,
             worker_config: worker.worker_config(state),
-            worker_fn: Box::new(move |state: &S, args: &str| {
+            worker_fn: Box::new(move |state: &S, args: serde_json::Value| {
                 let worker = worker.clone();
                 Box::pin(async move {
-                    let args: Args = serde_json::from_str(args)
+                    let args: Args = serde_json::from_value(args)
                         .map_err(crate::error::worker::DequeueError::Serde)?;
 
-                    match worker.clone().handle(state, &args).await {
+                    match worker.clone().handle(state, args).await {
                         Ok(_) => Ok(()),
                         Err(err) => Err(crate::error::Error::from(
                             crate::error::worker::WorkerError::Handle(W::name(), Box::new(err)),
@@ -428,7 +431,7 @@ where
         })
     }
 
-    async fn handle(&self, state: &S, args: &str) -> RoadsterResult<()> {
+    async fn handle(&self, state: &S, args: serde_json::Value) -> RoadsterResult<()> {
         // todo: timeouts, etc
         (self.worker_fn)(state, args).await?;
         Ok(())
