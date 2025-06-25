@@ -175,7 +175,6 @@ where
             });
 
         loop {
-            // todo: confirm that updating the `peek_mut` object updates the binary heap
             while let Some(mut queue) = queues.peek_mut() {
                 if self.inner.cancellation_token.is_cancelled() {
                     info!(worker_num, "Exiting processor worker loop");
