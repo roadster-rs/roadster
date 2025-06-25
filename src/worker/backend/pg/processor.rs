@@ -186,8 +186,6 @@ where
                 let duration = diff.to_std().unwrap_or_else(|_| Duration::from_secs(0));
                 sleep(duration).await;
 
-                // Todo: We can't deserialize to a string, so we'll probably want to use serde_json::Value
-                //  for the job args instead of a json string
                 let msg = match context
                     .pgmq()
                     .read::<Job>(&queue.name, default_view_timeout)
