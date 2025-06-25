@@ -5,6 +5,7 @@ use crate::worker::{EnqueueConfig, Worker, WorkerConfig};
 use axum_core::extract::FromRef;
 use chrono::{DateTime, OutOfRangeError, TimeDelta, Utc};
 use itertools::Itertools;
+use pgmq::PgmqError;
 use serde::{Deserialize, Serialize};
 use std::cmp::{Ordering, max};
 use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashSet};
@@ -212,6 +213,7 @@ where
                     }
                 };
 
+                // todo: move this to above error handling block
                 // let job: Job = match serde_json::from_str(&msg.message) {
                 //     Ok(job) => job,
                 //     Err(err) => {
