@@ -186,9 +186,18 @@ where
                 let duration = diff.to_std().unwrap_or_else(|_| Duration::from_secs(0));
                 sleep(duration).await;
 
+                /*
+                Deserialize to `serde_json::Value` first. We do this because pgmq does not return
+                the message id if an error occurs when deserializing a custom type. So, if there
+                is a deserialization error, we wouldn't be able to update the view timeout of
+                the message and it will stay at the front of the queue indefinitely, blocking
+                all other work. Deserializing to `serde_json::Value` first will avoid all
+                deserialization errors (aside from those due to corrupted date, which should be
+                rare). Then, we can separately handle any deserialization errors ourselves.
+                 */
                 let msg = match context
                     .pgmq()
-                    .read::<Job>(&queue.name, default_view_timeout)
+                    .read::<serde_json::Value>(&queue.name, default_view_timeout)
                     .await
                 {
                     Ok(Some(msg)) => msg,
@@ -211,34 +220,24 @@ where
                     }
                 };
 
-                // todo: move this to above error handling block
-                // let job: Job = match serde_json::from_str(&msg.message) {
-                //     Ok(job) => job,
-                //     Err(err) => {
-                //         error!(
-                //             msg_id = msg.msg_id,
-                //             read_count = msg.read_ct,
-                //             worker_num,
-                //             queue = queue.name,
-                //             "An error occurred while deserializing message from pgmq, archiving: {err}"
-                //         );
-                //         if let Err(err) = context.pgmq().archive(&queue.name, msg.msg_id).await {
-                //             error!(
-                //                 msg_id = msg.msg_id,
-                //                 read_count = msg.read_ct,
-                //                 worker_num,
-                //                 queue = queue.name,
-                //                 "An error occurred while archiving message: {err}"
-                //             );
-                //         }
-                //         // Todo: make this configurable
-                //         queue.next_fetch = Utc::now() + Duration::from_secs(10);
-                //         continue;
-                //     }
-                // };
+                let job: Job = match serde_json::from_value(msg.message) {
+                    Ok(job) => job,
+                    Err(err) => {
+                        // Todo: set the vt of the job with exponential backoff
+                        error!(
+                            msg_id = msg.msg_id,
+                            read_count = msg.read_ct,
+                            worker_num,
+                            queue = queue.name,
+                            "An error occurred while deserializing message from pgmq: {err}"
+                        );
+                        // Todo: make this configurable
+                        queue.next_fetch = Utc::now() + Duration::from_secs(10);
+                        continue;
+                    }
+                };
 
-                let worker = if let Some(worker) =
-                    self.inner.workers.get(&msg.message.metadata.worker_name)
+                let worker = if let Some(worker) = self.inner.workers.get(&job.metadata.worker_name)
                 {
                     worker
                 } else {
@@ -248,7 +247,7 @@ where
                         read_count = msg.read_ct,
                         worker_num,
                         queue = queue.name,
-                        worker_name = msg.message.metadata.worker_name,
+                        worker_name = job.metadata.worker_name,
                         "Unable to handle job, worker not registered"
                     );
                     // Todo: make this configurable
@@ -269,17 +268,17 @@ where
                             read_count = msg.read_ct,
                             worker_num,
                             queue = queue.name,
-                            worker_name = msg.message.metadata.worker_name,
-                            "An error occurred while updating the view timeout of a job: {err}"
+                            worker_name = job.metadata.worker_name,
+                            "An error occurred while updating job's view timeout: {err}"
                         );
                     }
                 }
 
-                // Todo: error handling, here and for other "worker" errors above
-                worker
-                    .handle(&self.inner.state, msg.message.args)
-                    .await
-                    .unwrap();
+                // Todo: error handling, here and for other errors above
+                //  - handle errors
+                //  - set vt with backoff (exponential/configurable?)
+                //  - archive/delete (configurable) when max retries exceeded
+                worker.handle(&self.inner.state, job.args).await.unwrap();
 
                 // On success, update the next_fetch to `now`
                 queue.next_fetch = Utc::now();
