@@ -1,6 +1,7 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::worker::job::Job;
+use crate::worker::worker::{can_retry, failure_action, retry_delay};
 use crate::worker::{EnqueueConfig, Worker, WorkerConfig};
 use axum_core::extract::FromRef;
 use chrono::{DateTime, OutOfRangeError, TimeDelta, Utc};
@@ -162,7 +163,8 @@ where
             .collect();
 
         let context = AppContext::from_ref(&self.inner.state);
-        let default_max_duration = context.config().service.worker.worker_config.max_duration;
+        let default_worker_config = &context.config().service.worker.worker_config;
+        let default_max_duration = default_worker_config.max_duration;
         let default_view_timeout = default_max_duration
             .as_ref()
             .map(|duration| duration.as_secs())
@@ -278,7 +280,31 @@ where
                 //  - handle errors
                 //  - set vt with backoff (exponential/configurable?)
                 //  - archive/delete (configurable) when max retries exceeded
-                worker.handle(&self.inner.state, job.args).await.unwrap();
+                let result = worker.handle(&self.inner.state, job.args).await;
+
+                if let Err(err) = result {
+                    error!(
+                        msg_id = msg.msg_id,
+                        read_count = msg.read_ct,
+                        worker_num,
+                        queue = queue.name,
+                        worker_name = job.metadata.worker_name,
+                        "An error occurred while handling a job: {err}"
+                    );
+
+                    if let Some(delay) = retry_delay(
+                        default_worker_config.retry_config.as_ref(),
+                        worker.worker_config.retry_config.as_ref(),
+                        msg.read_ct,
+                    ) {
+                        todo!()
+                    } else {
+                        let action = failure_action(
+                            default_worker_config.pg.as_ref(),
+                            worker.worker_config.pg.as_ref(),
+                        );
+                    }
+                }
 
                 // On success, update the next_fetch to `now`
                 queue.next_fetch = Utc::now();

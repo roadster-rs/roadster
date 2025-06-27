@@ -47,11 +47,6 @@ pub struct EnqueueConfig {
 #[serde(default, rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct WorkerConfig {
-    /// The maximum number of times a job should be retried on failure.
-    #[serde(default)]
-    #[builder(default, setter(strip_option))]
-    pub max_retries: Option<usize>,
-
     /// True if Roadster should enforce a timeout on the app's workers. The default duration of
     /// the timeout can be configured with the `max-duration` option.
     #[serde(default)]
@@ -64,6 +59,12 @@ pub struct WorkerConfig {
     #[serde_as(as = "Option<serde_with::DurationSeconds>")]
     #[builder(default, setter(strip_option))]
     pub max_duration: Option<Duration>,
+
+    /// The worker retry configuration. If no configuration is provided, either in the app's config
+    /// or for the [`Worker`], the worker will not retry.
+    #[serde(flatten, default)]
+    #[builder(default, setter(strip_option))]
+    pub retry_config: Option<RetryConfig>,
 
     #[cfg(feature = "worker-sidekiq")]
     #[serde(flatten, default)]
@@ -98,6 +99,48 @@ pub struct SidekiqWorkerConfig {
 #[derive(Debug, Default, Clone, Validate, Serialize, Deserialize, TypedBuilder)]
 #[serde(default, rename_all = "kebab-case")]
 #[non_exhaustive]
+pub struct RetryConfig {
+    /// The maximum number of times a job should be retried on failure.
+    #[serde(default)]
+    #[builder(default, setter(strip_option))]
+    pub max_retries: Option<usize>,
+
+    /// The delay between retries. If any [`BackoffStrategy`] besides [`BackoffStrategy::None`] is
+    /// selected, this will be used as the base delay of the backoff calculation.
+    ///
+    /// Note: Not all worker backends will use this. For example, the Sidekiq backend does not use
+    /// this and instead uses a hard-coded delay.
+    #[serde(default)]
+    #[serde_as(as = "Option<serde_with::DurationSeconds>")]
+    #[builder(default, setter(strip_option))]
+    pub delay: Option<Duration>,
+
+    /// The retry delay backoff algorithm to use.
+    ///
+    /// Note: Not all worker backends will use this. For example, the Sidekiq backend does not use
+    /// this and instead uses a hard-coded exponential backoff strategy.
+    #[serde(default)]
+    #[builder(default, setter(strip_option))]
+    pub backoff_strategy: Option<BackoffStrategy>,
+}
+
+#[serde_as]
+#[skip_serializing_none]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub enum BackoffStrategy {
+    #[default]
+    Exponential,
+    Linear,
+    None,
+}
+
+#[serde_as]
+#[skip_serializing_none]
+#[derive(Debug, Default, Clone, Validate, Serialize, Deserialize, TypedBuilder)]
+#[serde(default, rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct PgWorkerConfig {
     /// The action to take when a job in the queue completes successfully.
     #[serde(default)]
@@ -110,14 +153,32 @@ pub struct PgWorkerConfig {
 
 /// Action to take when a job completes processing, either by being processed successfully, or by
 /// running out of retry attempts.
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub enum CompletedAction {
     /// Move the message to the queue's archive table.
+    #[default]
     Archive,
     /// Delete the message.
     Delete,
+}
+
+/// Return None if it should not retry.
+pub(crate) fn retry_delay(
+    default_retry_config: Option<&RetryConfig>,
+    worker_retry_config: Option<&RetryConfig>,
+    attempt_num: i32,
+) -> Option<Duration> {
+    todo!()
+}
+
+/// Action to take if a job fails.
+pub(crate) fn failure_action(
+    default_config: Option<&PgWorkerConfig>,
+    worker_config: Option<&PgWorkerConfig>,
+) -> CompletedAction {
+    todo!()
 }
 
 // Todo: add on_success/on_failure handlers?
