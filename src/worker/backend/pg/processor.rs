@@ -1,7 +1,7 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::worker::job::Job;
-use crate::worker::worker::{can_retry, failure_action, retry_delay};
+use crate::worker::worker::{CompletedAction, failure_action, retry_delay};
 use crate::worker::{EnqueueConfig, Worker, WorkerConfig};
 use axum_core::extract::FromRef;
 use chrono::{DateTime, OutOfRangeError, TimeDelta, Utc};
@@ -11,9 +11,10 @@ use serde::{Deserialize, Serialize};
 use std::cmp::{Ordering, max};
 use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashSet};
 use std::pin::Pin;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 use thiserror::Error;
+use tokio::sync::OnceCell;
 use tokio::task::JoinSet;
 use tokio::time::{sleep, sleep_until};
 use tokio_util::sync::CancellationToken;
@@ -177,6 +178,7 @@ where
                 }
             });
 
+        let pgmq = context.pgmq();
         loop {
             while let Some(mut queue) = queues.peek_mut() {
                 if self.inner.cancellation_token.is_cancelled() {
@@ -197,8 +199,7 @@ where
                 deserialization errors (aside from those due to corrupted date, which should be
                 rare). Then, we can separately handle any deserialization errors ourselves.
                  */
-                let msg = match context
-                    .pgmq()
+                let msg = match pgmq
                     .read::<serde_json::Value>(&queue.name, default_view_timeout)
                     .await
                 {
@@ -260,8 +261,7 @@ where
                 if let Some(duration) = default_max_duration
                     .or_else(|| context.config().service.worker.worker_config.max_duration)
                 {
-                    if let Err(err) = context
-                        .pgmq()
+                    if let Err(err) = pgmq
                         .set_vt::<serde_json::Value>(&queue.name, msg.msg_id, Utc::now() + duration)
                         .await
                     {
@@ -297,17 +297,33 @@ where
                         worker.worker_config.retry_config.as_ref(),
                         msg.read_ct,
                     ) {
-                        todo!()
+                        let result = pgmq
+                            .set_vt::<serde_json::Value>(
+                                &queue.name,
+                                msg.msg_id,
+                                Utc::now() + duration,
+                            )
+                            .await;
+                        if let Err(err) = result {
+                            todo!();
+                        }
                     } else {
-                        let action = failure_action(
+                        let result = match failure_action(
                             default_worker_config.pg.as_ref(),
                             worker.worker_config.pg.as_ref(),
-                        );
-                    }
-                }
+                        ) {
+                            CompletedAction::Archive => pgmq.archive(&queue.name, msg.msg_id).await,
+                            CompletedAction::Delete => pgmq.delete(&queue.name, msg.msg_id).await,
+                        };
 
-                // On success, update the next_fetch to `now`
-                queue.next_fetch = Utc::now();
+                        if let Err(err) = result {
+                            todo!()
+                        }
+                    }
+                } else {
+                    // On success, update the next_fetch to `now`
+                    queue.next_fetch = Utc::now();
+                }
             }
         }
     }

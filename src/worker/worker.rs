@@ -6,6 +6,7 @@ use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
+use std::sync::OnceLock;
 use std::time::Duration;
 use tracing::instrument;
 use typed_builder::TypedBuilder;
@@ -173,12 +174,17 @@ pub(crate) fn retry_delay(
     todo!()
 }
 
+static DEFAULT_COMPLETED_ACTION: OnceLock<CompletedAction> = OnceLock::new();
+
 /// Action to take if a job fails.
-pub(crate) fn failure_action(
-    default_config: Option<&PgWorkerConfig>,
-    worker_config: Option<&PgWorkerConfig>,
-) -> CompletedAction {
-    todo!()
+pub(crate) fn failure_action<'a>(
+    default_config: Option<&'a PgWorkerConfig>,
+    worker_config: Option<&'a PgWorkerConfig>,
+) -> &'a CompletedAction {
+    default_config
+        .and_then(|config| config.failure_action.as_ref())
+        .or(worker_config.and_then(|config| config.failure_action.as_ref()))
+        .unwrap_or(DEFAULT_COMPLETED_ACTION.get_or_init(|| CompletedAction::default()))
 }
 
 // Todo: add on_success/on_failure handlers?
