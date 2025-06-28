@@ -281,7 +281,6 @@ where
                 // Todo: error handling, here and for other errors above
                 //  - handle errors
                 //  - set vt with backoff (exponential/configurable?)
-                //  - archive/delete (configurable) when max retries exceeded
                 let result = worker.handle(&self.inner.state, job.args).await;
 
                 if let Err(err) = result {
