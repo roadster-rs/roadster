@@ -1,5 +1,7 @@
 use crate::config::service::ServiceConfig;
+#[cfg(feature = "worker-pg")]
 use crate::config::service::worker::pg::WorkerPgServiceConfig;
+#[cfg(feature = "worker-sidekiq")]
 use crate::config::service::worker::sidekiq::SidekiqServiceConfig;
 use config::{FileFormat, FileSourceString};
 use serde_derive::{Deserialize, Serialize};
