@@ -144,9 +144,9 @@ expression: serialized
     "worker": {
       "enqueue-config": {},
       "worker-config": {
-        "max-retries": 25,
         "timeout": true,
-        "max-duration": 60
+        "max-duration": 60,
+        "max-retries": 25
       },
       "sidekiq": {
         "num-workers": 16,

@@ -134,9 +134,9 @@ port = 3001
 [service.worker.enqueue-config]
 
 [service.worker.worker-config]
-max-retries = 25
 timeout = true
 max-duration = 60
+max-retries = 25
 
 [service.worker.sidekiq]
 num-workers = 16

@@ -4,21 +4,20 @@ use crate::worker::job::{Job, JobMetadata};
 use crate::worker::worker::{CompletedAction, failure_action, retry_delay};
 use crate::worker::{EnqueueConfig, Worker, WorkerConfig};
 use axum_core::extract::FromRef;
-use chrono::{DateTime, OutOfRangeError, TimeDelta, Utc};
+use chrono::{DateTime, TimeDelta, Utc};
 use itertools::Itertools;
-use pgmq::{PGMQueue, PgmqError};
+use pgmq::PGMQueue;
 use serde::{Deserialize, Serialize};
 use std::cmp::{Ordering, max};
-use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, BinaryHeap};
 use std::pin::Pin;
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 use std::time::Duration;
 use thiserror::Error;
-use tokio::sync::OnceCell;
 use tokio::task::JoinSet;
-use tokio::time::{sleep, sleep_until};
+use tokio::time::sleep;
 use tokio_util::sync::CancellationToken;
-use tracing::{error, info, instrument};
+use tracing::{debug, error, info, instrument};
 
 const DEFAULT_VIEW_TIMEOUT: Duration = Duration::from_secs(60 * 10);
 
@@ -168,15 +167,7 @@ where
         let default_max_duration = default_worker_config.max_duration;
         let default_view_timeout = default_max_duration
             .as_ref()
-            .map(|duration| duration.as_secs())
-            .map(|duration| {
-                // Todo: is there a utility/crate to do this safely?
-                if duration > (i32::MAX as u64) {
-                    i32::MAX
-                } else {
-                    duration as i32
-                }
-            });
+            .and_then(|duration| duration.as_secs().try_into().ok());
 
         let pgmq = context.pgmq();
         loop {
@@ -207,10 +198,17 @@ where
                 {
                     Ok(Some(msg)) => msg,
                     Ok(None) => {
-                        // Todo: make this configurable
-                        // Todo: consolidate the `next_fetch` update logic so we don't need to
-                        //  remember to do it before every `continue`
-                        queue.next_fetch = Utc::now() + Duration::from_secs(10);
+                        let delay = context
+                            .config()
+                            .service
+                            .worker
+                            .pg
+                            .custom
+                            .custom
+                            .queue_fetch_config
+                            .as_ref()
+                            .and_then(|config| config.empty_delay);
+                        queue.next_fetch = Utc::now() + delay.unwrap_or_default();
                         continue;
                     }
                     Err(err) => {
@@ -219,8 +217,17 @@ where
                             queue = queue.name,
                             "An error occurred while reading from pgmq: {err}"
                         );
-                        // Todo: make this configurable
-                        queue.next_fetch = Utc::now() + Duration::from_secs(10);
+                        let delay = context
+                            .config()
+                            .service
+                            .worker
+                            .pg
+                            .custom
+                            .custom
+                            .queue_fetch_config
+                            .as_ref()
+                            .and_then(|config| config.error_delay);
+                        queue.next_fetch = Utc::now() + delay.unwrap_or_default();
                         continue;
                     }
                 };
@@ -228,7 +235,6 @@ where
                 let job: Job = match serde_json::from_value(msg.message) {
                     Ok(job) => job,
                     Err(err) => {
-                        // Todo: set the vt of the job with exponential backoff
                         error!(
                             msg_id = msg.msg_id,
                             read_count = msg.read_ct,
@@ -236,8 +242,19 @@ where
                             queue = queue.name,
                             "An error occurred while deserializing message from pgmq: {err}"
                         );
-                        // Todo: make this configurable
-                        queue.next_fetch = Utc::now() + Duration::from_secs(10);
+                        self.retry(
+                            pgmq,
+                            worker_num,
+                            &queue,
+                            None,
+                            msg.msg_id,
+                            msg.read_ct,
+                            default_worker_config,
+                            None,
+                        )
+                        .await;
+
+                        queue.next_fetch = Utc::now();
                         continue;
                     }
                 };
@@ -246,7 +263,6 @@ where
                 {
                     worker
                 } else {
-                    // Todo: set the vt of the job with exponential backoff
                     error!(
                         msg_id = msg.msg_id,
                         read_count = msg.read_ct,
@@ -255,14 +271,35 @@ where
                         worker_name = job.metadata.worker_name,
                         "Unable to handle job, worker not registered"
                     );
-                    // Todo: make this configurable
-                    queue.next_fetch = Utc::now() + Duration::from_secs(10);
+                    self.retry(
+                        pgmq,
+                        worker_num,
+                        &queue,
+                        Some(&job.metadata),
+                        msg.msg_id,
+                        msg.read_ct,
+                        default_worker_config,
+                        None,
+                    )
+                    .await;
+                    queue.next_fetch = Utc::now();
                     continue;
                 };
 
-                if let Some(duration) = default_max_duration
-                    .or_else(|| context.config().service.worker.worker_config.max_duration)
+                // Update the view timeout to match the max duration of the worker, if it's
+                // different from the default.
+                let max_duration = if let Some((worker_max, default_max)) =
+                    worker.worker_config.max_duration.zip(default_max_duration)
                 {
+                    if worker_max != default_max {
+                        Some(worker_max)
+                    } else {
+                        None
+                    }
+                } else {
+                    worker.worker_config.max_duration
+                };
+                if let Some(duration) = max_duration {
                     if let Err(err) = pgmq
                         .set_vt::<serde_json::Value>(&queue.name, msg.msg_id, Utc::now() + duration)
                         .await
@@ -278,9 +315,6 @@ where
                     }
                 }
 
-                // Todo: error handling, here and for other errors above
-                //  - handle errors
-                //  - set vt with backoff (exponential/configurable?)
                 let result = worker.handle(&self.inner.state, job.args).await;
 
                 if let Err(err) = result {
@@ -295,18 +329,16 @@ where
                     self.retry(
                         pgmq,
                         worker_num,
-                        &mut queue,
-                        &job.metadata,
+                        &queue,
+                        Some(&job.metadata),
                         msg.msg_id,
                         msg.read_ct,
                         default_worker_config,
-                        worker,
+                        Some(worker),
                     )
                     .await;
                 }
 
-                // After handling the job, regardless of success/failure, update the
-                // `next_fetch` for the current queue to `now`.
                 queue.next_fetch = Utc::now();
             }
         }
@@ -317,18 +349,19 @@ where
         &self,
         pgmq: &PGMQueue,
         worker_num: u32,
-        queue: &mut QueueItem,
-        job_metadata: &JobMetadata,
+        queue: &QueueItem,
+        job_metadata: Option<&JobMetadata>,
         msg_id: i64,
         read_count: i32,
         default_worker_config: &WorkerConfig,
-        worker: &WorkerWrapper<S>,
+        worker: Option<&WorkerWrapper<S>>,
     ) {
         if let Some(delay) = retry_delay(
             default_worker_config.retry_config.as_ref(),
-            worker.worker_config.retry_config.as_ref(),
+            worker.and_then(|worker| worker.worker_config.retry_config.as_ref()),
             read_count,
         ) {
+            // If the job can retry, update its view timeout by the calculated delay.
             let result = pgmq
                 .set_vt::<serde_json::Value>(&queue.name, msg_id, Utc::now() + delay)
                 .await;
@@ -338,22 +371,23 @@ where
                     read_count,
                     worker_num,
                     queue = queue.name,
-                    worker_name = job_metadata.worker_name,
-                    "An error occurred while updating view time for a job: {err}"
+                    worker_name = job_metadata.map(|metadata| &metadata.worker_name),
+                    "An error occurred while updating view timeout for a job: {err}"
                 );
             }
         } else {
+            // Otherwise, perform the failure action for the worker.
             let action = failure_action(
                 default_worker_config.pg.as_ref(),
-                worker.worker_config.pg.as_ref(),
+                worker.and_then(|worker| worker.worker_config.pg.as_ref()),
             );
 
-            info!(
+            debug!(
                 msg_id,
                 read_count,
                 worker_num,
                 queue = queue.name,
-                worker_name = job_metadata.worker_name,
+                worker_name = job_metadata.map(|metadata| &metadata.worker_name),
                 ?action,
                 "Performing failure action for a job"
             );
@@ -369,7 +403,7 @@ where
                     read_count,
                     worker_num,
                     queue = queue.name,
-                    worker_name = job_metadata.worker_name,
+                    worker_name = job_metadata.map(|metadata| &metadata.worker_name),
                     ?action,
                     "An error occurred while performing failure action for a job: {err}"
                 );
@@ -481,6 +515,7 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
+    name: String,
     enqueue_config: EnqueueConfig,
     worker_config: WorkerConfig,
     worker_fn: WorkerFn<S>,
@@ -501,6 +536,7 @@ where
         let worker = Arc::new(worker);
 
         Ok(Self {
+            name: W::name(),
             enqueue_config,
             worker_config: worker.worker_config(state),
             worker_fn: Box::new(move |state: &S, args: serde_json::Value| {
@@ -520,10 +556,47 @@ where
         })
     }
 
+    #[instrument(skip_all)]
     async fn handle(&self, state: &S, args: serde_json::Value) -> RoadsterResult<()> {
-        // todo: timeouts, etc
-        (self.worker_fn)(state, args).await?;
-        Ok(())
+        let inner = (self.worker_fn)(state, args);
+
+        let context = AppContext::from_ref(state);
+        let timeout = self
+            .worker_config
+            .timeout
+            .or(context.config().service.worker.worker_config.timeout)
+            .unwrap_or_default();
+
+        let max_duration = if timeout {
+            self.worker_config.max_duration.or(context
+                .config()
+                .service
+                .worker
+                .worker_config
+                .max_duration)
+        } else {
+            None
+        };
+
+        if let Some(max_duration) = max_duration {
+            tokio::time::timeout(max_duration, inner)
+                .await
+                .map_err(|err| {
+                    error!(
+                        worker = %self.name,
+                        max_duration = %max_duration.as_secs(),
+                        %err,
+                        "Worker timed out"
+                    );
+                    crate::error::worker::WorkerError::Timeout(
+                        self.name.clone(),
+                        max_duration,
+                        Box::new(err),
+                    )
+                })?
+        } else {
+            inner.await
+        }
     }
 }
 

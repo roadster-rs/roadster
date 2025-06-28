@@ -4,8 +4,11 @@ use crate::util::types;
 use crate::worker::enqueue::Enqueuer;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
+use num_traits::pow;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
+use std::cmp::min;
 use std::sync::OnceLock;
 use std::time::Duration;
 use tracing::instrument;
@@ -106,8 +109,8 @@ pub struct RetryConfig {
     #[builder(default, setter(strip_option))]
     pub max_retries: Option<usize>,
 
-    /// The delay between retries. If any [`BackoffStrategy`] besides [`BackoffStrategy::None`] is
-    /// selected, this will be used as the base delay of the backoff calculation.
+    /// The delay between retries. If a [`BackoffStrategy`] is provided, this will be used as the
+    /// base delay of the backoff calculation.
     ///
     /// Note: Not all worker backends will use this. For example, the Sidekiq backend does not use
     /// this and instead uses a hard-coded delay.
@@ -115,6 +118,26 @@ pub struct RetryConfig {
     #[serde_as(as = "Option<serde_with::DurationSeconds>")]
     #[builder(default, setter(strip_option))]
     pub delay: Option<Duration>,
+
+    /// An offset to add to the base `delay` to add jitter to the delay to avoid a "thundering herd"
+    /// problem. A random value between 0 and the provided [`Duration`] will be added to the
+    /// `base` delay before performing any provided [`BackoffStrategy`].
+    ///
+    /// Note: Not all worker backends will use this. For example, the Sidekiq backend does not use
+    /// this and instead uses a hard-coded delay.
+    #[serde(default)]
+    #[serde_as(as = "Option<serde_with::DurationSeconds>")]
+    #[builder(default, setter(strip_option))]
+    pub delay_offset: Option<Duration>,
+
+    /// The maximum duration to delay the retry.
+    ///
+    /// Note: Not all worker backends will use this. For example, the Sidekiq backend does not use
+    /// this and instead uses a hard-coded delay.
+    #[serde(default)]
+    #[serde_as(as = "Option<serde_with::DurationSeconds>")]
+    #[builder(default, setter(strip_option))]
+    pub max_delay: Option<Duration>,
 
     /// The retry delay backoff algorithm to use.
     ///
@@ -165,13 +188,73 @@ pub enum CompletedAction {
     Delete,
 }
 
+/// Calculate the retry delay based on the provided [`RetryConfig`]s and the number of attempts.
+///
 /// Return None if it should not retry.
 pub(crate) fn retry_delay(
     default_retry_config: Option<&RetryConfig>,
     worker_retry_config: Option<&RetryConfig>,
     attempt_num: i32,
 ) -> Option<Duration> {
-    todo!()
+    let attempt_num = usize::try_from(attempt_num).unwrap_or_else(|_| usize::MAX);
+
+    let max_retries = worker_retry_config
+        .and_then(|config| config.max_retries)
+        .or(default_retry_config.and_then(|config| config.max_retries))
+        .unwrap_or_default();
+
+    if attempt_num > max_retries {
+        return None;
+    }
+
+    let delay = worker_retry_config
+        .and_then(|config| config.delay)
+        .or(default_retry_config.and_then(|config| config.delay));
+    let delay = match delay {
+        Some(delay) => delay,
+        None => {
+            return None;
+        }
+    };
+
+    let delay_offset = worker_retry_config
+        .and_then(|config| config.delay_offset)
+        .or(default_retry_config.and_then(|config| config.delay_offset));
+    let delay = match delay_offset {
+        Some(delay_offset) => {
+            delay + Duration::from_secs(rand::rng().random_range(0..delay_offset.as_secs()))
+        }
+        None => delay,
+    };
+
+    let backoff_strategy = worker_retry_config
+        .and_then(|config| config.backoff_strategy.as_ref())
+        .or(default_retry_config.and_then(|config| config.backoff_strategy.as_ref()));
+    let backoff_strategy = match backoff_strategy {
+        Some(backoff_strategy) => backoff_strategy,
+        None => {
+            return Some(delay);
+        }
+    };
+
+    let delay = match backoff_strategy {
+        BackoffStrategy::Exponential => Duration::from_secs(pow(delay.as_secs(), attempt_num)),
+        BackoffStrategy::Linear => match u32::try_from(attempt_num) {
+            Ok(attempt_num) => delay * attempt_num,
+            Err(_) => return None,
+        },
+        BackoffStrategy::None => delay,
+    };
+
+    let max_delay = worker_retry_config
+        .and_then(|config| config.max_delay.as_ref())
+        .or(default_retry_config.and_then(|config| config.max_delay.as_ref()));
+    let delay = match max_delay {
+        Some(max_delay) => min(*max_delay, delay),
+        None => delay,
+    };
+
+    Some(delay)
 }
 
 static DEFAULT_COMPLETED_ACTION: OnceLock<CompletedAction> = OnceLock::new();
