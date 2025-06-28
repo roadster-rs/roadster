@@ -253,6 +253,17 @@ pub(crate) fn retry_delay(
 
 static DEFAULT_COMPLETED_ACTION: OnceLock<CompletedAction> = OnceLock::new();
 
+/// Action to take if a job succeeds.
+pub(crate) fn success_action<'a>(
+    default_config: Option<&'a PgWorkerConfig>,
+    worker_config: Option<&'a PgWorkerConfig>,
+) -> &'a CompletedAction {
+    default_config
+        .and_then(|config| config.success_action.as_ref())
+        .or(worker_config.and_then(|config| config.success_action.as_ref()))
+        .unwrap_or(DEFAULT_COMPLETED_ACTION.get_or_init(|| CompletedAction::default()))
+}
+
 /// Action to take if a job fails.
 pub(crate) fn failure_action<'a>(
     default_config: Option<&'a PgWorkerConfig>,

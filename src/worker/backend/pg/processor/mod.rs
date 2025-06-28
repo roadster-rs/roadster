@@ -1,6 +1,6 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
-use crate::worker::config::{CompletedAction, failure_action, retry_delay};
+use crate::worker::config::{CompletedAction, failure_action, retry_delay, success_action};
 use crate::worker::job::{Job, JobMetadata};
 use crate::worker::{EnqueueConfig, Worker, WorkerConfig};
 use axum_core::extract::FromRef;
@@ -291,20 +291,17 @@ where
                 } else {
                     worker.worker_config.max_duration
                 };
-                if let Some(duration) = max_duration {
-                    if let Err(err) = pgmq
-                        .set_vt::<serde_json::Value>(&queue.name, msg.msg_id, Utc::now() + duration)
-                        .await
-                    {
-                        error!(
-                            msg_id = msg.msg_id,
-                            read_count = msg.read_ct,
-                            worker_num,
-                            queue = queue.name,
-                            worker_name = job.metadata.worker_name,
-                            "An error occurred while updating job's view timeout: {err}"
-                        );
-                    }
+                if let Some(delay) = max_duration {
+                    self.update_job_view_timeout(
+                        pgmq,
+                        worker_num,
+                        &queue,
+                        Some(&job.metadata),
+                        msg.msg_id,
+                        msg.read_ct,
+                        delay,
+                    )
+                    .await;
                 }
 
                 let result = worker.handle(&self.inner.state, job.args).await;
@@ -327,6 +324,21 @@ where
                         msg.read_ct,
                         default_worker_config,
                         Some(worker),
+                    )
+                    .await;
+                } else {
+                    let action = success_action(
+                        default_worker_config.pg.as_ref(),
+                        worker.worker_config.pg.as_ref(),
+                    );
+                    self.job_completed(
+                        pgmq,
+                        worker_num,
+                        &queue,
+                        Some(&job.metadata),
+                        msg.msg_id,
+                        msg.read_ct,
+                        action,
                     )
                     .await;
                 }
@@ -354,52 +366,97 @@ where
             read_count,
         ) {
             // If the job can retry, update its view timeout by the calculated delay.
-            let result = pgmq
-                .set_vt::<serde_json::Value>(&queue.name, msg_id, Utc::now() + delay)
-                .await;
-            if let Err(err) = result {
-                error!(
-                    msg_id,
-                    read_count,
-                    worker_num,
-                    queue = queue.name,
-                    worker_name = job_metadata.map(|metadata| &metadata.worker_name),
-                    "An error occurred while updating view timeout for a job: {err}"
-                );
-            }
+            self.update_job_view_timeout(
+                pgmq,
+                worker_num,
+                queue,
+                job_metadata,
+                msg_id,
+                read_count,
+                delay,
+            )
+            .await;
         } else {
             // Otherwise, perform the failure action for the worker.
             let action = failure_action(
                 default_worker_config.pg.as_ref(),
                 worker.and_then(|worker| worker.worker_config.pg.as_ref()),
             );
+            self.job_completed(
+                pgmq,
+                worker_num,
+                queue,
+                job_metadata,
+                msg_id,
+                read_count,
+                action,
+            )
+            .await;
+        }
+    }
 
-            debug!(
+    #[instrument(skip_all)]
+    async fn update_job_view_timeout(
+        &self,
+        pgmq: &PGMQueue,
+        worker_num: u32,
+        queue: &QueueItem,
+        job_metadata: Option<&JobMetadata>,
+        msg_id: i64,
+        read_count: i32,
+        delay: Duration,
+    ) {
+        if let Err(err) = pgmq
+            .set_vt::<serde_json::Value>(&queue.name, msg_id, Utc::now() + delay)
+            .await
+        {
+            error!(
+                msg_id,
+                read_count,
+                worker_num,
+                queue = queue.name,
+                worker_name = job_metadata.map(|metadata| &metadata.worker_name),
+                "An error occurred while updating job's view timeout: {err}"
+            );
+        }
+    }
+
+    #[instrument(skip_all)]
+    async fn job_completed(
+        &self,
+        pgmq: &PGMQueue,
+        worker_num: u32,
+        queue: &QueueItem,
+        job_metadata: Option<&JobMetadata>,
+        msg_id: i64,
+        read_count: i32,
+        action: &CompletedAction,
+    ) {
+        debug!(
+            msg_id,
+            read_count,
+            worker_num,
+            queue = queue.name,
+            worker_name = job_metadata.map(|metadata| &metadata.worker_name),
+            ?action,
+            "Performing completed action for a job"
+        );
+
+        let result = match action {
+            CompletedAction::Archive => pgmq.archive(&queue.name, msg_id).await,
+            CompletedAction::Delete => pgmq.delete(&queue.name, msg_id).await,
+        };
+
+        if let Err(err) = result {
+            error!(
                 msg_id,
                 read_count,
                 worker_num,
                 queue = queue.name,
                 worker_name = job_metadata.map(|metadata| &metadata.worker_name),
                 ?action,
-                "Performing failure action for a job"
+                "An error occurred while performing completed action for a job: {err}"
             );
-
-            let result = match action {
-                CompletedAction::Archive => pgmq.archive(&queue.name, msg_id).await,
-                CompletedAction::Delete => pgmq.delete(&queue.name, msg_id).await,
-            };
-
-            if let Err(err) = result {
-                error!(
-                    msg_id,
-                    read_count,
-                    worker_num,
-                    queue = queue.name,
-                    worker_name = job_metadata.map(|metadata| &metadata.worker_name),
-                    ?action,
-                    "An error occurred while performing failure action for a job: {err}"
-                );
-            }
         }
     }
 }
