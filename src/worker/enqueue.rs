@@ -1,13 +1,12 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::error::worker::EnqueueError;
+use crate::worker::Worker;
 use crate::worker::job::{Job, JobMetadata};
-use crate::worker::{EnqueueConfig, Worker};
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
 use std::time::Duration;
 use tracing::error;
 

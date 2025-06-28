@@ -1,7 +1,7 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
+use crate::worker::config::{CompletedAction, failure_action, retry_delay};
 use crate::worker::job::{Job, JobMetadata};
-use crate::worker::worker::{CompletedAction, failure_action, retry_delay};
 use crate::worker::{EnqueueConfig, Worker, WorkerConfig};
 use axum_core::extract::FromRef;
 use chrono::{DateTime, TimeDelta, Utc};

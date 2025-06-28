@@ -24,12 +24,12 @@ pub struct WorkerServiceConfig {
     /// The default enqueue config if not overridden by a worker.
     #[validate(nested)]
     #[serde(default)]
-    pub enqueue_config: crate::worker::EnqueueConfig,
+    pub enqueue_config: crate::worker::config::EnqueueConfig,
 
     /// The default worker config if not overridden by a worker.
     #[validate(nested)]
     #[serde(default)]
-    pub worker_config: crate::worker::WorkerConfig,
+    pub worker_config: crate::worker::config::WorkerConfig,
 
     /// Worker configurations specific to sidekiq-backed queues.
     #[cfg(feature = "worker-sidekiq")]

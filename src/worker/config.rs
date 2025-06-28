@@ -1,23 +1,17 @@
-use crate::app::context::AppContext;
 use crate::config::CustomConfig;
-use crate::util::types;
-use crate::worker::enqueue::Enqueuer;
-use async_trait::async_trait;
-use axum_core::extract::FromRef;
 use num_traits::pow;
 use rand::Rng;
-use serde::{Deserialize, Serialize};
+use serde_derive::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
 use std::cmp::min;
 use std::sync::OnceLock;
 use std::time::Duration;
-use tracing::instrument;
 use typed_builder::TypedBuilder;
 use validator::Validate;
 
 /// Worker configuration options to use when enqueuing a job. Default values for these options can
 /// be set via the app's configuration files. The options can also be overridden on a per-worker
-/// basis by implementing the [`Worker::enqueue_config`] method.
+/// basis by implementing the [`crate::worker::Worker::enqueue_config`] method.
 #[serde_as]
 #[skip_serializing_none]
 #[derive(Debug, Default, Clone, Validate, Serialize, Deserialize, TypedBuilder)]
@@ -44,7 +38,7 @@ pub struct EnqueueConfig {
 
 /// Worker configuration options to use when handling a job. Default values for these options can
 /// be set via the app's configuration files. The options can also be overridden on a per-worker
-/// basis by implementing the [`Worker::worker_config`] method.
+/// basis by implementing the [`crate::worker::Worker::worker_config`] method.
 #[serde_as]
 #[skip_serializing_none]
 #[derive(Debug, Default, Clone, Validate, Serialize, Deserialize, TypedBuilder)]
@@ -268,216 +262,4 @@ pub(crate) fn failure_action<'a>(
         .and_then(|config| config.failure_action.as_ref())
         .or(worker_config.and_then(|config| config.failure_action.as_ref()))
         .unwrap_or(DEFAULT_COMPLETED_ACTION.get_or_init(|| CompletedAction::default()))
-}
-
-// Todo: add on_success/on_failure handlers?
-#[async_trait]
-pub trait Worker<S, Args>: Send + Sync
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-    Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-{
-    type Error: std::error::Error + Send + Sync;
-    type Enqueuer: Enqueuer + Send + Sync;
-
-    /// The name of the worker. This will be encoded in the job data when it's enqueued the backing
-    /// database (Redis/Postgres), and used to identify which type should handle a job when it's
-    /// fetched from the queue. Therefore, it should be unique across the app, and care should be
-    /// taken when refactoring.
-    ///
-    /// By default, [`Self::name`] returns the name of the type that implements the [`Worker`]
-    /// trait. See [`types::simple_type_name`].
-    ///
-    /// This is not included in the [`EnqueueConfig`] because [`EnqueueConfig`] is included in
-    /// the [`crate::config::AppConfig`] to allow defining defaults for the config values, but
-    /// the name needs to be specified separately for each [`Worker`].
-    fn name() -> String
-    where
-        Self: Sized,
-    {
-        types::simple_type_name::<Self>()
-    }
-
-    /// Get worker-specific configuration options to use when enqueuing a job. Any value not
-    /// provided in the returned [`WorkerConfig`] will fall back to the value from the
-    /// [`crate::config::AppConfig`].
-    ///
-    /// The [`Worker::enqueue_config`] method will be called when enqueuing a job for the worker.
-    fn enqueue_config(_state: &S) -> EnqueueConfig {
-        EnqueueConfig::default()
-    }
-
-    /// Get worker-specific configuration options to use when handling a job. Any value not provided
-    /// in the returned [`WorkerConfig`] will fall back to the value from the
-    /// [`crate::config::AppConfig`].
-    ///
-    /// The [`Worker::worker_config`] method will be called once for each worker when it is
-    /// registered, and the config will be stored by the [`Processor`] to be used when the worker
-    /// handles a job.
-    fn worker_config(&self, _state: &S) -> WorkerConfig {
-        WorkerConfig::default()
-    }
-
-    #[instrument(skip_all)]
-    async fn enqueue(state: &S, args: &Args) -> Result<(), <Self::Enqueuer as Enqueuer>::Error>
-    where
-        Self: 'static + Sized,
-    {
-        Self::Enqueuer::enqueue::<Self, S, Args, Self::Error>(state, args).await?;
-        Ok(())
-    }
-
-    #[instrument(skip_all)]
-    async fn enqueue_delayed(
-        state: &S,
-        args: &Args,
-        delay: Duration,
-    ) -> Result<(), <Self::Enqueuer as Enqueuer>::Error>
-    where
-        Self: 'static + Sized,
-    {
-        Self::Enqueuer::enqueue_delayed::<Self, S, Args, Self::Error>(state, args, delay).await?;
-        Ok(())
-    }
-
-    #[instrument(skip_all)]
-    async fn enqueue_batch(
-        state: &S,
-        args: &[Args],
-    ) -> Result<(), <Self::Enqueuer as Enqueuer>::Error>
-    where
-        Self: 'static + Sized,
-    {
-        Self::Enqueuer::enqueue_batch::<Self, S, Args, Self::Error>(state, args).await?;
-        Ok(())
-    }
-
-    #[instrument(skip_all)]
-    async fn enqueue_batch_delayed(
-        state: &S,
-        args: &[Args],
-        delay: Duration,
-    ) -> Result<(), <Self::Enqueuer as Enqueuer>::Error>
-    where
-        Self: 'static + Sized,
-    {
-        Self::Enqueuer::enqueue_batch_delayed::<Self, S, Args, Self::Error>(state, args, delay)
-            .await?;
-        Ok(())
-    }
-
-    async fn handle(&self, state: &S, args: Args) -> Result<(), Self::Error>;
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::app::context::AppContext;
-    use crate::config::AppConfig;
-    use crate::worker::{EnqueueConfig, Enqueuer, Worker};
-    use async_trait::async_trait;
-    use axum_core::extract::FromRef;
-    use insta::assert_debug_snapshot;
-    use rstest::{fixture, rstest};
-    use serde::{Deserialize, Serialize};
-    use std::time::Duration;
-
-    struct FooBackend;
-
-    #[async_trait]
-    impl Enqueuer for FooBackend {
-        type Error = crate::error::Error;
-
-        async fn enqueue<W, S, Args, E>(state: &S, args: &Args) -> Result<(), Self::Error>
-        where
-            W: 'static + Worker<S, Args, Error = E>,
-            S: Clone + Send + Sync + 'static,
-            AppContext: FromRef<S>,
-            Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-        {
-            todo!()
-        }
-
-        async fn enqueue_delayed<W, S, Args, E>(
-            state: &S,
-            args: &Args,
-            delay: Duration,
-        ) -> Result<(), Self::Error>
-        where
-            W: 'static + Worker<S, Args, Error = E>,
-            S: Clone + Send + Sync + 'static,
-            AppContext: FromRef<S>,
-            Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-        {
-            todo!()
-        }
-
-        async fn enqueue_batch<W, S, Args, E>(state: &S, args: &[Args]) -> Result<(), Self::Error>
-        where
-            W: 'static + Worker<S, Args, Error = E>,
-            S: Clone + Send + Sync + 'static,
-            AppContext: FromRef<S>,
-            Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-        {
-            todo!()
-        }
-
-        async fn enqueue_batch_delayed<W, S, Args, E>(
-            state: &S,
-            args: &[Args],
-            delay: Duration,
-        ) -> Result<(), Self::Error>
-        where
-            W: 'static + Worker<S, Args, Error = E>,
-            S: Clone + Send + Sync + 'static,
-            AppContext: FromRef<S>,
-            Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-        {
-            todo!()
-        }
-    }
-
-    #[derive(Serialize, Deserialize)]
-    struct FooWorkerArgs {
-        foo: String,
-    }
-
-    struct FooWorker;
-
-    #[async_trait::async_trait]
-    impl super::Worker<AppContext, FooWorkerArgs> for FooWorker {
-        type Error = crate::error::Error;
-        type Enqueuer = FooBackend;
-
-        #[cfg_attr(coverage_nightly, coverage(off))]
-        async fn handle(&self, state: &AppContext, args: FooWorkerArgs) -> Result<(), Self::Error> {
-            todo!()
-        }
-    }
-
-    #[fixture]
-    #[once]
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    fn context() -> AppContext {
-        let config = AppConfig::test(None).unwrap();
-        AppContext::test(Some(config), None, None).unwrap()
-    }
-
-    #[rstest]
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    fn enqueue_config(context: &AppContext) {
-        let enqueue_config = FooWorker::enqueue_config(context);
-        assert_debug_snapshot!(enqueue_config);
-    }
-
-    #[rstest]
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    #[cfg(feature = "worker-pg")]
-    #[tokio::test]
-    async fn pg_processor_register(context: &AppContext) {
-        let mut processor = crate::worker::backend::pg::processor::Processor::builder(context);
-        // Todo: add `unwrap` -- right now this is just to ensure things compile
-        processor.register(FooWorker).await;
-        let processor = processor.build();
-    }
 }

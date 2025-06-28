@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
 use typed_builder::TypedBuilder;
 
 // Todo: Not sure if this should be public yet.
