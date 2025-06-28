@@ -4,6 +4,7 @@ use crate::worker::config::{CompletedAction, failure_action, retry_delay};
 use crate::worker::job::{Job, JobMetadata};
 use crate::worker::{EnqueueConfig, Worker, WorkerConfig};
 use axum_core::extract::FromRef;
+use builder::ProcessorBuilder;
 use chrono::{DateTime, TimeDelta, Utc};
 use itertools::Itertools;
 use pgmq::PGMQueue;
@@ -18,6 +19,8 @@ use tokio::task::JoinSet;
 use tokio::time::sleep;
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, error, info, instrument};
+
+pub mod builder;
 
 #[derive(Debug, Error)]
 #[non_exhaustive]
@@ -56,15 +59,6 @@ where
     cancellation_token: CancellationToken,
 }
 
-#[non_exhaustive]
-pub struct ProcessorBuilder<S>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-{
-    pub inner: ProcessorInner<S>,
-}
-
 /*
 How to implement periodic jobs? Maybe something like this:
 
@@ -80,7 +74,7 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    fn new(inner: ProcessorInner<S>) -> Self {
+    pub(crate) fn new(inner: ProcessorInner<S>) -> Self {
         Self {
             inner: Arc::new(inner),
         }
@@ -434,70 +428,6 @@ impl Ord for QueueItem {
         // This is intentionally reversed so that `QueueItem` forms a min heap when used in
         // a binary heap.
         other.next_fetch.cmp(&self.next_fetch)
-    }
-}
-
-impl<S> ProcessorBuilder<S>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-{
-    fn new(state: &S) -> Self {
-        Self {
-            inner: ProcessorInner {
-                state: state.clone(),
-                queues: Default::default(),
-                workers: Default::default(),
-                cancellation_token: Default::default(),
-            },
-        }
-    }
-
-    pub fn build(self) -> Processor<S> {
-        Processor::new(self.inner)
-    }
-
-    pub async fn register<W, Args, E>(&mut self, worker: W) -> RoadsterResult<&mut Self>
-    where
-        W: 'static + Worker<S, Args, Error = E>,
-        Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-        // Todo: without this `'static`, we're getting an internal compiler error
-        E: 'static + std::error::Error + Send + Sync,
-    {
-        let name = W::name();
-        info!(name, "Registering PG worker");
-
-        let context = AppContext::from_ref(&self.inner.state);
-        let enqueue_config = &context.config().service.worker.enqueue_config;
-        let worker_enqueue_config = W::enqueue_config(&self.inner.state);
-
-        let queue = worker_enqueue_config
-            .queue
-            .as_ref()
-            .or(enqueue_config.queue.as_ref());
-        let queue = if let Some(queue) = queue {
-            queue
-        } else {
-            error!(
-                worker_name = W::name(),
-                "Unable to register worker, no queue configured"
-            );
-            return Err(PgProcessorError::NoQueue(W::name()).into());
-        };
-        self.inner.queues.insert(queue.to_owned());
-
-        if self
-            .inner
-            .workers
-            .insert(
-                name.clone(),
-                WorkerWrapper::new(&self.inner.state, worker, worker_enqueue_config)?,
-            )
-            .is_some()
-        {
-            return Err(PgProcessorError::AlreadyRegistered(name).into());
-        }
-        Ok(self)
     }
 }
 
