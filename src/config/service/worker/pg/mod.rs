@@ -1,6 +1,7 @@
 use crate::config::database::DbPoolConfig;
 use serde_derive::{Deserialize, Serialize};
-use serde_with::skip_serializing_none;
+use serde_with::{serde_as, skip_serializing_none};
+use std::time::Duration;
 use url::Url;
 use validator::Validate;
 
@@ -11,6 +12,9 @@ use validator::Validate;
 pub struct WorkerPgServiceConfig {
     #[serde(default)]
     pub db_config: Option<DbConfig>,
+
+    #[serde(default)]
+    pub queue_fetch_config: Option<QueueFetchConfig>,
 }
 
 #[skip_serializing_none]
@@ -48,6 +52,24 @@ impl From<&DbPoolConfig> for sqlx::pool::PoolOptions<sqlx::Postgres> {
             .max_connections(value.max_connections)
             .test_before_acquire(value.test_on_checkout)
     }
+}
+
+#[serde_as]
+#[skip_serializing_none]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct QueueFetchConfig {
+    /// How long to wait before fetching from a queue again when the previous fetch
+    /// experienced an error (e.g., db timeout).
+    #[serde(default)]
+    #[serde_as(as = "Option<serde_with::DurationSeconds>")]
+    pub error_delay: Option<Duration>,
+
+    /// How long to wait before fetching from a queue that was empty on a previous fetch.
+    #[serde(default)]
+    #[serde_as(as = "Option<serde_with::DurationSeconds>")]
+    pub empty_delay: Option<Duration>,
 }
 
 #[cfg(test)]
