@@ -80,7 +80,9 @@ where
                     .service
                     .worker
                     .worker_config
-                    .max_retries
+                    .retry_config
+                    .as_ref()
+                    .and_then(|config| config.max_retries)
                     .unwrap_or_else(|| W::max_retries(&self.inner))
             })
     }
