@@ -1,12 +1,12 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
-use crate::worker::job::Job;
+use crate::worker::job::{Job, JobMetadata};
 use crate::worker::worker::{CompletedAction, failure_action, retry_delay};
 use crate::worker::{EnqueueConfig, Worker, WorkerConfig};
 use axum_core::extract::FromRef;
 use chrono::{DateTime, OutOfRangeError, TimeDelta, Utc};
 use itertools::Itertools;
-use pgmq::PgmqError;
+use pgmq::{PGMQueue, PgmqError};
 use serde::{Deserialize, Serialize};
 use std::cmp::{Ordering, max};
 use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashSet};
@@ -18,7 +18,7 @@ use tokio::sync::OnceCell;
 use tokio::task::JoinSet;
 use tokio::time::{sleep, sleep_until};
 use tokio_util::sync::CancellationToken;
-use tracing::{error, info};
+use tracing::{error, info, instrument};
 
 const DEFAULT_VIEW_TIMEOUT: Duration = Duration::from_secs(60 * 10);
 
@@ -186,9 +186,11 @@ where
                     return;
                 }
 
-                let diff = max(TimeDelta::zero(), queue.next_fetch - Utc::now());
-                let duration = diff.to_std().unwrap_or_else(|_| Duration::from_secs(0));
-                sleep(duration).await;
+                {
+                    let diff = max(TimeDelta::zero(), queue.next_fetch - Utc::now());
+                    let duration = diff.to_std().unwrap_or_else(|_| Duration::from_secs(0));
+                    sleep(duration).await;
+                }
 
                 /*
                 Deserialize to `serde_json::Value` first. We do this because pgmq does not return
@@ -291,39 +293,87 @@ where
                         worker_name = job.metadata.worker_name,
                         "An error occurred while handling a job: {err}"
                     );
-
-                    if let Some(delay) = retry_delay(
-                        default_worker_config.retry_config.as_ref(),
-                        worker.worker_config.retry_config.as_ref(),
+                    self.retry(
+                        pgmq,
+                        worker_num,
+                        &mut queue,
+                        &job.metadata,
+                        msg.msg_id,
                         msg.read_ct,
-                    ) {
-                        let result = pgmq
-                            .set_vt::<serde_json::Value>(
-                                &queue.name,
-                                msg.msg_id,
-                                Utc::now() + duration,
-                            )
-                            .await;
-                        if let Err(err) = result {
-                            todo!();
-                        }
-                    } else {
-                        let result = match failure_action(
-                            default_worker_config.pg.as_ref(),
-                            worker.worker_config.pg.as_ref(),
-                        ) {
-                            CompletedAction::Archive => pgmq.archive(&queue.name, msg.msg_id).await,
-                            CompletedAction::Delete => pgmq.delete(&queue.name, msg.msg_id).await,
-                        };
-
-                        if let Err(err) = result {
-                            todo!()
-                        }
-                    }
-                } else {
-                    // On success, update the next_fetch to `now`
-                    queue.next_fetch = Utc::now();
+                        default_worker_config,
+                        worker,
+                    )
+                    .await;
                 }
+
+                // After handling the job, regardless of success/failure, update the
+                // `next_fetch` for the current queue to `now`.
+                queue.next_fetch = Utc::now();
+            }
+        }
+    }
+
+    #[instrument(skip_all)]
+    async fn retry(
+        &self,
+        pgmq: &PGMQueue,
+        worker_num: u32,
+        queue: &mut QueueItem,
+        job_metadata: &JobMetadata,
+        msg_id: i64,
+        read_count: i32,
+        default_worker_config: &WorkerConfig,
+        worker: &WorkerWrapper<S>,
+    ) {
+        if let Some(delay) = retry_delay(
+            default_worker_config.retry_config.as_ref(),
+            worker.worker_config.retry_config.as_ref(),
+            read_count,
+        ) {
+            let result = pgmq
+                .set_vt::<serde_json::Value>(&queue.name, msg_id, Utc::now() + delay)
+                .await;
+            if let Err(err) = result {
+                error!(
+                    msg_id,
+                    read_count,
+                    worker_num,
+                    queue = queue.name,
+                    worker_name = job_metadata.worker_name,
+                    "An error occurred while updating view time for a job: {err}"
+                );
+            }
+        } else {
+            let action = failure_action(
+                default_worker_config.pg.as_ref(),
+                worker.worker_config.pg.as_ref(),
+            );
+
+            info!(
+                msg_id,
+                read_count,
+                worker_num,
+                queue = queue.name,
+                worker_name = job_metadata.worker_name,
+                ?action,
+                "Performing failure action for a job"
+            );
+
+            let result = match action {
+                CompletedAction::Archive => pgmq.archive(&queue.name, msg_id).await,
+                CompletedAction::Delete => pgmq.delete(&queue.name, msg_id).await,
+            };
+
+            if let Err(err) = result {
+                error!(
+                    msg_id,
+                    read_count,
+                    worker_num,
+                    queue = queue.name,
+                    worker_name = job_metadata.worker_name,
+                    ?action,
+                    "An error occurred while performing failure action for a job: {err}"
+                );
             }
         }
     }
@@ -352,7 +402,6 @@ impl Ord for QueueItem {
     fn cmp(&self, other: &Self) -> Ordering {
         // This is intentionally reversed so that `QueueItem` forms a min heap when used in
         // a binary heap.
-        // todo: confirm that this create a min heaps
         other.next_fetch.cmp(&self.next_fetch)
     }
 }
