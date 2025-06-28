@@ -49,7 +49,7 @@ impl AppContext {
         #[allow(unused_mut)]
         mut config: AppConfig,
         metadata: AppMetadata,
-        extension_registry: ExtensionRegistry,
+        #[cfg_attr(test, allow(unused_variables))] extension_registry: ExtensionRegistry,
     ) -> RoadsterResult<Self>
     where
         S: Clone + Send + Sync + 'static,
@@ -375,6 +375,7 @@ impl AppContext {
     // Todo: This is a bit of a hack to get automock working while not requiring `'static` lifetime
     //  for the actual method.
     #[cfg(test)]
+    #[allow(dead_code)]
     pub(crate) fn get_extension<T>(&'static self) -> RoadsterResult<&'static T>
     where
         T: 'static + Send + Sync,

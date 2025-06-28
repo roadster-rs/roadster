@@ -19,8 +19,6 @@ use tokio::time::sleep;
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, error, info, instrument};
 
-const DEFAULT_VIEW_TIMEOUT: Duration = Duration::from_secs(60 * 10);
-
 #[derive(Debug, Error)]
 #[non_exhaustive]
 pub enum PgProcessorError {
@@ -473,9 +471,11 @@ where
         let enqueue_config = &context.config().service.worker.enqueue_config;
         let worker_enqueue_config = W::enqueue_config(&self.inner.state);
 
-        let queue = if let Some(queue) = worker_enqueue_config.queue.as_ref() {
-            queue
-        } else if let Some(queue) = enqueue_config.queue.as_ref() {
+        let queue = worker_enqueue_config
+            .queue
+            .as_ref()
+            .or(enqueue_config.queue.as_ref());
+        let queue = if let Some(queue) = queue {
             queue
         } else {
             error!(
@@ -516,6 +516,7 @@ where
     AppContext: FromRef<S>,
 {
     name: String,
+    #[allow(dead_code)]
     enqueue_config: EnqueueConfig,
     worker_config: WorkerConfig,
     worker_fn: WorkerFn<S>,
@@ -583,8 +584,8 @@ where
                 .await
                 .map_err(|err| {
                     error!(
-                        worker = %self.name,
-                        max_duration = %max_duration.as_secs(),
+                        worker = self.name,
+                        max_duration = max_duration.as_secs(),
                         %err,
                         "Worker timed out"
                     );
