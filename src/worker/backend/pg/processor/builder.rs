@@ -28,7 +28,6 @@ where
                 state: state.clone(),
                 queues: Default::default(),
                 workers: Default::default(),
-                cancellation_token: Default::default(),
             },
         }
     }

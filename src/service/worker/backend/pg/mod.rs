@@ -80,8 +80,7 @@ where
 
     #[instrument(skip_all)]
     async fn before_run(&self, state: &S) -> RoadsterResult<()> {
-        self.processor.initialize_queues().await?;
-        // remove_stale_periodic_jobs(&mut conn, &context, &self.registered_periodic_workers).await
+        self.processor.before_run().await?;
         Ok(())
     }
 
@@ -90,39 +89,7 @@ where
         _state: &S,
         cancel_token: CancellationToken,
     ) -> RoadsterResult<()> {
-        let processor = self.processor;
-        let processor_cancel_token = processor.cancellation_token();
-
-        let mut join_set = JoinSet::new();
-
-        {
-            let token = cancel_token.clone();
-            join_set.spawn(Box::pin(async move {
-                token.clone().cancelled().await;
-            }));
-        }
-
-        {
-            let token = processor_cancel_token.clone();
-            join_set.spawn(Box::pin(async move {
-                token.clone().cancelled().await;
-            }));
-        }
-
-        join_set.spawn(processor.run());
-
-        while let Some(result) = join_set.join_next().await {
-            // Once any of the tasks finish, cancel all the cancellation tokens to ensure
-            // the processor and the app shut down gracefully.
-            cancel_token.cancel();
-            processor_cancel_token.cancel();
-            if let Err(join_err) = result {
-                error!(
-                    "An error occurred when trying to join on one of the app's tasks. Error: {join_err}"
-                );
-            }
-        }
-
+        self.processor.run(cancel_token).await;
         Ok(())
     }
 }

@@ -56,7 +56,7 @@ where
     state: S,
     queues: BTreeSet<String>,
     workers: BTreeMap<String, WorkerWrapper<S>>,
-    cancellation_token: CancellationToken,
+    // cancellation_token: CancellationToken,
 }
 
 /*
@@ -84,8 +84,14 @@ where
         ProcessorBuilder::new(state)
     }
 
-    pub fn cancellation_token(&self) -> CancellationToken {
-        self.inner.cancellation_token.clone()
+    // pub fn cancellation_token(&self) -> CancellationToken {
+    //     self.inner.cancellation_token.clone()
+    // }
+
+    pub async fn before_run(&self) -> RoadsterResult<()> {
+        self.initialize_queues().await?;
+        // remove_stale_periodic_jobs(&mut conn, &context, &self.registered_periodic_workers).await
+        Ok(())
     }
 
     /// Ensures all of the workers' queues' tables exist in the Postgres database.
@@ -97,7 +103,7 @@ where
         Ok(())
     }
 
-    pub async fn run(self) {
+    pub async fn run(self, cancellation_token: CancellationToken) {
         let mut join_set = JoinSet::new();
 
         let context = AppContext::from_ref(&self.inner.state);
@@ -115,26 +121,28 @@ where
 
         if !shared_queues.is_empty() {
             for worker_num in 0..worker_config.common.num_workers {
-                join_set.spawn(
-                    self.clone()
-                        .process_queues(worker_num, shared_queues.clone()),
-                );
+                join_set.spawn(self.clone().process_queues(
+                    cancellation_token.clone(),
+                    worker_num,
+                    shared_queues.clone(),
+                ));
             }
         }
 
         for (queue, config) in dedicated_queues {
             for worker_num in 0..config.num_workers.unwrap_or_default() {
-                join_set.spawn(
-                    self.clone()
-                        .process_queues(worker_num, vec![queue.to_owned()]),
-                );
+                join_set.spawn(self.clone().process_queues(
+                    cancellation_token.clone(),
+                    worker_num,
+                    vec![queue.to_owned()],
+                ));
             }
         }
 
         while let Some(result) = join_set.join_next().await {
             // Once any of the tasks finish, cancel the cancellation token to ensure
             // the processor and the app shut down gracefully.
-            self.inner.cancellation_token.cancel();
+            cancellation_token.cancel();
             if let Err(join_err) = result {
                 error!(
                     "An error occurred when trying to join on one of the processor's workers. Error: {join_err}"
@@ -143,7 +151,12 @@ where
         }
     }
 
-    async fn process_queues(self, worker_num: u32, queues: Vec<String>) {
+    async fn process_queues(
+        self,
+        cancellation_token: CancellationToken,
+        worker_num: u32,
+        queues: Vec<String>,
+    ) {
         let mut queues: BinaryHeap<QueueItem> = queues
             .into_iter()
             .map(|name| QueueItem {
@@ -162,7 +175,9 @@ where
         let pgmq = context.pgmq();
         loop {
             while let Some(mut queue) = queues.peek_mut() {
-                if self.inner.cancellation_token.is_cancelled() {
+                if cancellation_token.is_cancelled() {
+                    // todo: differentiate between shared and dedicated worker loops?
+                    // todo: add total number of worker tasks to the event?
                     info!(worker_num, "Exiting processor worker loop");
                     return;
                 }
