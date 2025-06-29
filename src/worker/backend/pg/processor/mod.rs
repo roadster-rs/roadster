@@ -97,7 +97,7 @@ where
         Ok(())
     }
 
-    pub async fn run(self) -> RoadsterResult<()> {
+    pub async fn run(self) {
         let mut join_set = JoinSet::new();
 
         let context = AppContext::from_ref(&self.inner.state);
@@ -141,8 +141,6 @@ where
                 );
             }
         }
-
-        Ok(())
     }
 
     async fn process_queues(self, worker_num: u32, queues: Vec<String>) {
