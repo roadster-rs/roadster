@@ -41,7 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
-      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0
       # protoc is needed to build examples that have grpc enabled
       - uses: taiki-e/install-action@735e5933943122c5ac182670a935f54a949265c1
         with:
@@ -55,7 +55,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
-      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0
       - uses: taiki-e/install-action@735e5933943122c5ac182670a935f54a949265c1
         with:
           tool: just
@@ -87,7 +87,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
-      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0
       - uses: taiki-e/install-action@735e5933943122c5ac182670a935f54a949265c1
         with:
           tool: cargo-hack,nextest
@@ -120,7 +120,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
-      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0
       - uses: taiki-e/install-action@735e5933943122c5ac182670a935f54a949265c1
         with:
           tool: cargo-hack
@@ -134,7 +134,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
-      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0
       - uses: taiki-e/install-action@735e5933943122c5ac182670a935f54a949265c1
         with:
           tool: cargo-hack
@@ -154,7 +154,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
-      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0
       - uses: taiki-e/install-action@735e5933943122c5ac182670a935f54a949265c1
         with:
           tool: cargo-hack
@@ -197,7 +197,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
-      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0
       - uses: taiki-e/install-action@735e5933943122c5ac182670a935f54a949265c1
         with:
           tool: cargo-hack
@@ -211,7 +211,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
-      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0
       - uses: taiki-e/install-action@735e5933943122c5ac182670a935f54a949265c1
         with:
           tool: cargo-hack,cargo-minimal-versions
@@ -222,7 +222,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0
       - name: Formatting
         run: cargo fmt --all --check
 
@@ -231,7 +231,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0
       - uses: taiki-e/install-action@735e5933943122c5ac182670a935f54a949265c1
         with:
           tool: just,cargo-hack
