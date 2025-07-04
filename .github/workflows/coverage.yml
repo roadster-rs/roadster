@@ -2,10 +2,9 @@ name: Test coverage
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, v0.8 ]
   pull_request:
-    branches:
-      - main
+    branches: [ main, v0.8 ]
 
 # https://stackoverflow.com/a/72408109
 concurrency:

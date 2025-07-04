@@ -2,9 +2,9 @@ name: Checks
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, v0.8 ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, v0.8 ]
 
 env:
   CARGO_TERM_COLOR: always
