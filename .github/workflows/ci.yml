@@ -43,7 +43,7 @@ jobs:
       - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       # protoc is needed to build examples that have grpc enabled
-      - uses: taiki-e/install-action@735e5933943122c5ac182670a935f54a949265c1
+      - uses: taiki-e/install-action@21517c4e721ab8b872d9b8e90828e584dcabe8e2
         with:
           tool: just,protoc
       - name: Test
@@ -56,7 +56,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
-      - uses: taiki-e/install-action@735e5933943122c5ac182670a935f54a949265c1
+      - uses: taiki-e/install-action@21517c4e721ab8b872d9b8e90828e584dcabe8e2
         with:
           tool: just
 
@@ -88,7 +88,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
-      - uses: taiki-e/install-action@735e5933943122c5ac182670a935f54a949265c1
+      - uses: taiki-e/install-action@21517c4e721ab8b872d9b8e90828e584dcabe8e2
         with:
           tool: cargo-hack,nextest
       - name: Test
@@ -121,7 +121,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
-      - uses: taiki-e/install-action@735e5933943122c5ac182670a935f54a949265c1
+      - uses: taiki-e/install-action@21517c4e721ab8b872d9b8e90828e584dcabe8e2
         with:
           tool: cargo-hack
 
@@ -135,7 +135,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
-      - uses: taiki-e/install-action@735e5933943122c5ac182670a935f54a949265c1
+      - uses: taiki-e/install-action@21517c4e721ab8b872d9b8e90828e584dcabe8e2
         with:
           tool: cargo-hack
 
@@ -155,7 +155,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
-      - uses: taiki-e/install-action@735e5933943122c5ac182670a935f54a949265c1
+      - uses: taiki-e/install-action@21517c4e721ab8b872d9b8e90828e584dcabe8e2
         with:
           tool: cargo-hack
 
@@ -198,7 +198,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
-      - uses: taiki-e/install-action@735e5933943122c5ac182670a935f54a949265c1
+      - uses: taiki-e/install-action@21517c4e721ab8b872d9b8e90828e584dcabe8e2
         with:
           tool: cargo-hack
 
@@ -212,7 +212,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
-      - uses: taiki-e/install-action@735e5933943122c5ac182670a935f54a949265c1
+      - uses: taiki-e/install-action@21517c4e721ab8b872d9b8e90828e584dcabe8e2
         with:
           tool: cargo-hack,cargo-minimal-versions
       - run: cargo minimal-versions check --direct --all-features
@@ -232,7 +232,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
-      - uses: taiki-e/install-action@735e5933943122c5ac182670a935f54a949265c1
+      - uses: taiki-e/install-action@21517c4e721ab8b872d9b8e90828e584dcabe8e2
         with:
           tool: just,cargo-hack
       - name: Install zsh
