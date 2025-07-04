@@ -243,9 +243,9 @@ tokio = { version = "1.43.0" }
 # For CancellationToken
 tokio-util = { version = "0.7.10" }
 anyhow = "1.0.86"
-serde = { version = "1.0.185", features = ["derive"] }
-serde_derive = "1.0.185"
-serde_json = "1.0.96"
+serde = { version = "1.0.194", features = ["derive"] }
+serde_derive = "1.0.194"
+serde_json = "1.0.127"
 serde_with = { version = "3.7.0", features = ["macros", "chrono_0_4"] }
 strum = "0.27.0"
 strum_macros = "0.27.0"
