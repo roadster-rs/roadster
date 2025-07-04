@@ -11,8 +11,7 @@ permissions:
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main, v0.8 ]
 
 jobs:
   release:

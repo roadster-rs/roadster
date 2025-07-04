@@ -312,8 +312,7 @@ pub(crate) fn description_from_current_thread() -> String {
 }
 
 fn description_from_thread_name(name: &str) -> String {
-    let description = name
-        .split("::")
+    name.split("::")
         .map(|item| {
             if item.starts_with("case_") {
                 item.split('_').skip(2).join("_")
@@ -323,9 +322,7 @@ fn description_from_thread_name(name: &str) -> String {
         })
         .last()
         .filter(|s| !s.is_empty())
-        .unwrap_or_else(|| fallback_description(name));
-
-    description
+        .unwrap_or_else(|| fallback_description(name))
 }
 
 const CASE_PREFIX: &str = "case_";

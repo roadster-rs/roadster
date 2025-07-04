@@ -7,7 +7,7 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-roadster = { version = "0.7.4", path = "../..", default-features = false, features = ["default-diesel"] }
+roadster = { version = "0.8.0-alpha", path = "../..", default-features = false, features = ["default-diesel"] }
 tokio = { workspace = true }
 tokio-util = { workspace = true }
 anyhow = { workspace = true }
@@ -23,7 +23,7 @@ schemars = { workspace = true }
 diesel = { workspace = true }
 diesel-async = { workspace = true }
 diesel_migrations = { workspace = true }
-bb8_8 = { workspace = true }
+bb8 = { workspace = true }
 
 # CLI
 clap = { workspace = true, features = ["derive"] }
@@ -42,7 +42,7 @@ chrono = { workspace = true, features = ["serde"] }
 fake = { workspace = true }
 
 [dev-dependencies]
-roadster = { version = "0.7.4", path = "../..", default-features = false, features = ["testing"] }
+roadster = { version = "0.8.0-alpha", path = "../..", default-features = false, features = ["testing"] }
 tokio = { workspace = true, features = ["test-util"] }
 tower-util = { workspace = true }
 

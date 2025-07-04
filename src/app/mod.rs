@@ -131,7 +131,7 @@ where
         _config: &AppConfig,
     ) -> RoadsterResult<
         Box<
-            dyn bb8_8::CustomizeConnection<
+            dyn bb8::CustomizeConnection<
                     crate::db::DieselPgConnAsync,
                     diesel_async::pooled_connection::PoolError,
                 >,
@@ -146,7 +146,7 @@ where
         _config: &AppConfig,
     ) -> RoadsterResult<
         Box<
-            dyn bb8_8::CustomizeConnection<
+            dyn bb8::CustomizeConnection<
                     crate::db::DieselMysqlConnAsync,
                     diesel_async::pooled_connection::PoolError,
                 >,

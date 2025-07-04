@@ -6,7 +6,7 @@ name: Conventional Commits
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ main, v0.8 ]
     types: [ opened, synchronize, edited, reopened ]
 
 permissions:

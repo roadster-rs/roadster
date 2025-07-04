@@ -46,7 +46,7 @@ impl clap::FromArgMatches for Empty {
 
 #[cfg(feature = "db-diesel-postgres-pool-async")]
 impl
-    bb8_8::CustomizeConnection<
+    bb8::CustomizeConnection<
         crate::db::DieselPgConnAsync,
         diesel_async::pooled_connection::PoolError,
     > for Empty
@@ -55,7 +55,7 @@ impl
 
 #[cfg(feature = "db-diesel-mysql-pool-async")]
 impl
-    bb8_8::CustomizeConnection<
+    bb8::CustomizeConnection<
         crate::db::DieselMysqlConnAsync,
         diesel_async::pooled_connection::PoolError,
     > for Empty
