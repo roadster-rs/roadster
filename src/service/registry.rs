@@ -89,11 +89,6 @@ where
     ) -> RoadsterResult<()> {
         let name = service.name();
 
-        if !service.enabled(&self.state) {
-            info!(name=%name, "Service is not enabled, skipping registration");
-            return Ok(());
-        }
-
         info!(name=%name, "Registering service");
 
         if !self.service_names.insert(name.clone())

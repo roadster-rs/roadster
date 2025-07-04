@@ -141,31 +141,38 @@ expression: serialized
       "host": "127.0.0.1",
       "port": 3001
     },
-    "sidekiq": {
-      "num-workers": 16,
-      "balance-strategy": "round-robin",
-      "queues": [],
-      "redis": {
-        "uri": "redis://[Sensitive]",
-        "enqueue-pool": {
-          "min-idle": null,
-          "max-connections": null
-        },
-        "fetch-pool": {
-          "min-idle": null,
-          "max-connections": null
-        },
-        "test-container": null
-      },
-      "periodic": {
-        "stale-cleanup": "auto-clean-stale"
-      },
-      "app-worker": {
-        "max-retries": 25,
+    "worker": {
+      "enqueue-config": {},
+      "worker-config": {
         "timeout": true,
-        "max-duration": 60
+        "max-duration": 60,
+        "max-retries": 25
       },
-      "queue-config": {}
+      "sidekiq": {
+        "num-workers": 16,
+        "balance-strategy": "round-robin",
+        "queue-config": {},
+        "redis": {
+          "uri": "redis://[Sensitive]",
+          "enqueue-pool": {
+            "min-idle": null,
+            "max-connections": null
+          },
+          "fetch-pool": {
+            "min-idle": null,
+            "max-connections": null
+          },
+          "test-container": null
+        },
+        "periodic": {
+          "stale-cleanup": "auto-clean-stale"
+        }
+      },
+      "pg": {
+        "num-workers": 16,
+        "balance-strategy": "round-robin",
+        "queue-config": {}
+      }
     }
   },
   "auth": {
@@ -197,17 +204,15 @@ expression: serialized
   "database": {
     "uri": "postgres://[Sensitive]",
     "auto-migrate": true,
+    "temporary-test-db": false,
+    "temporary-test-db-clean-up": true,
     "connect-timeout": 1000,
     "connect-lazy": true,
     "acquire-timeout": 1000,
-    "idle-timeout": null,
-    "max-lifetime": null,
     "min-connections": 0,
     "max-connections": 10,
     "test-on-checkout": true,
     "retry-connection": true,
-    "temporary-test-db": false,
-    "temporary-test-db-clean-up": true,
     "test-container": null
   },
   "email": {

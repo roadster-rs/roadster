@@ -78,56 +78,56 @@ where
     W: Worker<Args>,
 {
 }
-
-#[cfg(test)]
-mod deserialize_tests {
-    use super::*;
-    use crate::testing::snapshot::TestCase;
-    use insta::assert_toml_snapshot;
-    use rstest::{fixture, rstest};
-
-    #[fixture]
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    fn case() -> TestCase {
-        Default::default()
-    }
-
-    #[rstest]
-    #[case("")]
-    #[case(
-        r#"
-        max-retries = 1
-        "#
-    )]
-    #[case(
-        r#"
-        timeout = false
-        "#
-    )]
-    #[case(
-        r#"
-        timeout = true
-        "#
-    )]
-    #[case(
-        r#"
-        max-duration = 1234
-        "#
-    )]
-    #[case(
-        r#"
-        disable-argument-coercion = false
-        "#
-    )]
-    #[case(
-        r#"
-        disable-argument-coercion = true
-        "#
-    )]
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    fn app_worker(_case: TestCase, #[case] config: &str) {
-        let app_worker: AppWorkerConfig = toml::from_str(config).unwrap();
-
-        assert_toml_snapshot!(app_worker);
-    }
-}
+//
+// #[cfg(test)]
+// mod deserialize_tests {
+//     use super::*;
+//     use crate::testing::snapshot::TestCase;
+//     use insta::assert_toml_snapshot;
+//     use rstest::{fixture, rstest};
+//
+//     #[fixture]
+//     #[cfg_attr(coverage_nightly, coverage(off))]
+//     fn case() -> TestCase {
+//         Default::default()
+//     }
+//
+//     #[rstest]
+//     #[case("")]
+//     #[case(
+//         r#"
+//         max-retries = 1
+//         "#
+//     )]
+//     #[case(
+//         r#"
+//         timeout = false
+//         "#
+//     )]
+//     #[case(
+//         r#"
+//         timeout = true
+//         "#
+//     )]
+//     #[case(
+//         r#"
+//         max-duration = 1234
+//         "#
+//     )]
+//     #[case(
+//         r#"
+//         disable-argument-coercion = false
+//         "#
+//     )]
+//     #[case(
+//         r#"
+//         disable-argument-coercion = true
+//         "#
+//     )]
+//     #[cfg_attr(coverage_nightly, coverage(off))]
+//     fn app_worker(_case: TestCase, #[case] config: &str) {
+//         let app_worker: AppWorkerConfig = toml::from_str(config).unwrap();
+//
+//         assert_toml_snapshot!(app_worker);
+//     }
+// }

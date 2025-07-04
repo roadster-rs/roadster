@@ -1,0 +1,14 @@
+---
+source: src/config/service/worker/pg/mod.rs
+expression: worker_pg
+---
+[db-config]
+connect-timeout = 1
+connect-lazy = true
+acquire-timeout = 2
+idle-timeout = 3
+max-lifetime = 4
+min-connections = 5
+max-connections = 6
+test-on-checkout = true
+retry-connection = true

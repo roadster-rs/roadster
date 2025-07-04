@@ -13,6 +13,7 @@ pub mod grpc;
 pub mod http;
 pub mod registry;
 pub(crate) mod runner;
+#[cfg(feature = "worker")]
 pub mod worker;
 
 /// Trait to represent a service (e.g., a persistent task) to run in the app.
@@ -32,6 +33,8 @@ pub mod worker;
 )]
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
+// todo: Do we still need the `App` type parameter? Most of the `App` trait's methods are
+//  non-static now, so we can't call them from the service anyway.
 pub trait AppService<A, S>: Send + Sync + AppServiceAsAny<A, S>
 where
     S: Clone + Send + Sync + 'static,

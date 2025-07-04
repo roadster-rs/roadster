@@ -1,6 +1,6 @@
 use crate::app::App;
 use crate::app::context::AppContext;
-use crate::config::service::worker::sidekiq::StaleCleanUpBehavior;
+use crate::config::service::worker::StaleCleanUpBehavior;
 use crate::error::RoadsterResult;
 use crate::service::AppService;
 use crate::service::worker::sidekiq::builder::{PERIODIC_KEY, SidekiqWorkerServiceBuilder};
@@ -17,7 +17,7 @@ use tracing::{debug, error, info, instrument, warn};
 pub(crate) const NAME: &str = "sidekiq";
 
 pub(crate) fn enabled(context: &AppContext) -> bool {
-    let sidekiq_config = &context.config().service.sidekiq;
+    let sidekiq_config = &context.config().service.worker.sidekiq;
     if !sidekiq_config.common.enabled(context) {
         debug!("Sidekiq is not enabled in the config.");
         return false;
@@ -26,18 +26,26 @@ pub(crate) fn enabled(context: &AppContext) -> bool {
     let dedicated_workers: u64 = context
         .config()
         .service
+        .worker
         .sidekiq
         .custom
+        .common
         .queue_config
         .values()
         .map(|config| config.num_workers.unwrap_or_default() as u64)
         .sum();
-    if sidekiq_config.custom.num_workers == 0 && dedicated_workers == 0 {
+    if sidekiq_config.custom.common.num_workers == 0 && dedicated_workers == 0 {
         debug!("Sidekiq configured with 0 worker tasks.");
         return false;
     }
 
-    if sidekiq_config.custom.queues.is_empty() && dedicated_workers == 0 {
+    let queues_empty = if let Some(queues) = sidekiq_config.custom.common.queues.as_ref() {
+        queues.is_empty()
+    } else {
+        true
+    };
+
+    if queues_empty && dedicated_workers == 0 {
         debug!("Sidekiq configured with 0 worker queues.");
         return false;
     }
@@ -96,7 +104,7 @@ where
         join_set.spawn(processor.run());
 
         while let Some(result) = join_set.join_next().await {
-            // Once any of the tasks finishes, cancel the cancellation tokens to ensure
+            // Once any of the tasks finish, cancel all the cancellation tokens to ensure
             // the processor and the app shut down gracefully.
             cancel_token.cancel();
             sidekiq_cancel_token.cancel();
@@ -149,7 +157,9 @@ async fn remove_stale_periodic_jobs<C: RedisCommands>(
     if context
         .config()
         .service
+        .worker
         .sidekiq
+        .custom
         .custom
         .periodic
         .stale_cleanup
@@ -182,6 +192,7 @@ mod tests {
     use bb8::Pool;
     use rstest::rstest;
     use sidekiq::RedisConnectionManager;
+    use std::collections::BTreeSet;
 
     #[rstest]
     #[case(false, None, 0, Default::default(), false, false)]
@@ -203,9 +214,10 @@ mod tests {
     ) {
         let mut config = AppConfig::test(None).unwrap();
         config.service.default_enable = default_enabled;
-        config.service.sidekiq.common.enable = sidekiq_enabled;
-        config.service.sidekiq.custom.num_workers = num_workers;
-        config.service.sidekiq.custom.queues = queues;
+        config.service.worker.sidekiq.common.enable = sidekiq_enabled;
+        config.service.worker.sidekiq.custom.common.num_workers = num_workers;
+        config.service.worker.sidekiq.custom.common.queues =
+            Some(BTreeSet::from_iter(queues.into_iter()));
 
         let pool = if has_redis_fetch {
             let redis_fetch = RedisConnectionManager::new("redis://invalid_host:1234").unwrap();
@@ -237,10 +249,23 @@ mod tests {
     ) {
         let mut config = AppConfig::test(None).unwrap();
         if clean_stale {
-            config.service.sidekiq.custom.periodic.stale_cleanup =
-                StaleCleanUpBehavior::AutoCleanStale;
+            config
+                .service
+                .worker
+                .sidekiq
+                .custom
+                .custom
+                .periodic
+                .stale_cleanup = StaleCleanUpBehavior::AutoCleanStale;
         } else {
-            config.service.sidekiq.custom.periodic.stale_cleanup = StaleCleanUpBehavior::Manual;
+            config
+                .service
+                .worker
+                .sidekiq
+                .custom
+                .custom
+                .periodic
+                .stale_cleanup = StaleCleanUpBehavior::Manual;
         }
 
         let context = AppContext::test(Some(config), None, None).unwrap();

@@ -27,7 +27,7 @@ pub struct HealthCheck {
     #[validate(nested)]
     pub database: HealthCheckConfig<crate::config::EmptyConfig>,
 
-    #[cfg(feature = "sidekiq")]
+    #[cfg(feature = "worker-sidekiq")]
     #[validate(nested)]
     pub sidekiq: HealthCheckConfig<crate::config::EmptyConfig>,
 

@@ -145,27 +145,34 @@ scheme = "http"
 host = "127.0.0.1"
 port = 3001
 
-[service.sidekiq]
-num-workers = 16
-balance-strategy = "round-robin"
-queues = []
+[service.worker.enqueue-config]
 
-[service.sidekiq.redis]
-uri = "redis://[Sensitive]"
-
-[service.sidekiq.redis.enqueue-pool]
-
-[service.sidekiq.redis.fetch-pool]
-
-[service.sidekiq.periodic]
-stale-cleanup = "auto-clean-stale"
-
-[service.sidekiq.app-worker]
-max-retries = 25
+[service.worker.worker-config]
 timeout = true
 max-duration = 60
+max-retries = 25
 
-[service.sidekiq.queue-config]
+[service.worker.sidekiq]
+num-workers = 16
+balance-strategy = "round-robin"
+
+[service.worker.sidekiq.queue-config]
+
+[service.worker.sidekiq.redis]
+uri = "redis://[Sensitive]"
+
+[service.worker.sidekiq.redis.enqueue-pool]
+
+[service.worker.sidekiq.redis.fetch-pool]
+
+[service.worker.sidekiq.periodic]
+stale-cleanup = "auto-clean-stale"
+
+[service.worker.pg]
+num-workers = 16
+balance-strategy = "round-robin"
+
+[service.worker.pg.queue-config]
 
 [auth.jwt]
 secret = "secret-test"
@@ -189,6 +196,8 @@ trace-filters = [
 [database]
 uri = "postgres://[Sensitive]"
 auto-migrate = true
+temporary-test-db = false
+temporary-test-db-clean-up = true
 connect-timeout = 1000
 connect-lazy = true
 acquire-timeout = 1000
@@ -196,8 +205,6 @@ min-connections = 0
 max-connections = 10
 test-on-checkout = true
 retry-connection = true
-temporary-test-db = false
-temporary-test-db-clean-up = true
 
 [email]
 from = "no-reply@example.com"

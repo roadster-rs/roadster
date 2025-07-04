@@ -31,6 +31,7 @@ pub use test::{TestAppState, run_test, run_test_with_result, test_state};
 use crate::api::cli::MockTestCli;
 #[cfg(feature = "cli")]
 use crate::api::cli::RunCommand;
+use crate::app::context::extension::ExtensionRegistry;
 use crate::app::metadata::AppMetadata;
 use crate::config::AppConfig;
 use crate::config::environment::Environment;
@@ -50,7 +51,10 @@ use std::future;
 use std::sync::Arc;
 
 #[cfg_attr(all(test, feature = "cli"), mockall::automock(type Cli = MockTestCli<S>;))]
-#[cfg_attr(all(test, not(feature = "cli")), mockall::automock(type Cli = crate::util::empty::Empty;))]
+#[cfg_attr(
+    all(test, not(feature = "cli")),
+    mockall::automock(type Cli = crate::util::empty::Empty;)
+)]
 #[async_trait]
 pub trait App<S>: Send + Sync + Sized
 where
@@ -77,6 +81,14 @@ where
 
     fn metadata(&self, _config: &AppConfig) -> RoadsterResult<AppMetadata> {
         Ok(Default::default())
+    }
+
+    async fn provide_context_extensions(
+        &self,
+        _config: &AppConfig,
+        _extension_registry: &mut ExtensionRegistry,
+    ) -> RoadsterResult<()> {
+        Ok(())
     }
 
     #[cfg(feature = "db-sea-orm")]
@@ -153,6 +165,27 @@ where
         >,
     > {
         Ok(Box::new(crate::util::empty::Empty))
+    }
+
+    #[cfg(feature = "worker-pg")]
+    fn worker_pg_sqlx_pool_options(
+        &self,
+        config: &AppConfig,
+    ) -> RoadsterResult<sqlx::pool::PoolOptions<sqlx::Postgres>> {
+        if let Some(pool_config) = config
+            .service
+            .worker
+            .pg
+            .custom
+            .custom
+            .db_config
+            .as_ref()
+            .and_then(|config| config.pool_config.as_ref())
+        {
+            Ok(pool_config.into())
+        } else {
+            Ok((&config.database).into())
+        }
     }
 
     /// Provide the app state that will be used throughout the app. The state can simply be the

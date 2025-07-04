@@ -5,9 +5,9 @@ pub mod default;
 #[cfg(feature = "email")]
 pub mod email;
 pub mod registry;
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 pub mod sidekiq_enqueue;
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 pub mod sidekiq_fetch;
 
 use crate::error::RoadsterResult;
