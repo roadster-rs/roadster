@@ -74,13 +74,11 @@ pub struct SmtpPool {
 impl From<&Email> for MessageBuilder {
     fn from(value: &Email) -> Self {
         let builder = MessageBuilder::new().from(value.from.clone());
-        let builder = if let Some(reply_to) = value.reply_to.as_ref() {
+        if let Some(reply_to) = value.reply_to.as_ref() {
             builder.reply_to(reply_to.clone())
         } else {
             builder
-        };
-
-        builder
+        }
     }
 }
 

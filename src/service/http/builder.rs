@@ -73,12 +73,11 @@ where
                 let api = api
                     .title(&context.config().app.name)
                     .description(&format!("# {}", context.config().app.name));
-                let api = if let Some(version) = context.metadata().version.as_ref() {
+                if let Some(version) = context.metadata().version.as_ref() {
                     api.version(version)
                 } else {
                     api
-                };
-                api
+                }
             }),
             middleware: default_middleware(state),
             initializers: default_initializers(state),

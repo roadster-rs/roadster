@@ -871,11 +871,7 @@ async fn create_temporary_test_db(
     let test_name = format!("{test_name}{case_name}");
 
     let name_len = prefix.len() + suffix.len() + test_name.len();
-    let start_index = if name_len > MAX_DB_NAME_LENGTH {
-        name_len - MAX_DB_NAME_LENGTH
-    } else {
-        0
-    };
+    let start_index = name_len.saturating_sub(MAX_DB_NAME_LENGTH);
     let test_name_truncated = test_name.get(start_index..test_name.len()).ok_or_else(|| {
         crate::error::other::OtherError::Message(
             "Invalid indexes used to truncate test name".to_owned(),
