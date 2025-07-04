@@ -20,7 +20,7 @@ pub(crate) struct JobMetadata {
 }
 
 #[skip_serializing_none]
-#[derive(Serialize, Deserialize, bon::Builder)]
+#[derive(Debug, Serialize, Deserialize, bon::Builder)]
 pub(crate) struct PeriodicConfig {
     pub(crate) hash: u64,
     pub(crate) schedule: Schedule,

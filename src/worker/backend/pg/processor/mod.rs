@@ -1,4 +1,5 @@
 use crate::app::context::AppContext;
+use crate::config::AppConfig;
 use crate::config::service::worker::StaleCleanUpBehavior;
 use crate::error::RoadsterResult;
 use crate::worker::backend::pg::processor::builder::{PERIODIC_QUEUE_NAME, PeriodicArgsJson};
@@ -82,15 +83,6 @@ where
         }
     }
 
-    /// Ensures all of the workers' queues' tables exist in the Postgres database.
-    async fn initialize_queues(&self) -> RoadsterResult<()> {
-        let context = AppContext::from_ref(&self.inner.state);
-        for queue in self.inner.queues.iter() {
-            context.pgmq().create(queue).await?;
-        }
-        Ok(())
-    }
-
     pub fn builder(state: &S) -> PgProcessorBuilder<S> {
         PgProcessorBuilder::new(state)
     }
@@ -101,6 +93,16 @@ where
         Ok(())
     }
 
+    /// Ensures all of the workers' queues' tables exist in the Postgres database.
+    async fn initialize_queues(&self) -> RoadsterResult<()> {
+        let context = AppContext::from_ref(&self.inner.state);
+        for queue in self.inner.queues.iter() {
+            context.pgmq().create(queue).await?;
+        }
+        Ok(())
+    }
+
+    /// Initialize the periodic queue tables and enqueue the periodic jobs in the queue.
     async fn initialize_periodic(&self, state: &S) -> RoadsterResult<()> {
         let context = AppContext::from_ref(state);
 
@@ -153,14 +155,10 @@ where
                 .as_ref()
                 .map(|periodic| &periodic.schedule)
             {
-                let now = Utc::now();
-                let next_run = schedule.upcoming(Utc).next().unwrap_or(now);
-                let diff = max(TimeDelta::zero(), next_run - now);
-                let duration = diff.to_std().unwrap_or_else(|_| Duration::from_secs(0));
-
+                let delay = periodic_next_run_delay(schedule, None);
                 let result = context
                     .pgmq()
-                    .send_delay(PERIODIC_QUEUE_NAME, job, duration.as_secs())
+                    .send_delay(PERIODIC_QUEUE_NAME, job, delay.as_secs())
                     .await;
 
                 match result {
@@ -277,6 +275,30 @@ where
             .as_ref()
             .and_then(|duration| duration.as_secs().try_into().ok());
 
+        let empty_delay = context
+            .config()
+            .service
+            .worker
+            .pg
+            .custom
+            .custom
+            .queue_fetch_config
+            .as_ref()
+            .and_then(|config| config.empty_delay)
+            .unwrap_or_default();
+
+        let error_delay = context
+            .config()
+            .service
+            .worker
+            .pg
+            .custom
+            .custom
+            .queue_fetch_config
+            .as_ref()
+            .and_then(|config| config.error_delay)
+            .unwrap_or_default();
+
         let pgmq = context.pgmq();
         loop {
             while let Some(mut queue) = queues.peek_mut() {
@@ -317,17 +339,7 @@ where
                 {
                     Ok(Some(msg)) => msg,
                     Ok(None) => {
-                        let delay = context
-                            .config()
-                            .service
-                            .worker
-                            .pg
-                            .custom
-                            .custom
-                            .queue_fetch_config
-                            .as_ref()
-                            .and_then(|config| config.empty_delay);
-                        queue.next_fetch = Utc::now() + delay.unwrap_or_default();
+                        queue.next_fetch = Utc::now() + empty_delay;
                         continue;
                     }
                     Err(err) => {
@@ -335,17 +347,7 @@ where
                             queue = queue.name,
                             "An error occurred while reading from pgmq: {err}"
                         );
-                        let delay = context
-                            .config()
-                            .service
-                            .worker
-                            .pg
-                            .custom
-                            .custom
-                            .queue_fetch_config
-                            .as_ref()
-                            .and_then(|config| config.error_delay);
-                        queue.next_fetch = Utc::now() + delay.unwrap_or_default();
+                        queue.next_fetch = Utc::now() + error_delay;
                         continue;
                     }
                 };
@@ -365,7 +367,7 @@ where
                             None,
                             msg.msg_id,
                             msg.read_ct,
-                            default_worker_config,
+                            context.config(),
                             None,
                         )
                         .await;
@@ -392,10 +394,11 @@ where
                         Some(&job.metadata),
                         msg.msg_id,
                         msg.read_ct,
-                        default_worker_config,
+                        context.config(),
                         None,
                     )
                     .await;
+
                     queue.next_fetch = Utc::now();
                     continue;
                 };
@@ -441,15 +444,12 @@ where
                         Some(&job.metadata),
                         msg.msg_id,
                         msg.read_ct,
-                        default_worker_config,
+                        context.config(),
                         Some(worker),
                     )
                     .await;
                 } else {
-                    let action = success_action(
-                        default_worker_config.pg.as_ref(),
-                        worker.worker_config.pg.as_ref(),
-                    );
+                    let action = success_action(context.config(), worker.worker_config.pg.as_ref());
                     self.job_completed(
                         pgmq,
                         &queue,
@@ -567,8 +567,10 @@ where
                             queue = PERIODIC_QUEUE_NAME,
                             "An error occurred while deleting periodic job: {err}"
                         );
-                    };
-                    next_fetch = Utc::now();
+                        next_fetch = Utc::now() + error_delay;
+                    } else {
+                        next_fetch = Utc::now();
+                    }
                     continue;
                 }
             };
@@ -577,20 +579,23 @@ where
             let queue = worker
                 .and_then(|worker| worker.enqueue_config.queue.as_ref())
                 .or(default_enqueue_config.queue.as_ref());
+            let periodic = job.metadata.periodic.as_ref();
 
-            let (worker, queue) = if let Some((worker, queue)) = worker.zip(queue) {
-                (worker, queue)
+            let (worker, queue, periodic) = if let Some(((worker, queue), periodic)) =
+                worker.zip(queue).zip(periodic)
+            {
+                (worker, queue, periodic)
             } else {
                 error!(
                     msg_id = msg.msg_id,
                     read_count = msg.read_ct,
                     worker_name = job.metadata.worker_name,
                     queue,
-                    "Unable to enqueue job, worker not registered or no queue configured"
+                    ?periodic,
+                    "Unable to enqueue job; worker not registered, no queue configured, or no periodic metadata configured"
                 );
                 // For periodic jobs, we simply delete the failing msg. It will
                 // be re-enqueued the next time the app starts
-                // todo: maybe don't do this?
                 if let Err(err) = context.pgmq().delete(PERIODIC_QUEUE_NAME, msg.msg_id).await {
                     error!(
                         msg_id = msg.msg_id,
@@ -598,8 +603,10 @@ where
                         queue = PERIODIC_QUEUE_NAME,
                         "An error occurred while deleting periodic job: {err}"
                     );
-                };
-                next_fetch = Utc::now();
+                    next_fetch = Utc::now() + error_delay;
+                } else {
+                    next_fetch = Utc::now();
+                }
                 continue;
             };
 
@@ -624,14 +631,7 @@ where
                 continue;
             }
 
-            let now = Utc::now();
-            let next_run = job
-                .metadata
-                .periodic
-                .and_then(|periodic| periodic.schedule.upcoming(Utc).next())
-                .unwrap_or(now);
-            let diff = max(TimeDelta::zero(), next_run - now);
-            let delay = diff.to_std().unwrap_or_else(|_| Duration::from_secs(0));
+            let delay = periodic_next_run_delay(&periodic.schedule, None);
             if let Err(err) = pgmq
                 .set_vt::<serde_json::Value>(PERIODIC_QUEUE_NAME, msg.msg_id, Utc::now() + delay)
                 .await
@@ -660,11 +660,11 @@ where
         job_metadata: Option<&JobMetadata>,
         msg_id: i64,
         read_count: i32,
-        default_worker_config: &WorkerConfig,
+        app_config: &AppConfig,
         worker: Option<&WorkerWrapper<S>>,
     ) {
         if let Some(delay) = retry_delay(
-            default_worker_config.retry_config.as_ref(),
+            app_config,
             worker.and_then(|worker| worker.worker_config.retry_config.as_ref()),
             read_count,
         ) {
@@ -674,7 +674,7 @@ where
         } else {
             // Otherwise, perform the failure action for the worker.
             let action = failure_action(
-                default_worker_config.pg.as_ref(),
+                app_config,
                 worker.and_then(|worker| worker.worker_config.pg.as_ref()),
             );
             self.job_completed(pgmq, queue, job_metadata, msg_id, read_count, action)
@@ -768,6 +768,13 @@ impl Ord for QueueItem {
         // a binary heap.
         other.next_fetch.cmp(&self.next_fetch)
     }
+}
+
+fn periodic_next_run_delay(schedule: &Schedule, now: Option<DateTime<Utc>>) -> Duration {
+    let now = now.unwrap_or_else(|| Utc::now());
+    let next_run = schedule.upcoming(Utc).next().unwrap_or(now);
+    let diff = max(TimeDelta::zero(), next_run - now);
+    diff.to_std().unwrap_or_else(|_| Duration::from_secs(0))
 }
 
 type WorkerFn<S> = Box<

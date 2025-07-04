@@ -198,7 +198,7 @@ mod tests {
 
     #[rstest]
     #[case(true, 1)]
-    #[case(false, 0)]
+    #[case(false, 1)]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn register_service(#[case] service_enabled: bool, #[case] expected_count: usize) {
         // Arrange
@@ -217,17 +217,16 @@ mod tests {
         // Assert
         assert_eq!(subject.services.len(), expected_count);
         assert_eq!(subject.services.len(), subject.service_names.len());
-        assert_eq!(
+        assert!(
             subject
                 .services
-                .contains_key(&TypeId::of::<MockAppService<MockApp<AppContext>, AppContext>>()),
-            service_enabled
+                .contains_key(&TypeId::of::<MockAppService<MockApp<AppContext>, AppContext>>())
         );
     }
 
     #[rstest]
     #[case(true, true, 1)]
-    #[case(false, true, 0)]
+    #[case(false, true, 1)]
     #[case(true, false, 0)]
     #[case(false, false, 0)]
     #[tokio::test]

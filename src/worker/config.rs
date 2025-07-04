@@ -1,4 +1,4 @@
-use crate::config::CustomConfig;
+use crate::config::{AppConfig, CustomConfig};
 use num_traits::pow;
 use rand::Rng;
 use serde_derive::{Deserialize, Serialize};
@@ -185,11 +185,18 @@ pub enum CompletedAction {
 ///
 /// Return None if it should not retry.
 pub(crate) fn retry_delay(
-    default_retry_config: Option<&RetryConfig>,
+    app_config: &AppConfig,
     worker_retry_config: Option<&RetryConfig>,
     attempt_num: i32,
 ) -> Option<Duration> {
-    let attempt_num = usize::try_from(attempt_num).unwrap_or_else(|_| usize::MAX);
+    let attempt_num = usize::try_from(attempt_num).unwrap_or(usize::MAX);
+
+    let default_retry_config = app_config
+        .service
+        .worker
+        .worker_config
+        .retry_config
+        .as_ref();
 
     let max_retries = worker_retry_config
         .and_then(|config| config.max_retries)
@@ -254,22 +261,34 @@ static DEFAULT_COMPLETED_ACTION: OnceLock<CompletedAction> = OnceLock::new();
 
 /// Action to take if a job succeeds.
 pub(crate) fn success_action<'a>(
-    default_config: Option<&'a PgWorkerConfig>,
+    app_config: &'a AppConfig,
     worker_config: Option<&'a PgWorkerConfig>,
 ) -> &'a CompletedAction {
     worker_config
         .and_then(|config| config.success_action.as_ref())
-        .or(default_config.and_then(|config| config.success_action.as_ref()))
+        .or(app_config
+            .service
+            .worker
+            .worker_config
+            .pg
+            .as_ref()
+            .and_then(|config| config.success_action.as_ref()))
         .unwrap_or(DEFAULT_COMPLETED_ACTION.get_or_init(|| CompletedAction::Delete))
 }
 
 /// Action to take if a job fails.
 pub(crate) fn failure_action<'a>(
-    default_config: Option<&'a PgWorkerConfig>,
+    app_config: &'a AppConfig,
     worker_config: Option<&'a PgWorkerConfig>,
 ) -> &'a CompletedAction {
     worker_config
         .and_then(|config| config.failure_action.as_ref())
-        .or(default_config.and_then(|config| config.failure_action.as_ref()))
+        .or(app_config
+            .service
+            .worker
+            .worker_config
+            .pg
+            .as_ref()
+            .and_then(|config| config.failure_action.as_ref()))
         .unwrap_or(DEFAULT_COMPLETED_ACTION.get_or_init(|| CompletedAction::Archive))
 }
