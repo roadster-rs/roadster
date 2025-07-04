@@ -146,7 +146,11 @@ expression: serialized
       "worker-config": {
         "timeout": true,
         "max-duration": 60,
-        "max-retries": 25
+        "max-retries": 25,
+        "pg": {
+          "success-action": "delete",
+          "failure-action": "archive"
+        }
       },
       "sidekiq": {
         "num-workers": 16,
@@ -171,7 +175,11 @@ expression: serialized
       "pg": {
         "num-workers": 16,
         "balance-strategy": "round-robin",
-        "queue-config": {}
+        "queue-config": {},
+        "periodic": {
+          "enable": true,
+          "stale-cleanup": "auto-clean-stale"
+        }
       }
     }
   },

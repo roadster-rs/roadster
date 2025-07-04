@@ -237,7 +237,7 @@ mod tests {
     async fn pg_processor_register(context: &AppContext) {
         let processor = crate::worker::backend::pg::processor::PgProcessor::builder(context);
         // Todo: add `unwrap` -- right now this is just to ensure things compile
-        let _processor = processor.register(FooWorker).await;
+        let _processor = processor.register(FooWorker);
         // let _ = processor.build();
     }
 }

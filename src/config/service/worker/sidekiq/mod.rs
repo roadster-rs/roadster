@@ -1,6 +1,4 @@
-use crate::config::service::worker::{
-    BalanceStrategy, Periodic, QueueConfig, StaleCleanUpBehavior,
-};
+use crate::config::service::worker::{BalanceStrategy, QueueConfig, StaleCleanUpBehavior};
 use serde_derive::{Deserialize, Serialize};
 use url::Url;
 use validator::Validate;

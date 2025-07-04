@@ -138,6 +138,10 @@ timeout = true
 max-duration = 60
 max-retries = 25
 
+[service.worker.worker-config.pg]
+success-action = "delete"
+failure-action = "archive"
+
 [service.worker.sidekiq]
 num-workers = 16
 balance-strategy = "round-robin"
@@ -159,6 +163,10 @@ num-workers = 16
 balance-strategy = "round-robin"
 
 [service.worker.pg.queue-config]
+
+[service.worker.pg.periodic]
+enable = true
+stale-cleanup = "auto-clean-stale"
 
 [auth.jwt]
 secret = "secret-test"

@@ -627,6 +627,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "bon"
+version = "3.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f61138465baf186c63e8d9b6b613b508cd832cba4ce93cf37ce5f096f91ac1a6"
+dependencies = [
+ "bon-macros",
+ "rustversion",
+]
+
+[[package]]
+name = "bon-macros"
+version = "3.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "40d1dad34aa19bf02295382f08d9bc40651585bd497266831d40ee6296fb49ca"
+dependencies = [
+ "darling",
+ "ident_case",
+ "prettyplease",
+ "proc-macro2",
+ "quote",
+ "rustversion",
+ "syn 2.0.100",
+]
+
+[[package]]
 name = "borsh"
 version = "1.5.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -909,7 +934,7 @@ dependencies = [
  "pathdiff",
  "serde",
  "toml 0.8.20",
- "winnow",
+ "winnow 0.7.6",
  "yaml-rust2",
 ]
 
@@ -1068,6 +1093,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a97769d94ddab943e4510d138150169a2758b5ef3eb191a9ee688de3e23ef7b3"
 dependencies = [
  "cfg-if",
+]
+
+[[package]]
+name = "cron"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5877d3fbf742507b66bc2a1945106bd30dd8504019d596901ddd012a4dd01740"
+dependencies = [
+ "chrono",
+ "once_cell",
+ "serde",
+ "winnow 0.6.26",
 ]
 
 [[package]]
@@ -3719,6 +3756,49 @@ dependencies = [
 ]
 
 [[package]]
+name = "pg-worker"
+version = "0.1.0"
+dependencies = [
+ "aide",
+ "anyhow",
+ "async-trait",
+ "axum",
+ "bon",
+ "cfg-if",
+ "clap",
+ "config",
+ "cron",
+ "roadster",
+ "rusty-sidekiq",
+ "schemars",
+ "sea-orm",
+ "serde",
+ "tokio",
+ "tokio-util",
+ "tonic-build",
+ "tower-util",
+ "tracing",
+ "vergen",
+ "vergen-gitcl",
+]
+
+[[package]]
+name = "pgmq"
+version = "0.30.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4b776031ffc4e2291941f2657fad6276408d4f16aa4084ac4ca934ce8d2d886d"
+dependencies = [
+ "chrono",
+ "log",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 1.0.69",
+ "tokio",
+ "url",
+]
+
+[[package]]
 name = "pgvector"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4537,6 +4617,7 @@ dependencies = [
  "axum-core",
  "axum-extra",
  "bb8",
+ "bon",
  "byte-unit",
  "cargo-husky",
  "cfg-if",
@@ -4545,6 +4626,7 @@ dependencies = [
  "config",
  "const_format",
  "convert_case 0.8.0",
+ "cron",
  "diesel",
  "diesel-async",
  "diesel_migrations",
@@ -4564,8 +4646,10 @@ dependencies = [
  "opentelemetry-otlp",
  "opentelemetry-semantic-conventions",
  "opentelemetry_sdk",
+ "pgmq",
  "prost",
  "r2d2",
+ "rand 0.9.0",
  "regex",
  "reqwest",
  "roadster",
@@ -4580,6 +4664,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "serde_with",
+ "sqlx",
  "strum 0.27.1",
  "strum_macros",
  "testcontainers-modules",
@@ -6385,7 +6470,7 @@ dependencies = [
  "serde",
  "serde_spanned",
  "toml_datetime",
- "winnow",
+ "winnow 0.7.6",
 ]
 
 [[package]]
@@ -7431,6 +7516,15 @@ name = "windows_x86_64_msvc"
 version = "0.53.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "271414315aff87387382ec3d271b52d7ae78726f5d44ac98b4f4030c91880486"
+
+[[package]]
+name = "winnow"
+version = "0.6.26"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e90edd2ac1aa278a5c4599b1d89cf03074b610800f866d4026dc199d7929a28"
+dependencies = [
+ "memchr",
+]
 
 [[package]]
 name = "winnow"
