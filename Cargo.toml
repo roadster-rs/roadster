@@ -212,7 +212,7 @@ r2d2 = { version = "0.8.4" }
 
 # Email
 lettre = { version = "0.11.0", default-features = false, features = ["smtp-transport", "pool", "rustls-tls", "hostname", "builder"] }
-sendgrid = "0.23.0"
+sendgrid = "0.24.0"
 
 # CLI
 clap = { version = "4.3.0", features = ["derive"] }
