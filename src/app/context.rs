@@ -342,12 +342,12 @@ where
     feature = "db-diesel-mysql-pool-async"
 ))]
 #[cfg_attr(test, allow(dead_code))]
-impl bb8_8::ErrorSink<diesel_async::pooled_connection::PoolError> for TracingErrorHandler {
+impl bb8::ErrorSink<diesel_async::pooled_connection::PoolError> for TracingErrorHandler {
     fn sink(&self, err: diesel_async::pooled_connection::PoolError) {
         tracing::error!("DB connection pool error: {err}");
     }
 
-    fn boxed_clone(&self) -> Box<dyn bb8_8::ErrorSink<diesel_async::pooled_connection::PoolError>> {
+    fn boxed_clone(&self) -> Box<dyn bb8::ErrorSink<diesel_async::pooled_connection::PoolError>> {
         Box::new(TracingErrorHandler)
     }
 }
@@ -392,7 +392,7 @@ where
 async fn build_diesel_pg_async_pool(
     config: &AppConfig,
     connection_customizer: Box<
-        dyn bb8_8::CustomizeConnection<
+        dyn bb8::CustomizeConnection<
                 crate::db::DieselPgConnAsync,
                 diesel_async::pooled_connection::PoolError,
             >,
@@ -428,7 +428,7 @@ async fn build_diesel_pg_async_pool(
 async fn build_diesel_mysql_async_pool(
     config: &AppConfig,
     connection_customizer: Box<
-        dyn bb8_8::CustomizeConnection<
+        dyn bb8::CustomizeConnection<
                 crate::db::DieselMysqlConnAsync,
                 diesel_async::pooled_connection::PoolError,
             >,

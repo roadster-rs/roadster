@@ -44,7 +44,7 @@ pub struct Database {
     #[serde(default = "default_true")]
     pub test_on_checkout: bool,
 
-    /// See [`bb8_8::Builder::retry_connection`]
+    /// See [`bb8::Builder::retry_connection`]
     #[cfg(feature = "db-diesel-pool-async")]
     #[serde(default = "default_true")]
     pub retry_connection: bool,

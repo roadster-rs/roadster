@@ -37,7 +37,7 @@ db-diesel-postgres-pool = ["db-diesel-pool", "db-diesel-postgres"]
 db-diesel-mysql-pool = ["db-diesel-pool", "db-diesel-mysql"]
 db-diesel-sqlite-pool = ["db-diesel-pool", "db-diesel-sqlite"]
 ## Features to create async connection pools
-db-diesel-pool-async = ["db-diesel", "dep:diesel-async", "dep:bb8_8"]
+db-diesel-pool-async = ["db-diesel", "dep:diesel-async", "dep:bb8"]
 db-diesel-postgres-pool-async = ["db-diesel-pool-async", "db-diesel-postgres", "diesel-async/postgres"]
 db-diesel-mysql-pool-async = ["db-diesel-pool-async", "db-diesel-mysql", "diesel-async/mysql"]
 
@@ -100,7 +100,7 @@ diesel-async = { workspace = true, features = ["bb8", "async-connection-wrapper"
 # r2d2 is used for non-async Diesel connection pools
 r2d2 = { workspace = true, optional = true }
 # bb8 is use for async Diesel connection pools
-bb8_8 = { workspace = true, optional = true }
+bb8 = { workspace = true, optional = true }
 
 # Email
 lettre = { workspace = true, features = ["serde"], optional = true }
@@ -108,7 +108,6 @@ sendgrid = { workspace = true, optional = true }
 
 # Workers
 rusty-sidekiq = { workspace = true, optional = true }
-bb8 = { workspace = true, optional = true }
 num_cpus = { workspace = true, optional = true }
 
 # Rust async
@@ -191,13 +190,13 @@ prost = { version = "0.13.2" }
 tracing-opentelemetry = { version = "0.30.0", features = ["metrics"] }
 
 # HTTP APIs
-aide = { version = "0.14.0", features = ["axum"] }
+aide = { version = "0.15.0", features = ["axum"] }
 axum-core = "0.5.0"
 axum = "0.8.1"
 axum-extra = "0.10.0"
 tower-http = "0.6.2"
 tower = "0.5.2"
-schemars = "0.8.16"
+schemars = "0.9.0"
 mime = "0.3.17"
 http-body-util = { version = "0.1.2" }
 
@@ -207,11 +206,9 @@ sea-orm-migration = { version = "1.1.11" }
 
 # DB - Diesel
 diesel = { version = "2.2.3" }
-diesel-async = { version = "0.5.2" }
+diesel-async = { version = "0.6.0" }
 diesel_migrations = { version = "2.2.0" }
 r2d2 = { version = "0.8.4" }
-# `diesel-async` is currently using `bb8-0.8`
-bb8_8 = { package = "bb8", version = "0.8.1" }
 
 # Email
 lettre = { version = "0.11.0", default-features = false, features = ["smtp-transport", "pool", "rustls-tls", "hostname", "builder"] }

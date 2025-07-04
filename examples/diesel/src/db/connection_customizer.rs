@@ -7,7 +7,7 @@ use tracing::info;
 pub struct CustomConnectionCustomizer;
 
 #[async_trait]
-impl bb8_8::CustomizeConnection<DieselPgConnAsync, PoolError> for CustomConnectionCustomizer {
+impl bb8::CustomizeConnection<DieselPgConnAsync, PoolError> for CustomConnectionCustomizer {
     async fn on_acquire(&self, connection: &mut DieselPgConnAsync) -> Result<(), PoolError> {
         // Note: this `ping` is redundant with the `database.test-on-checkout` config field
         let result = connection.ping(&RecyclingMethod::Fast).await;

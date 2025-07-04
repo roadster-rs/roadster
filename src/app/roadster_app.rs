@@ -50,7 +50,7 @@ type DieselConnectionCustomizerProvider<C> =
     feature = "db-diesel-mysql-pool-async"
 ))]
 type DieselAsyncConnectionCustomizer<C> =
-    Box<dyn bb8_8::CustomizeConnection<C, diesel_async::pooled_connection::PoolError>>;
+    Box<dyn bb8::CustomizeConnection<C, diesel_async::pooled_connection::PoolError>>;
 #[cfg(any(
     feature = "db-diesel-postgres-pool-async",
     feature = "db-diesel-mysql-pool-async"
@@ -270,7 +270,7 @@ where
             &AppConfig,
         ) -> RoadsterResult<
             Box<
-                dyn bb8_8::CustomizeConnection<
+                dyn bb8::CustomizeConnection<
                         crate::db::DieselPgConnAsync,
                         diesel_async::pooled_connection::PoolError,
                     >,
@@ -290,7 +290,7 @@ where
             &AppConfig,
         ) -> RoadsterResult<
             Box<
-                dyn bb8_8::CustomizeConnection<
+                dyn bb8::CustomizeConnection<
                         crate::db::DieselMysqlConnAsync,
                         diesel_async::pooled_connection::PoolError,
                     >,
@@ -700,7 +700,7 @@ where
     pub fn diesel_pg_async_connection_customizer(
         mut self,
         connection_customizer: impl 'static
-        + bb8_8::CustomizeConnection<
+        + bb8::CustomizeConnection<
             crate::db::DieselPgConnAsync,
             diesel_async::pooled_connection::PoolError,
         >,
@@ -719,7 +719,7 @@ where
             &AppConfig,
         ) -> RoadsterResult<
             Box<
-                dyn bb8_8::CustomizeConnection<
+                dyn bb8::CustomizeConnection<
                         crate::db::DieselPgConnAsync,
                         diesel_async::pooled_connection::PoolError,
                     >,
@@ -735,7 +735,7 @@ where
     pub fn diesel_mysql_async_connection_customizer(
         mut self,
         connection_customizer: impl 'static
-        + bb8_8::CustomizeConnection<
+        + bb8::CustomizeConnection<
             crate::db::DieselMysqlConnAsync,
             diesel_async::pooled_connection::PoolError,
         >,
@@ -754,7 +754,7 @@ where
             &AppConfig,
         ) -> RoadsterResult<
             Box<
-                dyn bb8_8::CustomizeConnection<
+                dyn bb8::CustomizeConnection<
                         crate::db::DieselMysqlConnAsync,
                         diesel_async::pooled_connection::PoolError,
                     >,
@@ -1112,7 +1112,7 @@ where
         config: &AppConfig,
     ) -> RoadsterResult<
         Box<
-            dyn bb8_8::CustomizeConnection<
+            dyn bb8::CustomizeConnection<
                     crate::db::DieselPgConnAsync,
                     diesel_async::pooled_connection::PoolError,
                 >,
@@ -1144,7 +1144,7 @@ where
         config: &AppConfig,
     ) -> RoadsterResult<
         Box<
-            dyn bb8_8::CustomizeConnection<
+            dyn bb8::CustomizeConnection<
                     crate::db::DieselMysqlConnAsync,
                     diesel_async::pooled_connection::PoolError,
                 >,
