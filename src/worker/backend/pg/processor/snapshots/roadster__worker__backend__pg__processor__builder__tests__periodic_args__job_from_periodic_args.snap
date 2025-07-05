@@ -1,0 +1,16 @@
+---
+source: src/worker/backend/pg/processor/builder.rs
+expression: job
+---
+{
+  "metadata": {
+    "worker_name": "a",
+    "periodic": {
+      "hash": 11189630487790136136,
+      "schedule": "* * * * * *"
+    }
+  },
+  "args": {
+    "foo": "bar"
+  }
+}

@@ -177,7 +177,9 @@ where
 mod tests {
     mod periodic_args {
         use crate::worker::backend::pg::processor::builder::PeriodicArgsJson;
+        use crate::worker::job::Job;
         use cron::Schedule;
+        use insta::assert_json_snapshot;
         use rstest::{fixture, rstest};
         use std::str::FromStr;
 
@@ -213,6 +215,25 @@ mod tests {
             let mut b = periodic_args_json.clone();
             b.args = serde_json::json!({"foo": "baz"});
             assert!(periodic_args_json < b);
+        }
+
+        #[rstest]
+        #[cfg_attr(coverage_nightly, coverage(off))]
+        fn job_from_periodic_args(periodic_args_json: PeriodicArgsJson) {
+            let job = Job::from(&periodic_args_json);
+            assert_json_snapshot!(job);
+        }
+
+        #[rstest]
+        #[cfg_attr(coverage_nightly, coverage(off))]
+        fn job_from_periodic_args_hash(periodic_args_json: PeriodicArgsJson) {
+            let job = Job::from(&periodic_args_json);
+            let hash = crate::worker::job::periodic_hash(
+                &job.metadata.worker_name,
+                &job.metadata.periodic.as_ref().unwrap().schedule,
+                &job.args,
+            );
+            assert_eq!(hash, job.metadata.periodic.unwrap().hash);
         }
     }
 }
