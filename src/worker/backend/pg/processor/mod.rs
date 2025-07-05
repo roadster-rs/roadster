@@ -482,8 +482,6 @@ where
         }
     }
 
-    // Todo: special handling for periodic jobs -- need to dequeue the periodic job, enqueue
-    //  the actual job, then re-enqueue the periodic job
     async fn process_periodic(self, cancellation_token: CancellationToken) {
         let context = AppContext::from_ref(&self.inner.state);
         let default_enqueue_config = &context.config().service.worker.enqueue_config;
@@ -575,7 +573,6 @@ where
                     );
                     // For periodic jobs, we simply delete the failing msg. It will
                     // be re-enqueued the next time the app starts
-                    // todo: maybe don't do this?
                     if let Err(err) = context.pgmq().delete(PERIODIC_QUEUE_NAME, msg.msg_id).await {
                         error!(
                             msg_id = msg.msg_id,
@@ -800,8 +797,8 @@ impl Ord for QueueItem {
 }
 
 fn periodic_next_run_delay(schedule: &Schedule, now: Option<DateTime<Utc>>) -> Duration {
-    let now = now.unwrap_or_else(|| Utc::now());
-    let next_run = schedule.upcoming(Utc).next().unwrap_or(now);
+    let now = now.unwrap_or_else(Utc::now);
+    let next_run = schedule.after(&now).next().unwrap_or(now);
     let diff = max(TimeDelta::zero(), next_run - now);
     diff.to_std().unwrap_or_else(|_| Duration::from_secs(0))
 }
@@ -836,7 +833,6 @@ where
     where
         W: 'static + Worker<S, Args, Error = E>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-        // Todo: without this `'static`, we're getting an internal compiler error
         E: 'static + std::error::Error + Send + Sync,
     {
         let worker = Arc::new(worker);
@@ -908,6 +904,12 @@ where
 
 #[cfg(test)]
 mod tests {
+    use chrono::DateTime;
+    use chrono::Utc;
+    use cron::Schedule;
+    use insta::assert_debug_snapshot;
+    use std::str::FromStr;
+
     #[test]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn periodic_queue_name() {
@@ -964,5 +966,14 @@ mod tests {
             assert_eq!(items.pop().unwrap().name, "b");
             assert_eq!(items.pop().unwrap().name, "a");
         }
+    }
+
+    #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn periodic_next_run_delay() {
+        let now = DateTime::<Utc>::from_timestamp(1751701139, 0).unwrap();
+        let schedule = Schedule::from_str("* 12 * * * *").unwrap();
+        let delay = super::periodic_next_run_delay(&schedule, Some(now));
+        assert_debug_snapshot!(delay);
     }
 }

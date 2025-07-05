@@ -80,7 +80,6 @@ where
     where
         W: 'static + Worker<S, Args, Error = E>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-        // Todo: without this `'static`, we're getting an internal compiler error
         E: 'static + std::error::Error + Send + Sync,
     {
         let name = W::name();
@@ -99,7 +98,6 @@ where
     where
         W: 'static + Worker<S, Args, Error = E>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-        // Todo: without this `'static`, we're getting an internal compiler error
         E: 'static + std::error::Error + Send + Sync,
     {
         let name = W::name();
@@ -134,7 +132,6 @@ where
     where
         W: 'static + Worker<S, Args, Error = E>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-        // Todo: without this `'static`, we're getting an internal compiler error
         E: 'static + std::error::Error + Send + Sync,
     {
         let context = AppContext::from_ref(&self.inner.state);
@@ -175,6 +172,191 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::app::context::AppContext;
+    use crate::worker::Worker;
+    use crate::worker::backend::pg::processor::builder::{PeriodicArgs, PgProcessorBuilder};
+    use crate::worker::config::EnqueueConfig;
+    use crate::worker::enqueue::Enqueuer;
+    use async_trait::async_trait;
+    use axum_core::extract::FromRef;
+    use cron::Schedule;
+    use rstest::{fixture, rstest};
+    use serde::{Deserialize, Serialize};
+    use std::borrow::Borrow;
+    use std::str::FromStr;
+    use std::time::Duration;
+
+    struct TestEnqueuer;
+    #[async_trait]
+    impl Enqueuer for TestEnqueuer {
+        type Error = crate::error::Error;
+
+        async fn enqueue<W, S, Args, ArgsRef, E>(
+            _state: &S,
+            _args: ArgsRef,
+        ) -> Result<(), Self::Error>
+        where
+            W: 'static + Worker<S, Args, Error = E>,
+            S: Clone + Send + Sync + 'static,
+            AppContext: FromRef<S>,
+            Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+            ArgsRef: Send + Sync + Borrow<Args> + Serialize,
+        {
+            todo!()
+        }
+
+        async fn enqueue_delayed<W, S, Args, ArgsRef, E>(
+            _state: &S,
+            _args: ArgsRef,
+            _delay: Duration,
+        ) -> Result<(), Self::Error>
+        where
+            W: 'static + Worker<S, Args, Error = E>,
+            S: Clone + Send + Sync + 'static,
+            AppContext: FromRef<S>,
+            Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+            ArgsRef: Send + Sync + Borrow<Args> + Serialize,
+        {
+            todo!()
+        }
+
+        async fn enqueue_batch<W, S, Args, ArgsRef, E>(
+            _state: &S,
+            _args: &[ArgsRef],
+        ) -> Result<(), Self::Error>
+        where
+            W: 'static + Worker<S, Args, Error = E>,
+            S: Clone + Send + Sync + 'static,
+            AppContext: FromRef<S>,
+            Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+            ArgsRef: Send + Sync + Borrow<Args> + Serialize,
+        {
+            todo!()
+        }
+
+        async fn enqueue_batch_delayed<W, S, Args, ArgsRef, E>(
+            _state: &S,
+            _args: &[ArgsRef],
+            _delay: Duration,
+        ) -> Result<(), Self::Error>
+        where
+            W: 'static + Worker<S, Args, Error = E>,
+            S: Clone + Send + Sync + 'static,
+            AppContext: FromRef<S>,
+            Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+            ArgsRef: Send + Sync + Borrow<Args> + Serialize,
+        {
+            todo!()
+        }
+    }
+
+    struct TestWorker;
+    #[async_trait]
+    impl Worker<AppContext, ()> for TestWorker {
+        type Error = crate::error::Error;
+        type Enqueuer = TestEnqueuer;
+
+        fn enqueue_config(_state: &AppContext) -> EnqueueConfig {
+            EnqueueConfig::builder().queue("default").build()
+        }
+
+        async fn handle(&self, _state: &AppContext, _args: ()) -> Result<(), Self::Error> {
+            todo!()
+        }
+    }
+
+    struct TestWorkerNoQueue;
+    #[async_trait]
+    impl Worker<AppContext, ()> for TestWorkerNoQueue {
+        type Error = crate::error::Error;
+        type Enqueuer = TestEnqueuer;
+
+        async fn handle(&self, _state: &AppContext, _args: ()) -> Result<(), Self::Error> {
+            todo!()
+        }
+    }
+
+    #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn context() -> AppContext {
+        AppContext::test(None, None, None).unwrap()
+    }
+
+    #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn builder(context: AppContext) -> PgProcessorBuilder<AppContext> {
+        PgProcessorBuilder::new(&context)
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn builder_register(builder: PgProcessorBuilder<AppContext>) {
+        builder.register(TestWorker).unwrap();
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn builder_register_duplicate(builder: PgProcessorBuilder<AppContext>) {
+        let result = builder.register(TestWorker).unwrap().register(TestWorker);
+        assert!(result.is_err());
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn builder_register_no_queue(builder: PgProcessorBuilder<AppContext>) {
+        let result = builder.register(TestWorkerNoQueue);
+        assert!(result.is_err());
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn builder_register_periodic(builder: PgProcessorBuilder<AppContext>) {
+        builder
+            .register_periodic(
+                TestWorker,
+                PeriodicArgs::builder()
+                    .args(())
+                    .schedule(Schedule::from_str("* * * * * *").unwrap())
+                    .build(),
+            )
+            .unwrap();
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn builder_register_periodic_duplicate(builder: PgProcessorBuilder<AppContext>) {
+        let result = builder
+            .register_periodic(
+                TestWorker,
+                PeriodicArgs::builder()
+                    .args(())
+                    .schedule(Schedule::from_str("* * * * * *").unwrap())
+                    .build(),
+            )
+            .unwrap()
+            .register_periodic(
+                TestWorker,
+                PeriodicArgs::builder()
+                    .args(())
+                    .schedule(Schedule::from_str("* * * * * *").unwrap())
+                    .build(),
+            );
+        assert!(result.is_err());
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn builder_register_periodic_no_queue(builder: PgProcessorBuilder<AppContext>) {
+        let result = builder.register_periodic(
+            TestWorkerNoQueue,
+            PeriodicArgs::builder()
+                .args(())
+                .schedule(Schedule::from_str("* * * * * *").unwrap())
+                .build(),
+        );
+        assert!(result.is_err());
+    }
+
     mod periodic_args {
         use crate::worker::backend::pg::processor::builder::PeriodicArgsJson;
         use crate::worker::job::Job;
