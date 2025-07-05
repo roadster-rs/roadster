@@ -76,8 +76,8 @@ mod tests {
         assert_eq!("Foo", registry.get::<String>().unwrap());
     }
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn register_duplicate() {
         let mut registry = super::ExtensionRegistry::default();
 
