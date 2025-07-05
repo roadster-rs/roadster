@@ -10,6 +10,7 @@ use crate::health::check::registry::HealthCheckRegistry;
 use axum_core::extract::FromRef;
 #[cfg(all(feature = "db-sql", feature = "testing"))]
 use itertools::Itertools;
+use pgmq::PGMQueue;
 #[cfg(feature = "db-sea-orm")]
 use sea_orm::DatabaseConnection;
 use std::sync::{Arc, OnceLock, Weak};
@@ -65,7 +66,7 @@ impl AppContext {
         let context = {
             #[cfg(all(feature = "db-sql", feature = "test-containers"))]
             let db_test_container = db_test_container(&mut config).await?;
-            #[cfg(all(feature = "sidekiq", feature = "test-containers"))]
+            #[cfg(all(feature = "worker-sidekiq", feature = "test-containers"))]
             let sidekiq_redis_test_container = sidekiq_redis_test_container(&mut config).await?;
 
             #[cfg(all(feature = "db-sql", feature = "testing"))]
@@ -215,7 +216,7 @@ impl AppContext {
                 redis_enqueue,
                 #[cfg(feature = "worker-sidekiq")]
                 redis_fetch,
-                #[cfg(all(feature = "sidekiq", feature = "test-containers"))]
+                #[cfg(all(feature = "worker-sidekiq", feature = "test-containers"))]
                 sidekiq_redis_test_container,
                 #[cfg(feature = "worker-pg")]
                 pgmq_queue,
@@ -249,7 +250,7 @@ impl AppContext {
     pub(crate) fn test(
         config: Option<AppConfig>,
         metadata: Option<AppMetadata>,
-        #[cfg(not(feature = "sidekiq"))] _redis: Option<()>,
+        #[cfg(not(feature = "worker-sidekiq"))] _redis: Option<()>,
         #[cfg(feature = "worker-sidekiq")] redis: Option<sidekiq::RedisPool>,
     ) -> RoadsterResult<Self> {
         let mut inner = MockAppContextInner::default();
@@ -777,6 +778,13 @@ impl Provide<Option<RedisFetch>> for AppContext {
     }
 }
 
+#[cfg(feature = "worker-pg")]
+impl ProvideRef<PGMQueue> for AppContext {
+    fn provide(&self) -> &PGMQueue {
+        self.pgmq()
+    }
+}
+
 #[cfg(all(feature = "db-sql", feature = "test-containers"))]
 enum DbTestContainer {
     Postgres(
@@ -858,7 +866,7 @@ async fn db_test_container(config: &mut AppConfig) -> RoadsterResult<Option<DbTe
     Ok(container)
 }
 
-#[cfg(all(feature = "sidekiq", feature = "test-containers"))]
+#[cfg(all(feature = "worker-sidekiq", feature = "test-containers"))]
 #[cfg_attr(test, allow(dead_code))]
 async fn sidekiq_redis_test_container(
     config: &mut AppConfig,
@@ -1020,7 +1028,7 @@ struct AppContextInner {
     /// config is set to zero, in which case the [sidekiq::Processor] would also not be started.
     #[cfg(feature = "worker-sidekiq")]
     redis_fetch: Option<RedisFetch>,
-    #[cfg(all(feature = "sidekiq", feature = "test-containers"))]
+    #[cfg(all(feature = "worker-sidekiq", feature = "test-containers"))]
     #[allow(dead_code)]
     sidekiq_redis_test_container: Option<
         testcontainers_modules::testcontainers::ContainerAsync<

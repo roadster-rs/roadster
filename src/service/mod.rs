@@ -24,7 +24,7 @@ pub mod worker;
     doc = r"- [HTTP API][crate::service::http::service::HttpService]"
 )]
 #[cfg_attr(
-    feature = "sidekiq",
+    feature = "worker-sidekiq",
     doc = r"- [Sidekiq processor][crate::service::worker::sidekiq::service::SidekiqWorkerService]"
 )]
 #[cfg_attr(

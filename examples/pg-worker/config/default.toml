@@ -1,5 +1,5 @@
 [app]
-name = "Postres Worker Example"
+name = "Postgres Worker Example"
 
 [tracing]
 level = "debug"
@@ -14,10 +14,6 @@ max-connections = 10
 
 [service.worker.enqueue-config]
 queue = "default"
-
-[service.worker.pg.queue-fetch-config]
-error-delay = 10
-empty-delay = 10
 
 [service.worker.pg]
 num-workers = 1

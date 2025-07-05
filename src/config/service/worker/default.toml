@@ -10,6 +10,10 @@ max-duration = 60
 success-action = "delete"
 failure-action = "archive"
 
+[service.worker.pg.queue-fetch-config]
+error-delay = 10
+empty-delay = 10
+
 [service.worker.pg.periodic]
 enable = true
 stale-cleanup = "auto-clean-stale"

@@ -72,7 +72,8 @@ pub fn default_health_checks(
 
 #[cfg(all(
     test,
-    feature = "sidekiq",
+    feature = "worker-sidekiq",
+    feature = "worker-pg",
     feature = "db-sea-orm",
     feature = "db-diesel-postgres-pool",
     feature = "db-diesel-mysql-pool",

@@ -7,19 +7,19 @@ use tracing::info;
 #[derive(Debug, Error)]
 #[non_exhaustive]
 pub enum ExtensionRegistryError {
-    /// The provided [`AppService`] was already registered. Contains the [`AppService::name`]
-    /// of the provided service.
-    #[error("The provided `AppService` was already registered: `{0}`")]
+    /// The provided context was already registered. Contains the [`type_name`]
+    /// of the provided context.
+    #[error("The provided `context` was already registered: `{0}`")]
     AlreadyRegistered(String),
 
-    /// Unable to find an [`AppService`] instance of the requested type. Contains the [`type_name`]
+    /// Unable to find a context instance of the requested type. Contains the [`type_name`]
     /// of the requested type.
-    #[error("Unable to find an `AppService` instance of type `{0}`")]
+    #[error("Unable to find an context instance of type `{0}`")]
     NotRegistered(String),
 
     /// Unable to downcast the registered instance to the requested type. Contains the [`type_name`]
     /// of the requested type.
-    #[error("Unable to downcast the registered instance of `AppService` to type `{0}`")]
+    #[error("Unable to downcast the registered context instance to type `{0}`")]
     Downcast(String),
 
     #[error(transparent)]
@@ -61,5 +61,27 @@ impl ExtensionRegistry {
             .downcast_ref::<T>()
             .ok_or_else(|| ExtensionRegistryError::Downcast(type_name::<T>().to_string()))?;
         Ok(service)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn register_and_get() {
+        let mut registry = super::ExtensionRegistry::default();
+
+        registry.register("Foo".to_owned()).unwrap();
+
+        assert_eq!("Foo", registry.get::<String>().unwrap());
+    }
+
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    #[test]
+    fn register_duplicate() {
+        let mut registry = super::ExtensionRegistry::default();
+
+        registry.register("Foo".to_owned()).unwrap();
+        assert!(registry.register("Foo".to_string()).is_err());
     }
 }

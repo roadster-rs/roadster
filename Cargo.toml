@@ -15,16 +15,17 @@ rust-version = "1.85"
 
 [features]
 default = ["default-common", "db-sea-orm"]
-default-common = ["sidekiq", "open-api", "jwt-ietf", "cli", "otel"]
+default-common = ["worker-sidekiq", "open-api", "jwt-ietf", "cli", "otel"]
 # The same as `default`, except using `diesel` as the SQL ORM instead of `sea-orm`
 default-diesel = ["default-common", "db-diesel-postgres-pool-async"]
+
 http = ["dep:axum", "dep:axum-extra", "dep:tower", "dep:tower-http", "dep:http-body-util", "dep:mime"]
 open-api = ["http", "dep:aide", "dep:schemars"]
+
 worker = ["dep:rand", "dep:num_cpus", "dep:cron"]
-# The `sidekiq` feature is deprecated (renamed to `worker-sidekiq`)
-sidekiq = ["worker-sidekiq"]
 worker-sidekiq = ["worker", "dep:rusty-sidekiq", "dep:bb8"]
 worker-pg = ["worker", "db-sql", "dep:pgmq", "dep:sqlx", "sea-orm?/sqlx-postgres"]
+
 db-sql = []
 db-sea-orm = ["db-sql", "dep:sea-orm", "dep:sea-orm-migration"]
 
@@ -117,7 +118,6 @@ num_cpus = { workspace = true, optional = true }
 ## Postgres queue
 pgmq = { workspace = true, optional = true }
 sqlx = { workspace = true, optional = true }
-cron = { workspace = true, optional = true }
 
 # Rust async
 tokio = { workspace = true, features = ["full"] }
@@ -166,6 +166,7 @@ cfg-if = { workspace = true }
 reqwest = { workspace = true }
 regex = { workspace = true, optional = true }
 rand = { workspace = true, optional = true }
+cron = { workspace = true, optional = true }
 
 [dev-dependencies]
 roadster = { path = ".", features = ["testing"] }
@@ -245,7 +246,6 @@ num_cpus = { version = "1.13.0" }
 ## Postgres queue
 pgmq = "0.30.1"
 sqlx = { version = "0.8.5", features = ["postgres"] }
-cron = { version = "0.15.0", features = ["serde"] }
 
 # Testing
 insta = { version = "1.39.0", features = ["toml", "filters"] }
@@ -288,6 +288,7 @@ uuid = { version = "1.11.0", features = ["v4", "serde"] }
 chrono = { version = "0.4.34", features = ["serde"] }
 async-trait = "0.1.81"
 regex = "1.11.1"
+cron = { version = "0.15.0", features = ["serde"] }
 
 # Build dependencies
 rustc_version = "0.4.1"

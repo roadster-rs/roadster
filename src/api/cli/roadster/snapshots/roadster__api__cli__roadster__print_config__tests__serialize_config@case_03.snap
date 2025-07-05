@@ -176,6 +176,10 @@ expression: serialized
         "num-workers": 16,
         "balance-strategy": "round-robin",
         "queue-config": {},
+        "queue-fetch-config": {
+          "error-delay": 10,
+          "empty-delay": 10
+        },
         "periodic": {
           "enable": true,
           "stale-cleanup": "auto-clean-stale"
