@@ -167,6 +167,7 @@ where
         Ok(Box::new(crate::util::empty::Empty))
     }
 
+    /// Allows customizing the pool options used for the `sqlx` Postgres connection used for `pgmq`.
     #[cfg(feature = "worker-pg")]
     fn worker_pg_sqlx_pool_options(
         &self,

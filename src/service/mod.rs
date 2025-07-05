@@ -51,6 +51,9 @@ where
     ///
     /// For example, checking that the service is healthy, removing stale items from the
     /// service's queue, etc.
+    ///
+    /// Note that this is run for every service that's registered in the
+    /// [`crate::service::registry::ServiceRegistry`] regardless of whether it's enabled or not.
     async fn before_run(&self, _state: &S) -> RoadsterResult<()> {
         Ok(())
     }

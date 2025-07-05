@@ -10,7 +10,6 @@ use crate::health::check::registry::HealthCheckRegistry;
 use axum_core::extract::FromRef;
 #[cfg(all(feature = "db-sql", feature = "testing"))]
 use itertools::Itertools;
-use pgmq::PGMQueue;
 #[cfg(feature = "db-sea-orm")]
 use sea_orm::DatabaseConnection;
 use std::sync::{Arc, OnceLock, Weak};
@@ -159,7 +158,9 @@ impl AppContext {
                 let pool: Option<sqlx::Pool<sqlx::Postgres>> = None;
 
                 #[cfg(feature = "db-sea-orm")]
-                let pool = if config.service.worker.pg.custom.custom.db_config.is_none() {
+                let pool = if config.service.worker.pg.custom.custom.db_config.is_none()
+                    && sea_orm.get_database_backend() == sea_orm::DatabaseBackend::Postgres
+                {
                     Some(sea_orm.get_postgres_connection_pool().clone())
                 } else {
                     None
@@ -779,8 +780,8 @@ impl Provide<Option<RedisFetch>> for AppContext {
 }
 
 #[cfg(feature = "worker-pg")]
-impl ProvideRef<PGMQueue> for AppContext {
-    fn provide(&self) -> &PGMQueue {
+impl ProvideRef<pgmq::PGMQueue> for AppContext {
+    fn provide(&self) -> &pgmq::PGMQueue {
         self.pgmq()
     }
 }
