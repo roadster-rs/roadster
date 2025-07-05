@@ -1,4 +1,5 @@
-use crate::error::RoadsterResult;
+//! Registry of custom context to include in the [`crate::app::context::AppContext`].
+
 use std::any::{Any, TypeId, type_name};
 use std::collections::BTreeMap;
 use thiserror::Error;
@@ -26,13 +27,33 @@ pub enum ExtensionRegistryError {
     Other(#[from] Box<dyn std::error::Error + Send + Sync>),
 }
 
+/// Registry of custom context to include in the [`crate::app::context::AppContext`].
+///
+/// # Examples
+/// ```
+/// # use roadster::app::context::extension::ExtensionRegistry;
+/// # let mut registry = ExtensionRegistry::default();
+/// #
+/// struct CustomContext {
+///     foo: String,
+/// }
+/// registry.register(CustomContext { foo: String::from("foo")}).unwrap();
+///
+/// let value = registry.get::<CustomContext>().unwrap();
+/// assert_eq!(value.foo, "foo");
+///
+/// let result = registry.register(CustomContext { foo: String::from("bar")});
+/// assert!(result.is_err());
+/// ```
 #[derive(Default)]
 pub struct ExtensionRegistry {
     extensions: BTreeMap<TypeId, Box<dyn Any + Send + Sync>>,
 }
 
 impl ExtensionRegistry {
-    pub fn register<T>(&mut self, extension: T) -> RoadsterResult<&mut Self>
+    /// Register the given extension value. Only a single value of any given type can be registered;
+    /// if the same type is already registered, an error will be returned.
+    pub fn register<T>(&mut self, extension: T) -> Result<&mut Self, ExtensionRegistryError>
     where
         T: 'static + Send + Sync,
     {
@@ -43,14 +64,24 @@ impl ExtensionRegistry {
             .insert(extension.type_id(), Box::new(extension))
             .is_some()
         {
-            return Err(
-                ExtensionRegistryError::AlreadyRegistered(type_name::<T>().to_owned()).into(),
-            );
+            return Err(ExtensionRegistryError::AlreadyRegistered(
+                type_name::<T>().to_owned(),
+            ));
         }
         Ok(self)
     }
 
-    pub fn get<T>(&self) -> RoadsterResult<&T>
+    /// Get a previously registered value by its type. If no value of the specified type has been
+    /// registered, an error will be returned.
+    ///
+    /// # Examples
+    /// ```
+    /// # use roadster::app::context::extension::ExtensionRegistry;
+    /// # let mut registry = ExtensionRegistry::default();
+    /// let result = registry.get::<String>();
+    /// assert!(result.is_err());
+    /// ```
+    pub fn get<T>(&self) -> Result<&T, ExtensionRegistryError>
     where
         T: 'static + Send + Sync,
     {

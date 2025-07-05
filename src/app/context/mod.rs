@@ -1142,7 +1142,8 @@ impl AppContextInner {
     where
         T: 'static + Send + Sync,
     {
-        self.extension_registry.get::<T>()
+        let extension = self.extension_registry.get::<T>()?;
+        Ok(extension)
     }
 
     // Todo: This is a bit of a hack to get automock working while not requiring `'static` lifetime
@@ -1152,7 +1153,8 @@ impl AppContextInner {
     where
         T: 'static + Send + Sync,
     {
-        self.extension_registry.get::<T>()
+        let extension = self.extension_registry.get::<T>()?;
+        Ok(extension)
     }
 }
 
