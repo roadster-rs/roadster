@@ -9,8 +9,8 @@ uri = "postgres://roadster:roadster@localhost:5432/example_dev"
 temporary-test-db = true
 temporary-test-db-clean-up = true
 
-[service.sidekiq]
+[service.worker.sidekiq]
 num-workers = 2
 
-[service.sidekiq.redis]
+[service.worker.sidekiq.redis]
 uri = "redis://localhost:6379"

@@ -12,17 +12,17 @@ use tracing::info;
 pub enum ServiceRegistryError {
     /// The provided [`Service`] was already registered. Contains the [`Service::name`]
     /// of the provided service.
-    #[error("The provided `AppService` was already registered: `{0}`")]
+    #[error("The provided `Service` was already registered: `{0}`")]
     AlreadyRegistered(String),
 
     /// Unable to find an [`Service`] instance of the requested type. Contains the [`type_name`]
     /// of the requested type.
-    #[error("Unable to find an `AppService` instance of type `{0}`")]
+    #[error("Unable to find an `Service` instance of type `{0}`")]
     NotRegistered(String),
 
     /// Unable to downcast the registered instance to the requested type. Contains the [`type_name`]
     /// of the requested type.
-    #[error("Unable to downcast the registered instance of `AppService` to type `{0}`")]
+    #[error("Unable to downcast the registered instance of `Service` to type `{0}`")]
     Downcast(String),
 
     #[error(transparent)]
@@ -118,7 +118,7 @@ from the registry with this method ([`ServiceRegistry::get`]), and call
 # tokio_test::block_on(async {
 # use roadster::service::http::service::OpenApiArgs;
 # use roadster::app::RoadsterApp;
-# use roadster::service::AppServiceBuilder;
+# use roadster::service::ServiceBuilder;
 # use roadster::service::http::service::HttpService;
 # use std::env::current_dir;
 # use std::path::PathBuf;
@@ -133,7 +133,7 @@ from the registry with this method ([`ServiceRegistry::get`]), and call
 # use roadster::service::function::service::FunctionService;
 # use roadster::service::registry::ServiceRegistry;
 # use roadster::app::prepare;
-# use roadster::service::AppService;
+# use roadster::service::Service;
 #
 type App = RoadsterApp<AppContext>;
 
