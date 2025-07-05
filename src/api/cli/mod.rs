@@ -25,7 +25,7 @@ where
     pub state: S,
     #[cfg(feature = "db-sql")]
     pub migrators: Vec<Box<dyn crate::db::migration::Migrator<S>>>,
-    pub service_registry: ServiceRegistry<A, S>,
+    pub service_registry: ServiceRegistry<S>,
 }
 
 /// Implement to enable Roadster to run your custom CLI commands.

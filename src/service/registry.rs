@@ -1,7 +1,7 @@
 use crate::app::App;
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
-use crate::service::{AppService, AppServiceBuilder};
+use crate::service::{Service, ServiceBuilder};
 use axum_core::extract::FromRef;
 use std::any::{TypeId, type_name};
 use std::collections::{BTreeMap, HashSet};
@@ -11,12 +11,12 @@ use tracing::info;
 #[derive(Debug, Error)]
 #[non_exhaustive]
 pub enum ServiceRegistryError {
-    /// The provided [`AppService`] was already registered. Contains the [`AppService::name`]
+    /// The provided [`Service`] was already registered. Contains the [`Service::name`]
     /// of the provided service.
     #[error("The provided `AppService` was already registered: `{0}`")]
     AlreadyRegistered(String),
 
-    /// Unable to find an [`AppService`] instance of the requested type. Contains the [`type_name`]
+    /// Unable to find an [`Service`] instance of the requested type. Contains the [`type_name`]
     /// of the requested type.
     #[error("Unable to find an `AppService` instance of type `{0}`")]
     NotRegistered(String),
@@ -30,23 +30,21 @@ pub enum ServiceRegistryError {
     Other(#[from] Box<dyn std::error::Error + Send + Sync>),
 }
 
-/// Registry for [AppService]s that will be run in the app.
-pub struct ServiceRegistry<A, S>
+/// Registry for [Service]s that will be run in the app.
+pub struct ServiceRegistry<S>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + 'static,
 {
     pub(crate) state: S,
     pub(crate) service_names: HashSet<String>,
-    pub(crate) services: BTreeMap<TypeId, Box<dyn AppService<A, S>>>,
+    pub(crate) services: BTreeMap<TypeId, Box<dyn Service<S>>>,
 }
 
-impl<A, S> ServiceRegistry<A, S>
+impl<S> ServiceRegistry<S>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S>,
 {
     pub(crate) fn new(state: &S) -> Self {
         Self {
@@ -56,21 +54,21 @@ where
         }
     }
 
-    /// Register a new service. If the service is not enabled (e.g., [AppService::enabled] is `false`),
+    /// Register a new service. If the service is not enabled (e.g., [Service::enabled] is `false`),
     /// the service will not be registered.
-    pub fn register_service<Service>(&mut self, service: Service) -> RoadsterResult<()>
+    pub fn register_service<Srvc>(&mut self, service: Srvc) -> RoadsterResult<()>
     where
-        Service: AppService<A, S> + 'static,
+        Srvc: Service<S> + 'static,
     {
         self.register_boxed(Box::new(service))
     }
 
     /// Build and register a new service. If the service is not enabled (e.g.,
-    /// [AppService::enabled] is `false`), the service will not be built or registered.
-    pub async fn register_builder<Service, B>(&mut self, builder: B) -> RoadsterResult<()>
+    /// [Service::enabled] is `false`), the service will not be built or registered.
+    pub async fn register_builder<Srvc, B>(&mut self, builder: B) -> RoadsterResult<()>
     where
-        Service: AppService<A, S> + 'static,
-        B: AppServiceBuilder<A, S, Service>,
+        Srvc: Service<S> + 'static,
+        B: ServiceBuilder<S, Srvc>,
     {
         if !builder.enabled(&self.state) {
             info!(name=%builder.name(), "Service is not enabled, skipping building and registration");
@@ -83,10 +81,7 @@ where
         self.register_boxed(Box::new(service))
     }
 
-    pub(crate) fn register_boxed(
-        &mut self,
-        service: Box<dyn AppService<A, S>>,
-    ) -> RoadsterResult<()> {
+    pub(crate) fn register_boxed(&mut self, service: Box<dyn Service<S>>) -> RoadsterResult<()> {
         let name = service.name();
 
         info!(name=%name, "Registering service");
@@ -102,9 +97,9 @@ where
         Ok(())
     }
 
-    /// Get a reference to a previously registered [`AppService`] of the specified type.
+    /// Get a reference to a previously registered [`Service`] of the specified type.
     ///
-    /// This is useful to call a method that only exists on a concrete [`AppService`]
+    /// This is useful to call a method that only exists on a concrete [`Service`]
     /// implementor after the app was prepared.
     #[cfg_attr(
         all(feature = "http", feature = "open-api"),
@@ -170,17 +165,17 @@ http_service.open_api_schema(&OpenApiArgs::builder().build()).unwrap();
 ```
 "##
     )]
-    pub fn get<Service>(&self) -> RoadsterResult<&Service>
+    pub fn get<Srvc>(&self) -> RoadsterResult<&Srvc>
     where
-        Service: AppService<A, S> + 'static,
+        Srvc: Service<S> + 'static,
     {
         let service = self
             .services
-            .get(&TypeId::of::<Service>())
-            .ok_or_else(|| ServiceRegistryError::NotRegistered(type_name::<Service>().to_string()))?
+            .get(&TypeId::of::<Srvc>())
+            .ok_or_else(|| ServiceRegistryError::NotRegistered(type_name::<Srvc>().to_string()))?
             .as_any()
-            .downcast_ref::<Service>()
-            .ok_or_else(|| ServiceRegistryError::Downcast(type_name::<Service>().to_string()))?;
+            .downcast_ref::<Srvc>()
+            .ok_or_else(|| ServiceRegistryError::Downcast(type_name::<Srvc>().to_string()))?;
         Ok(service)
     }
 }
@@ -190,7 +185,7 @@ mod tests {
     use super::*;
     use crate::app::MockApp;
     use crate::error::Error;
-    use crate::service::{MockAppService, MockAppServiceBuilder};
+    use crate::service::{MockService, MockServiceBuilder};
     use async_trait::async_trait;
     use rstest::rstest;
     use tokio_util::sync::CancellationToken;
@@ -204,14 +199,12 @@ mod tests {
         // Arrange
         let context = AppContext::test(None, None, None).unwrap();
 
-        let mut service: MockAppService<MockApp<AppContext>, AppContext> =
-            MockAppService::default();
+        let mut service: MockService<AppContext> = MockService::default();
         service.expect_enabled().return_const(service_enabled);
         service.expect_name().return_const("test".to_string());
 
         // Act
-        let mut subject: ServiceRegistry<MockApp<AppContext>, AppContext> =
-            ServiceRegistry::new(&context);
+        let mut subject: ServiceRegistry<AppContext> = ServiceRegistry::new(&context);
         subject.register_service(service).unwrap();
 
         // Assert
@@ -220,7 +213,7 @@ mod tests {
         assert!(
             subject
                 .services
-                .contains_key(&TypeId::of::<MockAppService<MockApp<AppContext>, AppContext>>())
+                .contains_key(&TypeId::of::<MockService<AppContext>>())
         );
     }
 
@@ -239,20 +232,18 @@ mod tests {
         // Arrange
         let context = AppContext::test(None, None, None).unwrap();
 
-        let mut builder = MockAppServiceBuilder::default();
+        let mut builder = MockServiceBuilder::default();
         builder.expect_enabled().return_const(builder_enabled);
         builder.expect_name().return_const("test".to_string());
         builder.expect_build().returning(move |_| {
-            let mut service: MockAppService<MockApp<AppContext>, AppContext> =
-                MockAppService::default();
+            let mut service: MockService<AppContext> = MockService::default();
             service.expect_enabled().return_const(service_enabled);
             service.expect_name().return_const("test".to_string());
             Ok(service)
         });
 
         // Act
-        let mut subject: ServiceRegistry<MockApp<AppContext>, AppContext> =
-            ServiceRegistry::new(&context);
+        let mut subject: ServiceRegistry<AppContext> = ServiceRegistry::new(&context);
         subject.register_builder(builder).await.unwrap();
 
         // Assert
@@ -261,7 +252,7 @@ mod tests {
         assert_eq!(
             subject
                 .services
-                .contains_key(&TypeId::of::<MockAppService<MockApp<AppContext>, AppContext>>()),
+                .contains_key(&TypeId::of::<MockService<AppContext>>()),
             expected_count > 0
         );
     }
@@ -271,7 +262,7 @@ mod tests {
     }
     #[async_trait]
     #[cfg_attr(coverage_nightly, coverage(off))]
-    impl AppService<MockApp<AppContext>, AppContext> for FooService {
+    impl Service<AppContext> for FooService {
         fn name(&self) -> String {
             "foo".to_string()
         }
@@ -288,7 +279,7 @@ mod tests {
     struct BarService;
     #[async_trait]
     #[cfg_attr(coverage_nightly, coverage(off))]
-    impl AppService<MockApp<AppContext>, AppContext> for BarService {
+    impl Service<AppContext> for BarService {
         fn name(&self) -> String {
             "bar".to_string()
         }
@@ -315,8 +306,7 @@ mod tests {
         let id = Uuid::new_v4();
         let service = FooService { id };
 
-        let mut subject: ServiceRegistry<MockApp<AppContext>, AppContext> =
-            ServiceRegistry::new(&context);
+        let mut subject: ServiceRegistry<AppContext> = ServiceRegistry::new(&context);
         if registered && correct_type {
             subject.register_service(service).unwrap();
 

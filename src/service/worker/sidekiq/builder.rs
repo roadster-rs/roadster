@@ -2,7 +2,7 @@ use crate::app::App;
 use crate::app::context::AppContext;
 use crate::config::service::worker::StaleCleanUpBehavior;
 use crate::error::RoadsterResult;
-use crate::service::AppServiceBuilder;
+use crate::service::ServiceBuilder;
 use crate::service::worker::sidekiq::app_worker::{AppWorker, AppWorkerConfig};
 #[cfg_attr(test, mockall_double::double)]
 use crate::service::worker::sidekiq::processor_wrapper::ProcessorWrapper;
@@ -43,11 +43,10 @@ where
 }
 
 #[async_trait]
-impl<A, S> AppServiceBuilder<A, S, SidekiqWorkerService> for SidekiqWorkerServiceBuilder<S>
+impl<S> ServiceBuilder<S, SidekiqWorkerService> for SidekiqWorkerServiceBuilder<S>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + 'static,
 {
     fn name(&self) -> String {
         NAME.to_string()

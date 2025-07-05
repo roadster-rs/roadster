@@ -34,7 +34,7 @@ where
     pub state: S,
     #[cfg(feature = "db-sql")]
     pub migrators: Vec<Box<dyn Migrator<S>>>,
-    pub service_registry: ServiceRegistry<A, S>,
+    pub service_registry: ServiceRegistry<S>,
     pub lifecycle_handler_registry: LifecycleHandlerRegistry<A, S>,
 }
 
@@ -308,7 +308,7 @@ where
     pub state: S,
     #[cfg(feature = "db-sql")]
     pub migrators: Vec<Box<dyn Migrator<S>>>,
-    pub service_registry: ServiceRegistry<A, S>,
+    pub service_registry: ServiceRegistry<S>,
     pub lifecycle_handler_registry: LifecycleHandlerRegistry<A, S>,
 }
 

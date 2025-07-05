@@ -13,7 +13,7 @@ use crate::health::check::HealthCheck;
 use crate::health::check::registry::HealthCheckRegistry;
 use crate::lifecycle::AppLifecycleHandler;
 use crate::lifecycle::registry::LifecycleHandlerRegistry;
-use crate::service::AppService;
+use crate::service::Service;
 use crate::service::registry::ServiceRegistry;
 use crate::util::empty::Empty;
 use async_trait::async_trait;
@@ -78,13 +78,13 @@ type LifecycleHandlerProviders<A, S> =
     Vec<Box<dyn Send + Sync + Fn(&mut LifecycleHandlerRegistry<A, S>, &S) -> RoadsterResult<()>>>;
 type HealthCheckProviders<S> =
     Vec<Box<dyn Send + Sync + Fn(&mut HealthCheckRegistry, &S) -> RoadsterResult<()>>>;
-type Services<A, S> = Vec<Box<dyn AppService<A, S>>>;
-type ServiceProviders<A, S> = Vec<
+type Services<S> = Vec<Box<dyn Service<S>>>;
+type ServiceProviders<S> = Vec<
     Box<
         dyn Send
             + Sync
             + for<'a> Fn(
-                &'a mut ServiceRegistry<A, S>,
+                &'a mut ServiceRegistry<S>,
                 &'a S,
             ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>>,
     >,
@@ -136,7 +136,7 @@ struct Inner<
     health_check_providers: HealthCheckProviders<S>,
     graceful_shutdown_signal_provider: GracefulShutdownSignalProvider<S>,
     lifecycle_handler_providers: LifecycleHandlerProviders<RoadsterApp<S, Cli>, S>,
-    service_providers: ServiceProviders<RoadsterApp<S, Cli>, S>,
+    service_providers: ServiceProviders<S>,
 }
 
 impl<
@@ -522,7 +522,7 @@ pub struct RoadsterApp<
     lifecycle_handlers: Mutex<LifecycleHandlers<RoadsterApp<S, Cli>, S>>,
     // Interior mutability pattern -- this allows us to keep the service reference as a
     // Box, which helps with single ownership and ensuring we only register a service once.
-    services: Mutex<Services<RoadsterApp<S, Cli>, S>>,
+    services: Mutex<Services<S>>,
 }
 
 pub struct RoadsterAppBuilder<
@@ -556,7 +556,7 @@ pub struct RoadsterAppBuilder<
     diesel_mysql_async_connection_customizer:
         Option<DieselAsyncConnectionCustomizer<crate::db::DieselMysqlConnAsync>>,
     lifecycle_handlers: LifecycleHandlers<RoadsterApp<S, Cli>, S>,
-    services: Services<RoadsterApp<S, Cli>, S>,
+    services: Services<S>,
 }
 
 impl<
@@ -1036,18 +1036,15 @@ where
         self
     }
 
-    /// Add a [`AppService`] for the [`RoadsterApp`].
+    /// Add a [`Service`] for the [`RoadsterApp`].
     ///
     /// This method can be called multiple times to register multiple services.
-    pub fn add_service(
-        mut self,
-        service: impl 'static + AppService<RoadsterApp<S, Cli>, S>,
-    ) -> Self {
+    pub fn add_service(mut self, service: impl 'static + Service<S>) -> Self {
         self.services.push(Box::new(service));
         self
     }
 
-    /// Provide the logic to register [`AppService`]s for the [`RoadsterApp`].
+    /// Provide the logic to register [`Service`]s for the [`RoadsterApp`].
     ///
     /// This method can be called multiple times to register multiple services in separate
     /// callbacks.
@@ -1057,7 +1054,7 @@ where
         + Send
         + Sync
         + for<'a> Fn(
-            &'a mut ServiceRegistry<RoadsterApp<S, Cli>, S>,
+            &'a mut ServiceRegistry<S>,
             &'a S,
         ) -> Pin<
             Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>,
@@ -1396,11 +1393,7 @@ where
         self.inner.health_checks(registry, state).await
     }
 
-    async fn services(
-        &self,
-        registry: &mut ServiceRegistry<Self, S>,
-        state: &S,
-    ) -> RoadsterResult<()> {
+    async fn services(&self, registry: &mut ServiceRegistry<S>, state: &S) -> RoadsterResult<()> {
         {
             let mut services = self.services.lock().map_err(crate::error::Error::from)?;
             for service in services.drain(..) {

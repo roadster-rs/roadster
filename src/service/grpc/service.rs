@@ -1,7 +1,7 @@
 use crate::app::App;
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
-use crate::service::AppService;
+use crate::service::Service;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use std::sync::Mutex;
@@ -25,11 +25,10 @@ impl GrpcService {
 }
 
 #[async_trait]
-impl<A, S> AppService<A, S> for GrpcService
+impl<S> Service<S> for GrpcService
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + 'static,
 {
     fn name(&self) -> String {
         "grpc".to_string()

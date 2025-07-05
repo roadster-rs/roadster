@@ -221,12 +221,8 @@ where
         Ok(())
     }
 
-    /// Provide the [crate::service::AppService]s to run in the app.
-    async fn services(
-        &self,
-        _registry: &mut ServiceRegistry<Self, S>,
-        _state: &S,
-    ) -> RoadsterResult<()> {
+    /// Provide the [crate::service::Service]s to run in the app.
+    async fn services(&self, _registry: &mut ServiceRegistry<S>, _state: &S) -> RoadsterResult<()> {
         Ok(())
     }
 

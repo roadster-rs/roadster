@@ -1,7 +1,7 @@
 use crate::app::App;
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
-use crate::service::AppService;
+use crate::service::Service;
 use crate::worker::backend::pg::processor::PgProcessor;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
@@ -58,11 +58,10 @@ where
 }
 
 #[async_trait]
-impl<A, S> AppService<A, S> for PgWorkerService<S>
+impl<S> Service<S> for PgWorkerService<S>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + 'static,
 {
     fn name(&self) -> String {
         NAME.to_string()

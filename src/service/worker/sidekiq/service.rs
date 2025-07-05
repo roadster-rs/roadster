@@ -2,7 +2,7 @@ use crate::app::App;
 use crate::app::context::AppContext;
 use crate::config::service::worker::StaleCleanUpBehavior;
 use crate::error::RoadsterResult;
-use crate::service::AppService;
+use crate::service::Service;
 use crate::service::worker::sidekiq::builder::{PERIODIC_KEY, SidekiqWorkerServiceBuilder};
 use crate::util::redis::RedisCommands;
 use async_trait::async_trait;
@@ -63,11 +63,10 @@ pub struct SidekiqWorkerService {
 }
 
 #[async_trait]
-impl<A, S> AppService<A, S> for SidekiqWorkerService
+impl<S> Service<S> for SidekiqWorkerService
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + 'static,
 {
     fn name(&self) -> String {
         NAME.to_string()

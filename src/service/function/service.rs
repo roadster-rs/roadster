@@ -1,7 +1,7 @@
 use crate::app::App;
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
-use crate::service::AppService;
+use crate::service::Service;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use std::future::Future;
@@ -9,7 +9,7 @@ use std::marker::PhantomData;
 use tokio_util::sync::CancellationToken;
 use typed_builder::TypedBuilder;
 
-/// A generic [AppService] to allow creating a service from an async function.
+/// A generic [Service] to allow creating a service from an async function.
 ///
 /// # Examples
 /// ```rust
@@ -42,11 +42,10 @@ use typed_builder::TypedBuilder;
 ///     .build();
 /// ```
 #[derive(TypedBuilder)]
-pub struct FunctionService<A, S, F, Fut>
+pub struct FunctionService<S, F, Fut>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + 'static,
     F: Send + Sync + Fn(S, CancellationToken) -> Fut,
     Fut: Send + Future<Output = RoadsterResult<()>>,
 {
@@ -56,17 +55,14 @@ where
     enabled: Option<bool>,
     function: F,
     #[builder(default, setter(skip))]
-    _app: PhantomData<A>,
-    #[builder(default, setter(skip))]
     _state: PhantomData<S>,
 }
 
 #[async_trait]
-impl<A, S, F, Fut> AppService<A, S> for FunctionService<A, S, F, Fut>
+impl<S, F, Fut> Service<S> for FunctionService<S, F, Fut>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + 'static,
     F: 'static + Send + Sync + Fn(S, CancellationToken) -> Fut,
     Fut: 'static + Send + Future<Output = RoadsterResult<()>>,
 {
