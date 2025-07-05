@@ -1,0 +1,10 @@
+---
+source: src/worker/mod.rs
+expression: enqueue_config
+---
+EnqueueConfig {
+    queue: None,
+    custom: CustomConfig {
+        inner: {},
+    },
+}

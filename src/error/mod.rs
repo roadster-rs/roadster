@@ -11,18 +11,23 @@ pub mod db;
 pub mod email;
 #[cfg(feature = "http")]
 pub mod mime;
-mod mutex;
+pub mod mutex;
 pub mod other;
 pub mod parse;
+#[cfg(feature = "worker-pg")]
+pub mod pgmq;
 pub mod reqwest;
 pub mod serde;
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 pub mod sidekiq;
 pub mod tokio;
 #[cfg(feature = "grpc")]
 pub mod tonic;
 pub mod tracing;
+#[cfg(feature = "worker")]
+pub mod worker;
 
+use crate::app::context::extension::ExtensionRegistryError;
 use crate::error::api::ApiError;
 use crate::error::auth::AuthError;
 #[cfg(feature = "http")]
@@ -38,14 +43,18 @@ use crate::error::mime::MimeError;
 use crate::error::mutex::MutexError;
 use crate::error::other::OtherError;
 use crate::error::parse::ParseError;
+#[cfg(feature = "worker-pg")]
+use crate::error::pgmq::PgmqError;
 use crate::error::reqwest::ReqwestError;
 use crate::error::serde::SerdeError;
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 use crate::error::sidekiq::SidekiqError;
 use crate::error::tokio::TokioError;
 #[cfg(feature = "grpc")]
 use crate::error::tonic::TonicError;
 use crate::error::tracing::TracingError;
+#[cfg(feature = "worker")]
+use crate::error::worker::WorkerError;
 use crate::health::check::registry::HealthCheckRegistryError;
 use crate::lifecycle::registry::LifecycleHandlerRegistryError;
 use crate::service::registry::ServiceRegistryError;
@@ -76,9 +85,17 @@ pub enum Error {
     #[error(transparent)]
     Db(#[from] DbError),
 
-    #[cfg(feature = "sidekiq")]
+    #[cfg(feature = "worker-sidekiq")]
     #[error(transparent)]
     Sidekiq(#[from] SidekiqError),
+
+    #[cfg(feature = "worker-pg")]
+    #[error(transparent)]
+    Pgmq(#[from] PgmqError),
+
+    #[cfg(feature = "worker")]
+    #[error(transparent)]
+    Worker(#[from] WorkerError),
 
     #[cfg(feature = "cli")]
     #[error(transparent)]
@@ -129,6 +146,9 @@ pub enum Error {
 
     #[error(transparent)]
     ServiceRegistry(#[from] ServiceRegistryError),
+
+    #[error(transparent)]
+    ExtensionRegistry(#[from] ExtensionRegistryError),
 
     #[error(transparent)]
     Mutex(#[from] MutexError),

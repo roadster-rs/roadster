@@ -1,8 +1,7 @@
-use crate::app::App;
 use crate::app::context::AppContext;
-use crate::config::service::worker::sidekiq::StaleCleanUpBehavior;
+use crate::config::service::worker::StaleCleanUpBehavior;
 use crate::error::RoadsterResult;
-use crate::service::AppServiceBuilder;
+use crate::service::ServiceBuilder;
 use crate::service::worker::sidekiq::app_worker::{AppWorker, AppWorkerConfig};
 #[cfg_attr(test, mockall_double::double)]
 use crate::service::worker::sidekiq::processor_wrapper::ProcessorWrapper;
@@ -43,11 +42,10 @@ where
 }
 
 #[async_trait]
-impl<A, S> AppServiceBuilder<A, S, SidekiqWorkerService> for SidekiqWorkerServiceBuilder<S>
+impl<S> ServiceBuilder<S, SidekiqWorkerService> for SidekiqWorkerServiceBuilder<S>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + 'static,
 {
     fn name(&self) -> String {
         NAME.to_string()
@@ -105,10 +103,13 @@ where
             let queues = context
                 .config()
                 .service
+                .worker
                 .sidekiq
                 .custom
+                .common
                 .queues
                 .clone()
+                .unwrap_or_default()
                 .into_iter()
                 .chain(worker_queues.unwrap_or_default())
                 .collect_vec();
@@ -118,23 +119,32 @@ where
             );
             debug!("Sidekiq.rs queues: {queues:?}");
             let processor = {
-                let config = context.config().service.sidekiq.custom.clone();
-                let num_workers = config.num_workers.to_usize().ok_or_else(|| {
+                let config = context.config().service.worker.sidekiq.custom.clone();
+                let num_workers = config.common.num_workers.to_usize().ok_or_else(|| {
                     crate::error::other::OtherError::Message(format!(
                         "Unable to convert num_workers `{}` to usize",
-                        context.config().service.sidekiq.custom.num_workers
+                        context
+                            .config()
+                            .service
+                            .worker
+                            .sidekiq
+                            .custom
+                            .common
+                            .num_workers
                     ))
                 })?;
                 let processor_config: ProcessorConfig = Default::default();
                 let processor_config = processor_config
                     .num_workers(num_workers)
-                    .balance_strategy(config.balance_strategy.into());
+                    .balance_strategy(config.common.balance_strategy.into());
 
                 let processor_config = context
                     .config()
                     .service
+                    .worker
                     .sidekiq
                     .custom
+                    .common
                     .queue_config
                     .iter()
                     .fold(processor_config, |processor_config, (queue, config)| {
@@ -179,7 +189,9 @@ where
         if context
             .config()
             .service
+            .worker
             .sidekiq
+            .custom
             .custom
             .periodic
             .stale_cleanup
@@ -396,6 +408,7 @@ mod tests {
     use futures::StreamExt;
     use rstest::rstest;
     use sidekiq::{RedisConnectionManager, Worker};
+    use std::collections::BTreeSet;
 
     #[rstest]
     #[case(true, 1, vec![MockTestAppWorker::class_name()])]
@@ -480,8 +493,9 @@ mod tests {
     ) -> SidekiqWorkerServiceBuilder<AppContext> {
         let mut config = AppConfig::test(None).unwrap();
         config.service.default_enable = enabled;
-        config.service.sidekiq.custom.num_workers = 1;
-        config.service.sidekiq.custom.queues = vec!["foo".to_string()];
+        config.service.worker.sidekiq.custom.common.num_workers = 1;
+        config.service.worker.sidekiq.custom.common.queues =
+            Some(BTreeSet::from(["foo".to_string()]));
 
         let redis_fetch = RedisConnectionManager::new("redis://invalid_host:1234").unwrap();
         let pool = Pool::builder().build_unchecked(redis_fetch);

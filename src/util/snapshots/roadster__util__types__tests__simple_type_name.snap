@@ -1,0 +1,5 @@
+---
+source: src/util/types.rs
+expression: simple_type_name
+---
+"Foo"

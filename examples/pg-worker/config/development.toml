@@ -1,0 +1,8 @@
+[tracing]
+format = "pretty"
+
+[auth.jwt]
+secret = "secret-dev"
+
+[database]
+uri = "postgres://roadster:roadster@localhost:5432/example_dev"

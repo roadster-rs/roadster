@@ -1,4 +1,3 @@
-use crate::util::serde::UriOrString;
 use serde_derive::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -41,7 +40,7 @@ pub struct Jwt {
 pub struct JwtClaims {
     // Todo: Default to the server URL?
     #[serde(default)]
-    pub audience: Vec<UriOrString>,
+    pub audience: Vec<crate::util::serde::UriOrString>,
     /// Claim names to require, in addition to the default-required `exp` claim.
     #[serde(default)]
     pub required_claims: Vec<String>,

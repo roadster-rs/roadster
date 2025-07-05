@@ -4,6 +4,8 @@ expression: database
 ---
 uri = 'https://example.com:1234/'
 auto-migrate = true
+temporary-test-db = false
+temporary-test-db-clean-up = true
 connect-timeout = 1000
 connect-lazy = true
 acquire-timeout = 1000
@@ -11,5 +13,3 @@ min-connections = 0
 max-connections = 1
 test-on-checkout = true
 retry-connection = true
-temporary-test-db = false
-temporary-test-db-clean-up = true

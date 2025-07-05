@@ -11,7 +11,7 @@ use schemars::JsonSchema;
 use sea_orm::DatabaseConnection;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 use sidekiq::redis_rs::cmd;
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -362,7 +362,7 @@ async fn ping_smtp(
     }
 }
 
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 #[instrument(skip_all)]
 pub(crate) async fn redis_health(
     redis: &sidekiq::RedisPool,
@@ -389,7 +389,7 @@ pub(crate) async fn redis_health(
         .build()
 }
 
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 #[instrument(skip_all)]
 async fn ping_redis(
     redis: &sidekiq::RedisPool,

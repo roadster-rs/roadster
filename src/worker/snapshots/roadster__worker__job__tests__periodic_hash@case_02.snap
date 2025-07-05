@@ -1,0 +1,5 @@
+---
+source: src/worker/job.rs
+expression: "super::periodic_hash(name, &schedule, &value)"
+---
+4508099775577637326

@@ -1,7 +1,6 @@
-use crate::app::App;
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
-use crate::service::AppService;
+use crate::service::Service;
 use crate::service::http::builder::HttpServiceBuilder;
 #[cfg(feature = "open-api")]
 use aide::openapi::OpenApi;
@@ -33,11 +32,10 @@ pub struct HttpService {
 }
 
 #[async_trait]
-impl<A, S> AppService<A, S> for HttpService
+impl<S> Service<S> for HttpService
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + 'static,
 {
     fn name(&self) -> String {
         NAME.to_string()

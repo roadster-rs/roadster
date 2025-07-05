@@ -37,14 +37,13 @@ pub(crate) async fn health_checks(checks: Vec<Arc<dyn HealthCheck>>) -> Roadster
 }
 
 #[instrument(skip_all)]
-pub(crate) async fn before_run<A, S>(
-    service_registry: &ServiceRegistry<A, S>,
+pub(crate) async fn before_run<S>(
+    service_registry: &ServiceRegistry<S>,
     state: &S,
 ) -> RoadsterResult<()>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S>,
 {
     for (_, service) in service_registry.services.iter() {
         let name = service.name();
@@ -57,13 +56,13 @@ where
 
 pub(crate) async fn run<A, S>(
     app: A,
-    service_registry: ServiceRegistry<A, S>,
+    service_registry: ServiceRegistry<S>,
     state: &S,
 ) -> RoadsterResult<()>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S>,
+    A: 'static + App<S>,
 {
     let app = Arc::new(app);
     let cancel_token = CancellationToken::new();
@@ -71,8 +70,13 @@ where
 
     let context = AppContext::from_ref(state);
 
+    let services = service_registry
+        .services
+        .into_values()
+        .filter(|service| service.enabled(state));
+
     // Spawn tasks for the app's services
-    for (_, service) in service_registry.services {
+    for service in services {
         let name = service.name();
         let state = state.clone();
         let cancel_token = cancel_token.clone();

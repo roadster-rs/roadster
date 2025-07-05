@@ -5,9 +5,9 @@ pub mod default;
 #[cfg(feature = "email")]
 pub mod email;
 pub mod registry;
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 pub mod sidekiq_enqueue;
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 pub mod sidekiq_fetch;
 
 use crate::error::RoadsterResult;
@@ -68,7 +68,7 @@ pub struct ErrorData {
 
 /// Trait used to check the health of the app before its services start up.
 ///
-/// This is a separate trait, vs adding a "health check" method to [`crate::service::AppService`],
+/// This is a separate trait, vs adding a "health check" method to [`crate::service::Service`],
 /// to allow defining health checks that apply to multiple services. For example, most services
 /// would require the DB and Redis connections to be valid, so we would want to perform a check for
 /// these resources a single time before starting any service instead of once for every service that

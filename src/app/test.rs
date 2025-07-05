@@ -19,12 +19,12 @@ where
 {
     pub app: A,
     pub state: S,
-    pub service_registry: ServiceRegistry<A, S>,
+    pub service_registry: ServiceRegistry<S>,
 }
 
 /// Similar to [`run`], except intended to be used in tests. Does all of the same setup and
 /// teardown logic as [`run`], but does not actually run the registered
-/// [`crate::service::AppService`]s.
+/// [`crate::service::Service`]s.
 ///
 /// Note: If the test panics, the teardown logic will only be run if the `testing.catch-panic`
 /// config is set to `true`.

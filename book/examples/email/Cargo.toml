@@ -5,7 +5,7 @@ edition = "2024"
 publish = false
 
 [dependencies]
-roadster = { path = "../../..", features = ["email-smtp", "email-sendgrid", "sidekiq"] }
+roadster = { path = "../../..", features = ["email-smtp", "email-sendgrid", "worker-sidekiq"] }
 aide = { workspace = true }
 tracing = { workspace = true }
 serde = { workspace = true }

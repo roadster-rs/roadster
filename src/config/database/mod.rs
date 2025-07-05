@@ -1,6 +1,6 @@
 use crate::util::serde::default_true;
 use serde_derive::{Deserialize, Serialize};
-use serde_with::serde_as;
+use serde_with::{serde_as, skip_serializing_none};
 use std::time::Duration;
 use url::Url;
 use validator::Validate;
@@ -17,7 +17,37 @@ pub struct Database {
     /// be manually performed via the `roadster migration [COMMAND]` CLI command.
     pub auto_migrate: bool,
 
-    #[serde(default = "Database::default_connect_timeout")]
+    /// Create a temporary database in the same DB host from the `uri` field.
+    #[serde(default)]
+    pub temporary_test_db: bool,
+
+    /// Automatically clean up (drop) the temporary test DB that was created by setting
+    /// `temporary_test_db` to `true`. Note that the test DB will only be cleaned up if the closure
+    /// passed to [`crate::app::run_test`] or [`crate::app::run_test_with_result`] doesn't panic.
+    #[cfg(feature = "testing")]
+    #[serde(default = "default_true")]
+    pub temporary_test_db_clean_up: bool,
+
+    #[validate(nested)]
+    #[serde(flatten)]
+    pub pool_config: DbPoolConfig,
+
+    /// Options for creating a Test Container instance for the DB. If enabled, the `Database#uri`
+    /// field will be overridden to be the URI for the Test Container instance that's created when
+    /// building the app's [`crate::app::context::AppContext`].
+    #[cfg(feature = "test-containers")]
+    #[serde(default)]
+    #[validate(nested)]
+    pub test_container: Option<crate::config::TestContainer>,
+}
+
+#[serde_as]
+#[skip_serializing_none]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct DbPoolConfig {
+    #[serde(default = "DbPoolConfig::default_connect_timeout")]
     #[serde_as(as = "serde_with::DurationMilliSeconds")]
     pub connect_timeout: Duration,
 
@@ -26,7 +56,7 @@ pub struct Database {
     #[serde(default = "default_true")]
     pub connect_lazy: bool,
 
-    #[serde(default = "Database::default_acquire_timeout")]
+    #[serde(default = "DbPoolConfig::default_acquire_timeout")]
     #[serde_as(as = "serde_with::DurationMilliSeconds")]
     pub acquire_timeout: Duration,
 
@@ -48,33 +78,14 @@ pub struct Database {
     #[cfg(feature = "db-diesel-pool-async")]
     #[serde(default = "default_true")]
     pub retry_connection: bool,
-
-    /// Create a temporary database in the same DB host from the `uri` field.
-    #[serde(default)]
-    pub temporary_test_db: bool,
-
-    /// Automatically clean up (drop) the temporary test DB that was created by setting
-    /// `temporary_test_db` to `true`. Note that the test DB will only be cleaned up if the closure
-    /// passed to [`crate::app::run_test`] or [`crate::app::run_test_with_result`] doesn't panic.
-    #[cfg(feature = "testing")]
-    #[serde(default = "default_true")]
-    pub temporary_test_db_clean_up: bool,
-
-    /// Options for creating a Test Container instance for the DB. If enabled, the `Database#uri`
-    /// field will be overridden to be the URI for the Test Container instance that's created when
-    /// building the app's [`crate::app::context::AppContext`].
-    #[cfg(feature = "test-containers")]
-    #[serde(default)]
-    #[validate(nested)]
-    pub test_container: Option<crate::config::TestContainer>,
 }
 
-impl Database {
-    fn default_connect_timeout() -> Duration {
+impl DbPoolConfig {
+    pub(crate) fn default_connect_timeout() -> Duration {
         Duration::from_millis(1000)
     }
 
-    fn default_acquire_timeout() -> Duration {
+    pub(crate) fn default_acquire_timeout() -> Duration {
         Duration::from_millis(1000)
     }
 }
@@ -91,20 +102,40 @@ impl From<&Database> for sea_orm::ConnectOptions {
     fn from(database: &Database) -> Self {
         let mut options = sea_orm::ConnectOptions::new(database.uri.to_string());
         options
-            .test_before_acquire(database.test_on_checkout)
-            .connect_timeout(database.connect_timeout)
-            .connect_lazy(database.connect_lazy)
-            .acquire_timeout(database.acquire_timeout)
-            .min_connections(database.min_connections)
-            .max_connections(database.max_connections)
+            .test_before_acquire(database.pool_config.test_on_checkout)
+            .connect_timeout(database.pool_config.connect_timeout)
+            .connect_lazy(database.pool_config.connect_lazy)
+            .acquire_timeout(database.pool_config.acquire_timeout)
+            .min_connections(database.pool_config.min_connections)
+            .max_connections(database.pool_config.max_connections)
             .sqlx_logging(false);
-        if let Some(idle_timeout) = database.idle_timeout {
+        if let Some(idle_timeout) = database.pool_config.idle_timeout {
             options.idle_timeout(idle_timeout);
         }
-        if let Some(max_lifetime) = database.max_lifetime {
+        if let Some(max_lifetime) = database.pool_config.max_lifetime {
             options.max_lifetime(max_lifetime);
         }
         options
+    }
+}
+
+#[cfg(feature = "worker-pg")]
+impl From<Database> for sqlx::pool::PoolOptions<sqlx::Postgres> {
+    fn from(value: Database) -> Self {
+        Self::from(&value)
+    }
+}
+
+#[cfg(feature = "worker-pg")]
+impl From<&Database> for sqlx::pool::PoolOptions<sqlx::Postgres> {
+    fn from(value: &Database) -> Self {
+        sqlx::pool::PoolOptions::new()
+            .test_before_acquire(value.pool_config.test_on_checkout)
+            .acquire_timeout(value.pool_config.acquire_timeout)
+            .min_connections(value.pool_config.min_connections)
+            .max_connections(value.pool_config.max_connections)
+            .idle_timeout(value.pool_config.idle_timeout)
+            .max_lifetime(value.pool_config.max_lifetime)
     }
 }
 
@@ -155,16 +186,18 @@ mod tests {
             #[cfg(feature = "test-containers")]
             test_container: None,
             auto_migrate: true,
-            connect_timeout: Duration::from_secs(1),
-            connect_lazy: true,
-            acquire_timeout: Duration::from_secs(2),
-            idle_timeout: Some(Duration::from_secs(3)),
-            max_lifetime: Some(Duration::from_secs(4)),
-            min_connections: 10,
-            max_connections: 20,
-            test_on_checkout: true,
-            #[cfg(feature = "db-diesel-pool-async")]
-            retry_connection: true,
+            pool_config: DbPoolConfig {
+                connect_timeout: Duration::from_secs(1),
+                connect_lazy: true,
+                acquire_timeout: Duration::from_secs(2),
+                idle_timeout: Some(Duration::from_secs(3)),
+                max_lifetime: Some(Duration::from_secs(4)),
+                min_connections: 10,
+                max_connections: 20,
+                test_on_checkout: true,
+                #[cfg(feature = "db-diesel-pool-async")]
+                retry_connection: true,
+            },
             temporary_test_db: false,
             temporary_test_db_clean_up: false,
         }

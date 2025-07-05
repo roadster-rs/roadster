@@ -2,10 +2,6 @@
 source: src/config/service/worker/sidekiq/mod.rs
 expression: sidekiq
 ---
-num-workers = 1
-balance-strategy = 'round-robin'
-queues = []
-
 [redis]
 uri = 'redis://[Sensitive]'
 
@@ -15,7 +11,3 @@ uri = 'redis://[Sensitive]'
 
 [periodic]
 stale-cleanup = 'auto-clean-stale'
-
-[app-worker]
-
-[queue-config]
