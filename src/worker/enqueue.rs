@@ -84,27 +84,6 @@ where
     Ok(queue)
 }
 
-// pub(crate) fn queue_from_config<S>(state: &S, worker_enqueue_config: &EnqueueConfig) -> Result<String, EnqueueError>
-// where
-//     S: Clone + Send + Sync + 'static,
-//     AppContext: FromRef<S>,
-// {
-//     let context = AppContext::from_ref(state);
-//     let enqueue_config = &context.config().service.worker.enqueue_config;
-//
-//     let queue = if let Some(queue) = worker_enqueue_config.queue.as_ref() {
-//         queue.to_owned()
-//     } else if let Some(queue) = enqueue_config.queue.as_ref() {
-//         queue.to_owned()
-//     } else {
-//         let worker_name = W::name();
-//         error!(worker_name, "Unable to enqueue job, no queue configured");
-//         return Err(EnqueueError::NoQueue(worker_name).into());
-//     };
-//
-//     Ok(queue)
-// }
-
 /// Helper function to prepare a job to be enqueued and then enqueue it using the provided `enqueue_fn`.
 pub(crate) async fn enqueue<W, S, Args, ArgsRef, E, F>(
     state: &S,

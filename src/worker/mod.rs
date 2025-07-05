@@ -14,7 +14,6 @@ pub mod config;
 pub(crate) mod enqueue;
 pub(crate) mod job;
 
-// Todo: add on_success/on_failure handlers?
 #[async_trait]
 pub trait Worker<S, Args>: Send + Sync
 where
@@ -228,16 +227,5 @@ mod tests {
     fn enqueue_config(context: &AppContext) {
         let enqueue_config = FooWorker::enqueue_config(context);
         assert_debug_snapshot!(enqueue_config);
-    }
-
-    #[rstest]
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    #[cfg(feature = "worker-pg")]
-    #[tokio::test]
-    async fn pg_processor_register(context: &AppContext) {
-        let processor = crate::worker::backend::pg::processor::PgProcessor::builder(context);
-        // Todo: add `unwrap` -- right now this is just to ensure things compile
-        let _processor = processor.register(FooWorker);
-        // let _ = processor.build();
     }
 }

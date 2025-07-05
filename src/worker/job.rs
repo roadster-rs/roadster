@@ -5,7 +5,8 @@ use serde_with::skip_serializing_none;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
 // Todo: Not sure if this should be public yet.
-#[derive(Serialize, Deserialize, bon::Builder)]
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize, bon::Builder, Eq, PartialEq)]
 pub(crate) struct Job {
     pub(crate) metadata: JobMetadata,
     pub(crate) args: serde_json::Value,
@@ -13,14 +14,16 @@ pub(crate) struct Job {
 
 // Todo: Not sure if this should be public yet.
 #[skip_serializing_none]
-#[derive(Serialize, Deserialize, bon::Builder)]
+#[derive(Debug, Clone, Serialize, Deserialize, bon::Builder, Eq, PartialEq)]
 pub(crate) struct JobMetadata {
+    #[builder(into)]
     pub(crate) worker_name: String,
     pub(crate) periodic: Option<PeriodicConfig>,
 }
 
+// Todo: Not sure if this should be public yet.
 #[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, bon::Builder)]
+#[derive(Debug, Clone, Serialize, Deserialize, bon::Builder, Eq, PartialEq)]
 pub(crate) struct PeriodicConfig {
     pub(crate) hash: u64,
     pub(crate) schedule: Schedule,
@@ -61,8 +64,9 @@ pub(crate) fn periodic_hash(
 #[cfg(test)]
 mod tests {
     use crate::testing::snapshot::TestCase;
+    use crate::worker::job::{Job, JobMetadata, PeriodicConfig};
     use cron::Schedule;
-    use insta::assert_snapshot;
+    use insta::{assert_json_snapshot, assert_snapshot};
     use rstest::{fixture, rstest};
     use std::str::FromStr;
 
@@ -82,5 +86,51 @@ mod tests {
         #[case] value: serde_json::Value,
     ) {
         assert_snapshot!(super::periodic_hash(name, &schedule, &value));
+    }
+
+    #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn job_ser_and_deser() {
+        let job = Job::builder()
+            .args(serde_json::json!({"foo": "bar"}))
+            .metadata(
+                JobMetadata::builder()
+                    .worker_name("foo")
+                    .periodic(
+                        PeriodicConfig::builder()
+                            .hash(1234) // fake hash
+                            .schedule(Schedule::from_str("* * * * * *").unwrap())
+                            .build(),
+                    )
+                    .build(),
+            )
+            .build();
+
+        let ser = serde_json::to_value(&job).unwrap();
+
+        let job_deser: Job = serde_json::from_value(ser).unwrap();
+
+        assert_eq!(job, job_deser);
+    }
+
+    #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn job_serde() {
+        let job = Job::builder()
+            .args(serde_json::json!({"foo": "bar"}))
+            .metadata(
+                JobMetadata::builder()
+                    .worker_name("foo")
+                    .periodic(
+                        PeriodicConfig::builder()
+                            .hash(1234) // fake hash
+                            .schedule(Schedule::from_str("* * * * * *").unwrap())
+                            .build(),
+                    )
+                    .build(),
+            )
+            .build();
+
+        assert_json_snapshot!(job);
     }
 }
