@@ -1,6 +1,6 @@
 use crate::app::context::AppContext;
 use crate::config::AppConfig;
-use crate::config::service::worker::StaleCleanUpBehavior;
+use crate::config::service::worker::{BalanceStrategy, StaleCleanUpBehavior};
 use crate::error::RoadsterResult;
 use crate::worker::backend::pg::processor::builder::{PERIODIC_QUEUE_NAME, PeriodicArgsJson};
 use crate::worker::config::{CompletedAction, failure_action, retry_delay, success_action};
@@ -46,6 +46,9 @@ pub enum PgProcessorError {
     #[error("No queue configured for worker `{0}`.")]
     NoQueue(String),
 
+    #[error("{0}")]
+    InvalidBalanceStrategy(String),
+
     #[error(transparent)]
     Other(#[from] Box<dyn std::error::Error + Send + Sync>),
 }
@@ -88,6 +91,25 @@ where
     }
 
     pub async fn before_run(&self, state: &S) -> RoadsterResult<()> {
+        let context = AppContext::from_ref(state);
+        if context
+            .config()
+            .service
+            .worker
+            .pg
+            .custom
+            .common
+            .balance_strategy
+            == BalanceStrategy::None
+            && self.shared_queues(context.config()).len() > 1
+        {
+            return Err(PgProcessorError::InvalidBalanceStrategy(format!(
+                "{:?} is not supported when more than one shared queue is enabled.",
+                BalanceStrategy::None
+            ))
+            .into());
+        }
+
         self.initialize_queues().await?;
         self.initialize_periodic(state).await?;
         Ok(())
@@ -196,15 +218,7 @@ where
         let context = AppContext::from_ref(&self.inner.state);
         let worker_config = &context.config().service.worker.pg.custom;
         let dedicated_queues = &worker_config.common.queue_config;
-        let shared_queues = worker_config
-            .common
-            .queues
-            .as_ref()
-            .unwrap_or(&self.inner.queues)
-            .iter()
-            .filter(|queue| !dedicated_queues.contains_key(*queue))
-            .map(|queue| queue.to_owned())
-            .collect_vec();
+        let shared_queues = self.shared_queues(context.config());
 
         if !shared_queues.is_empty() {
             let total_worker_tasks = worker_config.common.num_workers;
@@ -650,6 +664,19 @@ where
 
             next_fetch = Utc::now();
         }
+    }
+
+    fn shared_queues(&self, config: &AppConfig) -> Vec<String> {
+        let worker_config = &config.service.worker.pg.custom;
+        worker_config
+            .common
+            .queues
+            .as_ref()
+            .unwrap_or(&self.inner.queues)
+            .iter()
+            .filter(|queue| !worker_config.common.queue_config.contains_key(*queue))
+            .map(|queue| queue.to_owned())
+            .collect_vec()
     }
 
     #[instrument(skip_all)]
