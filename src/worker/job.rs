@@ -57,3 +57,30 @@ pub(crate) fn periodic_hash(
     value.hash(&mut hash);
     hash.finish()
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::testing::snapshot::TestCase;
+    use cron::Schedule;
+    use insta::assert_snapshot;
+    use rstest::{fixture, rstest};
+    use std::str::FromStr;
+
+    #[fixture]
+    fn case() -> TestCase {
+        Default::default()
+    }
+
+    #[rstest]
+    #[case("a", Schedule::from_str("* * * * * *").unwrap(), serde_json::json!({"foo": "bar"}))]
+    #[case("b", Schedule::from_str("*/10 * * * * *").unwrap(), serde_json::json!({"foo": "baz"}))]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn periodic_hash(
+        _case: TestCase,
+        #[case] name: &str,
+        #[case] schedule: Schedule,
+        #[case] value: serde_json::Value,
+    ) {
+        assert_snapshot!(super::periodic_hash(name, &schedule, &value));
+    }
+}

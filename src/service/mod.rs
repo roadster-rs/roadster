@@ -1,4 +1,3 @@
-use crate::app::App;
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
@@ -33,8 +32,6 @@ pub mod worker;
 )]
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
-// todo: Do we still need the `App` type parameter? Most of the `App` trait's methods are
-//  non-static now, so we can't call them from the service anyway.
 pub trait Service<S>: Send + Sync + ServiceAsAny<S>
 where
     S: Clone + Send + Sync + 'static,

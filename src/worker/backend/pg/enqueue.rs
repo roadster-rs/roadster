@@ -8,6 +8,8 @@ use std::borrow::Borrow;
 use std::time::Duration;
 use tracing::{debug, instrument};
 
+pub struct PgEnqueuer;
+
 #[async_trait]
 impl Enqueuer for PgEnqueuer {
     type Error = crate::error::Error;
@@ -120,6 +122,3 @@ impl Enqueuer for PgEnqueuer {
         .await
     }
 }
-
-// todo: remove this and use enqueuer-specific name?
-pub struct PgEnqueuer;

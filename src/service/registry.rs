@@ -1,4 +1,3 @@
-use crate::app::App;
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::{Service, ServiceBuilder};
@@ -183,7 +182,6 @@ http_service.open_api_schema(&OpenApiArgs::builder().build()).unwrap();
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::MockApp;
     use crate::error::Error;
     use crate::service::{MockService, MockServiceBuilder};
     use async_trait::async_trait;

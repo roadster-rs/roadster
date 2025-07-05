@@ -2,7 +2,6 @@
 use crate::api::http::default_api_routes;
 #[cfg(not(feature = "open-api"))]
 use crate::api::http::default_routes;
-use crate::app::App;
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::ServiceBuilder;

@@ -1,4 +1,3 @@
-use crate::app::App;
 use crate::app::context::AppContext;
 use crate::config::service::worker::StaleCleanUpBehavior;
 use crate::error::RoadsterResult;

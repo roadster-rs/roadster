@@ -10,8 +10,6 @@ use crate::health::check::registry::HealthCheckRegistry;
 use axum_core::extract::FromRef;
 #[cfg(all(feature = "db-sql", feature = "testing"))]
 use itertools::Itertools;
-#[cfg(all(feature = "worker-pg", feature = "db-sea-orm"))]
-use sea_orm::ConnectionTrait;
 #[cfg(feature = "db-sea-orm")]
 use sea_orm::DatabaseConnection;
 use std::sync::{Arc, OnceLock, Weak};
@@ -161,7 +159,9 @@ impl AppContext {
 
                 #[cfg(feature = "db-sea-orm")]
                 let pool = if config.service.worker.pg.custom.custom.db_config.is_none()
-                    && sea_orm.get_database_backend() == sea_orm::DatabaseBackend::Postgres
+                    && <DatabaseConnection as sea_orm::ConnectionTrait>::get_database_backend(
+                        &sea_orm,
+                    ) == sea_orm::DatabaseBackend::Postgres
                 {
                     Some(sea_orm.get_postgres_connection_pool().clone())
                 } else {

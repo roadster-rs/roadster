@@ -10,8 +10,6 @@ use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use tracing::{error, info};
 
-pub(crate) const PERIODIC_QUEUE_NAME: &str = "periodic";
-
 #[non_exhaustive]
 pub struct PgProcessorBuilder<S>
 where
@@ -29,16 +27,14 @@ where
 {
     args: Args,
     schedule: Schedule,
-    description: Option<String>,
 }
 
-#[derive(bon::Builder, Eq, PartialEq)]
+#[derive(Clone, bon::Builder, Eq, PartialEq)]
 #[non_exhaustive]
 pub(crate) struct PeriodicArgsJson {
     pub(crate) args: serde_json::Value,
     pub(crate) worker_name: String,
     pub(crate) schedule: Schedule,
-    pub(crate) description: Option<String>,
 }
 
 impl Ord for PeriodicArgsJson {
@@ -115,7 +111,6 @@ where
             .args(serde_json::to_value(periodic_args.args)?)
             .worker_name(name.clone())
             .schedule(periodic_args.schedule)
-            .maybe_description(periodic_args.description)
             .build();
 
         if let Some(replaced) = self.inner.periodic_workers.replace(periodic_args) {
@@ -175,5 +170,49 @@ where
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    mod periodic_args {
+        use crate::worker::backend::pg::processor::builder::PeriodicArgsJson;
+        use cron::Schedule;
+        use rstest::{fixture, rstest};
+        use std::str::FromStr;
+
+        #[fixture]
+        #[cfg_attr(coverage_nightly, coverage(off))]
+        fn periodic_args_json() -> PeriodicArgsJson {
+            PeriodicArgsJson::builder()
+                .worker_name("a".to_string())
+                .schedule(Schedule::from_str("* * * * * *").unwrap())
+                .args(serde_json::json!({"foo": "bar"}))
+                .build()
+        }
+
+        #[rstest]
+        #[cfg_attr(coverage_nightly, coverage(off))]
+        fn periodic_args_json_ord_name(periodic_args_json: PeriodicArgsJson) {
+            let mut b = periodic_args_json.clone();
+            b.worker_name = "b".to_string();
+            assert!(periodic_args_json < b);
+        }
+
+        #[rstest]
+        #[cfg_attr(coverage_nightly, coverage(off))]
+        fn periodic_args_json_ord_schedule(periodic_args_json: PeriodicArgsJson) {
+            let mut b = periodic_args_json.clone();
+            b.schedule = Schedule::from_str("*/10 * * * * *").unwrap();
+            assert!(periodic_args_json < b);
+        }
+
+        #[rstest]
+        #[cfg_attr(coverage_nightly, coverage(off))]
+        fn periodic_args_json_ord_args(periodic_args_json: PeriodicArgsJson) {
+            let mut b = periodic_args_json.clone();
+            b.args = serde_json::json!({"foo": "baz"});
+            assert!(periodic_args_json < b);
+        }
     }
 }

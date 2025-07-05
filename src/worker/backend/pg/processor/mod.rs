@@ -2,7 +2,7 @@ use crate::app::context::AppContext;
 use crate::config::AppConfig;
 use crate::config::service::worker::{BalanceStrategy, StaleCleanUpBehavior};
 use crate::error::RoadsterResult;
-use crate::worker::backend::pg::processor::builder::{PERIODIC_QUEUE_NAME, PeriodicArgsJson};
+use crate::worker::backend::pg::processor::builder::PeriodicArgsJson;
 use crate::worker::config::{CompletedAction, failure_action, retry_delay, success_action};
 use crate::worker::job::{Job, JobMetadata};
 use crate::worker::{EnqueueConfig, Worker, WorkerConfig};
@@ -27,6 +27,8 @@ use tokio_util::sync::CancellationToken;
 use tracing::{debug, error, info, instrument};
 
 pub mod builder;
+
+pub(crate) const PERIODIC_QUEUE_NAME: &str = "periodic";
 
 #[derive(Debug, Error)]
 #[non_exhaustive]
@@ -906,6 +908,12 @@ where
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn periodic_queue_name() {
+        assert_eq!(super::PERIODIC_QUEUE_NAME, "periodic");
+    }
+
     mod queue_item {
         use crate::worker::backend::pg::processor::QueueItem;
         use chrono::Utc;
@@ -913,6 +921,7 @@ mod tests {
         use std::time::Duration;
 
         #[test]
+        #[cfg_attr(coverage_nightly, coverage(off))]
         fn min_heap() {
             let now = Utc::now();
             let mut items = BinaryHeap::new();
@@ -935,6 +944,7 @@ mod tests {
         }
 
         #[test]
+        #[cfg_attr(coverage_nightly, coverage(off))]
         fn peek_mut_change_order() {
             let now = Utc::now();
             let mut items = BinaryHeap::new();
