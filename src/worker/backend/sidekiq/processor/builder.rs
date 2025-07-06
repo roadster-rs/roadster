@@ -3,9 +3,11 @@ use crate::error::RoadsterResult;
 use crate::worker::backend::sidekiq::processor::{
     SidekiqProcessor, SidekiqProcessorError, SidekiqProcessorInner,
 };
+use crate::worker::backend::sidekiq::roadster_worker::RoadsterWorker;
 use crate::worker::{PeriodicArgs, PeriodicArgsJson, Worker, WorkerWrapper};
 use axum_core::extract::FromRef;
 use serde::{Deserialize, Serialize};
+use sidekiq::Processor;
 use tracing::{error, info};
 
 #[non_exhaustive]
@@ -46,7 +48,7 @@ where
     pub fn register<W, Args, E>(mut self, worker: W) -> RoadsterResult<Self>
     where
         W: 'static + Worker<S, Args, Error = E>,
-        Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+        Args: 'static + Send + Sync + Serialize + for<'de> Deserialize<'de>,
         E: 'static + std::error::Error + Send + Sync,
     {
         let name = W::name();
@@ -64,7 +66,7 @@ where
     ) -> RoadsterResult<Self>
     where
         W: 'static + Worker<S, Args, Error = E>,
-        Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+        Args: 'static + Send + Sync + Serialize + for<'de> Deserialize<'de>,
         E: 'static + std::error::Error + Send + Sync,
     {
         let name = W::name();
@@ -98,7 +100,7 @@ where
     ) -> RoadsterResult<()>
     where
         W: 'static + Worker<S, Args, Error = E>,
-        Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+        Args: 'static + Send + Sync + Serialize + for<'de> Deserialize<'de>,
         E: 'static + std::error::Error + Send + Sync,
     {
         let context = AppContext::from_ref(&self.inner.state);
@@ -120,13 +122,23 @@ where
         };
         self.inner.queues.insert(queue.to_owned());
 
-        // todo
+        // Todo: impl something similar for periodic jobs?
+        let register_sidekiq = Box::new(
+            move |state: &S, processor: &mut Processor, worker_wrapper: WorkerWrapper<S>| {
+                let roadster_worker = RoadsterWorker::<S, W, Args, E>::new(state, worker_wrapper);
+                processor.register(roadster_worker);
+            },
+        );
+
         if self
             .inner
             .workers
             .insert(
                 name.clone(),
-                WorkerWrapper::new(&self.inner.state, worker, worker_enqueue_config)?,
+                (
+                    WorkerWrapper::new(&self.inner.state, worker, worker_enqueue_config)?,
+                    register_sidekiq,
+                ),
             )
             .is_some()
             && !skip_duplicate

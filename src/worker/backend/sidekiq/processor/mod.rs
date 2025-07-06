@@ -3,7 +3,7 @@ use crate::config::service::worker::StaleCleanUpBehavior;
 use crate::error::RoadsterResult;
 use crate::util::redis::RedisCommands;
 use crate::worker::backend::sidekiq::processor::builder::SidekiqProcessorBuilder;
-use crate::worker::{PeriodicArgsJson, WorkerWrapper};
+use crate::worker::{PeriodicArgsJson, RegisterSidekiqFn, WorkerWrapper};
 use axum_core::extract::FromRef;
 use cron::Schedule;
 use itertools::Itertools;
@@ -63,7 +63,7 @@ where
     // todo: store a closure to register the worker in order to keep the type?
     processor: Option<::sidekiq::Processor>,
     queues: BTreeSet<String>,
-    workers: BTreeMap<String, WorkerWrapper<S>>,
+    workers: BTreeMap<String, (WorkerWrapper<S>, RegisterSidekiqFn<S>)>,
     periodic_workers: BTreeSet<PeriodicArgsJson>,
 }
 
@@ -188,10 +188,7 @@ async fn remove_stale_periodic_jobs<C: RedisCommands>(
         .stale_cleanup
         == StaleCleanUpBehavior::AutoCleanStale
     {
-        info!(
-            count = stale_jobs.len()
-            "Removing stale periodic jobs",
-        );
+        info!(count = stale_jobs.len(), "Removing stale periodic jobs",);
         conn.zrem(PERIODIC_KEY.to_string(), stale_jobs.clone())
             .await?;
     } else {

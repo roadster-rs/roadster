@@ -1,34 +1,35 @@
 use crate::app::context::AppContext;
-use crate::worker::WorkerWrapper;
+use crate::worker::{Worker, WorkerWrapper};
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sidekiq::{RedisPool, WorkerOpts};
 use std::marker::PhantomData;
 use std::time::Duration;
 
-/// [`::sidekiq::Worker`] used by Roadster to pass a [`crate::worker::Worker`] to sidekiq.
-// todo: do we need the `W` type param? IIRC we need it for the `Worker#class_name` method, but
-//  do we need that method if jobs are enqueued by our custom sidekiq enqueuer?
-pub(crate) struct RoadsterWorker<S, Args, W>
+/// [`::sidekiq::Worker`] used by Roadster to pass a [`Worker`] to sidekiq.
+pub(crate) struct RoadsterWorker<S, W, Args, E>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    Args: Send + Sync + Serialize + 'static,
-    W: ::sidekiq::Worker<Args>,
+    W: 'static + Worker<S, Args, Error = E>,
+    Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+    E: 'static + std::error::Error + Send + Sync,
 {
     state: S,
     inner: WorkerWrapper<S>,
     _args: PhantomData<Args>,
     _worker: PhantomData<W>,
+    _error: PhantomData<E>,
 }
 
-impl<S, Args, W> RoadsterWorker<S, Args, W>
+impl<S, W, Args, E> RoadsterWorker<S, W, Args, E>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    Args: Send + Sync + Serialize + 'static,
-    W: ::sidekiq::Worker<Args>,
+    W: 'static + Worker<S, Args, Error = E>,
+    Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+    E: 'static + std::error::Error + Send + Sync,
 {
     pub(crate) fn new(state: &S, inner: WorkerWrapper<S>) -> Self {
         Self {
@@ -36,17 +37,19 @@ where
             inner,
             _args: Default::default(),
             _worker: Default::default(),
+            _error: Default::default(),
         }
     }
 }
 
 #[async_trait]
-impl<S, Args, W> ::sidekiq::Worker<serde_json::Value> for RoadsterWorker<S, Args, W>
+impl<S, W, Args, E> ::sidekiq::Worker<serde_json::Value> for RoadsterWorker<S, W, Args, E>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Clone + Send + Sync,
     AppContext: FromRef<S>,
-    Args: Send + Sync + Serialize + 'static,
-    W: ::sidekiq::Worker<Args>,
+    W: 'static + Worker<S, Args, Error = E>,
+    Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+    E: 'static + std::error::Error + Send + Sync,
 {
     fn disable_argument_coercion(&self) -> bool {
         let context = AppContext::from_ref(&self.state);
@@ -107,7 +110,7 @@ where
         // what Sidekiq.rs uses specifically. If we attempt to override this, our impl will be used
         // when registering the worker, but not when enqueuing a job, so the worker will not pick
         // up the jobs.
-        W::class_name()
+        W::name()
     }
 
     async fn perform_async(_redis: &RedisPool, _args: serde_json::Value) -> sidekiq::Result<()>

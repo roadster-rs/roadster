@@ -1,6 +1,7 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::util::types;
+use crate::worker::backend::sidekiq::roadster_worker::RoadsterWorker;
 use crate::worker::config::{EnqueueConfig, WorkerConfig};
 use crate::worker::enqueue::Enqueuer;
 use async_trait::async_trait;
@@ -127,6 +128,9 @@ type WorkerFn<S> = Box<
             serde_json::Value,
         ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>>,
 >;
+
+type RegisterSidekiqFn<S> =
+    Box<dyn Send + Sync + for<'a> Fn(&'a S, &'a mut ::sidekiq::Processor, WorkerWrapper<S>)>;
 
 pub(crate) struct WorkerWrapper<S>
 where
