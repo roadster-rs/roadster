@@ -8,6 +8,10 @@ pub enum WorkerError {
     #[error(transparent)]
     PgProcessor(#[from] crate::worker::backend::pg::processor::PgProcessorError),
 
+    #[cfg(feature = "worker-sidekiq")]
+    #[error(transparent)]
+    SidekiqProcessor(#[from] crate::worker::backend::sidekiq::processor::SidekiqProcessorError),
+
     #[error(transparent)]
     Enqueue(#[from] EnqueueError),
 
@@ -53,6 +57,13 @@ pub enum DequeueError {
 #[cfg(feature = "worker-pg")]
 impl From<crate::worker::backend::pg::processor::PgProcessorError> for Error {
     fn from(value: crate::worker::backend::pg::processor::PgProcessorError) -> Self {
+        Self::Worker(WorkerError::from(value))
+    }
+}
+
+#[cfg(feature = "worker-sidekiq")]
+impl From<crate::worker::backend::sidekiq::processor::SidekiqProcessorError> for Error {
+    fn from(value: crate::worker::backend::sidekiq::processor::SidekiqProcessorError) -> Self {
         Self::Worker(WorkerError::from(value))
     }
 }

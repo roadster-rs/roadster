@@ -62,11 +62,11 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    inner: Arc<ProcessorInner<S>>,
+    inner: Arc<PgProcessorInner<S>>,
 }
 
 #[non_exhaustive]
-pub(crate) struct ProcessorInner<S>
+pub(crate) struct PgProcessorInner<S>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
@@ -82,7 +82,7 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    pub(crate) fn new(inner: ProcessorInner<S>) -> Self {
+    pub(crate) fn new(inner: PgProcessorInner<S>) -> Self {
         Self {
             inner: Arc::new(inner),
         }
@@ -150,7 +150,11 @@ where
         match periodic_config.stale_cleanup {
             StaleCleanUpBehavior::Manual => {}
             StaleCleanUpBehavior::AutoCleanAll => {
-                context.pgmq().purge(PERIODIC_QUEUE_NAME).await?;
+                let rows_affected = context.pgmq().purge(PERIODIC_QUEUE_NAME).await?;
+                info!(
+                    count = rows_affected,
+                    "Deleted all previously registered periodic jobs"
+                );
             }
             StaleCleanUpBehavior::AutoCleanStale => {
                 let current_job_hashes = periodic_jobs

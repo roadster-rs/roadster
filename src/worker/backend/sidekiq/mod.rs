@@ -1,3 +1,2 @@
 pub mod enqueue;
-
-pub struct SidekiqBackend;
+pub mod processor;

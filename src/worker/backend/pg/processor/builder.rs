@@ -2,7 +2,7 @@ use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::worker::Worker;
 use crate::worker::backend::pg::processor::{
-    PgProcessor, PgProcessorError, ProcessorInner, WorkerWrapper,
+    PgProcessor, PgProcessorError, PgProcessorInner, WorkerWrapper,
 };
 use axum_core::extract::FromRef;
 use cron::Schedule;
@@ -16,7 +16,7 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    pub(crate) inner: ProcessorInner<S>,
+    pub(crate) inner: PgProcessorInner<S>,
 }
 
 #[derive(bon::Builder)]
@@ -63,7 +63,7 @@ where
 {
     pub(crate) fn new(state: &S) -> Self {
         Self {
-            inner: ProcessorInner {
+            inner: PgProcessorInner {
                 state: state.clone(),
                 queues: Default::default(),
                 workers: Default::default(),

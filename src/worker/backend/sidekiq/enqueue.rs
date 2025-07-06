@@ -1,6 +1,5 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
-use crate::worker::backend::sidekiq::SidekiqBackend;
 use crate::worker::{Enqueuer, Worker, enqueue};
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
@@ -9,8 +8,10 @@ use std::borrow::Borrow;
 use std::time::Duration;
 use tracing::{debug, instrument};
 
+pub struct SidekiqEnqueuer;
+
 #[async_trait]
-impl Enqueuer for SidekiqBackend {
+impl Enqueuer for SidekiqEnqueuer {
     type Error = crate::error::Error;
 
     #[instrument(skip_all)]
