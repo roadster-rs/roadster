@@ -63,7 +63,7 @@ where
     // todo: store a closure to register the worker in order to keep the type?
     processor: Option<::sidekiq::Processor>,
     queues: BTreeSet<String>,
-    workers: BTreeMap<String, (WorkerWrapper<S>, RegisterSidekiqFn<S>)>,
+    // workers: BTreeMap<String, (WorkerWrapper<S>, RegisterSidekiqFn<S>)>,
     periodic_workers: BTreeSet<PeriodicArgsJson>,
 }
 
