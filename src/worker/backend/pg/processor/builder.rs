@@ -33,8 +33,8 @@ where
         }
     }
 
-    pub fn build(self) -> PgProcessor<S> {
-        PgProcessor::new(self.inner)
+    pub fn build(self) -> RoadsterResult<PgProcessor<S>> {
+        Ok(PgProcessor::new(self.inner))
     }
 
     pub fn register<W, Args, E>(mut self, worker: W) -> RoadsterResult<Self>

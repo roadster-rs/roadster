@@ -6,6 +6,8 @@ use crate::worker::backend::sidekiq::processor::{
 use crate::worker::backend::sidekiq::roadster_worker::RoadsterWorker;
 use crate::worker::{PeriodicArgs, PeriodicArgsJson, RegisterSidekiqFn, Worker, WorkerWrapper};
 use axum_core::extract::FromRef;
+use itertools::Itertools;
+use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
 use sidekiq::Processor;
 use std::collections::{BTreeMap, BTreeSet};
@@ -18,9 +20,6 @@ where
     AppContext: FromRef<S>,
 {
     pub(crate) state: S,
-    // Todo: we may need to register directly on the processor instead of waiting to register
-    //  until later, depending on if `RoadsterWorker` needs the `W` type param.
-    // todo: store a closure to register the worker in order to keep the type?
     pub(crate) processor: Option<::sidekiq::Processor>,
     pub(crate) queues: BTreeSet<String>,
     pub(crate) workers: BTreeMap<String, (WorkerWrapper<S>, RegisterSidekiqFn<S>)>,
@@ -42,20 +41,69 @@ where
         }
     }
 
-    pub fn build(mut self) -> SidekiqProcessor<S> {
-        // todo: create processor if it wasn't provided.
-        if let Some(processor) = self.processor.as_mut() {
+    pub fn build(mut self) -> RoadsterResult<SidekiqProcessor<S>> {
+        let context = AppContext::from_ref(&self.state);
+
+        let mut processor = if let Some(processor) = self.processor {
+            Some(processor)
+        } else if let Some(redis) = context.redis_fetch() {
+            let config = &context.config().service.worker.sidekiq.custom.common;
+
+            let dedicated_queues = &config.queue_config;
+
+            let shared_queues = config
+                .queues
+                .clone()
+                .unwrap_or_else(|| self.queues.clone())
+                .iter()
+                .filter(|queue| dedicated_queues.contains_key(*queue))
+                .map(|s| s.to_owned())
+                .collect_vec();
+
+            let num_workers = config.num_workers.to_usize().ok_or_else(|| {
+                crate::error::other::OtherError::Message(format!(
+                    "Unable to convert num_workers `{}` to usize",
+                    context
+                        .config()
+                        .service
+                        .worker
+                        .sidekiq
+                        .custom
+                        .common
+                        .num_workers
+                ))
+            })?;
+
+            let processor_config = ::sidekiq::ProcessorConfig::default()
+                .num_workers(num_workers)
+                .balance_strategy(config.balance_strategy.clone().into());
+            let processor_config = config.queue_config.iter().fold(
+                processor_config,
+                |processor_config, (queue, config)| {
+                    processor_config.queue_config(queue.clone(), config.into())
+                },
+            );
+
+            let processor = ::sidekiq::Processor::new(redis.clone().inner, shared_queues)
+                .with_config(processor_config);
+
+            Some(processor)
+        } else {
+            None
+        };
+
+        if let Some(processor) = processor.as_mut() {
             for (worker, register_fn) in self.workers.into_values() {
                 register_fn(&self.state, processor, worker);
             }
         }
 
-        SidekiqProcessor::new(SidekiqProcessorInner {
+        Ok(SidekiqProcessor::new(SidekiqProcessorInner {
             state: self.state,
-            processor: self.processor,
+            processor,
             queues: self.queues,
             periodic_workers: self.periodic_workers,
-        })
+        }))
     }
 
     pub fn with_processor(mut self, processor: ::sidekiq::Processor) -> Self {

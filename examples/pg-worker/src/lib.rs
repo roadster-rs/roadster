@@ -47,7 +47,7 @@ pub fn build_app() -> App {
                                         .args(ExamplePeriodicWorkerArgs::builder().a(111).build())
                                         .build(),
                                 )?
-                                .build(),
+                                .build()?,
                         )
                         .build(),
                 )?;
