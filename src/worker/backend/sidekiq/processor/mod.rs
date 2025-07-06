@@ -60,6 +60,7 @@ where
     state: S,
     // Todo: we may need to register directly on the processor instead of waiting to register
     //  until later, depending on if `RoadsterWorker` needs the `W` type param.
+    // todo: store a closure to register the worker in order to keep the type?
     processor: Option<::sidekiq::Processor>,
     queues: BTreeSet<String>,
     workers: BTreeMap<String, WorkerWrapper<S>>,
