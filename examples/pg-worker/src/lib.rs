@@ -6,8 +6,8 @@ use roadster::app::RoadsterApp;
 use roadster::app::context::AppContext;
 use roadster::service::http::service::HttpService;
 use roadster::service::worker::backend::pg::PgWorkerService;
+use roadster::worker::PeriodicArgs;
 use roadster::worker::backend::pg::processor::PgProcessor;
-use roadster::worker::backend::pg::processor::builder::PeriodicArgs;
 use std::str::FromStr;
 
 pub mod api;

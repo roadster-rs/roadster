@@ -2,10 +2,10 @@ use crate::app::context::AppContext;
 use crate::config::AppConfig;
 use crate::config::service::worker::{BalanceStrategy, StaleCleanUpBehavior};
 use crate::error::RoadsterResult;
-use crate::worker::backend::pg::processor::builder::PeriodicArgsJson;
+use crate::worker::PeriodicArgsJson;
 use crate::worker::config::{CompletedAction, failure_action, retry_delay, success_action};
 use crate::worker::job::{Job, JobMetadata};
-use crate::worker::{EnqueueConfig, Worker, WorkerConfig};
+use crate::worker::{EnqueueConfig, Worker, WorkerConfig, WorkerWrapper};
 use axum_core::extract::FromRef;
 use builder::PgProcessorBuilder;
 use chrono::{DateTime, TimeDelta, Utc};
@@ -805,105 +805,6 @@ fn periodic_next_run_delay(schedule: &Schedule, now: Option<DateTime<Utc>>) -> D
     let next_run = schedule.after(&now).next().unwrap_or(now);
     let diff = max(TimeDelta::zero(), next_run - now);
     diff.to_std().unwrap_or_else(|_| Duration::from_secs(0))
-}
-
-type WorkerFn<S> = Box<
-    dyn Send
-        + Sync
-        + for<'a> Fn(
-            &'a S,
-            serde_json::Value,
-        ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>>,
->;
-
-struct WorkerWrapper<S>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-{
-    name: String,
-    #[allow(dead_code)]
-    enqueue_config: EnqueueConfig,
-    worker_config: WorkerConfig,
-    worker_fn: WorkerFn<S>,
-}
-
-impl<S> WorkerWrapper<S>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-{
-    fn new<W, Args, E>(state: &S, worker: W, enqueue_config: EnqueueConfig) -> RoadsterResult<Self>
-    where
-        W: 'static + Worker<S, Args, Error = E>,
-        Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-        E: 'static + std::error::Error + Send + Sync,
-    {
-        let worker = Arc::new(worker);
-
-        Ok(Self {
-            name: W::name(),
-            enqueue_config,
-            worker_config: worker.worker_config(state),
-            worker_fn: Box::new(move |state: &S, args: serde_json::Value| {
-                let worker = worker.clone();
-                Box::pin(async move {
-                    let args: Args = serde_json::from_value(args)
-                        .map_err(crate::error::worker::DequeueError::Serde)?;
-
-                    match worker.clone().handle(state, args).await {
-                        Ok(_) => Ok(()),
-                        Err(err) => Err(crate::error::Error::from(
-                            crate::error::worker::WorkerError::Handle(W::name(), Box::new(err)),
-                        )),
-                    }
-                })
-            }),
-        })
-    }
-
-    #[instrument(skip_all)]
-    async fn handle(&self, state: &S, args: serde_json::Value) -> RoadsterResult<()> {
-        let inner = (self.worker_fn)(state, args);
-
-        let context = AppContext::from_ref(state);
-        let timeout = self
-            .worker_config
-            .timeout
-            .or(context.config().service.worker.worker_config.timeout)
-            .unwrap_or_default();
-
-        let max_duration = if timeout {
-            self.worker_config.max_duration.or(context
-                .config()
-                .service
-                .worker
-                .worker_config
-                .max_duration)
-        } else {
-            None
-        };
-
-        if let Some(max_duration) = max_duration {
-            tokio::time::timeout(max_duration, inner)
-                .await
-                .map_err(|err| {
-                    error!(
-                        worker = self.name,
-                        max_duration = max_duration.as_secs(),
-                        %err,
-                        "Worker timed out"
-                    );
-                    crate::error::worker::WorkerError::Timeout(
-                        self.name.clone(),
-                        max_duration,
-                        Box::new(err),
-                    )
-                })?
-        } else {
-            inner.await
-        }
-    }
 }
 
 #[cfg(test)]

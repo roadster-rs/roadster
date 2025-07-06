@@ -1,13 +1,18 @@
 use crate::app::context::AppContext;
+use crate::error::RoadsterResult;
 use crate::util::types;
 use crate::worker::config::{EnqueueConfig, WorkerConfig};
 use crate::worker::enqueue::Enqueuer;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
+use cron::Schedule;
 use serde::{Deserialize, Serialize};
 use std::borrow::Borrow;
+use std::cmp::Ordering;
+use std::pin::Pin;
+use std::sync::Arc;
 use std::time::Duration;
-use tracing::instrument;
+use tracing::{error, instrument};
 
 pub mod backend;
 pub mod config;
@@ -112,6 +117,142 @@ where
     }
 
     async fn handle(&self, state: &S, args: Args) -> Result<(), Self::Error>;
+}
+
+type WorkerFn<S> = Box<
+    dyn Send
+        + Sync
+        + for<'a> Fn(
+            &'a S,
+            serde_json::Value,
+        ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>>,
+>;
+
+pub(crate) struct WorkerWrapper<S>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    name: String,
+    #[allow(dead_code)]
+    enqueue_config: EnqueueConfig,
+    worker_config: WorkerConfig,
+    worker_fn: WorkerFn<S>,
+}
+
+impl<S> WorkerWrapper<S>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    fn new<W, Args, E>(state: &S, worker: W, enqueue_config: EnqueueConfig) -> RoadsterResult<Self>
+    where
+        W: 'static + Worker<S, Args, Error = E>,
+        Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+        E: 'static + std::error::Error + Send + Sync,
+    {
+        let worker = Arc::new(worker);
+
+        Ok(Self {
+            name: W::name(),
+            enqueue_config,
+            worker_config: worker.worker_config(state),
+            worker_fn: Box::new(move |state: &S, args: serde_json::Value| {
+                let worker = worker.clone();
+                Box::pin(async move {
+                    let args: Args = serde_json::from_value(args)
+                        .map_err(crate::error::worker::DequeueError::Serde)?;
+
+                    match worker.clone().handle(state, args).await {
+                        Ok(_) => Ok(()),
+                        Err(err) => Err(crate::error::Error::from(
+                            crate::error::worker::WorkerError::Handle(W::name(), Box::new(err)),
+                        )),
+                    }
+                })
+            }),
+        })
+    }
+
+    #[instrument(skip_all)]
+    async fn handle(&self, state: &S, args: serde_json::Value) -> RoadsterResult<()> {
+        let inner = (self.worker_fn)(state, args);
+
+        let context = AppContext::from_ref(state);
+        let timeout = self
+            .worker_config
+            .timeout
+            .or(context.config().service.worker.worker_config.timeout)
+            .unwrap_or_default();
+
+        let max_duration = if timeout {
+            self.worker_config.max_duration.or(context
+                .config()
+                .service
+                .worker
+                .worker_config
+                .max_duration)
+        } else {
+            None
+        };
+
+        if let Some(max_duration) = max_duration {
+            tokio::time::timeout(max_duration, inner)
+                .await
+                .map_err(|err| {
+                    error!(
+                        worker = self.name,
+                        max_duration = max_duration.as_secs(),
+                        %err,
+                        "Worker timed out"
+                    );
+                    crate::error::worker::WorkerError::Timeout(
+                        self.name.clone(),
+                        max_duration,
+                        Box::new(err),
+                    )
+                })?
+        } else {
+            inner.await
+        }
+    }
+}
+
+#[derive(bon::Builder)]
+#[non_exhaustive]
+pub struct PeriodicArgs<Args>
+where
+    Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+{
+    pub(crate) args: Args,
+    pub(crate) schedule: Schedule,
+}
+
+#[derive(Clone, bon::Builder, Eq, PartialEq)]
+#[non_exhaustive]
+pub(crate) struct PeriodicArgsJson {
+    pub(crate) args: serde_json::Value,
+    pub(crate) worker_name: String,
+    pub(crate) schedule: Schedule,
+}
+
+impl Ord for PeriodicArgsJson {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.worker_name
+            .cmp(&other.worker_name)
+            .then(self.schedule.to_string().cmp(&other.schedule.to_string()))
+            .then(
+                serde_json::to_string(&self.args)
+                    .unwrap_or_default()
+                    .cmp(&serde_json::to_string(&other.args).unwrap_or_default()),
+            )
+    }
+}
+
+impl PartialOrd for PeriodicArgsJson {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 #[cfg(test)]

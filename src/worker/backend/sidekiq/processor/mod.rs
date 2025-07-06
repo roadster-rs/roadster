@@ -3,10 +3,12 @@ use crate::config::service::worker::StaleCleanUpBehavior;
 use crate::error::RoadsterResult;
 use crate::util::redis::RedisCommands;
 use crate::worker::backend::sidekiq::processor::builder::SidekiqProcessorBuilder;
+use crate::worker::{PeriodicArgsJson, WorkerWrapper};
 use axum_core::extract::FromRef;
+use cron::Schedule;
 use itertools::Itertools;
 use sidekiq::periodic;
-use std::collections::{BTreeSet, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::task::JoinSet;
@@ -25,12 +27,13 @@ pub enum SidekiqProcessorError {
     #[error("The provided `Worker` was already registered: `{0}`")]
     AlreadyRegistered(String),
 
-    // /// The provided [`Worker`] was already registered. Contains the [`Worker::name`]
-    // /// of the provided worker.
-    // #[error(
-    //     "The provided periodic worker job was already registered. Worker: `{0}`, schedule: `{1}`, args: `{2}`"
-    // )]
-    // AlreadyRegisteredPeriodic(String, Schedule, serde_json::Value),
+    /// The provided [`Worker`] was already registered. Contains the [`Worker::name`]
+    /// of the provided worker.
+    #[error(
+        "The provided periodic worker job was already registered. Worker: `{0}`, schedule: `{1}`, args: `{2}`"
+    )]
+    AlreadyRegisteredPeriodic(String, Schedule, serde_json::Value),
+
     #[error("No queue configured for worker `{0}`.")]
     NoQueue(String),
 
@@ -57,8 +60,8 @@ where
     state: S,
     processor: Option<::sidekiq::Processor>,
     queues: BTreeSet<String>,
-    // workers: BTreeMap<String, WorkerWrapper<S>>,
-    // periodic_workers: BTreeSet<PeriodicArgsJson>,
+    workers: BTreeMap<String, WorkerWrapper<S>>,
+    periodic_workers: BTreeSet<PeriodicArgsJson>,
 }
 
 impl<S> SidekiqProcessor<S>

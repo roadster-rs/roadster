@@ -1,9 +1,7 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
-use crate::worker::Worker;
-use crate::worker::backend::pg::processor::{
-    PgProcessor, PgProcessorError, PgProcessorInner, WorkerWrapper,
-};
+use crate::worker::backend::pg::processor::{PgProcessor, PgProcessorError, PgProcessorInner};
+use crate::worker::{PeriodicArgs, PeriodicArgsJson, Worker, WorkerWrapper};
 use axum_core::extract::FromRef;
 use cron::Schedule;
 use serde::{Deserialize, Serialize};
@@ -17,43 +15,6 @@ where
     AppContext: FromRef<S>,
 {
     pub(crate) inner: PgProcessorInner<S>,
-}
-
-#[derive(bon::Builder)]
-#[non_exhaustive]
-pub struct PeriodicArgs<Args>
-where
-    Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-{
-    args: Args,
-    schedule: Schedule,
-}
-
-#[derive(Clone, bon::Builder, Eq, PartialEq)]
-#[non_exhaustive]
-pub(crate) struct PeriodicArgsJson {
-    pub(crate) args: serde_json::Value,
-    pub(crate) worker_name: String,
-    pub(crate) schedule: Schedule,
-}
-
-impl Ord for PeriodicArgsJson {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.worker_name
-            .cmp(&other.worker_name)
-            .then(self.schedule.to_string().cmp(&other.schedule.to_string()))
-            .then(
-                serde_json::to_string(&self.args)
-                    .unwrap_or_default()
-                    .cmp(&serde_json::to_string(&other.args).unwrap_or_default()),
-            )
-    }
-}
-
-impl PartialOrd for PeriodicArgsJson {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
 }
 
 impl<S> PgProcessorBuilder<S>
@@ -173,10 +134,10 @@ where
 #[cfg(test)]
 mod tests {
     use crate::app::context::AppContext;
-    use crate::worker::Worker;
-    use crate::worker::backend::pg::processor::builder::{PeriodicArgs, PgProcessorBuilder};
+    use crate::worker::backend::pg::processor::builder::PgProcessorBuilder;
     use crate::worker::config::EnqueueConfig;
     use crate::worker::enqueue::Enqueuer;
+    use crate::worker::{PeriodicArgs, Worker};
     use async_trait::async_trait;
     use axum_core::extract::FromRef;
     use cron::Schedule;
@@ -358,7 +319,7 @@ mod tests {
     }
 
     mod periodic_args {
-        use crate::worker::backend::pg::processor::builder::PeriodicArgsJson;
+        use crate::worker::PeriodicArgsJson;
         use crate::worker::job::Job;
         use cron::Schedule;
         use insta::assert_json_snapshot;

@@ -1,4 +1,4 @@
-use crate::worker::backend::pg::processor::builder::PeriodicArgsJson;
+use crate::worker::PeriodicArgsJson;
 use cron::Schedule;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
