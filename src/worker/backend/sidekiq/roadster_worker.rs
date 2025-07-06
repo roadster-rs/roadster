@@ -8,6 +8,8 @@ use std::marker::PhantomData;
 use std::time::Duration;
 
 /// [`::sidekiq::Worker`] used by Roadster to pass a [`crate::worker::Worker`] to sidekiq.
+// todo: do we need the `W` type param? IIRC we need it for the `Worker#class_name` method, but
+//  do we need that method if jobs are enqueued by our custom sidekiq enqueuer?
 pub(crate) struct RoadsterWorker<S, Args, W>
 where
     S: Clone + Send + Sync + 'static,
