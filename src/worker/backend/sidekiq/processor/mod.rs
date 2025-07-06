@@ -58,6 +58,8 @@ where
     AppContext: FromRef<S>,
 {
     state: S,
+    // Todo: we may need to register directly on the processor instead of waiting to register
+    //  until later, depending on if `RoadsterWorker` needs the `W` type param.
     processor: Option<::sidekiq::Processor>,
     queues: BTreeSet<String>,
     workers: BTreeMap<String, WorkerWrapper<S>>,
