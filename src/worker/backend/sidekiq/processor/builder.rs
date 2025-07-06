@@ -43,6 +43,7 @@ where
     }
 
     pub fn build(mut self) -> SidekiqProcessor<S> {
+        // todo: create processor if it wasn't provided.
         if let Some(processor) = self.processor.as_mut() {
             for (worker, register_fn) in self.workers.into_values() {
                 register_fn(&self.state, processor, worker);
