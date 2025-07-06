@@ -1,24 +1,19 @@
 use crate::app::context::AppContext;
-use crate::service::worker::sidekiq::app_worker::AppWorkerConfig;
-use crate::service::worker::sidekiq::app_worker::DEFAULT_MAX_DURATION;
 use crate::worker::WorkerWrapper;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use serde::Serialize;
-use sidekiq::{RedisPool, Worker, WorkerOpts};
+use sidekiq::{RedisPool, WorkerOpts};
 use std::marker::PhantomData;
 use std::time::Duration;
-use tracing::{error, instrument};
 
-/// Worker used by Roadster to wrap the consuming app's workers to add additional behavior. For
-/// example, [`RoadsterWorker`] is by default configured to automatically abort the app's worker
-/// when it exceeds a certain timeout.
+/// [`::sidekiq::Worker`] used by Roadster to pass a [`crate::worker::Worker`] to sidekiq.
 pub(crate) struct RoadsterWorker<S, Args, W>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
     Args: Send + Sync + Serialize + 'static,
-    W: Worker<Args>,
+    W: ::sidekiq::Worker<Args>,
 {
     state: S,
     inner: WorkerWrapper<S>,
@@ -31,23 +26,25 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
     Args: Send + Sync + Serialize + 'static,
-    W: Worker<Args>,
+    W: ::sidekiq::Worker<Args>,
 {
     pub(crate) fn new(state: &S, inner: WorkerWrapper<S>) -> Self {
         Self {
             state: state.clone(),
             inner,
+            _args: Default::default(),
+            _worker: Default::default(),
         }
     }
 }
 
 #[async_trait]
-impl<S, Args, W> Worker<serde_json::Value> for RoadsterWorker<S, Args, W>
+impl<S, Args, W> ::sidekiq::Worker<serde_json::Value> for RoadsterWorker<S, Args, W>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
     Args: Send + Sync + Serialize + 'static,
-    W: Worker<Args>,
+    W: ::sidekiq::Worker<Args>,
 {
     fn disable_argument_coercion(&self) -> bool {
         let context = AppContext::from_ref(&self.state);
@@ -115,8 +112,7 @@ where
     where
         Self: Sized,
     {
-        // This method not implemented because `RoadsterWorker` should not be enqueued directly.
-        unimplemented!()
+        unimplemented!("`RoadsterWorker` should not be enqueued directly")
     }
 
     async fn perform_in(
@@ -127,56 +123,14 @@ where
     where
         Self: Sized,
     {
-        // This method not implemented because `RoadsterWorker` should not be enqueued directly.
-        unimplemented!()
+        unimplemented!("`RoadsterWorker` should not be enqueued directly")
     }
 
-    #[instrument(skip_all)]
     async fn perform(&self, args: serde_json::Value) -> sidekiq::Result<()> {
-        let inner = self.inner.perform(args);
-
-        let timeout = self
-            .inner_config
-            .as_ref()
-            .and_then(|config| config.timeout)
-            .unwrap_or_else(|| {
-                self.context
-                    .config()
-                    .service
-                    .worker
-                    .worker_config
-                    .timeout
-                    .unwrap_or_default()
-            });
-
-        if timeout {
-            let max_duration = self
-                .inner_config
-                .as_ref()
-                .and_then(|config| config.max_duration)
-                .unwrap_or_else(|| {
-                    self.context
-                        .config()
-                        .service
-                        .worker
-                        .worker_config
-                        .max_duration
-                        .unwrap_or(DEFAULT_MAX_DURATION)
-                });
-
-            tokio::time::timeout(max_duration, inner)
-                .await
-                .map_err(|err| {
-                    error!(
-                        worker = %W::class_name(),
-                        max_duration = %max_duration.as_secs(),
-                        %err,
-                        "Worker timed out"
-                    );
-                    sidekiq::Error::Any(Box::new(err))
-                })?
-        } else {
-            inner.await
-        }
+        self.inner
+            .handle(&self.state, args)
+            .await
+            .map_err(|err| sidekiq::Error::Any(Box::new(err)))?;
+        Ok(())
     }
 }
