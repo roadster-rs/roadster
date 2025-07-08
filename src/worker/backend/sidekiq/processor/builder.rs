@@ -189,30 +189,29 @@ where
         self.queues.insert(queue.clone());
 
         // Todo: impl something similar for periodic jobs?
-        let register_sidekiq = Box::new(
+        let register_sidekiq: RegisterSidekiqFn<S> = Box::new(
             move |state: &S, processor: &mut Processor, worker_wrapper: WorkerWrapper<S>| {
                 let roadster_worker = RoadsterWorker::<S, W, Args, E>::new(state, worker_wrapper);
                 processor.register(roadster_worker);
             },
         );
 
-        let register_sidekiq_periodic = Box::new(
+        let register_sidekiq_periodic: RegisterSidekiqPeriodicFn<S> = Box::new(
             move |state: &S,
                   processor: &mut Processor,
                   worker_wrapper: WorkerWrapper<S>,
                   args: PeriodicArgsJson| {
+                let queue = queue.clone();
                 Box::pin(async move {
                     let roadster_worker =
                         RoadsterWorker::<S, W, Args, E>::new(state, worker_wrapper);
-                    let job = ::sidekiq::periodic::builder(&args.schedule.to_string())
+                    ::sidekiq::periodic::builder(&args.schedule.to_string())
                         .unwrap()
                         .args(args.args.clone())
                         .unwrap()
-                        .queue(queue)
-                        .into_periodic_job();
-                    // .register(processor, roadster_worker)
-                    // .await?;
-                    // todo: register
+                        .queue(queue.clone())
+                        .register(processor, roadster_worker)
+                        .await?;
                     Ok(())
                 })
             },

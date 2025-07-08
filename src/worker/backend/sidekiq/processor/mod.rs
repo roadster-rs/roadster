@@ -129,6 +129,8 @@ where
             return Err(todo!());
         };
 
+        // todo: I think I need to move this to the builder in order to have a mut referance to the
+        //  processor. Unless I can make the `Service#before_run` take a `&mut self`?
         for periodic_args in self.inner.periodic_workers.iter() {
             if let Some((worker, _, register_periodic_fn)) =
                 self.inner.workers.get(&periodic_args.worker_name)

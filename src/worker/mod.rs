@@ -132,17 +132,15 @@ type WorkerFn<S> = Box<
 >;
 
 type RegisterSidekiqFn<S> =
-    Box<dyn Send + Sync + for<'a> Fn(&'a S, &'a mut ::sidekiq::Processor, WorkerWrapper<S>)>;
+    Box<dyn for<'a> Fn(&'a S, &'a mut ::sidekiq::Processor, WorkerWrapper<S>)>;
 
 type RegisterSidekiqPeriodicFn<S> = Box<
-    dyn Send
-        + Sync
-        + for<'a> Fn(
-            &'a S,
-            &'a mut ::sidekiq::Processor,
-            WorkerWrapper<S>,
-            PeriodicArgsJson,
-        ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>>,
+    dyn for<'a> Fn(
+        &'a S,
+        &'a mut ::sidekiq::Processor,
+        WorkerWrapper<S>,
+        PeriodicArgsJson,
+    ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>>,
 >;
 
 #[derive(Clone)]
