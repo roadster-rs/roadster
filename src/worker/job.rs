@@ -31,7 +31,11 @@ pub(crate) struct PeriodicConfig {
 
 impl From<&PeriodicArgsJson> for Job {
     fn from(value: &PeriodicArgsJson) -> Self {
-        let hash = periodic_hash(&value.worker_name, &value.schedule, &value.args);
+        let mut hash = DefaultHasher::new();
+        value.hash(&mut hash);
+        let hash = hash.finish();
+
+        // let hash = periodic_hash(&value.worker_name, &value.schedule, &value.args);
         Job::builder()
             .args(value.args.clone())
             .metadata(
@@ -49,16 +53,15 @@ impl From<&PeriodicArgsJson> for Job {
     }
 }
 
-pub(crate) fn periodic_hash(
+pub(crate) fn periodic_hash<H: Hasher>(
+    hasher: &mut H,
     worker_name: &str,
     schedule: &Schedule,
     value: &serde_json::Value,
-) -> u64 {
-    let mut hash = DefaultHasher::new();
-    worker_name.hash(&mut hash);
-    schedule.to_string().hash(&mut hash);
-    value.hash(&mut hash);
-    hash.finish()
+) {
+    worker_name.hash(hasher);
+    schedule.to_string().hash(hasher);
+    value.hash(hasher);
 }
 
 #[cfg(test)]

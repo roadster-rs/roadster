@@ -3,7 +3,9 @@ use crate::config::service::worker::StaleCleanUpBehavior;
 use crate::error::RoadsterResult;
 use crate::util::redis::RedisCommands;
 use crate::worker::backend::sidekiq::processor::builder::SidekiqProcessorBuilder;
-use crate::worker::{PeriodicArgsJson, RegisterSidekiqFn, WorkerWrapper};
+use crate::worker::{
+    PeriodicArgsJson, RegisterSidekiqFn, RegisterSidekiqPeriodicFn, WorkerWrapper,
+};
 use axum_core::extract::FromRef;
 use cron::Schedule;
 use itertools::Itertools;
@@ -63,8 +65,15 @@ where
     // todo: store a closure to register the worker in order to keep the type?
     processor: Option<::sidekiq::Processor>,
     queues: BTreeSet<String>,
-    // workers: BTreeMap<String, (WorkerWrapper<S>, RegisterSidekiqFn<S>)>,
-    periodic_workers: BTreeSet<PeriodicArgsJson>,
+    workers: BTreeMap<
+        String,
+        (
+            WorkerWrapper<S>,
+            RegisterSidekiqFn<S>,
+            RegisterSidekiqPeriodicFn<S>,
+        ),
+    >,
+    periodic_workers: HashSet<PeriodicArgsJson>,
 }
 
 impl<S> SidekiqProcessor<S>
@@ -113,6 +122,26 @@ where
                 remove_stale_periodic_jobs(&mut conn, &context, &Default::default()).await?;
             }
         };
+
+        let processor = if let Some(processor) = self.inner.processor.as_mut() {
+            processor
+        } else {
+            return Err(todo!());
+        };
+
+        for periodic_args in self.inner.periodic_workers.iter() {
+            if let Some((worker, _, register_periodic_fn)) =
+                self.inner.workers.get(&periodic_args.worker_name)
+            {
+                register_periodic_fn(
+                    &self.inner.state,
+                    processor,
+                    worker.clone(),
+                    periodic_args.clone(),
+                )
+                .await?;
+            }
+        }
 
         Ok(())
     }

@@ -4,12 +4,14 @@ use crate::util::types;
 use crate::worker::backend::sidekiq::roadster_worker::RoadsterWorker;
 use crate::worker::config::{EnqueueConfig, WorkerConfig};
 use crate::worker::enqueue::Enqueuer;
+use crate::worker::job::periodic_hash;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use cron::Schedule;
 use serde::{Deserialize, Serialize};
 use std::borrow::Borrow;
 use std::cmp::Ordering;
+use std::hash::{Hash, Hasher};
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
@@ -132,7 +134,27 @@ type WorkerFn<S> = Box<
 type RegisterSidekiqFn<S> =
     Box<dyn Send + Sync + for<'a> Fn(&'a S, &'a mut ::sidekiq::Processor, WorkerWrapper<S>)>;
 
+type RegisterSidekiqPeriodicFn<S> = Box<
+    dyn Send
+        + Sync
+        + for<'a> Fn(
+            &'a S,
+            &'a mut ::sidekiq::Processor,
+            WorkerWrapper<S>,
+            PeriodicArgsJson,
+        ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>>,
+>;
+
+#[derive(Clone)]
 pub(crate) struct WorkerWrapper<S>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    inner: Arc<WorkerWrappeInner<S>>,
+}
+
+pub(crate) struct WorkerWrappeInner<S>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
@@ -158,39 +180,42 @@ where
         let worker = Arc::new(worker);
 
         Ok(Self {
-            name: W::name(),
-            enqueue_config,
-            worker_config: worker.worker_config(state),
-            worker_fn: Box::new(move |state: &S, args: serde_json::Value| {
-                let worker = worker.clone();
-                Box::pin(async move {
-                    let args: Args = serde_json::from_value(args)
-                        .map_err(crate::error::worker::DequeueError::Serde)?;
+            inner: Arc::new(WorkerWrappeInner {
+                name: W::name(),
+                enqueue_config,
+                worker_config: worker.worker_config(state),
+                worker_fn: Box::new(move |state: &S, args: serde_json::Value| {
+                    let worker = worker.clone();
+                    Box::pin(async move {
+                        let args: Args = serde_json::from_value(args)
+                            .map_err(crate::error::worker::DequeueError::Serde)?;
 
-                    match worker.clone().handle(state, args).await {
-                        Ok(_) => Ok(()),
-                        Err(err) => Err(crate::error::Error::from(
-                            crate::error::worker::WorkerError::Handle(W::name(), Box::new(err)),
-                        )),
-                    }
-                })
+                        match worker.clone().handle(state, args).await {
+                            Ok(_) => Ok(()),
+                            Err(err) => Err(crate::error::Error::from(
+                                crate::error::worker::WorkerError::Handle(W::name(), Box::new(err)),
+                            )),
+                        }
+                    })
+                }),
             }),
         })
     }
 
     #[instrument(skip_all)]
     async fn handle(&self, state: &S, args: serde_json::Value) -> RoadsterResult<()> {
-        let inner = (self.worker_fn)(state, args);
+        let inner = (self.inner.worker_fn)(state, args);
 
         let context = AppContext::from_ref(state);
         let timeout = self
+            .inner
             .worker_config
             .timeout
             .or(context.config().service.worker.worker_config.timeout)
             .unwrap_or_default();
 
         let max_duration = if timeout {
-            self.worker_config.max_duration.or(context
+            self.inner.worker_config.max_duration.or(context
                 .config()
                 .service
                 .worker
@@ -205,13 +230,13 @@ where
                 .await
                 .map_err(|err| {
                     error!(
-                        worker = self.name,
+                        worker = self.inner.name,
                         max_duration = max_duration.as_secs(),
                         %err,
                         "Worker timed out"
                     );
                     crate::error::worker::WorkerError::Timeout(
-                        self.name.clone(),
+                        self.inner.name.clone(),
                         max_duration,
                         Box::new(err),
                     )
@@ -240,24 +265,30 @@ pub(crate) struct PeriodicArgsJson {
     pub(crate) schedule: Schedule,
 }
 
-impl Ord for PeriodicArgsJson {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.worker_name
-            .cmp(&other.worker_name)
-            .then(self.schedule.to_string().cmp(&other.schedule.to_string()))
-            .then(
-                serde_json::to_string(&self.args)
-                    .unwrap_or_default()
-                    .cmp(&serde_json::to_string(&other.args).unwrap_or_default()),
-            )
+impl Hash for PeriodicArgsJson {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        periodic_hash(state, &self.worker_name, &self.schedule, &self.args);
     }
 }
-
-impl PartialOrd for PeriodicArgsJson {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
+//
+// impl Ord for PeriodicArgsJson {
+//     fn cmp(&self, other: &Self) -> Ordering {
+//         self.worker_name
+//             .cmp(&other.worker_name)
+//             .then(self.schedule.to_string().cmp(&other.schedule.to_string()))
+//             .then(
+//                 serde_json::to_string(&self.args)
+//                     .unwrap_or_default()
+//                     .cmp(&serde_json::to_string(&other.args).unwrap_or_default()),
+//             )
+//     }
+// }
+//
+// impl PartialOrd for PeriodicArgsJson {
+//     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+//         Some(self.cmp(other))
+//     }
+// }
 
 #[cfg(test)]
 mod tests {

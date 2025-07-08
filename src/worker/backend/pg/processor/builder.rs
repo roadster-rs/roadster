@@ -46,7 +46,7 @@ where
         let name = W::name();
         info!(name, "Registering PG worker");
 
-        self.register_internal(worker, name, false)?;
+        self.register_internal(worker, name, true)?;
 
         Ok(self)
     }
@@ -64,7 +64,7 @@ where
         let name = W::name();
         info!(name, "Registering periodic PG worker");
 
-        self.register_internal(worker, name.clone(), true)?;
+        self.register_internal(worker, name.clone(), false)?;
 
         let periodic_args = PeriodicArgsJson::builder()
             .args(serde_json::to_value(periodic_args.args)?)
@@ -88,7 +88,7 @@ where
         &mut self,
         worker: W,
         name: String,
-        skip_duplicate: bool,
+        err_on_duplicate: bool,
     ) -> RoadsterResult<()>
     where
         W: 'static + Worker<S, Args, Error = E>,
@@ -122,7 +122,7 @@ where
                 WorkerWrapper::new(&self.inner.state, worker, worker_enqueue_config)?,
             )
             .is_some()
-            && !skip_duplicate
+            && err_on_duplicate
         {
             return Err(PgProcessorError::AlreadyRegistered(name).into());
         }

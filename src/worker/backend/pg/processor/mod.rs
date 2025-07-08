@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::Error;
 use sqlx::error::ErrorKind;
 use std::cmp::{Ordering, max};
-use std::collections::{BTreeMap, BTreeSet, BinaryHeap};
+use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashSet};
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
@@ -74,7 +74,7 @@ where
     state: S,
     queues: BTreeSet<String>,
     workers: BTreeMap<String, WorkerWrapper<S>>,
-    periodic_workers: BTreeSet<PeriodicArgsJson>,
+    periodic_workers: HashSet<PeriodicArgsJson>,
 }
 
 impl<S> PgProcessor<S>
@@ -425,8 +425,11 @@ where
 
                 // Update the view timeout to match the max duration of the worker, if it's
                 // different from the default.
-                let max_duration = if let Some((worker_max, default_max)) =
-                    worker.worker_config.max_duration.zip(default_max_duration)
+                let max_duration = if let Some((worker_max, default_max)) = worker
+                    .inner
+                    .worker_config
+                    .max_duration
+                    .zip(default_max_duration)
                 {
                     if worker_max != default_max {
                         Some(worker_max)
@@ -434,7 +437,7 @@ where
                         None
                     }
                 } else {
-                    worker.worker_config.max_duration
+                    worker.inner.worker_config.max_duration
                 };
                 if let Some(delay) = max_duration {
                     self.update_job_view_timeout(
@@ -469,7 +472,8 @@ where
                     )
                     .await;
                 } else {
-                    let action = success_action(context.config(), worker.worker_config.pg.as_ref());
+                    let action =
+                        success_action(context.config(), worker.inner.worker_config.pg.as_ref());
                     self.job_completed(
                         pgmq,
                         &queue,
@@ -594,7 +598,7 @@ where
 
             let worker = self.inner.workers.get(&job.metadata.worker_name);
             let queue = worker
-                .and_then(|worker| worker.enqueue_config.queue.as_ref())
+                .and_then(|worker| worker.inner.enqueue_config.queue.as_ref())
                 .or(default_enqueue_config.queue.as_ref());
             let periodic = job.metadata.periodic.as_ref();
 
@@ -639,7 +643,7 @@ where
                 error!(
                     msg_id = msg.msg_id,
                     read_count = msg.read_ct,
-                    worker_name = worker.name,
+                    worker_name = worker.inner.name,
                     queue,
                     "An error occurred while enqueuing periodic job: {err}"
                 );
@@ -657,7 +661,7 @@ where
                     msg_id = msg.msg_id,
                     read_count = msg.read_ct,
                     queue = PERIODIC_QUEUE_NAME,
-                    worker_name = worker.name,
+                    worker_name = worker.inner.name,
                     ?delay,
                     "An error occurred while updating periodic job's view timeout: {err}"
                 );
@@ -695,7 +699,7 @@ where
     ) {
         if let Some(delay) = retry_delay(
             app_config,
-            worker.and_then(|worker| worker.worker_config.retry_config.as_ref()),
+            worker.and_then(|worker| worker.inner.worker_config.retry_config.as_ref()),
             read_count,
         ) {
             // If the job can retry, update its view timeout by the calculated delay.
@@ -705,7 +709,7 @@ where
             // Otherwise, perform the failure action for the worker.
             let action = failure_action(
                 app_config,
-                worker.and_then(|worker| worker.worker_config.pg.as_ref()),
+                worker.and_then(|worker| worker.inner.worker_config.pg.as_ref()),
             );
             self.job_completed(pgmq, queue, job_metadata, msg_id, read_count, action)
                 .await;

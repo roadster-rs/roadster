@@ -8,6 +8,7 @@ use std::marker::PhantomData;
 use std::time::Duration;
 
 /// [`::sidekiq::Worker`] used by Roadster to pass a [`Worker`] to sidekiq.
+#[derive(Clone)]
 pub(crate) struct RoadsterWorker<S, W, Args, E>
 where
     S: Clone + Send + Sync + 'static,
@@ -54,6 +55,7 @@ where
     fn disable_argument_coercion(&self) -> bool {
         let context = AppContext::from_ref(&self.state);
         self.inner
+            .inner
             .worker_config
             .sidekiq
             .as_ref()
@@ -84,6 +86,7 @@ where
     fn max_retries(&self) -> usize {
         let context = AppContext::from_ref(&self.state);
         self.inner
+            .inner
             .worker_config
             .retry_config
             .as_ref()
