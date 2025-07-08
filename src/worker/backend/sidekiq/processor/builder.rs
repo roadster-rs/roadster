@@ -209,9 +209,9 @@ where
                         .args(args.args.clone())
                         .unwrap()
                         .queue(queue)
-                        .into_periodic_job()
-                        // .register(processor, roadster_worker)
-                        // .await?;
+                        .into_periodic_job();
+                    // .register(processor, roadster_worker)
+                    // .await?;
                     // todo: register
                     Ok(())
                 })
