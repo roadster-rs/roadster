@@ -152,18 +152,21 @@ where
     }
 
     pub async fn run(self, _state: &S, cancellation_token: CancellationToken) {
-        let processor = match self.inner.processor.lock() {
-            Ok(processor) => processor,
-            Err(err) => {
-                error!("Unable to lock Sidekiq processor: {err}");
-                return;
+        let processor = {
+            match self.inner.processor.lock() {
+                Ok(mut processor) => processor.take(),
+                Err(err) => {
+                    error!("Unable to lock ::sidekiq::Processor: {err}");
+                    cancellation_token.cancel();
+                    return;
+                }
             }
         };
 
         let processor = match processor.clone() {
             Some(processor) => processor,
             None => {
-                warn!("No ::sidekiq::Processor configured.");
+                warn!("No ::sidekiq::Processor available.");
                 return;
             }
         };
