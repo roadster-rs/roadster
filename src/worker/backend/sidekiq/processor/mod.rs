@@ -11,7 +11,7 @@ use cron::Schedule;
 use itertools::Itertools;
 use sidekiq::periodic;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use thiserror::Error;
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
@@ -53,6 +53,12 @@ where
     inner: Arc<SidekiqProcessorInner<S>>,
 }
 
+pub(crate) type WorkerMapValue<S> = (
+    WorkerWrapper<S>,
+    RegisterSidekiqFn<S>,
+    RegisterSidekiqPeriodicFn<S>,
+);
+
 #[non_exhaustive]
 pub(crate) struct SidekiqProcessorInner<S>
 where
@@ -63,16 +69,9 @@ where
     // Todo: we may need to register directly on the processor instead of waiting to register
     //  until later, depending on if `RoadsterWorker` needs the `W` type param.
     // todo: store a closure to register the worker in order to keep the type?
-    processor: Option<::sidekiq::Processor>,
-    queues: BTreeSet<String>,
-    workers: BTreeMap<
-        String,
-        (
-            WorkerWrapper<S>,
-            RegisterSidekiqFn<S>,
-            RegisterSidekiqPeriodicFn<S>,
-        ),
-    >,
+    processor: Mutex<Option<::sidekiq::Processor>>,
+    // queues: BTreeSet<String>,
+    workers: BTreeMap<String, WorkerMapValue<S>>,
     periodic_workers: HashSet<PeriodicArgsJson>,
 }
 
@@ -123,7 +122,9 @@ where
             }
         };
 
-        let processor = if let Some(processor) = self.inner.processor.as_mut() {
+        let mut processor = self.inner.processor.lock()?;
+
+        let processor = if let Some(processor) = processor.as_mut() {
             processor
         } else {
             return Err(todo!());
@@ -142,6 +143,8 @@ where
                     periodic_args.clone(),
                 )
                 .await?;
+            } else {
+                return Err(todo!());
             }
         }
 
@@ -149,7 +152,15 @@ where
     }
 
     pub async fn run(self, _state: &S, cancellation_token: CancellationToken) {
-        let processor = match self.inner.processor.clone() {
+        let processor = match self.inner.processor.lock() {
+            Ok(processor) => processor,
+            Err(err) => {
+                error!("Unable to lock Sidekiq processor: {err}");
+                return;
+            }
+        };
+
+        let processor = match processor.clone() {
             Some(processor) => processor,
             None => {
                 warn!("No ::sidekiq::Processor configured.");

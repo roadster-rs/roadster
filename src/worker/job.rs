@@ -71,6 +71,8 @@ mod tests {
     use cron::Schedule;
     use insta::{assert_json_snapshot, assert_snapshot};
     use rstest::{fixture, rstest};
+    use std::hash::DefaultHasher;
+    use std::hash::Hasher;
     use std::str::FromStr;
 
     #[fixture]
@@ -88,7 +90,9 @@ mod tests {
         #[case] schedule: Schedule,
         #[case] value: serde_json::Value,
     ) {
-        assert_snapshot!(super::periodic_hash(name, &schedule, &value));
+        let mut hasher = DefaultHasher::new();
+        super::periodic_hash(&mut hasher, name, &schedule, &value);
+        assert_snapshot!(hasher.finish());
     }
 
     #[test]
@@ -132,6 +136,17 @@ mod tests {
                     )
                     .build(),
             )
+            .build();
+
+        assert_json_snapshot!(job);
+    }
+
+    #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn job_serde_no_periodic() {
+        let job = Job::builder()
+            .args(serde_json::json!({"foo": "bar"}))
+            .metadata(JobMetadata::builder().worker_name("foo").build())
             .build();
 
         assert_json_snapshot!(job);

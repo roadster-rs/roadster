@@ -1,7 +1,7 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::worker::backend::sidekiq::processor::{
-    SidekiqProcessor, SidekiqProcessorError, SidekiqProcessorInner,
+    SidekiqProcessor, SidekiqProcessorError, SidekiqProcessorInner, WorkerMapValue,
 };
 use crate::worker::backend::sidekiq::roadster_worker::RoadsterWorker;
 use crate::worker::{
@@ -14,6 +14,7 @@ use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
 use sidekiq::Processor;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
+use std::sync::Mutex;
 use tracing::{error, info};
 
 #[non_exhaustive]
@@ -24,14 +25,7 @@ where
 {
     pub(crate) state: S,
     pub(crate) queues: BTreeSet<String>,
-    pub(crate) workers: BTreeMap<
-        String,
-        (
-            WorkerWrapper<S>,
-            RegisterSidekiqFn<S>,
-            RegisterSidekiqPeriodicFn<S>,
-        ),
-    >,
+    pub(crate) workers: BTreeMap<String, WorkerMapValue<S>>,
     pub(crate) periodic_workers: HashSet<PeriodicArgsJson>,
 }
 
@@ -105,8 +99,9 @@ where
 
         Ok(SidekiqProcessor::new(SidekiqProcessorInner {
             state: self.state,
-            processor,
-            queues: self.queues,
+            processor: Mutex::new(processor),
+            // queues: self.queues,
+            workers: self.workers,
             periodic_workers: self.periodic_workers,
         }))
     }
@@ -205,10 +200,8 @@ where
                 Box::pin(async move {
                     let roadster_worker =
                         RoadsterWorker::<S, W, Args, E>::new(state, worker_wrapper);
-                    ::sidekiq::periodic::builder(&args.schedule.to_string())
-                        .unwrap()
-                        .args(args.args.clone())
-                        .unwrap()
+                    ::sidekiq::periodic::builder(&args.schedule.to_string())?
+                        .args(args.args.clone())?
                         .queue(queue.clone())
                         .register(processor, roadster_worker)
                         .await?;
