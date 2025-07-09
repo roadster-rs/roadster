@@ -210,6 +210,7 @@ where
             },
         );
 
+        // todo: return an error if the typeid doesn't match
         if self
             .workers
             .insert(

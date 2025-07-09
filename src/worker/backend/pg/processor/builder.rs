@@ -114,6 +114,7 @@ where
         };
         self.inner.queues.insert(queue.to_owned());
 
+        // todo: return an error if the typeid doesn't match
         if self
             .inner
             .workers

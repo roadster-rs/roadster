@@ -9,6 +9,7 @@ use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use cron::Schedule;
 use serde::{Deserialize, Serialize};
+use std::any::{Any, TypeId};
 use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
@@ -158,6 +159,7 @@ where
     AppContext: FromRef<S>,
 {
     name: String,
+    type_id: TypeId,
     #[allow(dead_code)]
     enqueue_config: EnqueueConfig,
     worker_config: WorkerConfig,
@@ -180,6 +182,7 @@ where
         Ok(Self {
             inner: Arc::new(WorkerWrappeInner {
                 name: W::name(),
+                type_id: worker.type_id(),
                 enqueue_config,
                 worker_config: worker.worker_config(state),
                 worker_fn: Box::new(move |state: &S, args: serde_json::Value| {
