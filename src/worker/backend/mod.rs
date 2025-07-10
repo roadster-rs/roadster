@@ -22,14 +22,23 @@ fn shared_queues<'a>(
 #[cfg(test)]
 mod tests {
     use crate::config::service::worker::QueueConfig;
+    use crate::testing::snapshot::TestCase;
     use insta::assert_debug_snapshot;
     use itertools::Itertools;
-    use rstest::rstest;
+    use rstest::{fixture, rstest};
     use std::collections::{BTreeMap, BTreeSet};
 
+    #[fixture]
+    fn case() -> TestCase {
+        Default::default()
+    }
+
+    // Todo: more cases
     #[rstest]
     #[case(None, Default::default(), Default::default())]
+    #[case(Some(BTreeSet::from(["foo".to_owned()])), Default::default(), Default::default())]
     fn shared_queues(
+        _case: TestCase,
         #[case] config_queues: Option<BTreeSet<String>>,
         #[case] all_queues: BTreeSet<String>,
         #[case] dedicated_queues: BTreeMap<String, QueueConfig>,
