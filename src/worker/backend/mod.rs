@@ -32,10 +32,13 @@ mod tests {
         Default::default()
     }
 
-    // Todo: more cases
     #[rstest]
     #[case(None, Default::default(), Default::default())]
     #[case(Some(BTreeSet::from(["foo".to_owned()])), Default::default(), Default::default())]
+    #[case(None, BTreeSet::from(["foo".to_owned()]), Default::default())]
+    #[case(Some(BTreeSet::from(["foo".to_owned()])), BTreeSet::from(["bar".to_owned()]), Default::default())]
+    #[case(Some(BTreeSet::from(["foo".to_owned()])), Default::default(), [("foo".to_string(), Default::default())].into_iter().collect())]
+    #[case(Some(BTreeSet::from(["foo".to_owned(), "bar".to_owned()])), Default::default(), [("foo".to_string(), Default::default())].into_iter().collect())]
     fn shared_queues(
         _case: TestCase,
         #[case] config_queues: Option<BTreeSet<String>>,
