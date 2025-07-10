@@ -3,6 +3,7 @@ use crate::config::AppConfig;
 use crate::config::service::worker::{BalanceStrategy, StaleCleanUpBehavior};
 use crate::error::RoadsterResult;
 use crate::worker::PeriodicArgsJson;
+use crate::worker::backend::shared_queues;
 use crate::worker::config::{CompletedAction, failure_action, retry_delay, success_action};
 use crate::worker::job::{Job, JobMetadata};
 use crate::worker::{EnqueueConfig, Worker, WorkerConfig, WorkerWrapper};
@@ -679,15 +680,13 @@ where
 
     fn shared_queues(&self, config: &AppConfig) -> Vec<String> {
         let worker_config = &config.service.worker.pg.custom;
-        worker_config
-            .common
-            .queues
-            .as_ref()
-            .unwrap_or(&self.inner.queues)
-            .iter()
-            .filter(|queue| !worker_config.common.queue_config.contains_key(*queue))
-            .map(|queue| queue.to_owned())
-            .collect_vec()
+        shared_queues(
+            &worker_config.common.queues,
+            &self.inner.queues,
+            &worker_config.common.queue_config,
+        )
+        .map(|queue| queue.to_owned())
+        .collect_vec()
     }
 
     #[instrument(skip_all)]

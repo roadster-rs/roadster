@@ -1,5 +1,7 @@
 use crate::app::context::AppContext;
+use crate::config::AppConfig;
 use crate::error::RoadsterResult;
+use crate::worker::backend::shared_queues;
 use crate::worker::backend::sidekiq::processor::{
     SidekiqProcessor, SidekiqProcessorError, SidekiqProcessorInner, WorkerData,
 };
@@ -50,16 +52,7 @@ where
         let mut processor = if let Some(redis) = context.redis_fetch() {
             let config = &context.config().service.worker.sidekiq.custom.common;
 
-            let dedicated_queues = &config.queue_config;
-
-            let shared_queues = config
-                .queues
-                .as_ref()
-                .unwrap_or(&self.queues)
-                .iter()
-                .filter(|queue| dedicated_queues.contains_key(*queue))
-                .map(|queue| queue.to_owned())
-                .collect_vec();
+            let shared_queues = self.shared_queues(context.config());
 
             let num_workers = config.num_workers.to_usize().ok_or_else(|| {
                 crate::error::other::OtherError::Message(format!(
@@ -109,6 +102,17 @@ where
             workers: self.workers,
             periodic_workers: self.periodic_workers,
         }))
+    }
+
+    fn shared_queues(&self, config: &AppConfig) -> Vec<String> {
+        let worker_config = &config.service.worker.sidekiq.custom;
+        shared_queues(
+            &worker_config.common.queues,
+            &self.queues,
+            &worker_config.common.queue_config,
+        )
+        .map(|queue| queue.to_owned())
+        .collect_vec()
     }
 
     pub fn register<W, Args, E>(mut self, worker: W) -> RoadsterResult<Self>
