@@ -53,11 +53,15 @@ where
     inner: Arc<SidekiqProcessorInner<S>>,
 }
 
-pub(crate) type WorkerMapValue<S> = (
-    WorkerWrapper<S>,
-    RegisterSidekiqFn<S>,
-    RegisterSidekiqPeriodicFn<S>,
-);
+pub(crate) struct WorkerData<S>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    pub(crate) worker_wrapper: WorkerWrapper<S>,
+    pub(crate) register_sidekiq_fn: RegisterSidekiqFn<S>,
+    pub(crate) register_sidekiq_periodic_fn: RegisterSidekiqPeriodicFn<S>,
+}
 
 #[non_exhaustive]
 pub(crate) struct SidekiqProcessorInner<S>
@@ -71,7 +75,7 @@ where
     // todo: store a closure to register the worker in order to keep the type?
     processor: Mutex<Option<::sidekiq::Processor>>,
     // queues: BTreeSet<String>,
-    workers: BTreeMap<String, WorkerMapValue<S>>,
+    workers: BTreeMap<String, WorkerData<S>>,
     periodic_workers: HashSet<PeriodicArgsJson>,
 }
 
@@ -130,16 +134,12 @@ where
             return Err(todo!());
         };
 
-        // todo: I think I need to move this to the builder in order to have a mut referance to the
-        //  processor. Unless I can make the `Service#before_run` take a `&mut self`?
         for periodic_args in self.inner.periodic_workers.iter() {
-            if let Some((worker, _, register_periodic_fn)) =
-                self.inner.workers.get(&periodic_args.worker_name)
-            {
-                register_periodic_fn(
+            if let Some(worker_data) = self.inner.workers.get(&periodic_args.worker_name) {
+                (worker_data.register_sidekiq_periodic_fn)(
                     &self.inner.state,
                     processor,
-                    worker.clone(),
+                    worker_data.worker_wrapper.clone(),
                     periodic_args.clone(),
                 )
                 .await?;
@@ -154,7 +154,7 @@ where
     pub async fn run(self, _state: &S, cancellation_token: CancellationToken) {
         let processor = {
             match self.inner.processor.lock() {
-                Ok(mut processor) => processor.take(),
+                Ok(processor) => processor.clone(),
                 Err(err) => {
                     error!("Unable to lock ::sidekiq::Processor: {err}");
                     cancellation_token.cancel();

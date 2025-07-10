@@ -1,7 +1,7 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::worker::backend::sidekiq::processor::{
-    SidekiqProcessor, SidekiqProcessorError, SidekiqProcessorInner, WorkerMapValue,
+    SidekiqProcessor, SidekiqProcessorError, SidekiqProcessorInner, WorkerData,
 };
 use crate::worker::backend::sidekiq::roadster_worker::RoadsterWorker;
 use crate::worker::{
@@ -13,6 +13,7 @@ use itertools::Itertools;
 use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
 use sidekiq::Processor;
+use std::any::Any;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::sync::Mutex;
 use tracing::{error, info};
@@ -25,7 +26,7 @@ where
 {
     pub(crate) state: S,
     pub(crate) queues: BTreeSet<String>,
-    pub(crate) workers: BTreeMap<String, WorkerMapValue<S>>,
+    pub(crate) workers: BTreeMap<String, WorkerData<S>>,
     pub(crate) periodic_workers: HashSet<PeriodicArgsJson>,
 }
 
@@ -92,8 +93,12 @@ where
         };
 
         if let Some(processor) = processor.as_mut() {
-            for (worker, register_fn, _periodic_register_fn) in self.workers.values() {
-                register_fn(&self.state, processor, worker.clone());
+            for worker_data in self.workers.values() {
+                (worker_data.register_sidekiq_fn)(
+                    &self.state,
+                    processor,
+                    worker_data.worker_wrapper.clone(),
+                );
             }
         }
 
@@ -168,6 +173,18 @@ where
         let enqueue_config = &context.config().service.worker.enqueue_config;
         let worker_enqueue_config = W::enqueue_config(&self.state);
 
+        // todo: do this in the pg builder as well
+        if let Some(registered_worker) = self.workers.get(&name) {
+            return if registered_worker.type_id() != worker.type_id() {
+                Err(todo!())
+            } else if err_on_duplicate {
+                Err(SidekiqProcessorError::AlreadyRegistered(name).into())
+            } else {
+                // Already registered, no need to do anything
+                Ok(())
+            };
+        }
+
         let queue = worker_enqueue_config
             .queue
             .as_ref()
@@ -183,15 +200,14 @@ where
         };
         self.queues.insert(queue.clone());
 
-        // Todo: impl something similar for periodic jobs?
-        let register_sidekiq: RegisterSidekiqFn<S> = Box::new(
+        let register_sidekiq_fn: RegisterSidekiqFn<S> = Box::new(
             move |state: &S, processor: &mut Processor, worker_wrapper: WorkerWrapper<S>| {
                 let roadster_worker = RoadsterWorker::<S, W, Args, E>::new(state, worker_wrapper);
                 processor.register(roadster_worker);
             },
         );
 
-        let register_sidekiq_periodic: RegisterSidekiqPeriodicFn<S> = Box::new(
+        let register_sidekiq_periodic_fn: RegisterSidekiqPeriodicFn<S> = Box::new(
             move |state: &S,
                   processor: &mut Processor,
                   worker_wrapper: WorkerWrapper<S>,
@@ -210,22 +226,14 @@ where
             },
         );
 
-        // todo: return an error if the typeid doesn't match
-        if self
-            .workers
-            .insert(
-                name.clone(),
-                (
-                    WorkerWrapper::new(&self.state, worker, worker_enqueue_config)?,
-                    register_sidekiq,
-                    register_sidekiq_periodic,
-                ),
-            )
-            .is_some()
-            && err_on_duplicate
-        {
-            return Err(SidekiqProcessorError::AlreadyRegistered(name).into());
-        }
+        self.workers.insert(
+            name.clone(),
+            WorkerData {
+                worker_wrapper: WorkerWrapper::new(&self.state, worker, worker_enqueue_config)?,
+                register_sidekiq_fn,
+                register_sidekiq_periodic_fn,
+            },
+        );
 
         Ok(())
     }
