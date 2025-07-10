@@ -5,6 +5,7 @@ use crate::worker::{PeriodicArgs, PeriodicArgsJson, Worker, WorkerWrapper};
 use axum_core::extract::FromRef;
 use cron::Schedule;
 use serde::{Deserialize, Serialize};
+use std::any::Any;
 use std::cmp::Ordering;
 use tracing::{error, info};
 
@@ -99,6 +100,17 @@ where
         let enqueue_config = &context.config().service.worker.enqueue_config;
         let worker_enqueue_config = W::enqueue_config(&self.inner.state);
 
+        if let Some(registered_worker) = self.inner.workers.get(&name) {
+            return if registered_worker.type_id() != worker.type_id() {
+                Err(PgProcessorError::AlreadyRegisteredWithDifferentType(name).into())
+            } else if err_on_duplicate {
+                Err(PgProcessorError::AlreadyRegistered(name).into())
+            } else {
+                // Already registered with the same type, no need to do anything
+                Ok(())
+            };
+        }
+
         let queue = worker_enqueue_config
             .queue
             .as_ref()
@@ -114,19 +126,10 @@ where
         };
         self.inner.queues.insert(queue.to_owned());
 
-        // todo: return an error if the typeid doesn't match
-        if self
-            .inner
-            .workers
-            .insert(
-                name.clone(),
-                WorkerWrapper::new(&self.inner.state, worker, worker_enqueue_config)?,
-            )
-            .is_some()
-            && err_on_duplicate
-        {
-            return Err(PgProcessorError::AlreadyRegistered(name).into());
-        }
+        self.inner.workers.insert(
+            name.clone(),
+            WorkerWrapper::new(&self.inner.state, worker, worker_enqueue_config)?,
+        );
 
         Ok(())
     }
@@ -164,7 +167,7 @@ mod tests {
             Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
             ArgsRef: Send + Sync + Borrow<Args> + Serialize,
         {
-            todo!()
+            unimplemented!()
         }
 
         async fn enqueue_delayed<W, S, Args, ArgsRef, E>(
@@ -179,7 +182,7 @@ mod tests {
             Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
             ArgsRef: Send + Sync + Borrow<Args> + Serialize,
         {
-            todo!()
+            unimplemented!()
         }
 
         async fn enqueue_batch<W, S, Args, ArgsRef, E>(
@@ -193,7 +196,7 @@ mod tests {
             Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
             ArgsRef: Send + Sync + Borrow<Args> + Serialize,
         {
-            todo!()
+            unimplemented!()
         }
 
         async fn enqueue_batch_delayed<W, S, Args, ArgsRef, E>(
@@ -208,7 +211,7 @@ mod tests {
             Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
             ArgsRef: Send + Sync + Borrow<Args> + Serialize,
         {
-            todo!()
+            unimplemented!()
         }
     }
 
@@ -223,7 +226,7 @@ mod tests {
         }
 
         async fn handle(&self, _state: &AppContext, _args: ()) -> Result<(), Self::Error> {
-            todo!()
+            unimplemented!()
         }
     }
 
@@ -234,7 +237,7 @@ mod tests {
         type Enqueuer = TestEnqueuer;
 
         async fn handle(&self, _state: &AppContext, _args: ()) -> Result<(), Self::Error> {
-            todo!()
+            unimplemented!()
         }
     }
 
@@ -323,7 +326,7 @@ mod tests {
         use crate::worker::PeriodicArgsJson;
         use crate::worker::job::Job;
         use cron::Schedule;
-        use insta::assert_json_snapshot;
+        use insta::assert_snapshot;
         use rstest::{fixture, rstest};
         use std::hash::DefaultHasher;
         use std::hash::Hasher;
@@ -339,37 +342,18 @@ mod tests {
                 .build()
         }
 
-        // Todo: do we need any more tests for the args hash?
-        // #[rstest]
-        // #[cfg_attr(coverage_nightly, coverage(off))]
-        // fn periodic_args_json_ord_name(periodic_args_json: PeriodicArgsJson) {
-        //     let mut b = periodic_args_json.clone();
-        //     b.worker_name = "b".to_string();
-        //     assert!(periodic_args_json < b);
-        // }
-        //
-        // #[rstest]
-        // #[cfg_attr(coverage_nightly, coverage(off))]
-        // fn periodic_args_json_ord_schedule(periodic_args_json: PeriodicArgsJson) {
-        //     let mut b = periodic_args_json.clone();
-        //     b.schedule = Schedule::from_str("*/10 * * * * *").unwrap();
-        //     assert!(periodic_args_json < b);
-        // }
-        //
-        // #[rstest]
-        // #[cfg_attr(coverage_nightly, coverage(off))]
-        // fn periodic_args_json_ord_args(periodic_args_json: PeriodicArgsJson) {
-        //     let mut b = periodic_args_json.clone();
-        //     b.args = serde_json::json!({"foo": "baz"});
-        //     assert!(periodic_args_json < b);
-        // }
-        //
-        // #[rstest]
-        // #[cfg_attr(coverage_nightly, coverage(off))]
-        // fn job_from_periodic_args(periodic_args_json: PeriodicArgsJson) {
-        //     let job = Job::from(&periodic_args_json);
-        //     assert_json_snapshot!(job);
-        // }
+        #[rstest]
+        #[cfg_attr(coverage_nightly, coverage(off))]
+        fn periodic_args_json_hash(periodic_args_json: PeriodicArgsJson) {
+            let mut hasher = DefaultHasher::new();
+            crate::worker::job::periodic_hash(
+                &mut hasher,
+                &periodic_args_json.worker_name,
+                &periodic_args_json.schedule,
+                &periodic_args_json.args,
+            );
+            assert_snapshot!(hasher.finish());
+        }
 
         #[rstest]
         #[cfg_attr(coverage_nightly, coverage(off))]

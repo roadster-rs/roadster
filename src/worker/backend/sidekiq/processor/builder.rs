@@ -54,10 +54,11 @@ where
 
             let shared_queues = config
                 .queues
-                .clone()
-                .unwrap_or_else(|| self.queues.clone())
-                .into_iter()
-                .filter(|queue| dedicated_queues.contains_key(queue))
+                .as_ref()
+                .unwrap_or(&self.queues)
+                .iter()
+                .filter(|queue| dedicated_queues.contains_key(*queue))
+                .map(|queue| queue.to_owned())
                 .collect_vec();
 
             let num_workers = config.num_workers.to_usize().ok_or_else(|| {
@@ -105,7 +106,6 @@ where
         Ok(SidekiqProcessor::new(SidekiqProcessorInner {
             state: self.state,
             processor: Mutex::new(processor),
-            // queues: self.queues,
             workers: self.workers,
             periodic_workers: self.periodic_workers,
         }))
@@ -173,14 +173,13 @@ where
         let enqueue_config = &context.config().service.worker.enqueue_config;
         let worker_enqueue_config = W::enqueue_config(&self.state);
 
-        // todo: do this in the pg builder as well
         if let Some(registered_worker) = self.workers.get(&name) {
             return if registered_worker.type_id() != worker.type_id() {
-                Err(todo!())
+                Err(SidekiqProcessorError::AlreadyRegisteredWithDifferentType(name).into())
             } else if err_on_duplicate {
                 Err(SidekiqProcessorError::AlreadyRegistered(name).into())
             } else {
-                // Already registered, no need to do anything
+                // Already registered with the same type, no need to do anything
                 Ok(())
             };
         }

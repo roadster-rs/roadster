@@ -38,6 +38,10 @@ pub enum PgProcessorError {
     #[error("The provided `Worker` was already registered: `{0}`")]
     AlreadyRegistered(String),
 
+    /// A [`Worker`] was previously registered that has the same name but is a different type.
+    #[error("The provided `Worker` name was already registered for a different type: `{0}`")]
+    AlreadyRegisteredWithDifferentType(String),
+
     /// The provided [`Worker`] was already registered. Contains the [`Worker::name`]
     /// of the provided worker.
     #[error(
