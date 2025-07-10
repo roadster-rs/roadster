@@ -1,5 +1,4 @@
 use crate::config::service::worker::QueueConfig;
-use itertools::Itertools;
 use std::collections::{BTreeMap, BTreeSet};
 
 #[cfg(feature = "worker-pg")]
