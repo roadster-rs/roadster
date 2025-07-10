@@ -11,8 +11,9 @@ use cron::Schedule;
 use itertools::Itertools;
 use sidekiq::periodic;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use thiserror::Error;
+use tokio::sync::Mutex;
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, warn};
@@ -120,13 +121,11 @@ where
                 info!("Deleted all previously registered periodic jobs");
             }
             StaleCleanUpBehavior::AutoCleanStale => {
-                let mut conn = context.redis_enqueue().get().await?;
-                // todo: replace `default` with actual registered periodic jobs
-                remove_stale_periodic_jobs(&mut conn, &context, &Default::default()).await?;
+                // This is handled after the jobs are registered
             }
         };
 
-        let mut processor = self.inner.processor.lock()?;
+        let mut processor = self.inner.processor.lock().await;
 
         let processor = if let Some(processor) = processor.as_mut() {
             processor
@@ -134,18 +133,25 @@ where
             return Err(todo!());
         };
 
+        let mut registered_periodic_jobs_json: HashSet<String> = Default::default();
         for periodic_args in self.inner.periodic_workers.iter() {
             if let Some(worker_data) = self.inner.workers.get(&periodic_args.worker_name) {
-                (worker_data.register_sidekiq_periodic_fn)(
+                let json = (worker_data.register_sidekiq_periodic_fn)(
                     &self.inner.state,
                     processor,
                     worker_data.worker_wrapper.clone(),
                     periodic_args.clone(),
                 )
                 .await?;
+                registered_periodic_jobs_json.insert(json);
             } else {
                 return Err(todo!());
             }
+        }
+
+        if periodic_config.stale_cleanup == StaleCleanUpBehavior::AutoCleanStale {
+            let mut conn = context.redis_enqueue().get().await?;
+            remove_stale_periodic_jobs(&mut conn, &context, &registered_periodic_jobs_json).await?;
         }
 
         Ok(())

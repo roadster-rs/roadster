@@ -14,7 +14,7 @@ use axum_core::extract::FromRef;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
-use sidekiq::Processor;
+use sidekiq::{Processor, Worker as SidekiqWorker};
 use std::any::Any;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::sync::Mutex;
@@ -209,24 +209,28 @@ where
             },
         );
 
-        let register_sidekiq_periodic_fn: RegisterSidekiqPeriodicFn<S> = Box::new(
-            move |state: &S,
-                  processor: &mut Processor,
-                  worker_wrapper: WorkerWrapper<S>,
-                  args: PeriodicArgsJson| {
-                let queue = queue.clone();
-                Box::pin(async move {
-                    let roadster_worker =
-                        RoadsterWorker::<S, W, Args, E>::new(state, worker_wrapper);
-                    ::sidekiq::periodic::builder(&args.schedule.to_string())?
-                        .args(args.args.clone())?
-                        .queue(queue.clone())
-                        .register(processor, roadster_worker)
-                        .await?;
-                    Ok(())
-                })
-            },
-        );
+        let register_sidekiq_periodic_fn: RegisterSidekiqPeriodicFn<S> =
+            Box::new(
+                move |state: &S,
+                      processor: &mut Processor,
+                      worker_wrapper: WorkerWrapper<S>,
+                      args: PeriodicArgsJson| {
+                    let queue = queue.clone();
+                    Box::pin(async move {
+                        let roadster_worker =
+                            RoadsterWorker::<S, W, Args, E>::new(state, worker_wrapper);
+                        let builder = ::sidekiq::periodic::builder(&args.schedule.to_string())?
+                            .args(args.args.clone())?
+                            .queue(queue.clone());
+                        let json = serde_json::to_string(
+                            &builder
+                                .into_periodic_job(RoadsterWorker::<S, W, Args, E>::class_name())?,
+                        )?;
+                        builder.register(processor, roadster_worker).await?;
+                        Ok(json)
+                    })
+                },
+            );
 
         self.workers.insert(
             name.clone(),

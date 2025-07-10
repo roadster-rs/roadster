@@ -135,13 +135,14 @@ type WorkerFn<S> = Box<
 type RegisterSidekiqFn<S> =
     Box<dyn for<'a> Fn(&'a S, &'a mut ::sidekiq::Processor, WorkerWrapper<S>)>;
 
+// Returns the sidekiq json for the periodic job
 type RegisterSidekiqPeriodicFn<S> = Box<
     dyn for<'a> Fn(
         &'a S,
         &'a mut ::sidekiq::Processor,
         WorkerWrapper<S>,
         PeriodicArgsJson,
-    ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>>,
+    ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<String>>>>,
 >;
 
 #[derive(Clone)]
