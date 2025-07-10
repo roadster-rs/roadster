@@ -52,8 +52,6 @@ where
         let mut processor = if let Some(redis) = context.redis_fetch() {
             let config = &context.config().service.worker.sidekiq.custom.common;
 
-            let shared_queues = self.shared_queues(context.config());
-
             let num_workers = config.num_workers.to_usize().ok_or_else(|| {
                 crate::error::other::OtherError::Message(format!(
                     "Unable to convert num_workers `{}` to usize",
@@ -78,6 +76,7 @@ where
                 },
             );
 
+            let shared_queues = self.shared_queues(context.config());
             let processor = ::sidekiq::Processor::new(redis.clone().inner, shared_queues)
                 .with_config(processor_config);
 
