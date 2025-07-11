@@ -1,4 +1,3 @@
-use crate::config::service::ServiceConfig;
 #[cfg(feature = "worker-pg")]
 use crate::config::service::worker::pg::WorkerPgServiceConfig;
 #[cfg(feature = "worker-sidekiq")]
@@ -36,12 +35,12 @@ pub struct WorkerServiceConfig {
     /// Worker configurations specific to sidekiq-backed queues.
     #[cfg(feature = "worker-sidekiq")]
     #[validate(nested)]
-    pub sidekiq: ServiceConfig<WorkerConfig<SidekiqServiceConfig>>,
+    pub sidekiq: crate::config::service::ServiceConfig<WorkerConfig<SidekiqServiceConfig>>,
 
     /// Worker configurations specific to postgres-backed (`pgmq`) queues.
     #[cfg(feature = "worker-pg")]
     #[validate(nested)]
-    pub pg: ServiceConfig<WorkerConfig<WorkerPgServiceConfig>>,
+    pub pg: crate::config::service::ServiceConfig<WorkerConfig<WorkerPgServiceConfig>>,
 }
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]

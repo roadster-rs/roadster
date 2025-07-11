@@ -1,20 +1,14 @@
 use crate::app::context::AppContext;
-use crate::error::RoadsterResult;
 use crate::util::types;
 use crate::worker::config::{EnqueueConfig, WorkerConfig};
 use crate::worker::enqueue::Enqueuer;
-use crate::worker::job::periodic_hash;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use cron::Schedule;
 use serde::{Deserialize, Serialize};
-use std::any::{Any, TypeId};
 use std::borrow::Borrow;
-use std::hash::{Hash, Hasher};
-use std::pin::Pin;
-use std::sync::Arc;
 use std::time::Duration;
-use tracing::{error, instrument};
+use tracing::instrument;
 
 #[cfg(feature = "worker-pg")]
 pub use crate::worker::backend::pg::enqueue::PgEnqueuer;
@@ -125,75 +119,64 @@ where
     async fn handle(&self, state: &S, args: Args) -> Result<(), Self::Error>;
 }
 
+#[cfg(any(feature = "worker-pg", feature = "worker-sidekiq"))]
 type WorkerFn<S> = Box<
     dyn Send
         + Sync
         + for<'a> Fn(
             &'a S,
             serde_json::Value,
-        ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>>,
->;
-
-type RegisterSidekiqFn<S> =
-    Box<dyn Send + Sync + for<'a> Fn(&'a S, &'a mut ::sidekiq::Processor, WorkerWrapper<S>)>;
-
-// Returns the sidekiq json for the periodic job
-type RegisterSidekiqPeriodicFn<S> = Box<
-    dyn Send
-        + Sync
-        + for<'a> Fn(
-            &'a S,
-            &'a mut ::sidekiq::Processor,
-            WorkerWrapper<S>,
-            PeriodicArgsJson,
-        ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<String>>>>,
->;
-
-type RegisterSidekiqMiddlewareFn = Box<
-    dyn Send
-        + Sync
-        + for<'a> FnOnce(
-            &'a mut ::sidekiq::Processor,
-        ) -> Pin<Box<dyn 'a + Send + Future<Output = ()>>>,
+        ) -> std::pin::Pin<
+            Box<dyn 'a + Send + Future<Output = crate::error::RoadsterResult<()>>>,
+        >,
 >;
 
 #[derive(Clone)]
+#[cfg(any(feature = "worker-pg", feature = "worker-sidekiq"))]
 pub(crate) struct WorkerWrapper<S>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    inner: Arc<WorkerWrapperInner<S>>,
+    inner: std::sync::Arc<WorkerWrapperInner<S>>,
 }
 
+#[cfg(any(feature = "worker-pg", feature = "worker-sidekiq"))]
 pub(crate) struct WorkerWrapperInner<S>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
     name: String,
-    type_id: TypeId,
+    type_id: std::any::TypeId,
     #[allow(dead_code)]
     enqueue_config: EnqueueConfig,
     worker_config: WorkerConfig,
     worker_fn: WorkerFn<S>,
 }
 
+#[cfg(any(feature = "worker-pg", feature = "worker-sidekiq"))]
 impl<S> WorkerWrapper<S>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    fn new<W, Args, E>(state: &S, worker: W, enqueue_config: EnqueueConfig) -> RoadsterResult<Self>
+    fn new<W, Args, E>(
+        state: &S,
+        worker: W,
+        enqueue_config: EnqueueConfig,
+    ) -> crate::error::RoadsterResult<Self>
     where
         W: 'static + Worker<S, Args, Error = E>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
         E: 'static + std::error::Error + Send + Sync,
     {
-        let worker = Arc::new(worker);
+        use std::any::Any;
+
+        let worker = std::sync::Arc::new(worker);
 
         Ok(Self {
-            inner: Arc::new(WorkerWrapperInner {
+            inner: std::sync::Arc::new(WorkerWrapperInner {
                 name: W::name(),
                 type_id: worker.type_id(),
                 enqueue_config,
@@ -217,7 +200,7 @@ where
     }
 
     #[instrument(skip_all)]
-    async fn handle(&self, state: &S, args: serde_json::Value) -> RoadsterResult<()> {
+    async fn handle(&self, state: &S, args: serde_json::Value) -> crate::error::RoadsterResult<()> {
         let inner = (self.inner.worker_fn)(state, args);
 
         let context = AppContext::from_ref(state);
@@ -243,7 +226,7 @@ where
             tokio::time::timeout(max_duration, inner)
                 .await
                 .map_err(|err| {
-                    error!(
+                    tracing::error!(
                         worker = self.inner.name,
                         max_duration = max_duration.as_secs(),
                         %err,
@@ -267,42 +250,25 @@ pub struct PeriodicArgs<Args>
 where
     Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
 {
-    pub(crate) args: Args,
-    pub(crate) schedule: Schedule,
+    pub args: Args,
+    pub schedule: Schedule,
 }
 
 #[derive(Clone, bon::Builder, Eq, PartialEq)]
 #[non_exhaustive]
+#[cfg(any(feature = "worker-pg", feature = "worker-sidekiq"))]
 pub(crate) struct PeriodicArgsJson {
     pub(crate) args: serde_json::Value,
     pub(crate) worker_name: String,
     pub(crate) schedule: Schedule,
 }
 
-impl Hash for PeriodicArgsJson {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        periodic_hash(state, &self.worker_name, &self.schedule, &self.args);
+#[cfg(any(feature = "worker-pg", feature = "worker-sidekiq"))]
+impl std::hash::Hash for PeriodicArgsJson {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        crate::worker::job::periodic_hash(state, &self.worker_name, &self.schedule, &self.args);
     }
 }
-//
-// impl Ord for PeriodicArgsJson {
-//     fn cmp(&self, other: &Self) -> Ordering {
-//         self.worker_name
-//             .cmp(&other.worker_name)
-//             .then(self.schedule.to_string().cmp(&other.schedule.to_string()))
-//             .then(
-//                 serde_json::to_string(&self.args)
-//                     .unwrap_or_default()
-//                     .cmp(&serde_json::to_string(&other.args).unwrap_or_default()),
-//             )
-//     }
-// }
-//
-// impl PartialOrd for PeriodicArgsJson {
-//     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-//         Some(self.cmp(other))
-//     }
-// }
 
 #[cfg(test)]
 mod tests {

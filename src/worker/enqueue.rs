@@ -1,15 +1,10 @@
 use crate::app::context::AppContext;
-use crate::error::RoadsterResult;
-use crate::error::worker::EnqueueError;
 use crate::worker::Worker;
-use crate::worker::job::{Job, JobMetadata};
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
-use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::borrow::Borrow;
 use std::time::Duration;
-use tracing::error;
 
 #[async_trait]
 pub trait Enqueuer {
@@ -60,7 +55,10 @@ pub trait Enqueuer {
         ArgsRef: Send + Sync + Borrow<Args> + Serialize;
 }
 
-pub(crate) fn queue_from_worker<W, S, Args, E>(state: &S) -> Result<String, EnqueueError>
+#[cfg(any(feature = "worker-pg", feature = "worker-sidekiq"))]
+pub(crate) fn queue_from_worker<W, S, Args, E>(
+    state: &S,
+) -> Result<String, crate::error::worker::EnqueueError>
 where
     W: 'static + Worker<S, Args, Error = E>,
     S: Clone + Send + Sync + 'static,
@@ -77,32 +75,37 @@ where
         queue.to_owned()
     } else {
         let worker_name = W::name();
-        error!(worker_name, "Unable to enqueue job, no queue configured");
-        return Err(EnqueueError::NoQueue(worker_name));
+        tracing::error!(worker_name, "Unable to enqueue job, no queue configured");
+        return Err(crate::error::worker::EnqueueError::NoQueue(worker_name));
     };
 
     Ok(queue)
 }
 
 /// Helper function to prepare a job to be enqueued and then enqueue it using the provided `enqueue_fn`.
+#[cfg(any(feature = "worker-pg", feature = "worker-sidekiq"))]
 pub(crate) async fn enqueue<W, S, Args, ArgsRef, E, F>(
     state: &S,
     args: ArgsRef,
     enqueue_fn: F,
-) -> RoadsterResult<()>
+) -> crate::error::RoadsterResult<()>
 where
     W: 'static + Worker<S, Args, Error = E>,
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
     Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
     ArgsRef: Send + Sync + Borrow<Args> + Serialize,
-    F: AsyncFn(&S, &str, Job) -> RoadsterResult<()>,
+    F: AsyncFn(&S, &str, crate::worker::job::Job) -> crate::error::RoadsterResult<()>,
 {
     let worker_name = W::name();
 
-    let args = serde_json::to_value(&args).map_err(EnqueueError::Serde)?;
-    let job = Job::builder()
-        .metadata(JobMetadata::builder().worker_name(worker_name).build())
+    let args = serde_json::to_value(&args).map_err(crate::error::worker::EnqueueError::Serde)?;
+    let job = crate::worker::job::Job::builder()
+        .metadata(
+            crate::worker::job::JobMetadata::builder()
+                .worker_name(worker_name)
+                .build(),
+        )
         .args(args)
         .build();
 
@@ -115,31 +118,33 @@ where
 
 /// Helper function to prepare a batch of jobs to be enqueued and then enqueue them using the
 /// provided `enqueue_fn`.
+#[cfg(any(feature = "worker-pg", feature = "worker-sidekiq"))]
 pub(crate) async fn enqueue_batch<W, S, Args, ArgsRef, E, F>(
     state: &S,
     args: &[ArgsRef],
     enqueue_fn: F,
-) -> RoadsterResult<()>
+) -> crate::error::RoadsterResult<()>
 where
     W: 'static + Worker<S, Args, Error = E>,
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
     Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
     ArgsRef: Send + Sync + Borrow<Args> + Serialize,
-    F: AsyncFn(&S, &str, Vec<Job>) -> RoadsterResult<()>,
+    F: AsyncFn(&S, &str, Vec<crate::worker::job::Job>) -> crate::error::RoadsterResult<()>,
 {
     let worker_name = W::name();
 
     let mut args_serialized: Vec<serde_json::Value> = Vec::with_capacity(args.len());
     for arg in args.iter() {
-        args_serialized.push(serde_json::to_value(arg).map_err(EnqueueError::Serde)?);
+        args_serialized
+            .push(serde_json::to_value(arg).map_err(crate::error::worker::EnqueueError::Serde)?);
     }
-    let jobs = args_serialized
+    let jobs: Vec<crate::worker::job::Job> = args_serialized
         .into_iter()
         .map(|arg| {
-            Job::builder()
+            crate::worker::job::Job::builder()
                 .metadata(
-                    JobMetadata::builder()
+                    crate::worker::job::JobMetadata::builder()
                         // Todo: We could optimize away this clone by borrowing instead of cloning
                         //  but this would probably require having separate Job/JobMetadata structs
                         //  for enqueue vs dequeue, because the type used for dequeuing needs to
@@ -150,7 +155,7 @@ where
                 .args(arg)
                 .build()
         })
-        .collect_vec();
+        .collect();
 
     let queue = queue_from_worker::<W, S, Args, E>(state)?;
 

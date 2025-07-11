@@ -1,22 +1,18 @@
-use crate::worker::PeriodicArgsJson;
-use cron::Schedule;
-use serde::{Deserialize, Serialize};
-use serde_with::skip_serializing_none;
-use std::hash::{DefaultHasher, Hash, Hasher};
-
 // Todo: Not sure if this should be public yet.
-#[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize, bon::Builder, Eq, PartialEq)]
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, bon::Builder, Eq, PartialEq)]
 #[non_exhaustive]
+#[cfg(any(feature = "worker-sidekiq", feature = "worker-pg"))]
 pub(crate) struct Job {
     pub(crate) metadata: JobMetadata,
     pub(crate) args: serde_json::Value,
 }
 
 // Todo: Not sure if this should be public yet.
-#[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize, bon::Builder, Eq, PartialEq)]
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, bon::Builder, Eq, PartialEq)]
 #[non_exhaustive]
+#[cfg(any(feature = "worker-sidekiq", feature = "worker-pg"))]
 pub(crate) struct JobMetadata {
     #[builder(into)]
     pub(crate) worker_name: String,
@@ -24,16 +20,20 @@ pub(crate) struct JobMetadata {
 }
 
 // Todo: Not sure if this should be public yet.
-#[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize, bon::Builder, Eq, PartialEq)]
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, bon::Builder, Eq, PartialEq)]
 #[non_exhaustive]
+#[cfg(any(feature = "worker-sidekiq", feature = "worker-pg"))]
 pub(crate) struct PeriodicConfig {
     pub(crate) hash: u64,
-    pub(crate) schedule: Schedule,
+    pub(crate) schedule: cron::Schedule,
 }
 
-impl From<&PeriodicArgsJson> for Job {
-    fn from(value: &PeriodicArgsJson) -> Self {
+#[cfg(any(feature = "worker-sidekiq", feature = "worker-pg"))]
+impl From<&crate::worker::PeriodicArgsJson> for Job {
+    fn from(value: &crate::worker::PeriodicArgsJson) -> Self {
+        use std::hash::{DefaultHasher, Hash, Hasher};
+
         let mut hash = DefaultHasher::new();
         value.hash(&mut hash);
         let hash = hash.finish();
@@ -56,18 +56,22 @@ impl From<&PeriodicArgsJson> for Job {
     }
 }
 
-pub(crate) fn periodic_hash<H: Hasher>(
+#[cfg(any(feature = "worker-sidekiq", feature = "worker-pg"))]
+pub(crate) fn periodic_hash<H: std::hash::Hasher>(
     hasher: &mut H,
     worker_name: &str,
-    schedule: &Schedule,
+    schedule: &cron::Schedule,
     value: &serde_json::Value,
 ) {
+    use std::hash::Hash;
+
     worker_name.hash(hasher);
     schedule.to_string().hash(hasher);
     value.hash(hasher);
 }
 
 #[cfg(test)]
+#[cfg(any(feature = "worker-sidekiq", feature = "worker-pg"))]
 mod tests {
     use crate::testing::snapshot::TestCase;
     use crate::worker::job::{Job, JobMetadata, PeriodicConfig};

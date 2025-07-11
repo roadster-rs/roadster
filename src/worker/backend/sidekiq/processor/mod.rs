@@ -3,13 +3,12 @@ use crate::config::service::worker::StaleCleanUpBehavior;
 use crate::error::RoadsterResult;
 use crate::util::redis::RedisCommands;
 use crate::worker::backend::sidekiq::processor::builder::SidekiqProcessorBuilder;
-use crate::worker::{
-    PeriodicArgsJson, RegisterSidekiqFn, RegisterSidekiqPeriodicFn, WorkerWrapper,
-};
+use crate::worker::{PeriodicArgsJson, WorkerWrapper};
 use axum_core::extract::FromRef;
 use itertools::Itertools;
 use sidekiq::periodic;
 use std::collections::{BTreeSet, HashMap, HashSet};
+use std::pin::Pin;
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::sync::Mutex;
@@ -244,3 +243,24 @@ async fn remove_stale_periodic_jobs<C: RedisCommands>(
 
     Ok(())
 }
+
+type RegisterSidekiqFn<S> =
+    Box<dyn Send + Sync + for<'a> Fn(&'a S, &'a mut ::sidekiq::Processor, WorkerWrapper<S>)>;
+// Returns the sidekiq json for the periodic job
+type RegisterSidekiqPeriodicFn<S> = Box<
+    dyn Send
+        + Sync
+        + for<'a> Fn(
+            &'a S,
+            &'a mut ::sidekiq::Processor,
+            WorkerWrapper<S>,
+            PeriodicArgsJson,
+        ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<String>>>>,
+>;
+type RegisterSidekiqMiddlewareFn = Box<
+    dyn Send
+        + Sync
+        + for<'a> FnOnce(
+            &'a mut ::sidekiq::Processor,
+        ) -> Pin<Box<dyn 'a + Send + Future<Output = ()>>>,
+>;

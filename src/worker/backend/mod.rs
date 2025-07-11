@@ -1,15 +1,16 @@
-use crate::config::service::worker::QueueConfig;
-use std::collections::{BTreeMap, BTreeSet};
-
 #[cfg(feature = "worker-pg")]
 pub mod pg;
 #[cfg(feature = "worker-sidekiq")]
 pub mod sidekiq;
 
+#[cfg(any(feature = "worker-sidekiq", feature = "worker-pg"))]
 fn shared_queues<'a>(
-    config_queues: &'a Option<BTreeSet<String>>,
-    all_queues: &'a BTreeSet<String>,
-    dedicated_queues: &'a BTreeMap<String, QueueConfig>,
+    config_queues: &'a Option<std::collections::BTreeSet<String>>,
+    all_queues: &'a std::collections::BTreeSet<String>,
+    dedicated_queues: &'a std::collections::BTreeMap<
+        String,
+        crate::config::service::worker::QueueConfig,
+    >,
 ) -> impl Iterator<Item = &'a String> {
     config_queues
         .as_ref()
@@ -28,6 +29,7 @@ mod tests {
     use std::collections::{BTreeMap, BTreeSet};
 
     #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn case() -> TestCase {
         Default::default()
     }
@@ -39,6 +41,8 @@ mod tests {
     #[case(Some(BTreeSet::from(["foo".to_owned()])), BTreeSet::from(["bar".to_owned()]), Default::default())]
     #[case(Some(BTreeSet::from(["foo".to_owned()])), Default::default(), [("foo".to_string(), Default::default())].into_iter().collect())]
     #[case(Some(BTreeSet::from(["foo".to_owned(), "bar".to_owned()])), Default::default(), [("foo".to_string(), Default::default())].into_iter().collect())]
+    #[cfg(any(feature = "worker-sidekiq", feature = "worker-pg"))]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn shared_queues(
         _case: TestCase,
         #[case] config_queues: Option<BTreeSet<String>>,

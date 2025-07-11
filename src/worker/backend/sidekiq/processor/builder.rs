@@ -3,13 +3,11 @@ use crate::config::AppConfig;
 use crate::error::RoadsterResult;
 use crate::worker::backend::shared_queues;
 use crate::worker::backend::sidekiq::processor::{
-    SidekiqProcessor, SidekiqProcessorError, SidekiqProcessorInner, WorkerData,
+    RegisterSidekiqFn, RegisterSidekiqMiddlewareFn, RegisterSidekiqPeriodicFn, SidekiqProcessor,
+    SidekiqProcessorError, SidekiqProcessorInner, WorkerData,
 };
 use crate::worker::backend::sidekiq::roadster_worker::RoadsterWorker;
-use crate::worker::{
-    PeriodicArgs, PeriodicArgsJson, RegisterSidekiqFn, RegisterSidekiqMiddlewareFn,
-    RegisterSidekiqPeriodicFn, Worker, WorkerWrapper,
-};
+use crate::worker::{PeriodicArgs, PeriodicArgsJson, Worker, WorkerWrapper};
 use axum_core::extract::FromRef;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
