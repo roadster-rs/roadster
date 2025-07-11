@@ -1,9 +1,6 @@
-use crate::config::{AppConfig, CustomConfig};
-use num_traits::pow;
-use rand::Rng;
+use crate::config::CustomConfig;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
-use std::cmp::min;
 use std::time::Duration;
 use typed_builder::TypedBuilder;
 use validator::Validate;
@@ -178,80 +175,4 @@ pub enum CompletedAction {
     Archive,
     /// Delete the message.
     Delete,
-}
-
-/// Calculate the retry delay based on the provided [`RetryConfig`]s and the number of attempts.
-///
-/// Return None if it should not retry.
-pub(crate) fn retry_delay(
-    app_config: &AppConfig,
-    worker_retry_config: Option<&RetryConfig>,
-    attempt_num: i32,
-) -> Option<Duration> {
-    let attempt_num = usize::try_from(attempt_num).unwrap_or(usize::MAX);
-
-    let default_retry_config = app_config
-        .service
-        .worker
-        .worker_config
-        .retry_config
-        .as_ref();
-
-    let max_retries = worker_retry_config
-        .and_then(|config| config.max_retries)
-        .or(default_retry_config.and_then(|config| config.max_retries))
-        .unwrap_or_default();
-
-    if attempt_num > max_retries {
-        return None;
-    }
-
-    let delay = worker_retry_config
-        .and_then(|config| config.delay)
-        .or(default_retry_config.and_then(|config| config.delay));
-    let delay = match delay {
-        Some(delay) => delay,
-        None => {
-            return None;
-        }
-    };
-
-    let delay_offset = worker_retry_config
-        .and_then(|config| config.delay_offset)
-        .or(default_retry_config.and_then(|config| config.delay_offset));
-    let delay = match delay_offset {
-        Some(delay_offset) => {
-            delay + Duration::from_secs(rand::rng().random_range(0..delay_offset.as_secs()))
-        }
-        None => delay,
-    };
-
-    let backoff_strategy = worker_retry_config
-        .and_then(|config| config.backoff_strategy.as_ref())
-        .or(default_retry_config.and_then(|config| config.backoff_strategy.as_ref()));
-    let backoff_strategy = match backoff_strategy {
-        Some(backoff_strategy) => backoff_strategy,
-        None => {
-            return Some(delay);
-        }
-    };
-
-    let delay = match backoff_strategy {
-        BackoffStrategy::Exponential => Duration::from_secs(pow(delay.as_secs(), attempt_num)),
-        BackoffStrategy::Linear => match u32::try_from(attempt_num) {
-            Ok(attempt_num) => delay * attempt_num,
-            Err(_) => return None,
-        },
-        BackoffStrategy::None => delay,
-    };
-
-    let max_delay = worker_retry_config
-        .and_then(|config| config.max_delay.as_ref())
-        .or(default_retry_config.and_then(|config| config.max_delay.as_ref()));
-    let delay = match max_delay {
-        Some(max_delay) => min(*max_delay, delay),
-        None => delay,
-    };
-
-    Some(delay)
 }
