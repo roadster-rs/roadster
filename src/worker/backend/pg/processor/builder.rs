@@ -3,10 +3,8 @@ use crate::error::RoadsterResult;
 use crate::worker::backend::pg::processor::{PgProcessor, PgProcessorError, PgProcessorInner};
 use crate::worker::{PeriodicArgs, PeriodicArgsJson, Worker, WorkerWrapper};
 use axum_core::extract::FromRef;
-use cron::Schedule;
 use serde::{Deserialize, Serialize};
 use std::any::Any;
-use std::cmp::Ordering;
 use tracing::{error, info};
 
 #[non_exhaustive]
@@ -101,7 +99,7 @@ where
         let worker_enqueue_config = W::enqueue_config(&self.inner.state);
 
         if let Some(registered_worker) = self.inner.workers.get(&name) {
-            return if registered_worker.type_id() != worker.type_id() {
+            return if registered_worker.inner.type_id != worker.type_id() {
                 Err(PgProcessorError::AlreadyRegisteredWithDifferentType(name).into())
             } else if err_on_duplicate {
                 Err(PgProcessorError::AlreadyRegistered(name).into())

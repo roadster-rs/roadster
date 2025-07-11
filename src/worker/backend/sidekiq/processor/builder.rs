@@ -106,7 +106,6 @@ where
             state: self.state,
             processor: Mutex::new(processor),
             queues: self.queues,
-            workers: self.workers,
             periodic_workers: self.periodic_workers,
         }))
     }
@@ -203,7 +202,7 @@ where
         let worker_enqueue_config = W::enqueue_config(&self.state);
 
         if let Some(registered_worker) = self.workers.get(&name) {
-            return if registered_worker.type_id() != worker.type_id() {
+            return if registered_worker.worker_wrapper.inner.type_id != worker.type_id() {
                 Err(SidekiqProcessorError::AlreadyRegisteredWithDifferentType(name).into())
             } else if err_on_duplicate {
                 Err(SidekiqProcessorError::AlreadyRegistered(name).into())

@@ -10,8 +10,7 @@ use axum_core::extract::FromRef;
 use cron::Schedule;
 use itertools::Itertools;
 use sidekiq::periodic;
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::future;
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::sync::Mutex;
@@ -78,7 +77,6 @@ where
     pub(crate) state: S,
     pub(crate) processor: Mutex<Option<::sidekiq::Processor>>,
     pub(crate) queues: BTreeSet<String>,
-    pub(crate) workers: BTreeMap<String, Arc<WorkerData<S>>>,
     pub(crate) periodic_workers: HashMap<PeriodicArgsJson, Arc<WorkerData<S>>>,
 }
 
@@ -154,10 +152,6 @@ where
         }
 
         Ok(())
-    }
-
-    pub(crate) fn queues(&self) -> &BTreeSet<String> {
-        &self.inner.queues
     }
 
     pub async fn run(self, _state: &S, cancellation_token: CancellationToken) {

@@ -1,7 +1,6 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::util::types;
-use crate::worker::backend::sidekiq::roadster_worker::RoadsterWorker;
 use crate::worker::config::{EnqueueConfig, WorkerConfig};
 use crate::worker::enqueue::Enqueuer;
 use crate::worker::job::periodic_hash;
@@ -11,7 +10,6 @@ use cron::Schedule;
 use serde::{Deserialize, Serialize};
 use std::any::{Any, TypeId};
 use std::borrow::Borrow;
-use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 use std::pin::Pin;
 use std::sync::Arc;
@@ -166,10 +164,10 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    inner: Arc<WorkerWrappeInner<S>>,
+    inner: Arc<WorkerWrapperInner<S>>,
 }
 
-pub(crate) struct WorkerWrappeInner<S>
+pub(crate) struct WorkerWrapperInner<S>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
@@ -196,7 +194,7 @@ where
         let worker = Arc::new(worker);
 
         Ok(Self {
-            inner: Arc::new(WorkerWrappeInner {
+            inner: Arc::new(WorkerWrapperInner {
                 name: W::name(),
                 type_id: worker.type_id(),
                 enqueue_config,

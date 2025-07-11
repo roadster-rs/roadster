@@ -1,25 +1,25 @@
+//! Background task queue processor backed by Postgres using [pgmq](https://docs.rs/pgmq/latest/pgmq/).
+
 use crate::app::context::AppContext;
 use crate::config::AppConfig;
 use crate::config::service::worker::{BalanceStrategy, StaleCleanUpBehavior};
 use crate::error::RoadsterResult;
 use crate::worker::PeriodicArgsJson;
+use crate::worker::WorkerWrapper;
 use crate::worker::backend::pg::{failure_action, success_action};
 use crate::worker::backend::shared_queues;
 use crate::worker::config::{CompletedAction, retry_delay};
 use crate::worker::job::{Job, JobMetadata};
-use crate::worker::{EnqueueConfig, Worker, WorkerConfig, WorkerWrapper};
 use axum_core::extract::FromRef;
 use builder::PgProcessorBuilder;
 use chrono::{DateTime, TimeDelta, Utc};
 use cron::Schedule;
 use itertools::Itertools;
 use pgmq::{PGMQueue, PgmqError};
-use serde::{Deserialize, Serialize};
 use sqlx::Error;
 use sqlx::error::ErrorKind;
 use std::cmp::{Ordering, max};
 use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashSet};
-use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
 use thiserror::Error;
