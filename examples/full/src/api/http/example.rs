@@ -10,7 +10,7 @@ use lettre::message::header::ContentType;
 use lettre::message::{Mailbox, MessageBuilder};
 use roadster::api::http::build_path;
 use roadster::error::RoadsterResult;
-use roadster::service::worker::sidekiq::app_worker::AppWorker;
+use roadster::worker::Worker;
 use schemars::JsonSchema;
 use sendgrid::v3::{Content, Email, Personalization};
 use serde::{Deserialize, Serialize};

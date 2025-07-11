@@ -1,4 +1,4 @@
-[service.sidekiq]
+[service.worker.sidekiq]
 num-workers = 2
 
 [service.worker.sidekiq.redis]

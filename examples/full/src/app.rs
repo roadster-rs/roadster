@@ -26,6 +26,7 @@ use roadster::service::http::middleware::any::AnyMiddleware;
 use roadster::service::http::service::HttpService;
 use roadster::service::registry::ServiceRegistry;
 use roadster::service::worker::sidekiq::service::SidekiqWorkerService;
+use roadster::worker::backend::sidekiq::processor::SidekiqProcessor;
 use tracing::info;
 
 const BASE: &str = "/api";
@@ -74,7 +75,7 @@ impl RoadsterApp<AppState> for App {
 
     async fn services(
         &self,
-        registry: &mut ServiceRegistry<Self, AppState>,
+        registry: &mut ServiceRegistry<AppState>,
         state: &AppState,
     ) -> RoadsterResult<()> {
         registry
@@ -103,13 +104,11 @@ impl RoadsterApp<AppState> for App {
             )
             .await?;
 
-        registry
-            .register_builder(
-                SidekiqWorkerService::builder(state)
-                    .await?
-                    .register_worker(ExampleWorker)?,
-            )
+        let processor = SidekiqProcessor::builder(state)
+            .register(ExampleWorker)?
+            .build()
             .await?;
+        registry.register_service(SidekiqWorkerService::builder().processor(processor).build())?;
 
         registry.register_service(
             FunctionService::builder()
