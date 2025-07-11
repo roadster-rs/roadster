@@ -55,7 +55,7 @@ pub struct WorkerConfig {
     pub max_duration: Option<Duration>,
 
     /// The worker retry configuration. If no configuration is provided, either in the app's config
-    /// or for the [`Worker`], the worker will not retry.
+    /// or for the [`crate::worker::Worker`], the worker will not retry.
     #[serde(flatten, default)]
     #[builder(default, setter(strip_option))]
     pub retry_config: Option<RetryConfig>,

@@ -74,7 +74,7 @@ where
         if let Some(replaced) = self.inner.periodic_workers.replace(periodic_args) {
             return Err(PgProcessorError::AlreadyRegisteredPeriodic(
                 replaced.worker_name,
-                replaced.schedule,
+                replaced.schedule.to_string(),
                 replaced.args,
             )
             .into());

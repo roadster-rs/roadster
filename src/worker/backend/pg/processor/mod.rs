@@ -35,21 +35,22 @@ pub(crate) const PERIODIC_QUEUE_NAME: &str = "periodic";
 #[derive(Debug, Error)]
 #[non_exhaustive]
 pub enum PgProcessorError {
-    /// The provided [`Worker`] was already registered. Contains the [`Worker::name`]
-    /// of the provided worker.
+    /// The provided [`crate::worker::Worker`] was already registered. Contains the
+    /// [`crate::worker::Worker::name`] of the provided worker.
     #[error("The provided `Worker` was already registered: `{0}`")]
     AlreadyRegistered(String),
 
-    /// A [`Worker`] was previously registered that has the same name but is a different type.
+    /// A [`crate::worker::Worker`] was previously registered that has the same name but is a
+    /// different type.
     #[error("The provided `Worker` name was already registered for a different type: `{0}`")]
     AlreadyRegisteredWithDifferentType(String),
 
-    /// The provided [`Worker`] was already registered. Contains the [`Worker::name`]
-    /// of the provided worker.
+    /// The provided [`crate::worker::Worker`] was already registered. Contains the
+    /// [`crate::worker::Worker::name`] of the provided worker.
     #[error(
         "The provided periodic worker job was already registered. Worker: `{0}`, schedule: `{1}`, args: `{2}`"
     )]
-    AlreadyRegisteredPeriodic(String, Schedule, serde_json::Value),
+    AlreadyRegisteredPeriodic(String, String, serde_json::Value),
 
     #[error("No queue configured for worker `{0}`.")]
     NoQueue(String),
@@ -691,6 +692,7 @@ where
     }
 
     #[instrument(skip_all)]
+    #[allow(clippy::too_many_arguments)]
     async fn retry(
         &self,
         pgmq: &PGMQueue,

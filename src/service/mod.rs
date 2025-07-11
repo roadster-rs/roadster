@@ -24,7 +24,11 @@ pub mod worker;
 )]
 #[cfg_attr(
     feature = "worker-sidekiq",
-    doc = r"- [Sidekiq processor][crate::service::worker::sidekiq::service::SidekiqWorkerService]"
+    doc = r"- [Sidekiq processor][crate::service::worker::backend::sidekiq::SidekiqWorkerService]"
+)]
+#[cfg_attr(
+    feature = "worker-pg",
+    doc = r"- [Sidekiq processor][crate::service::worker::backend::pg::PgWorkerService]"
 )]
 #[cfg_attr(
     feature = "grpc",

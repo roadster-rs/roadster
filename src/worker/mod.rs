@@ -68,8 +68,7 @@ where
     /// [`crate::config::AppConfig`].
     ///
     /// The [`Worker::worker_config`] method will be called once for each worker when it is
-    /// registered, and the config will be stored by the [`Processor`] to be used when the worker
-    /// handles a job.
+    /// registered, and the config will be stored to be used when the worker handles a job.
     fn worker_config(&self, _state: &S) -> WorkerConfig {
         WorkerConfig::default()
     }

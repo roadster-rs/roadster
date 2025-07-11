@@ -78,7 +78,7 @@ where
     } else {
         let worker_name = W::name();
         error!(worker_name, "Unable to enqueue job, no queue configured");
-        return Err(EnqueueError::NoQueue(worker_name).into());
+        return Err(EnqueueError::NoQueue(worker_name));
     };
 
     Ok(queue)
@@ -100,7 +100,7 @@ where
 {
     let worker_name = W::name();
 
-    let args = serde_json::to_value(&args).map_err(|err| EnqueueError::Serde(err))?;
+    let args = serde_json::to_value(&args).map_err(EnqueueError::Serde)?;
     let job = Job::builder()
         .metadata(JobMetadata::builder().worker_name(worker_name).build())
         .args(args)
@@ -132,7 +132,7 @@ where
 
     let mut args_serialized: Vec<serde_json::Value> = Vec::with_capacity(args.len());
     for arg in args.iter() {
-        args_serialized.push(serde_json::to_value(arg).map_err(|err| EnqueueError::Serde(err))?);
+        args_serialized.push(serde_json::to_value(arg).map_err(EnqueueError::Serde)?);
     }
     let jobs = args_serialized
         .into_iter()

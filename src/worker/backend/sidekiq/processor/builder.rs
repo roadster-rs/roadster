@@ -163,7 +163,7 @@ where
         {
             return Err(SidekiqProcessorError::AlreadyRegisteredPeriodic(
                 periodic_args.worker_name,
-                periodic_args.schedule,
+                periodic_args.schedule.to_string(),
                 periodic_args.args,
             )
             .into());

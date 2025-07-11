@@ -12,6 +12,7 @@ use crate::config::CustomConfig;
 use crate::config::service::grpc::GrpcServiceConfig;
 #[cfg(feature = "http")]
 use crate::config::service::http::HttpServiceConfig;
+#[cfg(feature = "worker")]
 use crate::config::service::worker::WorkerServiceConfig;
 use crate::util::serde::default_true;
 use serde_derive::{Deserialize, Serialize};
