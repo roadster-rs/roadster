@@ -19,6 +19,7 @@ axum = { workspace = true }
 async-trait = { workspace = true }
 rusty-sidekiq = { workspace = true }
 tokio-util = { workspace = true }
+cron = "0.15.0"
 
 # gRPC API
 tonic = { workspace = true, optional = true }

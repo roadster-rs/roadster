@@ -1,8 +1,8 @@
-[service.sidekiq]
+[service.worker.sidekiq]
 num-workers = 2
 queues = ["default"]
 
-[service.sidekiq.redis]
+[service.worker.sidekiq.redis]
 # A hard-coded value can be provided to connect to a local server for local development.
 # Production values should be provided via a more secure method, such as an environment var
 # or an `AsyncSource` that fetches from an external secrets manager.

@@ -1,5 +1,0 @@
-[service.sidekiq]
-num-workers = 2
-
-[service.sidekiq.redis]
-uri = "redis://localhost:6379"

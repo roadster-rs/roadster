@@ -1,7 +1,9 @@
 use crate::worker::email::smtp::EmailConfirmationPlainText;
+use leptos::prelude::Render;
 use roadster::app::RoadsterApp;
 use roadster::app::context::AppContext;
-use roadster::service::worker::backend::sidekiq::SidekiqWorkerService;
+use roadster::service::worker::backend::pg::PgWorkerService;
+use roadster::worker::backend::pg::processor::PgProcessor;
 
 pub mod model;
 pub mod worker;
@@ -12,13 +14,13 @@ fn build_app() -> RoadsterApp<AppContext> {
         .state_provider(|context| Ok(context))
         .add_service_provider(move |registry, state| {
             Box::pin(async move {
-                registry
-                    .register_builder(
-                        SidekiqWorkerService::builder(state)
-                            .await?
-                            .register_worker(EmailConfirmationPlainText::new(state))?,
-                    )
+                let processor = PgProcessor::builder(state)
+                    .register(EmailConfirmationPlainText)?
+                    .build()
                     .await?;
+                registry
+                    .register_service(PgWorkerService::builder().processor(processor).build())?
+                    .build();
                 Ok(())
             })
         })

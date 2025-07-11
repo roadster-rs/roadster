@@ -5,24 +5,14 @@ use lettre::message::header::ContentType;
 use lettre::message::{Mailbox, MessageBuilder};
 use roadster::app::context::AppContext;
 use roadster::error::RoadsterResult;
+use roadster::worker::Worker;
 use serde::{Deserialize, Serialize};
-use sidekiq::Worker;
 use std::str::FromStr;
 use tracing::{info, instrument};
 use typed_builder::TypedBuilder;
 use uuid::Uuid;
 
-pub struct EmailConfirmationPlainText {
-    state: AppContext,
-}
-
-impl EmailConfirmationPlainText {
-    pub fn new(state: &AppContext) -> Self {
-        Self {
-            state: state.clone(),
-        }
-    }
-}
+pub struct EmailConfirmationPlainText;
 
 #[derive(Debug, TypedBuilder, Serialize, Deserialize)]
 pub struct EmailConfirmationPlainTextArgs {
@@ -30,12 +20,19 @@ pub struct EmailConfirmationPlainTextArgs {
 }
 
 #[async_trait]
-impl Worker<EmailConfirmationPlainTextArgs> for EmailConfirmationPlainText {
-    #[instrument(skip_all)]
-    async fn perform(&self, args: EmailConfirmationPlainTextArgs) -> sidekiq::Result<()> {
-        let user = User::find_by_id(&self.state, args.user_id).await?;
+impl Worker<AppContext, EmailConfirmationPlainTextArgs> for EmailConfirmationPlainText {
+    type Error = roadster::error::Error;
+    type Enqueuer = roadster::worker::PgEnqueuer;
 
-        send_email(&self.state, &user).await?;
+    #[instrument(skip_all)]
+    async fn handle(
+        &self,
+        state: &AppContext,
+        args: EmailConfirmationPlainTextArgs,
+    ) -> Result<(), Self::Error> {
+        let user = User::find_by_id(&state, args.user_id).await?;
+
+        send_email(&state, &user).await?;
 
         Ok(())
     }

@@ -1,0 +1,5 @@
+[service.worker.enqueue-config]
+queue = "default"
+
+[service.worker.pg]
+num-workers = 1

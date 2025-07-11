@@ -2,24 +2,14 @@ use crate::model::user::User;
 use async_trait::async_trait;
 use roadster::app::context::AppContext;
 use roadster::error::RoadsterResult;
+use roadster::worker::Worker;
 use sendgrid::v3::{Email, Message, Personalization};
 use serde::{Deserialize, Serialize};
-use sidekiq::Worker;
 use tracing::{info, instrument};
 use typed_builder::TypedBuilder;
 use uuid::Uuid;
 
-pub struct EmailConfirmationSendgrid {
-    state: AppContext,
-}
-
-impl EmailConfirmationSendgrid {
-    pub fn new(state: &AppContext) -> Self {
-        Self {
-            state: state.clone(),
-        }
-    }
-}
+pub struct EmailConfirmationSendgrid;
 
 #[derive(Debug, TypedBuilder, Serialize, Deserialize)]
 pub struct EmailConfirmationSendgridArgs {
@@ -27,12 +17,19 @@ pub struct EmailConfirmationSendgridArgs {
 }
 
 #[async_trait]
-impl Worker<EmailConfirmationSendgridArgs> for EmailConfirmationSendgrid {
-    #[instrument(skip_all)]
-    async fn perform(&self, args: EmailConfirmationSendgridArgs) -> sidekiq::Result<()> {
-        let user = User::find_by_id(&self.state, args.user_id).await?;
+impl Worker<AppContext, EmailConfirmationSendgridArgs> for EmailConfirmationSendgrid {
+    type Error = roadster::error::Error;
+    type Enqueuer = roadster::worker::PgEnqueuer;
 
-        send_email(&self.state, &user).await?;
+    #[instrument(skip_all)]
+    async fn handle(
+        &self,
+        state: &AppContext,
+        args: EmailConfirmationSendgridArgs,
+    ) -> Result<(), Self::Error> {
+        let user = User::find_by_id(&state, args.user_id).await?;
+
+        send_email(&state, &user).await?;
 
         Ok(())
     }
