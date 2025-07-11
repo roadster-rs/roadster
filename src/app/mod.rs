@@ -212,7 +212,7 @@ where
         Ok(())
     }
 
-    /// Provide the [crate::health::check::HealthCheck]s to use throughout the app.
+    /// Provide the [`crate::health::check::HealthCheck`]s to use throughout the app.
     async fn health_checks(
         &self,
         _registry: &mut HealthCheckRegistry,
@@ -221,7 +221,7 @@ where
         Ok(())
     }
 
-    /// Provide the [crate::service::Service]s to run in the app.
+    /// Provide the [`crate::service::Service`]s to run in the app.
     async fn services(&self, _registry: &mut ServiceRegistry<S>, _state: &S) -> RoadsterResult<()> {
         Ok(())
     }

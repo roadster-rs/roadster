@@ -35,23 +35,21 @@ pub fn build_app() -> App {
         })
         .add_service_provider(|registry, state| {
             Box::pin(async {
-                registry.register_service(
-                    PgWorkerService::builder()
-                        .processor(
-                            PgProcessor::builder(state)
-                                .register(ExampleWorker)?
-                                .register_periodic(
-                                    ExamplePeriodicWorker,
-                                    PeriodicArgs::builder()
-                                        .schedule(Schedule::from_str("*/10 * * * * *")?)
-                                        .args(ExamplePeriodicWorkerArgs::builder().a(111).build())
-                                        .build(),
-                                )?
-                                .build()
-                                .await?,
-                        )
-                        .build(),
-                )?;
+                let processor = PgProcessor::builder(state)
+                    .register(ExampleWorker)?
+                    .register_periodic(
+                        ExamplePeriodicWorker,
+                        PeriodicArgs::builder()
+                            .schedule(Schedule::from_str("*/10 * * * * *")?)
+                            .args(ExamplePeriodicWorkerArgs::builder().a(111).build())
+                            .build(),
+                    )?
+                    .build()
+                    .await?;
+
+                registry
+                    .register_service(PgWorkerService::builder().processor(processor).build())?;
+
                 Ok(())
             })
         });

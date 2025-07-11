@@ -11,13 +11,12 @@ pub struct ExampleWorkerArgs {
     bar: i32,
 }
 
-#[derive(Default)]
 pub struct ExampleWorker;
 
 #[async_trait]
 impl Worker<AppContext, ExampleWorkerArgs> for ExampleWorker {
     type Error = roadster::error::Error;
-    type Enqueuer = roadster::worker::backend::pg::enqueue::PgEnqueuer;
+    type Enqueuer = roadster::worker::PgEnqueuer;
 
     #[instrument(skip_all)]
     async fn handle(

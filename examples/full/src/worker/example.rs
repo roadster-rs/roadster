@@ -3,7 +3,6 @@ use async_trait::async_trait;
 use roadster::worker::Worker;
 use tracing::{info, instrument};
 
-#[derive(Default)]
 pub struct ExampleWorker;
 
 #[async_trait]

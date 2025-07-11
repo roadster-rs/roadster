@@ -9,12 +9,12 @@ use tracing::{info, instrument};
 use typed_builder::TypedBuilder;
 use uuid::Uuid;
 
-pub struct EmailConfirmationSendgrid;
-
 #[derive(Debug, TypedBuilder, Serialize, Deserialize)]
 pub struct EmailConfirmationSendgridArgs {
     user_id: Uuid,
 }
+
+pub struct EmailConfirmationSendgrid;
 
 #[async_trait]
 impl Worker<AppContext, EmailConfirmationSendgridArgs> for EmailConfirmationSendgrid {

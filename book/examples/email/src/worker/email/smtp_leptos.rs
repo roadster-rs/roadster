@@ -13,12 +13,12 @@ use tracing::{info, instrument};
 use typed_builder::TypedBuilder;
 use uuid::Uuid;
 
-pub struct EmailConfirmationHtml;
-
 #[derive(Debug, TypedBuilder, Serialize, Deserialize)]
 pub struct EmailConfirmationHtmlArgs {
     user_id: Uuid,
 }
+
+pub struct EmailConfirmationHtml;
 
 #[async_trait]
 impl Worker<AppContext, EmailConfirmationHtmlArgs> for EmailConfirmationHtml {

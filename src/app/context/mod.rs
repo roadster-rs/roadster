@@ -788,6 +788,13 @@ impl ProvideRef<pgmq::PGMQueue> for AppContext {
     }
 }
 
+#[cfg(feature = "worker-pg")]
+impl Provide<pgmq::PGMQueue> for AppContext {
+    fn provide(&self) -> pgmq::PGMQueue {
+        self.pgmq().clone()
+    }
+}
+
 #[cfg(all(feature = "db-sql", feature = "test-containers"))]
 enum DbTestContainer {
     Postgres(

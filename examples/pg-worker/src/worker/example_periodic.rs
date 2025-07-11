@@ -9,13 +9,12 @@ pub struct ExamplePeriodicWorkerArgs {
     a: u64,
 }
 
-#[derive(Default)]
 pub struct ExamplePeriodicWorker;
 
 #[async_trait]
 impl Worker<AppContext, ExamplePeriodicWorkerArgs> for ExamplePeriodicWorker {
     type Error = roadster::error::Error;
-    type Enqueuer = roadster::worker::backend::pg::enqueue::PgEnqueuer;
+    type Enqueuer = roadster::worker::PgEnqueuer;
 
     #[instrument(skip_all)]
     async fn handle(
