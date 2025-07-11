@@ -11,6 +11,7 @@ use cron::Schedule;
 use itertools::Itertools;
 use sidekiq::periodic;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::future;
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::sync::Mutex;
@@ -55,7 +56,7 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    inner: Arc<SidekiqProcessorInner<S>>,
+    pub(crate) inner: Arc<SidekiqProcessorInner<S>>,
 }
 
 pub(crate) struct WorkerData<S>
@@ -74,10 +75,11 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    state: S,
-    processor: Mutex<Option<::sidekiq::Processor>>,
-    workers: BTreeMap<String, Arc<WorkerData<S>>>,
-    periodic_workers: HashMap<PeriodicArgsJson, Arc<WorkerData<S>>>,
+    pub(crate) state: S,
+    pub(crate) processor: Mutex<Option<::sidekiq::Processor>>,
+    pub(crate) queues: BTreeSet<String>,
+    pub(crate) workers: BTreeMap<String, Arc<WorkerData<S>>>,
+    pub(crate) periodic_workers: HashMap<PeriodicArgsJson, Arc<WorkerData<S>>>,
 }
 
 impl<S> SidekiqProcessor<S>
@@ -154,6 +156,10 @@ where
         Ok(())
     }
 
+    pub(crate) fn queues(&self) -> &BTreeSet<String> {
+        &self.inner.queues
+    }
+
     pub async fn run(self, _state: &S, cancellation_token: CancellationToken) {
         let processor = { self.inner.processor.lock().await.clone() };
 
@@ -161,6 +167,7 @@ where
             Some(processor) => processor,
             None => {
                 warn!("No ::sidekiq::Processor available.");
+                cancellation_token.cancelled().await;
                 return;
             }
         };

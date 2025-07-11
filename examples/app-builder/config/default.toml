@@ -12,8 +12,8 @@ idle-timeout = 60
 min-connections = 0
 max-connections = 10
 
-[service.sidekiq]
-queues = ["default"]
+[service.worker.enqueue-config]
+queue = "default"
 
 [service.http]
 # Listen on any ipv4 or ipv6 addr, useful to allow connections from LAN for local dev

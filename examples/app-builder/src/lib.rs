@@ -12,6 +12,7 @@ use roadster::error::RoadsterResult;
 use roadster::service::function::service::FunctionService;
 use roadster::service::http::service::HttpService;
 use roadster::service::worker::sidekiq::service::SidekiqWorkerService;
+use roadster::worker::backend::sidekiq::processor::SidekiqProcessor;
 use std::future;
 use tokio_util::sync::CancellationToken;
 
@@ -129,13 +130,13 @@ pub fn build_app() -> App {
         })
         .add_service_provider(|registry, state| {
             Box::pin(async {
-                registry
-                    .register_builder(
-                        SidekiqWorkerService::builder(state)
-                            .await?
-                            .register_worker(ExampleWorker)?,
-                    )
+                let processor = SidekiqProcessor::builder(state)
+                    .register(ExampleWorker)?
+                    .build()
                     .await?;
+                registry.register_service(
+                    SidekiqWorkerService::builder().processor(processor).build(),
+                )?;
                 Ok(())
             })
         });

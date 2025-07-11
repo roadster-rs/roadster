@@ -31,8 +31,8 @@ impl Enqueuer for SidekiqEnqueuer {
                 // Todo: update `sidekiq` to return the job id?
                 ::sidekiq::perform_async(
                     context.redis_enqueue(),
-                    queue.to_owned(),
                     job.metadata.worker_name.to_owned(),
+                    queue.to_owned(),
                     &job.args,
                 )
                 .await?;
@@ -65,8 +65,8 @@ impl Enqueuer for SidekiqEnqueuer {
                 ::sidekiq::perform_in(
                     context.redis_enqueue(),
                     delay,
-                    queue.to_owned(),
                     job.metadata.worker_name.to_owned(),
+                    queue.to_owned(),
                     &job.args,
                 )
                 .await?;
@@ -99,8 +99,8 @@ impl Enqueuer for SidekiqEnqueuer {
                 for job in jobs {
                     ::sidekiq::perform_async(
                         context.redis_enqueue(),
-                        queue.to_owned(),
                         job.metadata.worker_name.to_owned(),
+                        queue.to_owned(),
                         &job.args,
                     )
                     .await?;
@@ -136,8 +136,8 @@ impl Enqueuer for SidekiqEnqueuer {
                     ::sidekiq::perform_in(
                         context.redis_enqueue(),
                         delay,
-                        queue.to_owned(),
                         job.metadata.worker_name.to_owned(),
+                        queue.to_owned(),
                         &job.args,
                     )
                     .await?;

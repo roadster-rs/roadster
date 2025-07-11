@@ -34,7 +34,7 @@ impl AsyncSource for ExampleAsyncSource {
         secrets manager services.
          */
         config.insert(
-            "service.sidekiq.redis.uri".into(),
+            "service.worker.sidekiq.redis.uri".into(),
             "redis://localhost:6379".into(),
         );
 

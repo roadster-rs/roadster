@@ -34,7 +34,7 @@ where
         }
     }
 
-    pub fn build(self) -> RoadsterResult<PgProcessor<S>> {
+    pub async fn build(self) -> RoadsterResult<PgProcessor<S>> {
         Ok(PgProcessor::new(self.inner))
     }
 

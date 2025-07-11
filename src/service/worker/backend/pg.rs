@@ -25,7 +25,7 @@ where
         .common
         .queue_config
         .values()
-        .map(|config| config.num_workers.unwrap_or_default() as u64)
+        .map(|config| u64::from(config.num_workers.unwrap_or_default()))
         .sum();
     if config.custom.common.num_workers == 0 && dedicated_workers == 0 {
         debug!("Postgres worker service configured with 0 worker tasks.");

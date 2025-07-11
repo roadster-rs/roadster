@@ -7,16 +7,16 @@ use crate::worker::backend::sidekiq::processor::{
 };
 use crate::worker::backend::sidekiq::roadster_worker::RoadsterWorker;
 use crate::worker::{
-    PeriodicArgs, PeriodicArgsJson, RegisterSidekiqFn, RegisterSidekiqPeriodicFn, Worker,
-    WorkerWrapper,
+    PeriodicArgs, PeriodicArgsJson, RegisterSidekiqFn, RegisterSidekiqMiddlewareFn,
+    RegisterSidekiqPeriodicFn, Worker, WorkerWrapper,
 };
 use axum_core::extract::FromRef;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
-use sidekiq::Processor;
+use sidekiq::{Processor, ServerMiddleware};
 use std::any::Any;
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::{error, info};
@@ -31,6 +31,7 @@ where
     pub(crate) queues: BTreeSet<String>,
     pub(crate) workers: BTreeMap<String, Arc<WorkerData<S>>>,
     pub(crate) periodic_workers: HashMap<PeriodicArgsJson, Arc<WorkerData<S>>>,
+    pub(crate) middleware: Vec<RegisterSidekiqMiddlewareFn>,
 }
 
 impl<S> SidekiqProcessorBuilder<S>
@@ -44,10 +45,11 @@ where
             queues: Default::default(),
             workers: Default::default(),
             periodic_workers: Default::default(),
+            middleware: Default::default(),
         }
     }
 
-    pub fn build(self) -> RoadsterResult<SidekiqProcessor<S>> {
+    pub async fn build(self) -> RoadsterResult<SidekiqProcessor<S>> {
         let context = AppContext::from_ref(&self.state);
 
         let mut processor = if let Some(redis) = context.redis_fetch() {
@@ -94,11 +96,16 @@ where
                     worker_data.worker_wrapper.clone(),
                 );
             }
+
+            for middleware in self.middleware {
+                middleware(processor).await;
+            }
         }
 
         Ok(SidekiqProcessor::new(SidekiqProcessorInner {
             state: self.state,
             processor: Mutex::new(processor),
+            queues: self.queues,
             workers: self.workers,
             periodic_workers: self.periodic_workers,
         }))
@@ -163,6 +170,20 @@ where
             .into());
         }
 
+        Ok(self)
+    }
+
+    pub async fn middleware<M>(mut self, middleware: M) -> RoadsterResult<Self>
+    where
+        M: ServerMiddleware + Send + Sync + 'static,
+    {
+        let register_sidekiq_middleware_fn: RegisterSidekiqMiddlewareFn =
+            Box::new(move |processor| {
+                Box::pin(async move {
+                    processor.using(middleware).await;
+                })
+            });
+        self.middleware.push(register_sidekiq_middleware_fn);
         Ok(self)
     }
 

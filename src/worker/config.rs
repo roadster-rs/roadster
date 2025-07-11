@@ -4,7 +4,6 @@ use rand::Rng;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
 use std::cmp::min;
-use std::sync::OnceLock;
 use std::time::Duration;
 use typed_builder::TypedBuilder;
 use validator::Validate;
@@ -255,40 +254,4 @@ pub(crate) fn retry_delay(
     };
 
     Some(delay)
-}
-
-static DEFAULT_COMPLETED_ACTION: OnceLock<CompletedAction> = OnceLock::new();
-
-/// Action to take if a job succeeds.
-pub(crate) fn success_action<'a>(
-    app_config: &'a AppConfig,
-    worker_config: Option<&'a PgWorkerConfig>,
-) -> &'a CompletedAction {
-    worker_config
-        .and_then(|config| config.success_action.as_ref())
-        .or(app_config
-            .service
-            .worker
-            .worker_config
-            .pg
-            .as_ref()
-            .and_then(|config| config.success_action.as_ref()))
-        .unwrap_or(DEFAULT_COMPLETED_ACTION.get_or_init(|| CompletedAction::Delete))
-}
-
-/// Action to take if a job fails.
-pub(crate) fn failure_action<'a>(
-    app_config: &'a AppConfig,
-    worker_config: Option<&'a PgWorkerConfig>,
-) -> &'a CompletedAction {
-    worker_config
-        .and_then(|config| config.failure_action.as_ref())
-        .or(app_config
-            .service
-            .worker
-            .worker_config
-            .pg
-            .as_ref()
-            .and_then(|config| config.failure_action.as_ref()))
-        .unwrap_or(DEFAULT_COMPLETED_ACTION.get_or_init(|| CompletedAction::Archive))
 }

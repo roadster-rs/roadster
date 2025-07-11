@@ -7,7 +7,7 @@ use axum::Json;
 use axum::extract::State;
 use roadster::api::http::build_path;
 use roadster::error::RoadsterResult;
-use roadster::service::worker::sidekiq::app_worker::AppWorker;
+use roadster::worker::Worker;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use tracing::instrument;

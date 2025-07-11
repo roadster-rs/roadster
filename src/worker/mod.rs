@@ -18,6 +18,11 @@ use std::sync::Arc;
 use std::time::Duration;
 use tracing::{error, instrument};
 
+#[cfg(feature = "worker-pg")]
+pub use crate::worker::backend::pg::enqueue::PgEnqueuer;
+#[cfg(feature = "worker-sidekiq")]
+pub use crate::worker::backend::sidekiq::enqueue::SidekiqEnqueuer;
+
 pub mod backend;
 pub mod config;
 pub(crate) mod enqueue;
@@ -133,16 +138,26 @@ type WorkerFn<S> = Box<
 >;
 
 type RegisterSidekiqFn<S> =
-    Box<dyn for<'a> Fn(&'a S, &'a mut ::sidekiq::Processor, WorkerWrapper<S>)>;
+    Box<dyn Send + Sync + for<'a> Fn(&'a S, &'a mut ::sidekiq::Processor, WorkerWrapper<S>)>;
 
 // Returns the sidekiq json for the periodic job
 type RegisterSidekiqPeriodicFn<S> = Box<
-    dyn for<'a> Fn(
-        &'a S,
-        &'a mut ::sidekiq::Processor,
-        WorkerWrapper<S>,
-        PeriodicArgsJson,
-    ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<String>>>>,
+    dyn Send
+        + Sync
+        + for<'a> Fn(
+            &'a S,
+            &'a mut ::sidekiq::Processor,
+            WorkerWrapper<S>,
+            PeriodicArgsJson,
+        ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<String>>>>,
+>;
+
+type RegisterSidekiqMiddlewareFn = Box<
+    dyn Send
+        + Sync
+        + for<'a> FnOnce(
+            &'a mut ::sidekiq::Processor,
+        ) -> Pin<Box<dyn 'a + Send + Future<Output = ()>>>,
 >;
 
 #[derive(Clone)]
