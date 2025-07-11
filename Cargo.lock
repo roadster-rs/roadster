@@ -3768,7 +3768,6 @@ dependencies = [
  "config",
  "cron",
  "roadster",
- "rusty-sidekiq",
  "schemars",
  "sea-orm",
  "serde",

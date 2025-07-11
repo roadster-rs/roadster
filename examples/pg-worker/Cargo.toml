@@ -28,8 +28,6 @@ sea-orm = { workspace = true, optional = true }
 # Cli
 clap = { workspace = true, features = ["derive"], optional = true }
 
-# The default `rss-stats` feature has a dependency that currently can't be satisfied (memchr: ~2.3)
-rusty-sidekiq = { workspace = true, default-features = false }
 serde = { workspace = true, features = ["derive"] }
 
 # Config

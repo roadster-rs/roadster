@@ -1,5 +1,5 @@
 use crate::api::http;
-use crate::worker::example::{ExampleWorker, ExampleWorkerArgs};
+use crate::worker::example::ExampleWorker;
 use crate::worker::example_periodic::{ExamplePeriodicWorker, ExamplePeriodicWorkerArgs};
 use cron::Schedule;
 use roadster::app::RoadsterApp;
@@ -43,11 +43,12 @@ pub fn build_app() -> App {
                                 .register_periodic(
                                     ExamplePeriodicWorker,
                                     PeriodicArgs::builder()
-                                        .schedule(Schedule::from_str("*/10 * * * *")?)
+                                        .schedule(Schedule::from_str("*/10 * * * * *")?)
                                         .args(ExamplePeriodicWorkerArgs::builder().a(111).build())
                                         .build(),
                                 )?
-                                .build()?,
+                                .build()
+                                .await?,
                         )
                         .build(),
                 )?;
