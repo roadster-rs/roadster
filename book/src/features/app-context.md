@@ -69,6 +69,10 @@ extension mechanism via the `ExtensionRegistry`, which is initialized by app aut
 methods can then be retrieved using the `AppContext#get_extension` method. This is similar to the Axum's [
 `Extension`](https://docs.rs/axum/latest/axum/struct.Extension.html) mechanism.
 
+```rust,ignore
+{{#include ../../examples/app-context/src/context_extension.rs:4:}}
+```
+
 ## See also
 
 - [Axum State chapter](/features/services/http/state.html)

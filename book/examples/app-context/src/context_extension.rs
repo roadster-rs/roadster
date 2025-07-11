@@ -1,0 +1,13 @@
+use roadster::app::RoadsterApp;
+use roadster::app::context::AppContext;
+
+pub fn app_with_context_extension() -> RoadsterApp<AppContext> {
+    RoadsterApp::builder()
+        .context_extension_provider(|_config, registry| {
+            Box::pin(async move {
+                registry.register("Custom String context".to_string())?;
+                Ok(())
+            })
+        })
+        .build()
+}
