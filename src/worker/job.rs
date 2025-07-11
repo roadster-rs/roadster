@@ -7,6 +7,7 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 // Todo: Not sure if this should be public yet.
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, bon::Builder, Eq, PartialEq)]
+#[non_exhaustive]
 pub(crate) struct Job {
     pub(crate) metadata: JobMetadata,
     pub(crate) args: serde_json::Value,
@@ -15,6 +16,7 @@ pub(crate) struct Job {
 // Todo: Not sure if this should be public yet.
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, bon::Builder, Eq, PartialEq)]
+#[non_exhaustive]
 pub(crate) struct JobMetadata {
     #[builder(into)]
     pub(crate) worker_name: String,
@@ -24,6 +26,7 @@ pub(crate) struct JobMetadata {
 // Todo: Not sure if this should be public yet.
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, bon::Builder, Eq, PartialEq)]
+#[non_exhaustive]
 pub(crate) struct PeriodicConfig {
     pub(crate) hash: u64,
     pub(crate) schedule: Schedule,
