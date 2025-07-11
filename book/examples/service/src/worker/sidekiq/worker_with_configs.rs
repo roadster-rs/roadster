@@ -1,9 +1,9 @@
 use crate::worker::sidekiq::ExampleWorker;
 use roadster::app::context::AppContext;
 use roadster::error::RoadsterResult;
+use roadster::service::worker::backend::sidekiq::SidekiqWorkerService;
 use roadster::service::worker::sidekiq::app_worker::AppWorkerConfig;
 use roadster::service::worker::sidekiq::builder::SidekiqWorkerServiceBuilder;
-use roadster::service::worker::sidekiq::service::SidekiqWorkerService;
 use std::time::Duration;
 
 async fn register_worker(

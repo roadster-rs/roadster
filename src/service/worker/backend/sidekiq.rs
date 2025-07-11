@@ -1,3 +1,6 @@
+//! Background task queue service backed by Redis using [rusty-sidekiq](https://docs.rs/rusty-sidekiq).
+//! The [`SidekiqWorkerService`] is a simple wrapper around a [`SidekiqProcessor`].
+
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::Service;
@@ -5,9 +8,49 @@ use crate::worker::backend::sidekiq::processor::SidekiqProcessor;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, info, instrument, warn};
+use tracing::{debug, instrument};
 
-pub(crate) const NAME: &str = "sidekiq";
+pub(crate) const NAME: &str = "worker-sidekiq";
+
+#[derive(bon::Builder)]
+#[non_exhaustive]
+pub struct SidekiqWorkerService<S>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    pub(crate) processor: SidekiqProcessor<S>,
+}
+
+#[async_trait]
+impl<S> Service<S> for SidekiqWorkerService<S>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    fn name(&self) -> String {
+        NAME.to_string()
+    }
+
+    fn enabled(&self, state: &S) -> bool {
+        enabled(&AppContext::from_ref(state), &self.processor)
+    }
+
+    #[instrument(skip_all)]
+    async fn before_run(&self, state: &S) -> RoadsterResult<()> {
+        self.processor.before_run(state).await?;
+        Ok(())
+    }
+
+    async fn run(
+        self: Box<Self>,
+        state: &S,
+        cancel_token: CancellationToken,
+    ) -> RoadsterResult<()> {
+        self.processor.run(state, cancel_token).await;
+        Ok(())
+    }
+}
 
 pub(crate) fn enabled<S>(context: &AppContext, processor: &SidekiqProcessor<S>) -> bool
 where
@@ -50,43 +93,4 @@ where
     }
 
     true
-}
-
-#[derive(bon::Builder)]
-pub struct SidekiqWorkerService<S>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-{
-    pub(crate) processor: SidekiqProcessor<S>,
-}
-
-#[async_trait]
-impl<S> Service<S> for SidekiqWorkerService<S>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-{
-    fn name(&self) -> String {
-        NAME.to_string()
-    }
-
-    fn enabled(&self, state: &S) -> bool {
-        enabled(&AppContext::from_ref(state), &self.processor)
-    }
-
-    #[instrument(skip_all)]
-    async fn before_run(&self, state: &S) -> RoadsterResult<()> {
-        self.processor.before_run(state).await?;
-        Ok(())
-    }
-
-    async fn run(
-        self: Box<Self>,
-        state: &S,
-        cancel_token: CancellationToken,
-    ) -> RoadsterResult<()> {
-        self.processor.run(state, cancel_token).await;
-        Ok(())
-    }
 }

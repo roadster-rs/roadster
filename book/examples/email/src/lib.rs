@@ -1,7 +1,7 @@
 use crate::worker::email::smtp::EmailConfirmationPlainText;
 use roadster::app::RoadsterApp;
 use roadster::app::context::AppContext;
-use roadster::service::worker::sidekiq::service::SidekiqWorkerService;
+use roadster::service::worker::backend::sidekiq::SidekiqWorkerService;
 
 pub mod model;
 pub mod worker;

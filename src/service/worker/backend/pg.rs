@@ -1,3 +1,6 @@
+//! Background task queue service backed by Postgres using [pgmq](https://docs.rs/pgmq/latest/pgmq/).
+//! The [`PgWorkerService`] is a simple wrapper around a [`PgProcessor`].
+
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::Service;
@@ -8,43 +11,6 @@ use tokio_util::sync::CancellationToken;
 use tracing::{debug, instrument};
 
 pub(crate) const NAME: &str = "worker-postgres";
-
-pub(crate) fn enabled<S>(context: &AppContext, processor: &PgProcessor<S>) -> bool
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-{
-    let config = &context.config().service.worker.pg;
-    if !config.common.enabled(context) {
-        debug!("Postgres worker service is not enabled in the config.");
-        return false;
-    }
-
-    let dedicated_workers: u64 = config
-        .custom
-        .common
-        .queue_config
-        .values()
-        .map(|config| u64::from(config.num_workers.unwrap_or_default()))
-        .sum();
-    if config.custom.common.num_workers == 0 && dedicated_workers == 0 {
-        debug!("Postgres worker service configured with 0 worker tasks.");
-        return false;
-    }
-
-    let queues_empty = if let Some(queues) = config.custom.common.queues.as_ref() {
-        queues.is_empty()
-    } else {
-        processor.queues().is_empty()
-    };
-
-    if queues_empty && dedicated_workers == 0 {
-        debug!("Postgres worker service configured with 0 worker queues.");
-        return false;
-    }
-
-    true
-}
 
 #[derive(bon::Builder)]
 #[non_exhaustive]
@@ -84,4 +50,41 @@ where
         self.processor.run(state, cancel_token).await;
         Ok(())
     }
+}
+
+pub(crate) fn enabled<S>(context: &AppContext, processor: &PgProcessor<S>) -> bool
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    let config = &context.config().service.worker.pg;
+    if !config.common.enabled(context) {
+        debug!("Postgres worker service is not enabled in the config.");
+        return false;
+    }
+
+    let dedicated_workers: u64 = config
+        .custom
+        .common
+        .queue_config
+        .values()
+        .map(|config| u64::from(config.num_workers.unwrap_or_default()))
+        .sum();
+    if config.custom.common.num_workers == 0 && dedicated_workers == 0 {
+        debug!("Postgres worker service configured with 0 worker tasks.");
+        return false;
+    }
+
+    let queues_empty = if let Some(queues) = config.custom.common.queues.as_ref() {
+        queues.is_empty()
+    } else {
+        processor.queues().is_empty()
+    };
+
+    if queues_empty && dedicated_workers == 0 {
+        debug!("Postgres worker service configured with 0 worker queues.");
+        return false;
+    }
+
+    true
 }

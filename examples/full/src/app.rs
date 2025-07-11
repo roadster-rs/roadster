@@ -25,7 +25,7 @@ use roadster::service::http::initializer::any::AnyInitializer;
 use roadster::service::http::middleware::any::AnyMiddleware;
 use roadster::service::http::service::HttpService;
 use roadster::service::registry::ServiceRegistry;
-use roadster::service::worker::sidekiq::service::SidekiqWorkerService;
+use roadster::service::worker::backend::sidekiq::SidekiqWorkerService;
 use roadster::worker::backend::sidekiq::processor::SidekiqProcessor;
 use tracing::info;
 
