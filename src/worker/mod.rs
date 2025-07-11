@@ -1,19 +1,20 @@
 use crate::app::context::AppContext;
 use crate::util::types;
+#[cfg(feature = "worker-pg")]
+pub use crate::worker::backend::pg::enqueue::PgEnqueuer;
+#[cfg(feature = "worker-sidekiq")]
+pub use crate::worker::backend::sidekiq::enqueue::SidekiqEnqueuer;
 use crate::worker::config::{EnqueueConfig, WorkerConfig};
 use crate::worker::enqueue::Enqueuer;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use cron::Schedule;
+use futures::FutureExt;
 use serde::{Deserialize, Serialize};
 use std::borrow::Borrow;
+use std::panic::AssertUnwindSafe;
 use std::time::Duration;
-use tracing::instrument;
-
-#[cfg(feature = "worker-pg")]
-pub use crate::worker::backend::pg::enqueue::PgEnqueuer;
-#[cfg(feature = "worker-sidekiq")]
-pub use crate::worker::backend::sidekiq::enqueue::SidekiqEnqueuer;
+use tracing::{error, instrument};
 
 pub mod backend;
 pub mod config;
@@ -201,7 +202,7 @@ where
 
     #[instrument(skip_all)]
     async fn handle(&self, state: &S, args: serde_json::Value) -> crate::error::RoadsterResult<()> {
-        let inner = (self.inner.worker_fn)(state, args);
+        let inner = AssertUnwindSafe((self.inner.worker_fn)(state, args)).catch_unwind();
 
         let context = AppContext::from_ref(state);
         let timeout = self
@@ -222,14 +223,13 @@ where
             None
         };
 
-        if let Some(max_duration) = max_duration {
+        let result = if let Some(max_duration) = max_duration {
             tokio::time::timeout(max_duration, inner)
                 .await
                 .map_err(|err| {
                     tracing::error!(
                         worker = self.inner.name,
                         max_duration = max_duration.as_secs(),
-                        %err,
                         "Worker timed out"
                     );
                     crate::error::worker::WorkerError::Timeout(
@@ -240,6 +240,17 @@ where
                 })?
         } else {
             inner.await
+        };
+
+        match result {
+            Ok(result) => result,
+            Err(unwind_error) => {
+                error!(
+                    worker = self.inner.name,
+                    "Worker panicked while handling a job: {unwind_error:?}"
+                );
+                Err(crate::error::worker::WorkerError::Panic(self.inner.name.clone()).into())
+            }
         }
     }
 }

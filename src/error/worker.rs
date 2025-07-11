@@ -21,6 +21,9 @@ pub enum WorkerError {
     #[error("An error occurred while handling a job in worker `{0}`: {1}")]
     Handle(String, Box<dyn std::error::Error + Send + Sync>),
 
+    #[error("Worker `{0}` panicked while handling a job")]
+    Panic(String),
+
     #[error("The maximum timeout of `{1:?}` elapsed when handling a job in worker `{0}`: {2}")]
     Timeout(String, Duration, Box<dyn std::error::Error + Send + Sync>),
 
