@@ -160,7 +160,14 @@ where
         let processor = match processor {
             Some(processor) => processor,
             None => {
-                warn!("No ::sidekiq::Processor available.");
+                /*
+                This should never happen because the processor should only be missing if there
+                was no `redis_fetch` connection available, in which case the SidekiqWorkerService is
+                not enabled. However, if we do get to here, we simply idle until the app goes into
+                shutdown -- if we return from here before then, it will trigger the app to exit
+                pre-maturely.
+                 */
+                warn!("No ::sidekiq::Processor available. Idling until cancelled.");
                 cancellation_token.cancelled().await;
                 return;
             }
