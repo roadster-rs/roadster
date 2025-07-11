@@ -322,7 +322,7 @@ mod tests {
             Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
             ArgsRef: Send + Sync + Borrow<Args> + Serialize,
         {
-            todo!()
+            unimplemented!()
         }
 
         async fn enqueue_delayed<W, S, Args, ArgsRef, E>(
@@ -337,7 +337,7 @@ mod tests {
             Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
             ArgsRef: Send + Sync + Borrow<Args> + Serialize,
         {
-            todo!()
+            unimplemented!()
         }
 
         async fn enqueue_batch<W, S, Args, ArgsRef, E>(
@@ -351,7 +351,7 @@ mod tests {
             Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
             ArgsRef: Send + Sync + Borrow<Args> + Serialize,
         {
-            todo!()
+            unimplemented!()
         }
 
         async fn enqueue_batch_delayed<W, S, Args, ArgsRef, E>(
@@ -366,7 +366,7 @@ mod tests {
             Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
             ArgsRef: Send + Sync + Borrow<Args> + Serialize,
         {
-            todo!()
+            unimplemented!()
         }
     }
 
@@ -388,7 +388,7 @@ mod tests {
             _state: &AppContext,
             _args: FooWorkerArgs,
         ) -> Result<(), Self::Error> {
-            todo!()
+            unimplemented!()
         }
     }
 

@@ -14,10 +14,11 @@ use axum_core::extract::FromRef;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
-use sidekiq::{Processor, Worker as SidekiqWorker};
+use sidekiq::Processor;
 use std::any::Any;
-use std::collections::{BTreeMap, BTreeSet, HashSet};
-use std::sync::Mutex;
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 use tracing::{error, info};
 
 #[non_exhaustive]
@@ -28,8 +29,8 @@ where
 {
     pub(crate) state: S,
     pub(crate) queues: BTreeSet<String>,
-    pub(crate) workers: BTreeMap<String, WorkerData<S>>,
-    pub(crate) periodic_workers: HashSet<PeriodicArgsJson>,
+    pub(crate) workers: BTreeMap<String, Arc<WorkerData<S>>>,
+    pub(crate) periodic_workers: HashMap<PeriodicArgsJson, Arc<WorkerData<S>>>,
 }
 
 impl<S> SidekiqProcessorBuilder<S>
@@ -141,7 +142,7 @@ where
         let name = W::name();
         info!(name, "Registering periodic PG worker");
 
-        self.register_internal(worker, name.clone(), false)?;
+        let worker_data = self.register_internal(worker, name.clone(), false)?;
 
         let periodic_args = PeriodicArgsJson::builder()
             .args(serde_json::to_value(periodic_args.args)?)
@@ -149,11 +150,15 @@ where
             .schedule(periodic_args.schedule)
             .build();
 
-        if let Some(replaced) = self.periodic_workers.replace(periodic_args) {
+        if self
+            .periodic_workers
+            .insert(periodic_args.clone(), worker_data)
+            .is_some()
+        {
             return Err(SidekiqProcessorError::AlreadyRegisteredPeriodic(
-                replaced.worker_name,
-                replaced.schedule,
-                replaced.args,
+                periodic_args.worker_name,
+                periodic_args.schedule,
+                periodic_args.args,
             )
             .into());
         }
@@ -166,7 +171,7 @@ where
         worker: W,
         name: String,
         err_on_duplicate: bool,
-    ) -> RoadsterResult<()>
+    ) -> RoadsterResult<Arc<WorkerData<S>>>
     where
         W: 'static + Worker<S, Args, Error = E>,
         Args: 'static + Send + Sync + Serialize + for<'de> Deserialize<'de>,
@@ -183,7 +188,7 @@ where
                 Err(SidekiqProcessorError::AlreadyRegistered(name).into())
             } else {
                 // Already registered with the same type, no need to do anything
-                Ok(())
+                Ok(registered_worker.clone())
             };
         }
 
@@ -217,6 +222,8 @@ where
                       args: PeriodicArgsJson| {
                     let queue = queue.clone();
                     Box::pin(async move {
+                        use sidekiq::Worker as SidekiqWorker;
+
                         let roadster_worker =
                             RoadsterWorker::<S, W, Args, E>::new(state, worker_wrapper);
                         let builder = ::sidekiq::periodic::builder(&args.schedule.to_string())?
@@ -232,15 +239,13 @@ where
                 },
             );
 
-        self.workers.insert(
-            name.clone(),
-            WorkerData {
-                worker_wrapper: WorkerWrapper::new(&self.state, worker, worker_enqueue_config)?,
-                register_sidekiq_fn,
-                register_sidekiq_periodic_fn,
-            },
-        );
+        let worker_data = Arc::new(WorkerData {
+            worker_wrapper: WorkerWrapper::new(&self.state, worker, worker_enqueue_config)?,
+            register_sidekiq_fn,
+            register_sidekiq_periodic_fn,
+        });
+        self.workers.insert(name.clone(), worker_data.clone());
 
-        Ok(())
+        Ok(worker_data)
     }
 }

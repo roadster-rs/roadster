@@ -10,7 +10,7 @@ use axum_core::extract::FromRef;
 use cron::Schedule;
 use itertools::Itertools;
 use sidekiq::periodic;
-use std::collections::{BTreeMap, BTreeSet, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::sync::Mutex;
@@ -76,8 +76,8 @@ where
 {
     state: S,
     processor: Mutex<Option<::sidekiq::Processor>>,
-    workers: BTreeMap<String, WorkerData<S>>,
-    periodic_workers: HashSet<PeriodicArgsJson>,
+    workers: BTreeMap<String, Arc<WorkerData<S>>>,
+    periodic_workers: HashMap<PeriodicArgsJson, Arc<WorkerData<S>>>,
 }
 
 impl<S> SidekiqProcessor<S>
@@ -130,23 +130,20 @@ where
         let processor = if let Some(processor) = processor.as_mut() {
             processor
         } else {
-            return Err(todo!());
+            warn!("No ::sidekiq::Processor available.");
+            return Ok(());
         };
 
         let mut registered_periodic_jobs_json: HashSet<String> = Default::default();
-        for periodic_args in self.inner.periodic_workers.iter() {
-            if let Some(worker_data) = self.inner.workers.get(&periodic_args.worker_name) {
-                let json = (worker_data.register_sidekiq_periodic_fn)(
-                    &self.inner.state,
-                    processor,
-                    worker_data.worker_wrapper.clone(),
-                    periodic_args.clone(),
-                )
-                .await?;
-                registered_periodic_jobs_json.insert(json);
-            } else {
-                return Err(todo!());
-            }
+        for (periodic_args, worker_data) in self.inner.periodic_workers.iter() {
+            let json = (worker_data.register_sidekiq_periodic_fn)(
+                &self.inner.state,
+                processor,
+                worker_data.worker_wrapper.clone(),
+                periodic_args.clone(),
+            )
+            .await?;
+            registered_periodic_jobs_json.insert(json);
         }
 
         if periodic_config.stale_cleanup == StaleCleanUpBehavior::AutoCleanStale {
@@ -158,18 +155,9 @@ where
     }
 
     pub async fn run(self, _state: &S, cancellation_token: CancellationToken) {
-        let processor = {
-            match self.inner.processor.lock() {
-                Ok(processor) => processor.clone(),
-                Err(err) => {
-                    error!("Unable to lock ::sidekiq::Processor: {err}");
-                    cancellation_token.cancel();
-                    return;
-                }
-            }
-        };
+        let processor = { self.inner.processor.lock().await.clone() };
 
-        let processor = match processor.clone() {
+        let processor = match processor {
             Some(processor) => processor,
             None => {
                 warn!("No ::sidekiq::Processor available.");

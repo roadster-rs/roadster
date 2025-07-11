@@ -78,17 +78,16 @@ pub struct CommonConfig {
     #[serde(default)]
     pub balance_strategy: BalanceStrategy,
 
-    /// The names of the worker queues to handle.
+    /// The names of the worker queues to handle in a shared pool of worker tasks.
     ///
-    /// Note: Different queue backends may treat this differently. For example, if this is `None`,
-    /// the Postgres queue backend will handle the queues for all registered workers, but the
-    /// Sidekiq backend will not handle any queues.
-    /// todo: confirm if this is true and/or if we can have the sidekiq behavior match pg
+    /// If not provided, will default to all of the queues for all registered
+    /// [`crate::worker::Worker`]s (minus any queues specified in the `queue_config` field).
     #[serde(default)]
     pub queues: Option<BTreeSet<String>>,
 
-    /// Queue-specific configurations. The queues specified in this field do not need to match
-    /// the list of queues listed in the `queues` field.
+    /// Queue-specific configurations. The queues specified in this field will be processed in
+    /// dedicated worker tasks and removed from the shared pool. The queues specified in this field
+    /// do not need to match the list of queues listed in the `queues` field.
     #[serde(default)]
     #[validate(nested)]
     pub queue_config: BTreeMap<String, QueueConfig>,
