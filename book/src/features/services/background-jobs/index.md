@@ -17,3 +17,48 @@ Roadster provides a `Worker` trait to encapsulate common functionality for handl
 to handle enqueueing jobs into the job queue backend. The job queue backend for a worker can be easily changed simply
 by changing the `Enqueuer` associated type for a `Worker` implementation.
 
+## Example
+
+### Pg vs Sidekiq worker definition
+
+Notice that the `Worker` implementation is identical for both a Postgres- vs a Sidekiq-backed queue. The only difference
+is the `Enqueuer` associated type.
+
+```rust,ignore
+{{#include ../../../../examples/service/src/worker/pg/worker.rs:11:14}}
+{{#include ../../../../examples/service/src/worker/pg/worker.rs:24:}}
+```
+
+```rust,ignore
+{{#include ../../../../examples/service/src/worker/sidekiq/worker.rs:11:14}}
+{{#include ../../../../examples/service/src/worker/sidekiq/worker.rs:24:}}
+```
+
+### Pg vs Sidekiq worker registration
+
+Workers need to be registered with a queue processor. The processor should at least be registered with the processor
+that matches its `Enqueuer`. However, it can also be registered with a processor that's different from its `Enqueuer`.
+This is useful if a worker's `Enqueuer` needs to change -- in this case, it's possible for some jobs to remain
+in the old backend after the `Enqueuer` was switched. To ensure jobs in the old backend are processed, the worker can
+temporarily be registered with both the old and new processors, and once all the jobs in the old backend are completed,
+the worker can be removed from the old processor.
+
+The built-in Postgres and Sidekiq processors have the same APIs, so migrating between the two is easy.
+
+```rust,ignore
+{{#include ../../../../examples/service/src/worker/pg/register.rs:12:17}}
+{{#include ../../../../examples/service/src/worker/pg/register.rs:26:}}
+```
+
+```rust,ignore
+{{#include ../../../../examples/service/src/worker/sidekiq/register.rs:12:17}}
+{{#include ../../../../examples/service/src/worker/sidekiq/register.rs:26:}}
+```
+
+### Pg vs Sidekiq worker enqueueing
+
+Enqueueing jobs from the application code is identical between each type of queue backend.
+
+```rust,ignore
+{{#include ../../../../examples/service/src/worker/sidekiq/enqueue.rs:7:}}
+```
