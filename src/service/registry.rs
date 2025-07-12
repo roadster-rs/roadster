@@ -15,7 +15,7 @@ pub enum ServiceRegistryError {
     #[error("The provided `Service` was already registered: `{0}`")]
     AlreadyRegistered(String),
 
-    /// Unable to find an [`Service`] instance of the requested type. Contains the [`type_name`]
+    /// Unable to find a [`Service`] instance of the requested type. Contains the [`type_name`]
     /// of the requested type.
     #[error("Unable to find an `Service` instance of type `{0}`")]
     NotRegistered(String),
@@ -29,7 +29,7 @@ pub enum ServiceRegistryError {
     Other(#[from] Box<dyn std::error::Error + Send + Sync>),
 }
 
-/// Registry for [Service]s that will be run in the app.
+/// Registry for [`Service`]s that will be run in the app.
 pub struct ServiceRegistry<S>
 where
     S: Clone + Send + Sync + 'static,
@@ -53,7 +53,7 @@ where
         }
     }
 
-    /// Register a new service. If the service is not enabled (e.g., [Service::enabled] is `false`),
+    /// Register a new service. If the service is not enabled (e.g., [`Service::enabled`] is `false`),
     /// the service will not be registered.
     pub fn register_service<Srvc>(&mut self, service: Srvc) -> RoadsterResult<()>
     where
@@ -63,7 +63,7 @@ where
     }
 
     /// Build and register a new service. If the service is not enabled (e.g.,
-    /// [Service::enabled] is `false`), the service will not be built or registered.
+    /// [`Service::enabled`] is `false`), the service will not be built or registered.
     pub async fn register_builder<Srvc, B>(&mut self, builder: B) -> RoadsterResult<()>
     where
         Srvc: Service<S> + 'static,
