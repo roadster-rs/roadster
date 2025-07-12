@@ -3,5 +3,5 @@ queue = "default"
 
 [service.worker.worker-config]
 timeout = true
-max-duration = 60
+max-duration = 60000
 max-retries = 25

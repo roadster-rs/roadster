@@ -10,7 +10,7 @@ temporary-test-db = true
 
 [service.worker.pg.queue-fetch-config]
 error-delay = 10000
-empty-delay = 0
+empty-delay = 250
 
 [service.worker.pg]
 num-workers = 1

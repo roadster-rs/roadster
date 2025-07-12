@@ -4,7 +4,7 @@ expression: worker_pg
 ---
 [database]
 uri = 'postgres://[Sensitive]'
-connect-timeout = 1000
+connect-timeout = 2000
 connect-lazy = true
 acquire-timeout = 1000
 min-connections = 0

@@ -29,8 +29,8 @@ balance-strategy = 'round-robin'
 [pg.queue-config]
 
 [pg.queue-fetch-config]
-error-delay = 15
-empty-delay = 20
+error-delay = 15000
+empty-delay = 20000
 
 [pg.periodic]
 enable = false

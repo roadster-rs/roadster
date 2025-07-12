@@ -6,13 +6,13 @@ expression: worker_service_config
 
 [worker-config]
 timeout = true
-max-duration = 120
+max-duration = 120000
 
 [worker-config.retry-config]
 backoff-strategy = 'exponential'
-delay = 10
-delay-offset = 20
-max-delay = 30
+delay = 10000
+delay-offset = 20000
+max-delay = 30000
 max-retries = 10
 
 [sidekiq]

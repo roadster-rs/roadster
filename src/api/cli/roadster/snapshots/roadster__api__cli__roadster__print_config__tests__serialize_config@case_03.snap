@@ -145,7 +145,7 @@ expression: serialized
       "enqueue-config": {},
       "worker-config": {
         "timeout": true,
-        "max-duration": 60,
+        "max-duration": 60000,
         "max-retries": 25,
         "pg": {
           "success-action": "delete",
@@ -177,8 +177,8 @@ expression: serialized
         "balance-strategy": "round-robin",
         "queue-config": {},
         "queue-fetch-config": {
-          "error-delay": 10,
-          "empty-delay": 10
+          "error-delay": 10000,
+          "empty-delay": 10000
         },
         "periodic": {
           "enable": true,

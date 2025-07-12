@@ -149,7 +149,7 @@ port = 3001
 
 [service.worker.worker-config]
 timeout = true
-max-duration = 60
+max-duration = 60000
 max-retries = 25
 
 [service.worker.worker-config.pg]
@@ -179,8 +179,8 @@ balance-strategy = "round-robin"
 [service.worker.pg.queue-config]
 
 [service.worker.pg.queue-fetch-config]
-error-delay = 10
-empty-delay = 10
+error-delay = 10000
+empty-delay = 10000
 
 [service.worker.pg.periodic]
 enable = true

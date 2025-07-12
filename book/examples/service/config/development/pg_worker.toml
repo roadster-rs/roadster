@@ -9,8 +9,8 @@ balance-strategy = "round-robin"
 [service.worker.pg.queue-config]
 
 [service.worker.pg.queue-fetch-config]
-error-delay = 10
-empty-delay = 10
+error-delay = 10000
+empty-delay = 10000
 
 [service.worker.pg.periodic]
 enable = true

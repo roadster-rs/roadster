@@ -7,4 +7,4 @@ stale-cleanup = "auto-clean-stale"
 [service.sidekiq.app-worker]
 max-retries = 25
 timeout = true
-max-duration = 60
+max-duration = 60000
