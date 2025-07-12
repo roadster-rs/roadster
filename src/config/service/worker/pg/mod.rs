@@ -7,7 +7,7 @@ use url::Url;
 use validator::Validate;
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct PgWorkerServiceConfig {

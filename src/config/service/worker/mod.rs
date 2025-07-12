@@ -154,3 +154,58 @@ mod tests {
         );
     }
 }
+
+// To simplify testing, these are only run when all of the config fields are available
+#[cfg(all(test, feature = "worker-sidekiq", feature = "worker-pg"))]
+mod deserialize_tests {
+    use super::*;
+    use crate::testing::snapshot::TestCase;
+    use insta::assert_toml_snapshot;
+    use rstest::{fixture, rstest};
+
+    #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn case() -> TestCase {
+        Default::default()
+    }
+
+    #[rstest]
+    #[case(
+        r#"
+        [sidekiq.redis]
+        uri = "redis://localhost:6379"
+        [pg]
+        "#
+    )]
+    #[case(
+        r#"
+        [sidekiq.redis]
+        uri = "redis://localhost:6379"
+        [pg]
+        [enqueue-config]
+        queue = "default"
+        "#
+    )]
+    #[case(
+        r#"
+        [sidekiq.redis]
+        uri = "redis://localhost:6379"
+        [pg]
+        [worker-config]
+        timeout = true
+        max-duration = 120
+        [worker-config.retry-config]
+        max-retries = 10
+        delay = 10
+        delay-offset = 20
+        max-delay = 30
+        backoff-strategy = "exponential"
+        "#
+    )]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn tracing(_case: TestCase, #[case] config: &str) {
+        let worker_service_config: WorkerServiceConfig = toml::from_str(config).unwrap();
+
+        assert_toml_snapshot!(worker_service_config);
+    }
+}
