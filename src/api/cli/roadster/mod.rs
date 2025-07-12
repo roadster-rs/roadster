@@ -25,8 +25,8 @@ pub mod migrate;
 pub mod open_api;
 pub mod print_config;
 
-/// Internal version of [RunCommand][crate::cli::RunCommand] that uses the [RoadsterCli] and
-/// [AppContext] instead of the consuming app's versions of these objects. This (slightly) reduces
+/// Internal version of [RunCommand][crate::cli::RunCommand] that uses the [`RoadsterCli`] and
+/// [`AppContext`] instead of the consuming app's versions of these objects. This (slightly) reduces
 /// the boilerplate required to implement a Roadster command.
 #[async_trait]
 pub(crate) trait RunRoadsterCommand<A, S>
@@ -180,7 +180,7 @@ pub enum RoadsterSubCommand {
     PrintConfig(PrintConfigArgs),
 
     /// Check the health of the app's resources. Note: This runs without starting the app's service(s)
-    /// and only requires creating the [AppContext] that would normally be used by the app.
+    /// and only requires creating the [`AppContext`] that would normally be used by the app.
     Health(HealthArgs),
 
     /// A test-only command to test handling the CLI.
