@@ -2,7 +2,7 @@
 source: src/config/service/worker/pg/mod.rs
 expression: worker_pg
 ---
-[db-config]
+[database]
 connect-timeout = 1
 connect-lazy = true
 acquire-timeout = 2
