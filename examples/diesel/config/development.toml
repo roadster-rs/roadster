@@ -7,8 +7,8 @@ secret = "secret-dev"
 [database]
 uri = "postgres://roadster:roadster@localhost:5432/example_dev"
 
-[service.sidekiq]
+[service.worker.sidekiq]
 num-workers = 2
 
-[service.sidekiq.redis]
+[service.worker.sidekiq.redis]
 uri = "redis://localhost:6379"
