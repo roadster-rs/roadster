@@ -105,27 +105,27 @@ mod deserialize_tests {
     #[rstest]
     #[case(
         r#"
-        [db-config]
+        [database]
         max-connections = 1
         "#
     )]
     #[case(
         r#"
-        [db-config]
+        [database]
         uri = "redis://localhost:6379"
         max-connections = 1
         "#
     )]
     #[case(
         r#"
-        [db-config]
+        [database]
         uri = "postgres://localhost:5432/example"
         max-connections = 1
         "#
     )]
     #[case(
         r#"
-        [db-config]
+        [database]
         connect-timeout = 1
         connect-lazy = true
         acquire-timeout = 2
