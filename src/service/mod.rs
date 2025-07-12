@@ -60,17 +60,17 @@ where
 
     /// Run the service in a new tokio task.
     ///
-    /// * cancel_token - A tokio [CancellationToken] to use as a signal to gracefully shut down
+    /// * cancel_token - A tokio [`CancellationToken`] to use as a signal to gracefully shut down
     /// the service.
     async fn run(self: Box<Self>, state: &S, cancel_token: CancellationToken)
     -> RoadsterResult<()>;
 }
 
-/// Trait used to build an [Service]. It's not a requirement that services implement this
+/// Trait used to build a [`Service`]. It's not a requirement that services implement this
 /// trait; it is provided as a convenience. A [builder][ServiceBuilder] can be provided to
-/// the [ServiceRegistry][crate::service::registry::ServiceRegistry] instead of an [Service],
-/// in which case the [ServiceRegistry][crate::service::registry::ServiceRegistry] will only
-/// build and register the service if [Service::enabled] is `true`.
+/// the [`ServiceRegistry`][crate::service::registry::ServiceRegistry] instead of a [`Service`],
+/// in which case the [`ServiceRegistry`][crate::service::registry::ServiceRegistry] will only
+/// build and register the service if [`Service::enabled`] is `true`.
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
 pub trait ServiceBuilder<S, Srvc>

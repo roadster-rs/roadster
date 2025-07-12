@@ -239,7 +239,6 @@ where
                     crate::error::worker::WorkerError::Timeout(
                         self.inner.name.clone(),
                         max_duration,
-                        Box::new(err),
                     )
                 })?
         } else {

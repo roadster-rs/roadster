@@ -24,8 +24,8 @@ pub enum WorkerError {
     #[error("Worker `{0}` panicked while handling a job")]
     Panic(String),
 
-    #[error("The maximum timeout of `{1:?}` elapsed when handling a job in worker `{0}`: {2}")]
-    Timeout(String, Duration, Box<dyn std::error::Error + Send + Sync>),
+    #[error("The maximum timeout of `{1:?}` elapsed when handling a job in worker `{0}`")]
+    Timeout(String, Duration),
 
     #[error(transparent)]
     Cron(#[from] cron::error::Error),
