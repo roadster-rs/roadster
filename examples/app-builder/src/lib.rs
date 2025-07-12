@@ -11,7 +11,7 @@ use roadster::app::{RoadsterApp, RoadsterAppBuilder};
 use roadster::error::RoadsterResult;
 use roadster::service::function::service::FunctionService;
 use roadster::service::http::service::HttpService;
-use roadster::service::worker::backend::sidekiq::SidekiqWorkerService;
+use roadster::service::worker::SidekiqWorkerService;
 use roadster::worker::backend::sidekiq::processor::SidekiqProcessor;
 use std::future;
 use tokio_util::sync::CancellationToken;

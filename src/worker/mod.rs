@@ -2,8 +2,12 @@ use crate::app::context::AppContext;
 use crate::util::types;
 #[cfg(feature = "worker-pg")]
 pub use crate::worker::backend::pg::enqueue::PgEnqueuer;
+#[cfg(feature = "worker-pg")]
+pub use crate::worker::backend::pg::processor::PgProcessor;
 #[cfg(feature = "worker-sidekiq")]
 pub use crate::worker::backend::sidekiq::enqueue::SidekiqEnqueuer;
+#[cfg(feature = "worker-sidekiq")]
+pub use crate::worker::backend::sidekiq::processor::SidekiqProcessor;
 use crate::worker::config::{EnqueueConfig, WorkerConfig};
 use crate::worker::enqueue::Enqueuer;
 use async_trait::async_trait;

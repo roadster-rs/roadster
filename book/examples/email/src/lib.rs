@@ -2,7 +2,7 @@ use crate::worker::email::smtp::EmailConfirmationPlainText;
 use leptos::prelude::Render;
 use roadster::app::RoadsterApp;
 use roadster::app::context::AppContext;
-use roadster::service::worker::backend::pg::PgWorkerService;
+use roadster::service::worker::PgWorkerService;
 use roadster::worker::backend::pg::processor::PgProcessor;
 
 pub mod model;

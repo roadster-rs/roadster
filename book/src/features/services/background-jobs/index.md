@@ -17,4 +17,3 @@ Roadster provides a `Worker` trait to encapsulate common functionality for handl
 to handle enqueueing jobs into the job queue backend. The job queue backend for a worker can be easily changed simply
 by changing the `Enqueuer` associated type for a `Worker` implementation.
 
-<!-- todo: add an example -->

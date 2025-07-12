@@ -3,10 +3,9 @@ use axum::extract::State;
 use roadster::app::RoadsterApp;
 use roadster::app::context::AppContext;
 use roadster::error::RoadsterResult;
-use roadster::service::worker::SidekiqWorkerService;
-use roadster::worker::SidekiqProcessor;
+use roadster::service::worker::PgWorkerService;
 use roadster::worker::config::{RetryConfig, WorkerConfig};
-use roadster::worker::{PeriodicArgs, Worker};
+use roadster::worker::{PeriodicArgs, PgProcessor, Worker};
 use std::str::FromStr;
 use std::time::Duration;
 use tracing::info;
@@ -17,7 +16,7 @@ pub struct ExampleWorker;
 #[async_trait]
 impl Worker<AppContext, String> for ExampleWorker {
     type Error = roadster::error::Error;
-    type Enqueuer = roadster::worker::SidekiqEnqueuer;
+    type Enqueuer = roadster::worker::PgEnqueuer;
 
     // Optionally provide worker-level config overrides
     fn worker_config(&self, _state: &AppContext) -> WorkerConfig {
@@ -38,11 +37,11 @@ fn build_app() -> RoadsterApp<AppContext> {
     RoadsterApp::builder()
         // Use the default `AppContext` for this example
         .state_provider(Ok)
-        // Register the Sidekiq worker service
+        // Register the Postgres worker service
         .add_service_provider(move |registry, state| {
             Box::pin(async move {
-                let processor = SidekiqProcessor::builder(state)
-                    // Register the `ExampleWorker` with the sidekiq service
+                let processor = PgProcessor::builder(state)
+                    // Register the `ExampleWorker` with the Postgres worker service
                     .register(ExampleWorker)?
                     // Example of registering the `ExampleWorker` to run as a periodic cron job
                     .register_periodic(
@@ -54,9 +53,8 @@ fn build_app() -> RoadsterApp<AppContext> {
                     )?
                     .build()
                     .await?;
-                registry.register_service(
-                    SidekiqWorkerService::builder().processor(processor).build(),
-                )?;
+                registry
+                    .register_service(PgWorkerService::builder().processor(processor).build())?;
                 Ok(())
             })
         })
