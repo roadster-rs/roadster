@@ -44,8 +44,8 @@ pub enum UriOrString {
 impl Display for UriOrString {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            UriOrString::Uri(inner) => write!(f, "{}", inner),
-            UriOrString::String(inner) => write!(f, "{}", inner),
+            UriOrString::Uri(inner) => write!(f, "{inner}"),
+            UriOrString::String(inner) => write!(f, "{inner}"),
         }
     }
 }

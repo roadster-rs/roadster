@@ -47,15 +47,15 @@ The built-in Postgres and Sidekiq processors have the same APIs, so migrating be
 
 ```rust,ignore
 {{#include ../../../../examples/service/src/worker/pg/register.rs:12:17}}
-{{#include ../../../../examples/service/src/worker/pg/register.rs:26:}}
+{{#include ../../../../examples/service/src/worker/pg/register.rs:26:32}}
 ```
 
 ```rust,ignore
 {{#include ../../../../examples/service/src/worker/sidekiq/register.rs:12:17}}
-{{#include ../../../../examples/service/src/worker/sidekiq/register.rs:26:}}
+{{#include ../../../../examples/service/src/worker/sidekiq/register.rs:26:33}}
 ```
 
-### Pg vs Sidekiq worker enqueueing
+### Enqueuing jobs
 
 Enqueueing jobs from the application code is identical between each type of queue backend.
 

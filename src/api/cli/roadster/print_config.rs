@@ -53,7 +53,7 @@ where
 fn serialize_config(format: &Format, config: &AppConfig) -> RoadsterResult<String> {
     let serialized = match format {
         Format::Debug => {
-            format!("{:?}", config)
+            format!("{config:?}")
         }
         Format::Json => serde_json::to_string(config)?,
         Format::JsonPretty => serde_json::to_string_pretty(config)?,
