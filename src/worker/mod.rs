@@ -230,7 +230,7 @@ where
         let result = if let Some(max_duration) = max_duration {
             tokio::time::timeout(max_duration, inner)
                 .await
-                .map_err(|err| {
+                .map_err(|_| {
                     tracing::error!(
                         worker = self.inner.name,
                         max_duration = max_duration.as_secs(),
