@@ -67,7 +67,7 @@ pub struct SmtpPool {
     pub max_connections: Option<u32>,
 
     #[serde(default)]
-    #[serde_as(as = "Option<serde_with::DurationSeconds>")]
+    #[serde_as(as = "Option<serde_with::DurationMilliSeconds>")]
     pub idle_timeout: Option<Duration>,
 }
 
@@ -263,7 +263,7 @@ mod tests {
         [connection]
         uri = "smtps://username:password@smtp.example.com:425"
         [pool]
-        idle-timeout = 60
+        idle-timeout = 60000
         "#
     )]
     #[cfg_attr(coverage_nightly, coverage(off))]

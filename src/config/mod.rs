@@ -23,7 +23,7 @@ use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::fs;
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
 use typed_builder::TypedBuilder;
 use validator::{Validate, ValidationErrors};
@@ -101,6 +101,12 @@ impl Deref for CustomConfig {
 
     fn deref(&self) -> &Self::Target {
         &self.inner
+    }
+}
+
+impl DerefMut for CustomConfig {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
     }
 }
 
@@ -288,14 +294,20 @@ impl AppConfig {
                     host = "127.0.0.1"
                     port = 3001
 
-                    [service.sidekiq]
+                    [service.worker.sidekiq]
                     # This field normally is determined by the number of CPU cores if not provided.
                     # We provide it in the test config to avoid snapshot failures when running
                     # on varying hardware.
                     num-workers = 16
 
-                    [service.sidekiq.redis]
+                    [service.worker.sidekiq.redis]
                     uri = "redis://invalid_host:1234"
+
+                    [service.worker.pg]
+                    # This field normally is determined by the number of CPU cores if not provided.
+                    # We provide it in the test config to avoid snapshot failures when running
+                    # on varying hardware.
+                    num-workers = 16
 
                     [email.from]
                     email = "no-reply@example.com"
@@ -352,8 +364,8 @@ impl AppConfig {
             config
         };
 
-        #[cfg(feature = "sidekiq")]
-        let config = config.add_source(service::worker::sidekiq::default_config());
+        #[cfg(feature = "worker")]
+        let config = config.add_source(service::worker::default_config());
 
         let config = config.add_source(lifecycle::default_config());
 
@@ -488,7 +500,8 @@ pub struct TestContainer {
     feature = "default",
     feature = "default-diesel",
     feature = "open-api",
-    feature = "sidekiq",
+    feature = "worker-sidekiq",
+    feature = "worker-pg",
     feature = "db-sea-orm",
     feature = "db-diesel-postgres-pool",
     feature = "db-diesel-mysql-pool",
@@ -541,6 +554,13 @@ mod custom_config_tests {
         inner.insert("foo".to_string(), "bar".into());
         let config: CustomConfig = CustomConfig { inner };
         assert_eq!(config.get("foo").unwrap(), "bar");
+    }
+
+    #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn build() {
+        let mut config = CustomConfig::default();
+        config.insert("key".to_owned(), Value::String("value".to_owned()));
     }
 }
 

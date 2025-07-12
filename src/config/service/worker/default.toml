@@ -1,0 +1,23 @@
+[service.worker]
+balance-strategy = "round-robin"
+
+[service.worker.worker-config]
+max-retries = 25
+timeout = true
+max-duration = 60000
+
+[service.worker.worker-config.pg]
+success-action = "delete"
+failure-action = "archive"
+
+[service.worker.pg.queue-fetch-config]
+error-delay = 10000
+empty-delay = 10000
+
+[service.worker.pg.periodic]
+enable = true
+stale-cleanup = "auto-clean-stale"
+
+[service.worker.sidekiq.periodic]
+stale-cleanup = "auto-clean-stale"
+

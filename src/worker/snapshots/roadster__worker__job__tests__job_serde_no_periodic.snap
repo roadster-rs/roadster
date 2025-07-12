@@ -1,0 +1,12 @@
+---
+source: src/worker/job.rs
+expression: job
+---
+{
+  "metadata": {
+    "worker_name": "foo"
+  },
+  "args": {
+    "foo": "bar"
+  }
+}

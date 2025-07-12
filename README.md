@@ -13,15 +13,16 @@
 
 A "Batteries Included" web framework for rust designed to get you moving fast 🏎️. Inspired by other fully-featured
 frameworks such
-as [Rails](https://rubyonrails.org/), [Django](https://www.djangoproject.com/), [Laravel](https://laravel.com/), and [Loco](https://github.com/loco-rs/loco).
+as [Rails](https://rubyonrails.org/), [Django](https://www.djangoproject.com/), [Laravel](https://laravel.com/),
+and [Loco](https://github.com/loco-rs/loco).
 
 ## Features
 
 - Built on Tokio's web stack (axum, tower, hyper, tracing). App behavior can be easily extended by taking advantage of
   all the resources in the tokio ecosystem.
-- Built-in support for HTTP APIs via [Axum](https://crates.io/crates/axum) (with the `http` feature) and gRPC APIs
-  via [Tonic](https://crates.io/crates/tonic) (with the `grpc` feature).
-- Auto-generates an OpenAPI schema for HTTP API routes defined with [aide](https://crates.io/crates/aide) (requires
+- Built-in support for HTTP APIs via [Axum](https://docs.rs/axum) (with the `http` feature) and gRPC APIs
+  via [Tonic](https://docs.rs/tonic) (with the `grpc` feature).
+- Auto-generates an OpenAPI schema for HTTP API routes defined with [aide](https://docs.rs/aide) (requires
   the `open-api` feature).
 - Support for running arbitrary long-running services (e.g., an API format not supported out of the box) with minimal
   boilerplate. Simply provide a
@@ -31,15 +32,16 @@ as [Rails](https://rubyonrails.org/), [Django](https://www.djangoproject.com/), 
   customized or disabled via per-environment configuration files.
 - Uses `#![forbid(unsafe_code)]` to ensure all code in Roadster is 100% safe rust.
 - Provides a CLI for common commands, and allows consumers to provide their own CLI commands
-  using [clap](https://crates.io/crates/clap) (requires the `cli` feature)
+  using [clap](https://docs.rs/clap) (requires the `cli` feature)
 - Provides sample JWT extractor for Axum (requires the `jwt-ietf` and/or `jwt-openid` features). Also provides a general
   JWT extractor for Axum that simply puts all claims into a map (available with the `jwt` feature)
-- Built-in support for [SeaORM](https://crates.io/crates/sea-orm), including creating DB connections (requires
+- Built-in support for [SeaORM](https://docs.rs/sea-orm), including creating DB connections (requires
   the `db-sea-orm` feature)
-- Built-in support for [Deisel](https://crates.io/crates/diesel), including creating DB connections (requires a subset
+- Built-in support for [Deisel](https://docs.rs/diesel), including creating DB connections (requires a subset
   of the `db-diesel-*` collection of features, depending on what's needed)
-- Built-in support for [Sidekiq.rs](https://crates.io/crates/rusty-sidekiq) for running async/background jobs (requires
-  the `sidekiq` feature)
+- Built-in support for async workers backed by Postgres via [pgmq](https://docs.rs/pgmq)
+  or [Sidekiq.rs](https://docs.rs/rusty-sidekiq). Requires the `worker-pg` or `worker-sidekiq` features,
+  respectively.
 - Built-in support for sending emails via SMTP (requires the `email-smtp` feature)
   or [Sendgrid's Mail Send API](https://www.twilio.com/docs/sendgrid/api-reference/mail-send/mail-send) (requires the
   `email-sendgrid` feature)
@@ -59,7 +61,7 @@ as [Rails](https://rubyonrails.org/), [Django](https://www.djangoproject.com/), 
 docker run -d -p 5432:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=example_dev -e POSTGRES_PASSWORD=roadster postgres:15.3-alpine
 ```
 
-## Start local Redis instance (for [Sidekiq.rs](https://crates.io/crates/rusty-sidekiq))
+## Start local Redis instance (for [Sidekiq.rs](https://docs.rs/rusty-sidekiq))
 
 ```shell
 docker run -d -p 6379:6379 redis:7.2-alpine
@@ -141,10 +143,11 @@ If you're using our SMTP integration to send emails, you can test locally using 
 # Tracing + OpenTelemetry
 
 Roadster allows reporting traces and metrics using the `tracing` and `opentelemetry_rust` integrations. Provide the URL
-of your OTLP exporter in order to report the trace/metric data to your telemetry provider (e.g., Grafana, SigNoz, New Relic,
+of your OTLP exporter in order to report the trace/metric data to your telemetry provider (e.g., Grafana, SigNoz, New
+Relic,
 Datadog, etc).
 
-# Background/async job queue using [Sidekiq.rs](https://crates.io/crates/rusty-sidekiq)
+# Background/async job queue using [Sidekiq.rs](https://docs.rs/rusty-sidekiq)
 
 This crate is a rust implementation of [Sidekiq](https://sidekiq.org/), which is usually used with Ruby on Rails. All we
 need in order to use this is a Redis instance.

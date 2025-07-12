@@ -1,0 +1,33 @@
+---
+source: src/config/service/worker/mod.rs
+expression: worker_service_config
+---
+[enqueue-config]
+
+[worker-config]
+
+[sidekiq]
+num-workers = 8
+balance-strategy = 'round-robin'
+
+[sidekiq.queue-config]
+
+[sidekiq.redis]
+uri = 'redis://[Sensitive]'
+
+[sidekiq.redis.enqueue-pool]
+
+[sidekiq.redis.fetch-pool]
+
+[sidekiq.periodic]
+stale-cleanup = 'auto-clean-stale'
+
+[pg]
+num-workers = 8
+balance-strategy = 'round-robin'
+
+[pg.queue-config]
+
+[pg.periodic]
+enable = false
+stale-cleanup = 'auto-clean-stale'

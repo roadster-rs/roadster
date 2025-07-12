@@ -10,7 +10,7 @@ grpc = ["roadster/grpc", "dep:tonic", "dep:tonic-reflection", "dep:prost", "road
 
 
 [dependencies]
-roadster = { path = "../../.." }
+roadster = { path = "../../..", default-features = false, features = ["open-api", "worker-sidekiq", "worker-pg", "grpc"] }
 aide = { workspace = true }
 tracing = { workspace = true }
 serde = { workspace = true }
@@ -19,6 +19,7 @@ axum = { workspace = true }
 async-trait = { workspace = true }
 rusty-sidekiq = { workspace = true }
 tokio-util = { workspace = true }
+cron = "0.15.0"
 
 # gRPC API
 tonic = { workspace = true, optional = true }

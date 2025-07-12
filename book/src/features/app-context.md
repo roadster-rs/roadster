@@ -60,6 +60,19 @@ of [`AppContextWeak`](https://docs.rs/roadster/latest/roadster/app/context/struc
 {{#include ../../examples/app-context/src/app.rs:12:}}
 ```
 
+## Custom state for crate authors via extensions
+
+Crate authors may need custom context not available in the [
+`AppContext`](https://docs.rs/roadster/latest/roadster/app/context/struct.AppContext.html). Roadster provides a context
+extension mechanism via the `ExtensionRegistry`, which is initialized by app authors in the
+`App#provide_context_extensions` or `RoadsterAppBuilder#context_extension_provider` methods. Context provided in these
+methods can then be retrieved using the `AppContext#get_extension` method. This is similar to the Axum's [
+`Extension`](https://docs.rs/axum/latest/axum/struct.Extension.html) mechanism.
+
+```rust,ignore
+{{#include ../../examples/app-context/src/context_extension.rs:4:}}
+```
+
 ## See also
 
 - [Axum State chapter](/features/services/http/state.html)

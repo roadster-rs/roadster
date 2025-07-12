@@ -6,37 +6,34 @@ use lettre::message::header::ContentType;
 use lettre::message::{Mailbox, MessageBuilder};
 use roadster::app::context::AppContext;
 use roadster::error::RoadsterResult;
+use roadster::worker::Worker;
 use serde::{Deserialize, Serialize};
-use sidekiq::Worker;
 use std::str::FromStr;
 use tracing::{info, instrument};
 use typed_builder::TypedBuilder;
 use uuid::Uuid;
-
-pub struct EmailConfirmationHtml {
-    state: AppContext,
-}
-
-impl EmailConfirmationHtml {
-    pub fn new(state: &AppContext) -> Self {
-        Self {
-            state: state.clone(),
-        }
-    }
-}
 
 #[derive(Debug, TypedBuilder, Serialize, Deserialize)]
 pub struct EmailConfirmationHtmlArgs {
     user_id: Uuid,
 }
 
-#[async_trait]
-impl Worker<EmailConfirmationHtmlArgs> for EmailConfirmationHtml {
-    #[instrument(skip_all)]
-    async fn perform(&self, args: EmailConfirmationHtmlArgs) -> sidekiq::Result<()> {
-        let user = User::find_by_id(&self.state, args.user_id).await?;
+pub struct EmailConfirmationHtml;
 
-        send_email(&self.state, &user).await?;
+#[async_trait]
+impl Worker<AppContext, EmailConfirmationHtmlArgs> for EmailConfirmationHtml {
+    type Error = roadster::error::Error;
+    type Enqueuer = roadster::worker::PgEnqueuer;
+
+    #[instrument(skip_all)]
+    async fn handle(
+        &self,
+        state: &AppContext,
+        args: EmailConfirmationHtmlArgs,
+    ) -> Result<(), Self::Error> {
+        let user = User::find_by_id(&state, args.user_id).await?;
+
+        send_email(&state, &user).await?;
 
         Ok(())
     }

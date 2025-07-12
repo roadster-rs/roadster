@@ -1,1 +1,2 @@
+mod pg;
 mod sidekiq;

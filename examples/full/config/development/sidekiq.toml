@@ -1,5 +1,5 @@
-[service.sidekiq]
+[service.worker.sidekiq]
 num-workers = 2
 
-[service.sidekiq.redis]
+[service.worker.sidekiq.redis]
 uri = "redis://localhost:6379"

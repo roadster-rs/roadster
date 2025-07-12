@@ -1,0 +1,54 @@
+[package]
+name = "pg-worker"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+
+[dependencies]
+roadster = { version = "0.8.0-alpha", path = "../..", default-features = false, features = ["worker-pg", "open-api", "cli"] }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+async-trait = { workspace = true }
+cfg-if = { workspace = true }
+
+# Http API
+aide = { workspace = true }
+axum = { workspace = true }
+schemars = { workspace = true }
+
+# DB
+sea-orm = { workspace = true, optional = true }
+
+# Cli
+clap = { workspace = true, features = ["derive"], optional = true }
+
+serde = { workspace = true, features = ["derive"] }
+
+# Config
+config = { workspace = true, features = ["async"] }
+
+bon = { workspace = true }
+cron = { workspace = true }
+
+[dev-dependencies]
+roadster = { version = "0.8.0-alpha", path = "../..", default-features = false, features = ["testing"] }
+tower-util = { workspace = true }
+
+[build-dependencies]
+tonic-build = { workspace = true }
+vergen = { workspace = true }
+vergen-gitcl = { workspace = true }
+
+[[bin]]
+name = "pg_worker"
+path = "./src/main.rs"
+
+[lib]
+name = "pg_worker"
+path = "./src/lib.rs"

@@ -12,6 +12,9 @@ port = 3000
 enable = true
 priority = 5
 
+[service.worker.enqueue-config]
+queue = "default"
+
 [service.grpc]
 host = "127.0.0.1"
 port = 3001

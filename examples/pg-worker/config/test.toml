@@ -1,0 +1,16 @@
+[tracing]
+format = "pretty"
+
+[auth.jwt]
+secret = "secret-test"
+
+[database]
+uri = "postgres://roadster:roadster@localhost:5432/example_dev"
+temporary-test-db = true
+
+[service.worker.pg.queue-fetch-config]
+error-delay = 10000
+empty-delay = 250
+
+[service.worker.pg]
+num-workers = 1

@@ -25,7 +25,7 @@ where
     Ok(())
 }
 
-/// Run a [PreparedApp] that was previously crated by [prepare]
+/// Run a [`PreparedApp`] that was previously created by [`prepare`]
 pub async fn run_prepared<A, S>(prepared: PreparedApp<A, S>) -> RoadsterResult<()>
 where
     A: App<S> + 'static,

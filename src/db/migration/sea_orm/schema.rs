@@ -71,8 +71,8 @@ pub struct IdentityOptions {
     increment: i64,
 }
 
-/// Same as [pk_bigint_identity], except allows configuring the IDENTITY column with the
-/// given [IdentityOptions].
+/// Same as [`pk_bigint_identity`], except allows configuring the IDENTITY column with the
+/// given [`IdentityOptions`].
 pub fn pk_bigint_identity_options<T>(name: T, options: IdentityOptions) -> ColumnDef
 where
     T: IntoIden,

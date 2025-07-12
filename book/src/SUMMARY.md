@@ -20,6 +20,7 @@
             - [Axum Middleware](features/services/http/middleware.md)
             - [Initializers](features/services/http/initializer.md)
         - [Background jobs](features/services/background-jobs/index.md)
+            - [Postgres](features/services/background-jobs/pg.md)
             - [Sidekiq](features/services/background-jobs/sidekiq.md)
         - [Grpc service with Tonic](features/services/grpc.md)
         - [Function service](features/services/function.md)

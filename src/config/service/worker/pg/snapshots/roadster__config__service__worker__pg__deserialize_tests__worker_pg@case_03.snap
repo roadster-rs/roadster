@@ -1,0 +1,17 @@
+---
+source: src/config/service/worker/pg/mod.rs
+expression: worker_pg
+---
+[database]
+uri = 'postgres://[Sensitive]'
+connect-timeout = 2000
+connect-lazy = true
+acquire-timeout = 1000
+min-connections = 0
+max-connections = 1
+test-on-checkout = true
+retry-connection = true
+
+[periodic]
+enable = false
+stale-cleanup = 'auto-clean-stale'

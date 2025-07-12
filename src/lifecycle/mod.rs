@@ -30,13 +30,13 @@ use axum_core::extract::FromRef;
 /// 3. Build the [`crate::app::context::AppContext`] and the [`crate::app::App`]'s custom state
 /// 4. Run the roadster/app CLI command, if one was specified when the app was started
 /// 5. Register [`AppLifecycleHandler`]s, [`crate::health::check::HealthCheck`]s, and
-///    [`crate::service::AppService`]s
+///    [`crate::service::Service`]s
 /// 6. Run the app's registered [`AppLifecycleHandler::before_health_checks`] hooks.
 /// 7. Run the registered [`crate::health::check::HealthCheck`]s
 /// 8. Run the app's registered [`AppLifecycleHandler::before_services`] hooks.
-/// 9. Run the registered [`crate::service::AppService`]s
+/// 9. Run the registered [`crate::service::Service`]s
 /// 10. Wait for a shutdown signal, e.g., `Ctrl+c` or a custom signal from
-///    [`crate::app::App::graceful_shutdown_signal`], and stop the [`crate::service::AppService`]s
+///    [`crate::app::App::graceful_shutdown_signal`], and stop the [`crate::service::Service`]s
 ///    when the signal is received.
 /// 11. Run Roadster's graceful shutdown logic
 /// 12. Run the app's registered [`AppLifecycleHandler::on_shutdown`] hooks.
@@ -80,7 +80,7 @@ where
         Ok(())
     }
 
-    /// This method is run right before the app's [`crate::service::AppService`]s are started.
+    /// This method is run right before the app's [`crate::service::Service`]s are started.
     async fn before_services(
         &self,
         _prepared_app: &PreparedAppWithoutCli<A, S>,
@@ -88,7 +88,7 @@ where
         Ok(())
     }
 
-    /// This method is run after the app's [`crate::service::AppService`]s have stopped.
+    /// This method is run after the app's [`crate::service::Service`]s have stopped.
     async fn on_shutdown(&self, _state: &S) -> RoadsterResult<()> {
         Ok(())
     }

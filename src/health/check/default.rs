@@ -8,9 +8,9 @@ use crate::health::check::db::diesel_pg_async::DbDieselPgAsyncHealthCheck;
 use crate::health::check::db::sea_orm::DbSeaOrmHealthCheck;
 #[cfg(feature = "email-smtp")]
 use crate::health::check::email::smtp::SmtpHealthCheck;
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 use crate::health::check::sidekiq_enqueue::SidekiqEnqueueHealthCheck;
-#[cfg(feature = "sidekiq")]
+#[cfg(feature = "worker-sidekiq")]
 use crate::health::check::sidekiq_fetch::SidekiqFetchHealthCheck;
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -49,11 +49,11 @@ pub fn default_health_checks(
         Arc::new(DbDieselMysqlAsyncHealthCheck {
             context: context.downgrade(),
         }),
-        #[cfg(feature = "sidekiq")]
+        #[cfg(feature = "worker-sidekiq")]
         Arc::new(SidekiqEnqueueHealthCheck {
             context: context.downgrade(),
         }),
-        #[cfg(feature = "sidekiq")]
+        #[cfg(feature = "worker-sidekiq")]
         Arc::new(SidekiqFetchHealthCheck {
             context: context.downgrade(),
         }),
@@ -72,7 +72,8 @@ pub fn default_health_checks(
 
 #[cfg(all(
     test,
-    feature = "sidekiq",
+    feature = "worker-sidekiq",
+    feature = "worker-pg",
     feature = "db-sea-orm",
     feature = "db-diesel-postgres-pool",
     feature = "db-diesel-mysql-pool",

@@ -15,12 +15,17 @@ rust-version = "1.85"
 
 [features]
 default = ["default-common", "db-sea-orm"]
-default-common = ["sidekiq", "open-api", "jwt-ietf", "cli", "otel"]
+default-common = ["worker-sidekiq", "open-api", "jwt-ietf", "cli", "otel"]
 # The same as `default`, except using `diesel` as the SQL ORM instead of `sea-orm`
 default-diesel = ["default-common", "db-diesel-postgres-pool-async"]
+
 http = ["dep:axum", "dep:axum-extra", "dep:tower", "dep:tower-http", "dep:http-body-util", "dep:mime"]
 open-api = ["http", "dep:aide", "dep:schemars"]
-sidekiq = ["dep:rusty-sidekiq", "dep:bb8", "dep:num_cpus"]
+
+worker = ["dep:rand", "dep:num_cpus", "dep:cron"]
+worker-sidekiq = ["worker", "dep:rusty-sidekiq", "dep:bb8"]
+worker-pg = ["worker", "db-sql", "dep:pgmq", "dep:sqlx", "sea-orm?/sqlx-postgres"]
+
 db-sql = []
 db-sea-orm = ["db-sql", "dep:sea-orm", "dep:sea-orm-migration"]
 
@@ -107,8 +112,12 @@ lettre = { workspace = true, features = ["serde"], optional = true }
 sendgrid = { workspace = true, optional = true }
 
 # Workers
+## Sidekiq
 rusty-sidekiq = { workspace = true, optional = true }
 num_cpus = { workspace = true, optional = true }
+## Postgres queue
+pgmq = { workspace = true, optional = true }
+sqlx = { workspace = true, optional = true }
 
 # Rust async
 tokio = { workspace = true, features = ["full"] }
@@ -149,12 +158,15 @@ byte-unit = { workspace = true }
 convert_case = { workspace = true }
 const_format = { workspace = true }
 typed-builder = { workspace = true }
+bon = { workspace = true }
 num-traits = { workspace = true }
 validator = { workspace = true }
 thiserror = { workspace = true }
 cfg-if = { workspace = true }
 reqwest = { workspace = true }
 regex = { workspace = true, optional = true }
+rand = { workspace = true, optional = true }
+cron = { workspace = true, optional = true }
 
 [dev-dependencies]
 roadster = { path = ".", features = ["testing"] }
@@ -225,11 +237,15 @@ tonic = { version = "0.13.0" }
 tonic-build = { version = "0.13.0" }
 tonic-reflection = { version = "0.13.0" }
 
-# Sidekiq
+# Workers
+## Sidekiq
 # The default `rss-stats` feature has a dependency that currently can't be satisfied on macos (memchr: ~2.3)
 rusty-sidekiq = { version = "0.13.1", default-features = false }
 bb8 = { version = "0.9.0" }
 num_cpus = { version = "1.13.0" }
+## Postgres queue
+pgmq = "0.30.1"
+sqlx = { version = "0.8.5", features = ["postgres"] }
 
 # Testing
 insta = { version = "1.39.0", features = ["toml", "filters"] }
@@ -265,12 +281,14 @@ reqwest = { version = "0.12.8", default-features = false, features = ["rustls-tl
 itertools = "0.14.0"
 cargo-manifest = "0.19.1"
 typed-builder = "0.21.0"
+bon = "3.0.0"
 rand = "0.9.0"
 thiserror = "2.0.9"
 uuid = { version = "1.11.0", features = ["v4", "serde"] }
 chrono = { version = "0.4.34", features = ["serde"] }
 async-trait = "0.1.81"
 regex = "1.11.1"
+cron = { version = "0.15.0", features = ["serde"] }
 
 # Build dependencies
 rustc_version = "0.4.1"

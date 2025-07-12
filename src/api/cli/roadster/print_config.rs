@@ -53,7 +53,7 @@ where
 fn serialize_config(format: &Format, config: &AppConfig) -> RoadsterResult<String> {
     let serialized = match format {
         Format::Debug => {
-            format!("{:?}", config)
+            format!("{config:?}")
         }
         Format::Json => serde_json::to_string(config)?,
         Format::JsonPretty => serde_json::to_string_pretty(config)?,
@@ -68,7 +68,8 @@ fn serialize_config(format: &Format, config: &AppConfig) -> RoadsterResult<Strin
     feature = "default",
     feature = "default-diesel",
     feature = "open-api",
-    feature = "sidekiq",
+    feature = "worker-sidekiq",
+    feature = "worker-pg",
     feature = "db-sea-orm",
     feature = "db-diesel-postgres-pool",
     feature = "db-diesel-mysql-pool",

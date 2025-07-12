@@ -1,4 +1,3 @@
-use crate::app::App;
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
@@ -13,6 +12,7 @@ pub mod grpc;
 pub mod http;
 pub mod registry;
 pub(crate) mod runner;
+#[cfg(feature = "worker")]
 pub mod worker;
 
 /// Trait to represent a service (e.g., a persistent task) to run in the app.
@@ -23,8 +23,12 @@ pub mod worker;
     doc = r"- [HTTP API][crate::service::http::service::HttpService]"
 )]
 #[cfg_attr(
-    feature = "sidekiq",
-    doc = r"- [Sidekiq processor][crate::service::worker::sidekiq::service::SidekiqWorkerService]"
+    feature = "worker-sidekiq",
+    doc = r"- [Sidekiq processor][crate::service::worker::backend::sidekiq::SidekiqWorkerService]"
+)]
+#[cfg_attr(
+    feature = "worker-pg",
+    doc = r"- [Sidekiq processor][crate::service::worker::backend::pg::PgWorkerService]"
 )]
 #[cfg_attr(
     feature = "grpc",
@@ -32,11 +36,10 @@ pub mod worker;
 )]
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
-pub trait AppService<A, S>: Send + Sync + AppServiceAsAny<A, S>
+pub trait Service<S>: Send + Sync + ServiceAsAny<S>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + 'static,
 {
     /// The name of the service.
     fn name(&self) -> String;
@@ -48,50 +51,52 @@ where
     ///
     /// For example, checking that the service is healthy, removing stale items from the
     /// service's queue, etc.
+    ///
+    /// Note that this is run for every service that's registered in the
+    /// [`crate::service::registry::ServiceRegistry`] regardless of whether it's enabled or not.
     async fn before_run(&self, _state: &S) -> RoadsterResult<()> {
         Ok(())
     }
 
     /// Run the service in a new tokio task.
     ///
-    /// * cancel_token - A tokio [CancellationToken] to use as a signal to gracefully shut down
+    /// * cancel_token - A tokio [`CancellationToken`] to use as a signal to gracefully shut down
     /// the service.
     async fn run(self: Box<Self>, state: &S, cancel_token: CancellationToken)
     -> RoadsterResult<()>;
 }
 
-/// Trait used to build an [AppService]. It's not a requirement that services implement this
-/// trait; it is provided as a convenience. A [builder][AppServiceBuilder] can be provided to
-/// the [ServiceRegistry][crate::service::registry::ServiceRegistry] instead of an [AppService],
-/// in which case the [ServiceRegistry][crate::service::registry::ServiceRegistry] will only
-/// build and register the service if [AppService::enabled] is `true`.
+/// Trait used to build a [`Service`]. It's not a requirement that services implement this
+/// trait; it is provided as a convenience. A [builder][ServiceBuilder] can be provided to
+/// the [`ServiceRegistry`][crate::service::registry::ServiceRegistry] instead of a [`Service`],
+/// in which case the [`ServiceRegistry`][crate::service::registry::ServiceRegistry] will only
+/// build and register the service if [`Service::enabled`] is `true`.
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
-pub trait AppServiceBuilder<A, S, Service>
+pub trait ServiceBuilder<S, Srvc>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + 'static,
-    Service: AppService<A, S>,
+    Srvc: Service<S>,
 {
     fn name(&self) -> String;
 
     fn enabled(&self, state: &S) -> bool;
 
-    async fn build(self, state: &S) -> RoadsterResult<Service>;
+    async fn build(self, state: &S) -> RoadsterResult<Srvc>;
 }
 
-/// Allows getting an `&dyn Any` reference to the [`AppService`]. This is to enable getting
-/// a concrete reference to a specific [`AppService`] implementation from the
+/// Allows getting an `&dyn Any` reference to the [`Service`]. This is to enable getting
+/// a concrete reference to a specific [`Service`] implementation from the
 /// [`registry::ServiceRegistry`] (which works via a downcast) in order to call methods that are
 /// specific to a certain implementation. See [`registry::ServiceRegistry::get`] for more details
 /// and examples.
 /*
-A note for future maintainers: This `AppService`-specific trait is required to get a `&dyn Any`
+A note for future maintainers: This `Service`-specific trait is required to get a `&dyn Any`
 for the service because the following don't work:
 
 1. General `AsAny` trait with a global impl -- doesn't work because this also implements `AsAny`
-   for `Box`, which prevents us from getting `&dyn Any` for the actual `AppService` that we want.
+   for `Box`, which prevents us from getting `&dyn Any` for the actual `Service` that we want.
 ```rust
 trait AsAny {
     fn as_any(&self) -> &dyn Any;
@@ -103,8 +108,8 @@ impl<T> AsAny for T {
 }
 ```
 
-2. General `AsAny` trait only implemented for specific traits, e.g. `AppService` -- doesn't work
-   for `AppService` because Rust considers the `A` and `S` type parameters as unconstrained.
+2. General `AsAny` trait only implemented for specific traits, e.g. `Service` -- doesn't work
+   for `Service` because Rust considers the `A` and `S` type parameters as unconstrained.
 ```rust
 trait AsAny {
     fn as_any(&self) -> &dyn Any;
@@ -115,7 +120,7 @@ where
     AppContext: FromRef<S>,
     A: App<S> + 'static,
     // Even though `A` and `S` appear here, Rust considers them unconstrained.
-    T: AppService<A, S>
+    T: Service<A, S>
 {
     fn as_any(&self) -> &dyn Any {
         self
@@ -123,22 +128,20 @@ where
 }
 ```
 */
-pub trait AppServiceAsAny<A, S>
+pub trait ServiceAsAny<S>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + 'static,
 {
     fn as_any(&self) -> &dyn Any;
 }
 
-/// Provide an auto-impl of [`AppServiceAsAny`] for any type that implements [`AppService`].
-impl<T, A, S> AppServiceAsAny<A, S> for T
+/// Provide an auto-impl of [`ServiceAsAny`] for any type that implements [`Service`].
+impl<T, S> ServiceAsAny<S> for T
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + 'static,
-    T: AppService<A, S> + 'static,
+    T: Service<S> + 'static,
 {
     fn as_any(&self) -> &dyn Any {
         self

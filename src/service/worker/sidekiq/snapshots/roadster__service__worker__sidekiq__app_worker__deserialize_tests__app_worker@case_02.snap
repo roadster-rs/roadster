@@ -1,5 +1,0 @@
----
-source: src/service/worker/sidekiq/app_worker.rs
-expression: app_worker
----
-max-retries = 1

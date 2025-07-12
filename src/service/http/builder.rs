@@ -2,10 +2,9 @@
 use crate::api::http::default_api_routes;
 #[cfg(not(feature = "open-api"))]
 use crate::api::http::default_routes;
-use crate::app::App;
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
-use crate::service::AppServiceBuilder;
+use crate::service::ServiceBuilder;
 use crate::service::http::initializer::Initializer;
 use crate::service::http::initializer::default::default_initializers;
 use crate::service::http::middleware::Middleware;
@@ -159,11 +158,10 @@ where
 }
 
 #[async_trait]
-impl<A, S> AppServiceBuilder<A, S, HttpService> for HttpServiceBuilder<S>
+impl<S> ServiceBuilder<S, HttpService> for HttpServiceBuilder<S>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    A: App<S> + 'static,
 {
     fn name(&self) -> String {
         NAME.to_string()
