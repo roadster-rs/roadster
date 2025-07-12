@@ -446,7 +446,7 @@ where
             .pg
             .custom
             .custom
-            .db_config
+            .database
             .as_ref()
             .and_then(|config| config.pool_config.as_ref())
         {

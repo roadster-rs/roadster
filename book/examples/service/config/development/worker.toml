@@ -1,0 +1,7 @@
+[service.worker.enqueue-config]
+queue = "default"
+
+[service.worker.worker-config]
+timeout = true
+max-duration = 60
+max-retries = 25

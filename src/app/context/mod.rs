@@ -158,7 +158,7 @@ impl AppContext {
                 let pool: Option<sqlx::Pool<sqlx::Postgres>> = None;
 
                 #[cfg(feature = "db-sea-orm")]
-                let pool = if config.service.worker.pg.custom.custom.db_config.is_none()
+                let pool = if config.service.worker.pg.custom.custom.database.is_none()
                     && <DatabaseConnection as sea_orm::ConnectionTrait>::get_database_backend(
                         &sea_orm,
                     ) == sea_orm::DatabaseBackend::Postgres
@@ -171,7 +171,7 @@ impl AppContext {
                 let pool = if let Some(pool) = pool {
                     pool
                 } else {
-                    let db_config = config.service.worker.pg.custom.custom.db_config.as_ref();
+                    let db_config = config.service.worker.pg.custom.custom.database.as_ref();
 
                     let uri = db_config
                         .and_then(|config| config.uri.as_ref())

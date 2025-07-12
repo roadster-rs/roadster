@@ -1,7 +1,7 @@
 #[cfg(feature = "worker-pg")]
-use crate::config::service::worker::pg::WorkerPgServiceConfig;
+use crate::config::service::worker::pg::PgWorkerServiceConfig;
 #[cfg(feature = "worker-sidekiq")]
-use crate::config::service::worker::sidekiq::SidekiqServiceConfig;
+use crate::config::service::worker::sidekiq::SidekiqWorkerServiceConfig;
 use config::{FileFormat, FileSourceString};
 use serde_derive::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
@@ -35,12 +35,12 @@ pub struct WorkerServiceConfig {
     /// Worker configurations specific to sidekiq-backed queues.
     #[cfg(feature = "worker-sidekiq")]
     #[validate(nested)]
-    pub sidekiq: crate::config::service::ServiceConfig<WorkerConfig<SidekiqServiceConfig>>,
+    pub sidekiq: crate::config::service::ServiceConfig<WorkerConfig<SidekiqWorkerServiceConfig>>,
 
     /// Worker configurations specific to postgres-backed (`pgmq`) queues.
     #[cfg(feature = "worker-pg")]
     #[validate(nested)]
-    pub pg: crate::config::service::ServiceConfig<WorkerConfig<WorkerPgServiceConfig>>,
+    pub pg: crate::config::service::ServiceConfig<WorkerConfig<PgWorkerServiceConfig>>,
 }
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]

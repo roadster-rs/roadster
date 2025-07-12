@@ -1,0 +1,17 @@
+[service.worker.worker-config.pg]
+success-action = "delete"
+failure-action = "archive"
+
+[service.worker.pg]
+num-workers = 1
+balance-strategy = "round-robin"
+
+[service.worker.pg.queue-config]
+
+[service.worker.pg.queue-fetch-config]
+error-delay = 10
+empty-delay = 10
+
+[service.worker.pg.periodic]
+enable = true
+stale-cleanup = "auto-clean-stale"

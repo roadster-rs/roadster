@@ -12,7 +12,7 @@ Below is an example of how to register a worker and enqueue it into the job queu
 Various properties of the Sidekiq worker service can be configured via the app's config files. The most important fields
 to configure are the following:
 
-- `service.worker.sidekiq.num-workers`: The number of Sidekiq workers that can run at the same time.
+- `service.worker.sidekiq.num-workers`: The number of Sidekiq worker tasks that can run at the same time.
 - `service.worker.sidekiq.queues`: The names of the worker queues to handle.
 - `service.worker.sidekiq.redis.uri`: The URI of the Redis database to use as the Sidekiq server.
 
@@ -21,7 +21,7 @@ to configure are the following:
 ```
 
 See
-the [config struct](https://docs.rs/roadster/latest/roadster/config/service/worker/sidekiq/struct.SidekiqServiceConfig.html)
+the [config struct](https://docs.rs/roadster/latest/roadster/config/service/worker/sidekiq/struct.SidekiqWorkerServiceConfig.html)
 for the full list of fields available.
 
 ## Worker configs
@@ -30,10 +30,28 @@ In addition to the service-level configs, each worker has various configurable v
 by implementing the `Worker::worker_config` method. Any configs not provided in this implementation will fall back
 to the values provided in the app config.
 
+```toml
+{{ #include ../../../../examples/service/config/development/worker.toml }}
+```
+
 ## Example
 
+### Worker definition
+
 ```rust,ignore
-{{#include ../../../../examples/service/src/worker/sidekiq/mod.rs:14:}}
+{{#include ../../../../examples/service/src/worker/sidekiq/worker.rs:10:}}
+```
+
+### Register the worker with the processor
+
+```rust,ignore
+{{#include ../../../../examples/service/src/worker/sidekiq/register.rs:8:}}
+```
+
+### Enqueue a job for the worker
+
+```rust,ignore
+{{#include ../../../../examples/service/src/worker/sidekiq/enqueue.rs:7:}}
 ```
 
 ## Docs.rs links

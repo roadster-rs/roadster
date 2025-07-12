@@ -10,9 +10,9 @@ use validator::Validate;
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
-pub struct WorkerPgServiceConfig {
+pub struct PgWorkerServiceConfig {
     #[serde(default)]
-    pub db_config: Option<DbConfig>,
+    pub database: Option<DbConfig>,
 
     #[serde(default)]
     pub queue_fetch_config: Option<QueueFetchConfig>,
@@ -138,7 +138,7 @@ mod deserialize_tests {
     )]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn worker_pg(_case: TestCase, #[case] config: &str) {
-        let worker_pg: WorkerPgServiceConfig = toml::from_str(config).unwrap();
+        let worker_pg: PgWorkerServiceConfig = toml::from_str(config).unwrap();
 
         assert_toml_snapshot!(worker_pg);
     }

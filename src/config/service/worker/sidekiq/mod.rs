@@ -6,7 +6,7 @@ use validator::Validate;
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
-pub struct SidekiqServiceConfig {
+pub struct SidekiqWorkerServiceConfig {
     #[validate(nested)]
     pub redis: Redis,
 
@@ -134,7 +134,7 @@ mod deserialize_tests {
     )]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn sidekiq(_case: TestCase, #[case] config: &str) {
-        let sidekiq: SidekiqServiceConfig = toml::from_str(config).unwrap();
+        let sidekiq: SidekiqWorkerServiceConfig = toml::from_str(config).unwrap();
 
         assert_toml_snapshot!(sidekiq);
     }
