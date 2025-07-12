@@ -1,5 +1,6 @@
 use crate::config::database::DbPoolConfig;
 use crate::config::service::worker::StaleCleanUpBehavior;
+use crate::util::serde::default_true;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
 use std::time::Duration;
@@ -47,6 +48,7 @@ pub struct DbConfig {
 pub struct Periodic {
     /// Enable or disable the periodic worker task that polls the periodic job queue and
     /// enqueues jobs as they become available from the periodic queue.
+    #[serde(default = "default_true")]
     pub enable: bool,
 
     #[serde(default)]

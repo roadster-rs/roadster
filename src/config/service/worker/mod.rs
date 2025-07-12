@@ -172,25 +172,34 @@ mod deserialize_tests {
     #[rstest]
     #[case(
         r#"
+        [sidekiq]
+        num-workers = 8
         [sidekiq.redis]
         uri = "redis://localhost:6379"
         [pg]
+        num-workers = 8
         "#
     )]
     #[case(
         r#"
+        [sidekiq]
+        num-workers = 8
         [sidekiq.redis]
         uri = "redis://localhost:6379"
         [pg]
+        num-workers = 8
         [enqueue-config]
         queue = "default"
         "#
     )]
     #[case(
         r#"
+        [sidekiq]
+        num-workers = 8
         [sidekiq.redis]
         uri = "redis://localhost:6379"
         [pg]
+        num-workers = 8
         [worker-config]
         timeout = true
         max-duration = 120
@@ -200,6 +209,86 @@ mod deserialize_tests {
         delay-offset = 20
         max-delay = 30
         backoff-strategy = "exponential"
+        "#
+    )]
+    #[case(
+        r#"
+        [sidekiq]
+        num-workers = 8
+        [sidekiq.redis]
+        uri = "redis://localhost:6379"
+        [pg]
+        num-workers = 8
+        [worker-config.pg]
+        success-action = "archive"
+        failure-action = "delete"
+        "#
+    )]
+    #[case(
+        r#"
+        [sidekiq]
+        num-workers = 8
+        [sidekiq.redis]
+        uri = "redis://localhost:6379"
+        [pg]
+        num-workers = 8
+        [worker-config.sidekiq]
+        disable-argument-coercion = true
+        "#
+    )]
+    #[case(
+        r#"
+        [sidekiq]
+        num-workers = 8
+        [sidekiq.redis]
+        uri = "redis://localhost:6379"
+        [sidekiq.redis.enqueue-pool]
+        min-idle = 1
+        max-connections = 2
+        [sidekiq.redis.fetch-pool]
+        min-idle = 3
+        max-connections = 4
+        [sidekiq.periodic]
+        stale-cleanup = "auto-clean-all"
+        [pg]
+        num-workers = 8
+        "#
+    )]
+    #[case(
+        r#"
+        [sidekiq]
+        num-workers = 8
+        [sidekiq.redis]
+        uri = "redis://localhost:6379"
+        [pg]
+        num-workers = 8
+        [pg.database]
+        uri = "postgres://postgres:postgres@localhost:5432/example_dev"
+        connect-timeout = 1000
+        connect-lazy = false
+        acquire-timeout = 2000
+        idle-timeout = 10
+        max-lifetime = 60
+        min-connections = 1
+        max-connections = 2
+        test-on-checkout = false
+        retry-connection = false
+        "#
+    )]
+    #[case(
+        r#"
+        [sidekiq]
+        num-workers = 8
+        [sidekiq.redis]
+        uri = "redis://localhost:6379"
+        [pg]
+        num-workers = 8
+        [pg.queue-fetch-config]
+        error-delay = 15
+        empty-delay = 20
+        [pg.periodic]
+        enable = false
+        stale-cleanup = "auto-clean-all"
         "#
     )]
     #[cfg_attr(coverage_nightly, coverage(off))]

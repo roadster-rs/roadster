@@ -44,7 +44,10 @@ pub struct Redis {
 #[serde(default, rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct ConnectionPool {
+    #[serde(default)]
     pub min_idle: Option<u32>,
+
+    #[serde(default)]
     pub max_connections: Option<u32>,
 }
 
