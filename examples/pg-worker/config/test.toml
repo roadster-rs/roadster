@@ -9,7 +9,7 @@ uri = "postgres://roadster:roadster@localhost:5432/example_dev"
 temporary-test-db = true
 
 [service.worker.pg.queue-fetch-config]
-error-delay = 0
+error-delay = 10000
 empty-delay = 0
 
 [service.worker.pg]

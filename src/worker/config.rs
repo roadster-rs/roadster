@@ -50,7 +50,7 @@ pub struct WorkerConfig {
     /// The maximum duration workers should run for. The timeout is only enforced if `timeout`
     /// is `true`.
     #[serde(default)]
-    #[serde_as(as = "Option<serde_with::DurationSeconds>")]
+    #[serde_as(as = "Option<serde_with::DurationMilliSeconds>")]
     #[builder(default, setter(strip_option))]
     pub max_duration: Option<Duration>,
 
@@ -105,7 +105,7 @@ pub struct RetryConfig {
     /// Note: Not all worker backends will use this. For example, the Sidekiq backend does not use
     /// this and instead uses a hard-coded delay.
     #[serde(default)]
-    #[serde_as(as = "Option<serde_with::DurationSeconds>")]
+    #[serde_as(as = "Option<serde_with::DurationMilliSeconds>")]
     #[builder(default, setter(strip_option))]
     pub delay: Option<Duration>,
 
@@ -116,7 +116,7 @@ pub struct RetryConfig {
     /// Note: Not all worker backends will use this. For example, the Sidekiq backend does not use
     /// this and instead uses a hard-coded delay.
     #[serde(default)]
-    #[serde_as(as = "Option<serde_with::DurationSeconds>")]
+    #[serde_as(as = "Option<serde_with::DurationMilliSeconds>")]
     #[builder(default, setter(strip_option))]
     pub delay_offset: Option<Duration>,
 
@@ -125,7 +125,7 @@ pub struct RetryConfig {
     /// Note: Not all worker backends will use this. For example, the Sidekiq backend does not use
     /// this and instead uses a hard-coded delay.
     #[serde(default)]
-    #[serde_as(as = "Option<serde_with::DurationSeconds>")]
+    #[serde_as(as = "Option<serde_with::DurationMilliSeconds>")]
     #[builder(default, setter(strip_option))]
     pub max_delay: Option<Duration>,
 

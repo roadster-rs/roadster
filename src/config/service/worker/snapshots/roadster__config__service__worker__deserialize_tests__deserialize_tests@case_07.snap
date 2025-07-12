@@ -1,0 +1,45 @@
+---
+source: src/config/service/worker/mod.rs
+expression: worker_service_config
+---
+[enqueue-config]
+
+[worker-config]
+
+[sidekiq]
+num-workers = 8
+balance-strategy = 'round-robin'
+
+[sidekiq.queue-config]
+
+[sidekiq.redis]
+uri = 'redis://[Sensitive]'
+
+[sidekiq.redis.enqueue-pool]
+
+[sidekiq.redis.fetch-pool]
+
+[sidekiq.periodic]
+stale-cleanup = 'auto-clean-stale'
+
+[pg]
+num-workers = 8
+balance-strategy = 'round-robin'
+
+[pg.queue-config]
+
+[pg.database]
+uri = 'postgres://[Sensitive]'
+connect-timeout = 1000
+connect-lazy = false
+acquire-timeout = 2000
+idle-timeout = 10
+max-lifetime = 60
+min-connections = 1
+max-connections = 2
+test-on-checkout = false
+retry-connection = false
+
+[pg.periodic]
+enable = false
+stale-cleanup = 'auto-clean-stale'

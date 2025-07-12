@@ -156,7 +156,12 @@ mod tests {
 }
 
 // To simplify testing, these are only run when all of the config fields are available
-#[cfg(all(test, feature = "worker-sidekiq", feature = "worker-pg"))]
+#[cfg(all(
+    test,
+    feature = "worker-sidekiq",
+    feature = "worker-pg",
+    feature = "db-diesel-pool-async"
+))]
 mod deserialize_tests {
     use super::*;
     use crate::testing::snapshot::TestCase;
@@ -202,12 +207,12 @@ mod deserialize_tests {
         num-workers = 8
         [worker-config]
         timeout = true
-        max-duration = 120
+        max-duration = 120000
         [worker-config.retry-config]
         max-retries = 10
-        delay = 10
-        delay-offset = 20
-        max-delay = 30
+        delay = 10000
+        delay-offset = 20000
+        max-delay = 30000
         backoff-strategy = "exponential"
         "#
     )]
@@ -267,8 +272,8 @@ mod deserialize_tests {
         connect-timeout = 1000
         connect-lazy = false
         acquire-timeout = 2000
-        idle-timeout = 10
-        max-lifetime = 60
+        idle-timeout = 10000
+        max-lifetime = 60000
         min-connections = 1
         max-connections = 2
         test-on-checkout = false
@@ -284,15 +289,15 @@ mod deserialize_tests {
         [pg]
         num-workers = 8
         [pg.queue-fetch-config]
-        error-delay = 15
-        empty-delay = 20
+        error-delay = 15000
+        empty-delay = 20000
         [pg.periodic]
         enable = false
         stale-cleanup = "auto-clean-all"
         "#
     )]
     #[cfg_attr(coverage_nightly, coverage(off))]
-    fn tracing(_case: TestCase, #[case] config: &str) {
+    fn deserialize_tests(_case: TestCase, #[case] config: &str) {
         let worker_service_config: WorkerServiceConfig = toml::from_str(config).unwrap();
 
         assert_toml_snapshot!(worker_service_config);

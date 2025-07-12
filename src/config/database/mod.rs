@@ -60,10 +60,10 @@ pub struct DbPoolConfig {
     #[serde_as(as = "serde_with::DurationMilliSeconds")]
     pub acquire_timeout: Duration,
 
-    #[serde_as(as = "Option<serde_with::DurationSeconds>")]
+    #[serde_as(as = "Option<serde_with::DurationMilliSeconds>")]
     pub idle_timeout: Option<Duration>,
 
-    #[serde_as(as = "Option<serde_with::DurationSeconds>")]
+    #[serde_as(as = "Option<serde_with::DurationMilliSeconds>")]
     pub max_lifetime: Option<Duration>,
 
     #[serde(default)]

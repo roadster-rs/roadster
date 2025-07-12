@@ -3,7 +3,7 @@ source: src/config/service/worker/pg/mod.rs
 expression: worker_pg
 ---
 [database]
-uri = 'redis://[Sensitive]'
+uri = 'postgres://[Sensitive]'
 connect-timeout = 1000
 connect-lazy = true
 acquire-timeout = 1000

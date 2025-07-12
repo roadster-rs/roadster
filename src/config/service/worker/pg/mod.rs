@@ -82,16 +82,22 @@ pub struct QueueFetchConfig {
     /// How long to wait before fetching from a queue again when the previous fetch
     /// experienced an error (e.g., db timeout).
     #[serde(default)]
-    #[serde_as(as = "Option<serde_with::DurationSeconds>")]
+    #[serde_as(as = "Option<serde_with::DurationMilliSeconds>")]
     pub error_delay: Option<Duration>,
 
     /// How long to wait before fetching from a queue that was empty on a previous fetch.
     #[serde(default)]
-    #[serde_as(as = "Option<serde_with::DurationSeconds>")]
+    #[serde_as(as = "Option<serde_with::DurationMilliSeconds>")]
     pub empty_delay: Option<Duration>,
 }
 
-#[cfg(test)]
+// To simplify testing, these are only run when all of the config fields are available
+#[cfg(all(
+    test,
+    feature = "worker-sidekiq",
+    feature = "worker-pg",
+    feature = "db-diesel-pool-async"
+))]
 mod deserialize_tests {
     use super::*;
     use crate::testing::snapshot::TestCase;
@@ -114,7 +120,7 @@ mod deserialize_tests {
     #[case(
         r#"
         [database]
-        uri = "redis://localhost:6379"
+        uri = "postgres://localhost:5432/example"
         max-connections = 1
         "#
     )]
@@ -123,16 +129,17 @@ mod deserialize_tests {
         [database]
         uri = "postgres://localhost:5432/example"
         max-connections = 1
+        connect-timeout = 2000
         "#
     )]
     #[case(
         r#"
         [database]
-        connect-timeout = 1
+        connect-timeout = 2000
         connect-lazy = true
-        acquire-timeout = 2
-        idle-timeout = 3
-        max-lifetime = 4
+        acquire-timeout = 5000
+        idle-timeout = 10000
+        max-lifetime = 60000
         min-connections = 5
         max-connections = 6
         test-on-checkout = true
