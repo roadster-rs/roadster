@@ -74,6 +74,7 @@ fn route(context: &AppContext) -> &str {
         .route
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "open-api", derive(JsonSchema))]
 #[serde(rename_all = "camelCase")]
@@ -83,7 +84,6 @@ pub struct HeathCheckRequest {
     ///
     /// Note: If this is greater than the timeout configured in middleware, the request may
     /// time out before the `max_duration` elapses.
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub max_duration: Option<u64>,
 }
 

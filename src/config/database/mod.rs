@@ -6,6 +6,7 @@ use url::Url;
 use validator::Validate;
 
 #[serde_as]
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]

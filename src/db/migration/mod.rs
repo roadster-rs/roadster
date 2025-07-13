@@ -16,6 +16,7 @@ pub mod diesel;
 #[cfg(feature = "db-sea-orm")]
 pub mod sea_orm;
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Serialize, TypedBuilder)]
 #[cfg_attr(feature = "cli", derive(clap::Parser))]
 #[non_exhaustive]
@@ -26,6 +27,7 @@ pub struct UpArgs {
     pub steps: Option<usize>,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Serialize, TypedBuilder)]
 #[cfg_attr(feature = "cli", derive(clap::Parser))]
 #[non_exhaustive]
@@ -36,6 +38,7 @@ pub struct DownArgs {
     pub steps: Option<usize>,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Serialize, TypedBuilder)]
 pub struct MigrationInfo {
     pub name: String,

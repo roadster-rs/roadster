@@ -28,6 +28,7 @@ pub(crate) fn default_config_per_env(
 }
 
 #[serde_as]
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]

@@ -9,6 +9,7 @@ use std::time::Duration;
 use url::Url;
 use validator::{Validate, ValidationErrors};
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -21,6 +22,7 @@ pub struct Smtp {
     pub pool: Option<SmtpPool>,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged, rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -38,6 +40,7 @@ impl Validate for SmtpConnection {
     }
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -48,6 +51,7 @@ pub struct SmtpConnectionFields {
     pub password: String,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -56,6 +60,7 @@ pub struct SmtpConnectionUri {
 }
 
 #[serde_as]
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]

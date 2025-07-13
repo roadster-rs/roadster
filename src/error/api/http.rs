@@ -103,6 +103,7 @@ use std::fmt::{Display, Formatter};
 /// }
 /// ```
 ///
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Error, Serialize, Deserialize)]
 #[cfg_attr(feature = "open-api", derive(aide::OperationIo, schemars::JsonSchema))]
 #[non_exhaustive]
@@ -115,11 +116,9 @@ pub struct HttpError {
     pub status: StatusCode,
     /// Basic description of the error that occurred.
     // Todo: auto-redact sensitive data
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
     /// Additional details for the error.
     // Todo: auto-redact sensitive data
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub details: Option<String>,
     /// The original error. This can be logged to help with debugging, but it is omitted
     /// from the response body/payload to avoid exposing sensitive details from the stacktrace

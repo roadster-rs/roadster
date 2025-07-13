@@ -13,6 +13,7 @@ pub(crate) fn default_config() -> config::File<FileSourceString, FileFormat> {
     config::File::from_str(include_str!("default.toml"), FileFormat::Toml)
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -65,6 +66,7 @@ pub struct HealthCheck {
     pub custom: BTreeMap<String, HealthCheckConfig<CustomConfig>>,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -72,7 +74,6 @@ pub struct CommonConfig {
     // Optional so we can tell the difference between a consumer explicitly enabling/disabling
     // the health check, vs the health check being enabled/disabled by default.
     // If this is `None`, the value will match the value of `HealthCheck#default_enable`.
-    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub enable: Option<bool>,
 }
@@ -92,6 +93,7 @@ impl CommonConfig {
     }
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -107,6 +109,7 @@ pub struct HealthCheckConfig<T: Validate> {
 /// The maximum duration to wait for health checks to succeed before timing out and assuming
 /// the checks failed.
 #[serde_as]
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]

@@ -11,6 +11,7 @@ use serde_derive::{Deserialize, Serialize};
 use smtp::Smtp;
 use validator::Validate;
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]

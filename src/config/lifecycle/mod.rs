@@ -10,6 +10,7 @@ pub(crate) fn default_config() -> config::File<FileSourceString, FileFormat> {
     config::File::from_str(include_str!("default.toml"), FileFormat::Toml)
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -55,6 +56,7 @@ pub struct LifecycleHandler {
     pub custom: BTreeMap<String, LifecycleHandlerConfig<CustomConfig>>,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "kebab-case", default)]
 #[non_exhaustive]
@@ -62,7 +64,6 @@ pub struct CommonConfig {
     // Optional so we can tell the difference between a consumer explicitly enabling/disabling
     // the lifecycle handler, vs the lifecycle handler being enabled/disabled by default.
     // If this is `None`, the value will match the value of `LifecycleHandler#default_enable`.
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub enable: Option<bool>,
     pub priority: i32,
 }

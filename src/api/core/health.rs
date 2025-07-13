@@ -20,6 +20,7 @@ use std::time::Instant;
 use tokio::time::timeout;
 use tracing::{debug, error, info, instrument};
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "open-api", derive(JsonSchema, OperationIo))]
 #[serde(rename_all = "camelCase")]

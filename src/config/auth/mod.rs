@@ -1,6 +1,7 @@
 use serde_derive::{Deserialize, Serialize};
 use validator::Validate;
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -10,6 +11,7 @@ pub struct Auth {
     pub jwt: Jwt,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -33,6 +35,7 @@ pub struct Jwt {
     pub claims: JwtClaims,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
 #[non_exhaustive]
