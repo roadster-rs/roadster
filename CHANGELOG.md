@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0-alpha.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.0-alpha...roadster-v0.8.0-alpha.1) - 2025-07-13
+
+### Added
+
+- [**breaking**] Postgres-backed queue ([#826](https://github.com/roadster-rs/roadster/pull/826))
+  This release adds support for using a Postgres database as the backing store for an async queue in addition to our
+  existing Sidekiq (Redis-backed) support. This release contains a lot of breaking changes.
+    - New features
+        - Add `Worker` trait to allow enqueuing and handling of jobs
+        - Add `Enqueuer` trait to decouple application code from the logic required to enqueue jobs to different queue
+          backends. This allows easily switching the queue backend if needed without needing to change any application
+          code. This also allows consumers to provide the own queue backends instead of relying on what's built-in to
+          Roadster.
+        - Add `PgProcessor` and a wrapping `PgWorkerService` to process jobs enqueued to the Postgres backend
+        - Allow adding custom values (extensions) to the `AppContext`. This is useful for external libraries that might
+          need custom state.
+        - New variants were added to the `Error` enum for the new features and dependencies
+    - Breaking changes
+        - Refactored our Sidekiq support to align more closely with the code added to support Postgres backed queues.
+        - Add a `SidekiqProcessor` has a very similar API to the `PgProcessor`
+        - Replace the `SidekiqWorkerService` with a new impl that simply wraps the `SidekiqProcessor`
+        - Roadster's `Worker` trait should be used instead of [the one from
+          `rusty-sidekiq`](https://docs.rs/rusty-sidekiq/latest/sidekiq/trait.Worker.html)
+        - A lot of the configuration structs were renamed, moved, or consolidated
+        - Rename `AppService` to `Service` and remove the `App` type parameter
+        - Duration config fields were all aligned to millisecond precision, with the exception of the `max-age` config
+          for the cache control middleware, as the HTTP header uses second precision.
+
 ## [0.7.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.3...roadster-v0.7.4) - 2025-04-29
 
 ### Added
