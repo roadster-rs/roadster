@@ -19,6 +19,7 @@ use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use validator::Validate;
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -43,6 +44,7 @@ pub struct Service {
     pub custom: BTreeMap<String, ServiceConfig<CustomConfig>>,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "kebab-case", default)]
 #[non_exhaustive]
@@ -50,7 +52,6 @@ pub struct CommonConfig {
     // Optional so we can tell the difference between a consumer explicitly enabling/disabling
     // the service, vs the service being enabled/disabled by default.
     // If this is `None`, the value will match the value of `Middleware#default_enable`.
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub enable: Option<bool>,
 }
 
@@ -61,6 +62,7 @@ impl CommonConfig {
     }
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]

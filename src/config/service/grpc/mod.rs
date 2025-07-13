@@ -18,6 +18,7 @@ pub(crate) fn default_config_per_env(
     config.map(|c| config::File::from_str(c, FileFormat::Toml))
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]

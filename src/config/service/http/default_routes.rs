@@ -5,6 +5,7 @@ use serde_derive::{Deserialize, Serialize};
 use validator::Validate;
 use validator::ValidationError;
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[validate(schema(function = "validate_default_routes"))]
@@ -58,11 +59,12 @@ fn validate_default_routes(
     Ok(())
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct DefaultRouteConfig {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub enable: Option<bool>,
     pub route: String,
 }

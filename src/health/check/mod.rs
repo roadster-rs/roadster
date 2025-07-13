@@ -56,12 +56,12 @@ pub enum Status {
     Err(ErrorData),
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, TypedBuilder)]
 #[cfg_attr(feature = "open-api", derive(JsonSchema))]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub struct ErrorData {
-    #[serde(skip_serializing_if = "Option::is_none")]
     #[builder(default, setter(strip_option))]
     pub msg: Option<String>,
 }

@@ -24,6 +24,7 @@ use validator::Validate;
 pub const PRIORITY_FIRST: i32 = -10_000;
 pub const PRIORITY_LAST: i32 = 10_000;
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -104,6 +105,7 @@ pub struct Middleware {
     pub custom: BTreeMap<String, MiddlewareConfig<CustomConfig>>,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -111,7 +113,6 @@ pub struct CommonConfig {
     // Optional so we can tell the difference between a consumer explicitly enabling/disabling
     // the middleware, vs the middleware being enabled/disabled by default.
     // If this is `None`, the value will match the value of `Middleware#default_enable`.
-    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub enable: Option<bool>,
     #[serde(default)]

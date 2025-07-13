@@ -31,7 +31,6 @@ expression: serialized
   "service": {
     "default-enable": true,
     "http": {
-      "url": null,
       "scheme": "http",
       "host": "127.0.0.1",
       "port": 3000,
@@ -158,15 +157,8 @@ expression: serialized
         "queue-config": {},
         "redis": {
           "uri": "redis://[Sensitive]",
-          "enqueue-pool": {
-            "min-idle": null,
-            "max-connections": null
-          },
-          "fetch-pool": {
-            "min-idle": null,
-            "max-connections": null
-          },
-          "test-container": null
+          "enqueue-pool": {},
+          "fetch-pool": {}
         },
         "periodic": {
           "stale-cleanup": "auto-clean-stale"
@@ -189,7 +181,6 @@ expression: serialized
   },
   "auth": {
     "jwt": {
-      "cookie-name": null,
       "secret": "secret-test",
       "claims": {
         "audience": [],
@@ -200,18 +191,14 @@ expression: serialized
   "tracing": {
     "level": "debug",
     "format": "compact",
-    "service-name": null,
     "trace-propagation": true,
-    "trace-sampling-ratio": null,
-    "metrics-export-interval": null,
     "trace-filters": [
       "h2=warn",
       "tower::buffer::worker=warn",
       "opentelemetry_sdk=warn",
       "opentelemetry-otlp=warn",
       "hyper_util::client::legacy::connect::http=warn"
-    ],
-    "otlp": null
+    ]
   },
   "database": {
     "uri": "postgres://[Sensitive]",
@@ -224,17 +211,14 @@ expression: serialized
     "min-connections": 0,
     "max-connections": 10,
     "test-on-checkout": true,
-    "retry-connection": true,
-    "test-container": null
+    "retry-connection": true
   },
   "email": {
     "from": "no-reply@example.com",
-    "reply-to": null,
     "smtp": {
       "connection": {
         "uri": "smtps://username:password@smtp.example.com:425"
-      },
-      "pool": null
+      }
     },
     "sendgrid": {
       "api-key": "api-key",

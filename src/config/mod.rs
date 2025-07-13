@@ -41,6 +41,7 @@ pub mod service;
 pub mod testing;
 pub mod tracing;
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -90,6 +91,7 @@ pub struct AppConfig {
     pub custom: CustomConfig,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Validate, Serialize, Deserialize)]
 pub struct CustomConfig {
     #[serde(flatten)]
@@ -116,6 +118,7 @@ impl From<CustomConfig> for BTreeMap<String, Value> {
     }
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EmptyConfig;
 impl Validate for EmptyConfig {
@@ -140,6 +143,7 @@ cfg_if! {
     }
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, TypedBuilder)]
 pub struct ConfigOverrideSource {
     #[builder(setter(into))]
@@ -476,6 +480,7 @@ impl AsyncSource for BoxedAsyncSource {
     }
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -487,6 +492,7 @@ pub struct App {
 }
 
 #[cfg(feature = "test-containers")]
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Validate, Clone, Serialize, Deserialize)]
 #[serde(default, rename_all = "kebab-case")]
 #[non_exhaustive]

@@ -23,6 +23,7 @@ pub use RequestResponseLoggingConfig as ReqResLoggingConfig;
 pub use RequestResponseLoggingMiddleware as RequestLoggingMiddleware;
 
 #[serde_as]
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", default)]
 #[non_exhaustive]
@@ -37,7 +38,6 @@ pub struct RequestResponseLoggingConfig {
     /// Note: this currently only supports exact matches, so using `text/*` will not match
     /// `text/plain`, for example.
     #[serde_as(as = "Option<BTreeSet<DisplayFromStr>>")]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub content_types: Option<BTreeSet<Mime>>,
 
     /// The request payload content types to log. If not provided, will fall back to the
@@ -46,7 +46,6 @@ pub struct RequestResponseLoggingConfig {
     /// Note: this currently only supports exact matches, so using `text/*` will not match
     /// `text/plain`, for example.
     #[serde_as(as = "Option<BTreeSet<DisplayFromStr>>")]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub content_types_req: Option<BTreeSet<Mime>>,
 
     /// The response payload content types to log. If not provided, will fall back to the
@@ -55,7 +54,6 @@ pub struct RequestResponseLoggingConfig {
     /// Note: this currently only supports exact matches, so using `text/*` will not match
     /// `text/plain`, for example.
     #[serde_as(as = "Option<BTreeSet<DisplayFromStr>>")]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub content_types_res: Option<BTreeSet<Mime>>,
 }
 

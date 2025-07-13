@@ -3,6 +3,7 @@ use serde_derive::{Deserialize, Serialize};
 use url::Url;
 use validator::Validate;
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -15,6 +16,7 @@ pub struct SidekiqWorkerServiceConfig {
     pub periodic: Periodic,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -40,6 +42,7 @@ pub struct Redis {
     pub test_container: Option<crate::config::TestContainer>,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Validate, Clone, Serialize, Deserialize)]
 #[serde(default, rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -51,6 +54,7 @@ pub struct ConnectionPool {
     pub max_connections: Option<u32>,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]

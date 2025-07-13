@@ -18,6 +18,7 @@ pub(crate) fn default_config() -> config::File<FileSourceString, FileFormat> {
     config::File::from_str(include_str!("default.toml"), FileFormat::Toml)
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -43,6 +44,7 @@ pub struct WorkerServiceConfig {
     pub pg: crate::config::service::ServiceConfig<WorkerConfig<PgWorkerServiceConfig>>,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -115,6 +117,7 @@ pub enum BalanceStrategy {
     None,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Validate, Clone, Serialize, Deserialize)]
 #[serde(default, rename_all = "kebab-case")]
 #[non_exhaustive]
