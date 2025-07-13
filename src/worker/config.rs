@@ -2,7 +2,6 @@ use crate::config::CustomConfig;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
 use std::time::Duration;
-use typed_builder::TypedBuilder;
 use validator::Validate;
 
 /// Worker configuration options to use when enqueuing a job. Default values for these options can
@@ -10,7 +9,7 @@ use validator::Validate;
 /// basis by implementing the [`crate::worker::Worker::enqueue_config`] method.
 #[serde_as]
 #[skip_serializing_none]
-#[derive(Debug, Default, Clone, Validate, Serialize, Deserialize, TypedBuilder)]
+#[derive(Debug, Default, Clone, Validate, Serialize, Deserialize, bon::Builder)]
 #[serde(default, rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct EnqueueConfig {
@@ -23,7 +22,7 @@ pub struct EnqueueConfig {
     /// this queue name is not too long or else the queue name will be truncated when used
     /// with `pgmq`.
     #[serde(default)]
-    #[builder(default, setter(into, strip_option(fallback = queue_opt)))]
+    #[builder(into)]
     pub queue: Option<String>,
 
     #[serde(flatten, default)]
@@ -37,37 +36,32 @@ pub struct EnqueueConfig {
 /// basis by implementing the [`crate::worker::Worker::worker_config`] method.
 #[serde_as]
 #[skip_serializing_none]
-#[derive(Debug, Default, Clone, Validate, Serialize, Deserialize, TypedBuilder)]
+#[derive(Debug, Default, Clone, Validate, Serialize, Deserialize, bon::Builder)]
 #[serde(default, rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct WorkerConfig {
     /// True if Roadster should enforce a timeout on the app's workers. The default duration of
     /// the timeout can be configured with the `max-duration` option.
     #[serde(default)]
-    #[builder(default, setter(strip_option))]
     pub timeout: Option<bool>,
 
     /// The maximum duration workers should run for. The timeout is only enforced if `timeout`
     /// is `true`.
     #[serde(default)]
     #[serde_as(as = "Option<serde_with::DurationMilliSeconds>")]
-    #[builder(default, setter(strip_option))]
     pub max_duration: Option<Duration>,
 
     /// The worker retry configuration. If no configuration is provided, either in the app's config
     /// or for the [`crate::worker::Worker`], the worker will not retry.
     #[serde(flatten, default)]
-    #[builder(default, setter(strip_option))]
     pub retry_config: Option<RetryConfig>,
 
     #[cfg(feature = "worker-sidekiq")]
     #[serde(default)]
-    #[builder(default, setter(strip_option))]
     pub sidekiq: Option<SidekiqWorkerConfig>,
 
     #[cfg(feature = "worker-pg")]
     #[serde(default)]
-    #[builder(default, setter(strip_option))]
     pub pg: Option<PgWorkerConfig>,
 
     #[serde(flatten, default)]
@@ -78,25 +72,23 @@ pub struct WorkerConfig {
 
 #[serde_as]
 #[skip_serializing_none]
-#[derive(Debug, Default, Clone, Validate, Serialize, Deserialize, TypedBuilder)]
+#[derive(Debug, Default, Clone, Validate, Serialize, Deserialize, bon::Builder)]
 #[serde(default, rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct SidekiqWorkerConfig {
     /// See <https://docs.rs/rusty-sidekiq/latest/sidekiq/trait.Worker.html#method.disable_argument_coercion>
     #[serde(default)]
-    #[builder(default, setter(strip_option(fallback = disable_argument_coercion_opt)))]
     pub disable_argument_coercion: Option<bool>,
 }
 
 #[serde_as]
 #[skip_serializing_none]
-#[derive(Debug, Default, Clone, Validate, Serialize, Deserialize, TypedBuilder)]
+#[derive(Debug, Default, Clone, Validate, Serialize, Deserialize, bon::Builder)]
 #[serde(default, rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct RetryConfig {
     /// The maximum number of times a job should be retried on failure.
     #[serde(default)]
-    #[builder(default, setter(strip_option))]
     pub max_retries: Option<usize>,
 
     /// The delay between retries. If a [`BackoffStrategy`] is provided, this will be used as the
@@ -106,7 +98,6 @@ pub struct RetryConfig {
     /// this and instead uses a hard-coded delay.
     #[serde(default)]
     #[serde_as(as = "Option<serde_with::DurationMilliSeconds>")]
-    #[builder(default, setter(strip_option))]
     pub delay: Option<Duration>,
 
     /// An offset to add to the base `delay` to add jitter to the delay to avoid a "thundering herd"
@@ -117,7 +108,6 @@ pub struct RetryConfig {
     /// this and instead uses a hard-coded delay.
     #[serde(default)]
     #[serde_as(as = "Option<serde_with::DurationMilliSeconds>")]
-    #[builder(default, setter(strip_option))]
     pub delay_offset: Option<Duration>,
 
     /// The maximum duration to delay the retry.
@@ -126,7 +116,6 @@ pub struct RetryConfig {
     /// this and instead uses a hard-coded delay.
     #[serde(default)]
     #[serde_as(as = "Option<serde_with::DurationMilliSeconds>")]
-    #[builder(default, setter(strip_option))]
     pub max_delay: Option<Duration>,
 
     /// The retry delay backoff algorithm to use.
@@ -134,7 +123,6 @@ pub struct RetryConfig {
     /// Note: Not all worker backends will use this. For example, the Sidekiq backend does not use
     /// this and instead uses a hard-coded exponential backoff strategy.
     #[serde(default)]
-    #[builder(default, setter(strip_option))]
     pub backoff_strategy: Option<BackoffStrategy>,
 }
 
@@ -152,7 +140,7 @@ pub enum BackoffStrategy {
 
 #[serde_as]
 #[skip_serializing_none]
-#[derive(Debug, Default, Clone, Validate, Serialize, Deserialize, TypedBuilder)]
+#[derive(Debug, Default, Clone, Validate, Serialize, Deserialize, bon::Builder)]
 #[serde(default, rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct PgWorkerConfig {

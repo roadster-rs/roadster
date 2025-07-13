@@ -110,7 +110,7 @@ where
         let steps_run = migrator
             .up(
                 &cli.state,
-                &UpArgs::builder().steps_opt(remaining_steps).build(),
+                &UpArgs::builder().maybe_steps(remaining_steps).build(),
             )
             .await?;
         total_steps_run += steps_run;
@@ -138,7 +138,7 @@ where
         let steps_run = migrator
             .down(
                 &cli.state,
-                &DownArgs::builder().steps_opt(remaining_steps).build(),
+                &DownArgs::builder().maybe_steps(remaining_steps).build(),
             )
             .await?;
         total_steps_run += steps_run;

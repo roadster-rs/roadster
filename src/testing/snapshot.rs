@@ -1,4 +1,4 @@
-//! Utilities for modifying `insta` snapshot [Settings].
+//! Utilities for modifying `insta` snapshot [`Settings`].
 
 use crate::util::regex::UUID_REGEX;
 use insta::Settings;
@@ -8,7 +8,6 @@ use regex::Regex;
 use std::str::FromStr;
 use std::sync::LazyLock;
 use std::thread::current;
-use typed_builder::TypedBuilder;
 
 const BEARER_TOKEN_REGEX: &str = r"Bearer [\w\.-]+";
 const POSTGRES_URI_REGEX: &str = r"postgres://(\w|\d|@|:|\/|\.)+";
@@ -18,15 +17,14 @@ const SMTP_URI_REGEX: &str = r"smtp://(\w|\d|@|:|\/|\.)+";
 // https://stackoverflow.com/questions/3143070/regex-to-match-an-iso-8601-datetime-string
 const TIMESTAMP_REGEX: &str = r"(\d{4}-[01]\d-[0-3]\d\s?T?\s?[0-2]\d:[0-5]\d:[0-5]\d\.\d+\s?([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\d\s?T?\s?[0-2]\d:[0-5]\d:[0-5]\d\s?([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\d\s?T?\s?[0-2]\d:[0-5]\d\s?([+-][0-2]\d:[0-5]\d|Z))";
 
-/// Configure which settings to apply on the snapshot [Settings].
+/// Configure which settings to apply on the snapshot [`Settings`].
 ///
-/// When built, a [TestCase] is returned.
-#[derive(TypedBuilder)]
-#[builder(build_method(into = TestCase))]
+/// When built, a [`TestCase`] is returned.
+#[derive(bon::Builder)]
+#[builder(finish_fn(vis = "", name = build_internal))]
 #[non_exhaustive]
 pub struct TestCaseConfig {
-    /// The [Settings] to modify. If not provided, will use `Settings::clone_current()`.
-    #[builder(default, setter(strip_option))]
+    /// The [`Settings`] to modify. If not provided, will use `Settings::clone_current()`.
     pub settings: Option<Settings>,
 
     /// The description of the test case. If not provided, will be extracted from the name of
@@ -37,7 +35,7 @@ pub struct TestCaseConfig {
     ///
     /// # Examples
     ///
-    /// ## [TestCase] description for `rstest` cases
+    /// ## [`TestCase`] description for `rstest` cases
     /// ```rust
     /// #[cfg(test)]
     /// mod tests {
@@ -60,7 +58,7 @@ pub struct TestCaseConfig {
     /// }
     /// ```
     ///
-    /// ## [TestCase] with manually set description
+    /// ## [`TestCase`] with manually set description
     /// ```rust
     /// #[cfg(test)]
     /// mod tests {
@@ -75,7 +73,7 @@ pub struct TestCaseConfig {
     ///     }
     /// }
     /// ```
-    #[builder(default, setter(strip_option, into))]
+    #[builder(into)]
     pub description: Option<String>,
 
     /// Whether to set the `description` as the suffix of the snapshot file.
@@ -126,8 +124,8 @@ pub struct TestCaseConfig {
     #[builder(default = true)]
     pub redact_timestamp: bool,
 
-    /// Whether to automatically bind the [Settings] to the current scope. If `true`, the settings
-    /// will be automatically applied for the test in which the [TestCase] was built. If `false`,
+    /// Whether to automatically bind the [`Settings`] to the current scope. If `true`, the settings
+    /// will be automatically applied for the test in which the [`TestCase`] was built. If `false`,
     /// the settings will only be applied after manually calling [Settings::bind_to_scope], or
     /// placing all relevant snapshot assertions inside a [Settings::bind] call.
     ///
@@ -149,7 +147,7 @@ pub struct TestCaseConfig {
     /// }
     /// ```
     ///
-    /// ## Manually bind [Settings] scope
+    /// ## Manually bind [`Settings`] scope
     /// ```rust
     /// #[cfg(test)]
     /// mod tests {
@@ -173,14 +171,20 @@ pub struct TestCaseConfig {
     pub bind_scope: bool,
 }
 
-/// Container for common `insta` snapshot [Settings] after they have been applied per the
+impl<S: test_case_config_builder::IsComplete> TestCaseConfigBuilder<S> {
+    pub fn build(self) -> TestCase {
+        self.build_internal().into()
+    }
+}
+
+/// Container for common `insta` snapshot [`Settings`] after they have been applied per the
 /// [TestCaseConfig].
 #[non_exhaustive]
 pub struct TestCase {
     /// The description of the current test case. Either manually provided via the
     /// [TestCaseConfigBuilder::description], or extracted from the current thread name.
     pub description: String,
-    /// The `insta` [Settings] that are configured.
+    /// The `insta` [`Settings`] that are configured.
     pub settings: Settings,
     _settings_guard: Option<SettingsBindDropGuard>,
 }
@@ -244,7 +248,7 @@ impl From<TestCaseConfig> for TestCase {
     }
 }
 
-/// Set the snapshot suffix on the [Settings].
+/// Set the snapshot suffix on the [`Settings`].
 ///
 /// Useful for using `insta` together with `rstest`.
 /// See: <https://insta.rs/docs/patterns/>
@@ -260,42 +264,42 @@ pub fn snapshot_redact_uuid(settings: &mut Settings) -> &mut Settings {
     settings
 }
 
-/// Redact instances of bearer tokens in snapshots. Applies a filter on the [Settings] to replace
+/// Redact instances of bearer tokens in snapshots. Applies a filter on the [`Settings`] to replace
 /// sub-strings matching [`BEARER_TOKEN_REGEX`] with `Sensitive`.
 pub fn snapshot_redact_bearer_tokens(settings: &mut Settings) -> &mut Settings {
     settings.add_filter(BEARER_TOKEN_REGEX, "Sensitive");
     settings
 }
 
-/// Redact instances of Postgres URIs in snapshots. Applies a filter on the [Settings] to replace
+/// Redact instances of Postgres URIs in snapshots. Applies a filter on the [`Settings`] to replace
 /// sub-strings matching [`POSTGRES_URI_REGEX`] with `postgres://[Sensitive]`.
 pub fn snapshot_redact_postgres_uri(settings: &mut Settings) -> &mut Settings {
     settings.add_filter(POSTGRES_URI_REGEX, "postgres://[Sensitive]");
     settings
 }
 
-/// Redact instances of Mysql URIs in snapshots. Applies a filter on the [Settings] to replace
+/// Redact instances of Mysql URIs in snapshots. Applies a filter on the [`Settings`] to replace
 /// sub-strings matching [`MYSQL_URI_REGEX`] with `mysql://[Sensitive]`.
 pub fn snapshot_redact_mysql_uri(settings: &mut Settings) -> &mut Settings {
     settings.add_filter(MYSQL_URI_REGEX, "mysql://[Sensitive]");
     settings
 }
 
-/// Redact instances of Redis URIs in snapshots. Applies a filter on the [Settings] to replace
+/// Redact instances of Redis URIs in snapshots. Applies a filter on the [`Settings`] to replace
 /// sub-strings matching [`REDIS_URI_REGEX`] with `redis://[Sensitive]`.
 pub fn snapshot_redact_redis_uri(settings: &mut Settings) -> &mut Settings {
     settings.add_filter(REDIS_URI_REGEX, "redis://[Sensitive]");
     settings
 }
 
-/// Redact instances of Smtp URIs in snapshots. Applies a filter on the [Settings] to replace
+/// Redact instances of Smtp URIs in snapshots. Applies a filter on the [`Settings`] to replace
 /// sub-strings matching [`SMTP_URI_REGEX`] with `smtp://[Sensitive]`.
 pub fn snapshot_redact_smtp_uri(settings: &mut Settings) -> &mut Settings {
     settings.add_filter(SMTP_URI_REGEX, "smtp://[Sensitive]");
     settings
 }
 
-/// Redact instances of timestamps in snapshots. Applies a filter on the [Settings] to replace
+/// Redact instances of timestamps in snapshots. Applies a filter on the [`Settings`] to replace
 /// sub-strings matching [`TIMESTAMP_REGEX`] with `[timestamp]`.
 pub fn snapshot_redact_timestamp(settings: &mut Settings) -> &mut Settings {
     settings.add_filter(TIMESTAMP_REGEX, "[timestamp]");

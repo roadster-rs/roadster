@@ -23,7 +23,6 @@ use jsonwebtoken::{DecodingKey, Header, TokenData, Validation, decode};
 use serde_derive::{Deserialize, Serialize};
 #[cfg(not(any(feature = "jwt-ietf", feature = "jwt-openid")))]
 use serde_json::Value as Claims;
-use typed_builder::TypedBuilder;
 use url::Url;
 use uuid::Uuid;
 
@@ -73,7 +72,8 @@ where
 /// If the functionality to extract from a cookie is not required, it's recommended to use
 /// the normal [`Jwt`] directly.
 #[cfg_attr(feature = "open-api", derive(aide::OperationIo))]
-#[derive(Deserialize, Serialize, TypedBuilder)]
+#[serde_with::skip_serializing_none]
+#[derive(Deserialize, Serialize, bon::Builder)]
 #[non_exhaustive]
 pub struct JwtCsrf<C = Claims> {
     pub token: Jwt<C>,

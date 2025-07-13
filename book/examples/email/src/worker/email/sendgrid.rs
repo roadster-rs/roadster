@@ -6,10 +6,9 @@ use roadster::worker::Worker;
 use sendgrid::v3::{Email, Message, Personalization};
 use serde::{Deserialize, Serialize};
 use tracing::{info, instrument};
-use typed_builder::TypedBuilder;
 use uuid::Uuid;
 
-#[derive(Debug, TypedBuilder, Serialize, Deserialize)]
+#[derive(Debug, bon::Builder, Serialize, Deserialize)]
 pub struct EmailConfirmationSendgridArgs {
     user_id: Uuid,
 }

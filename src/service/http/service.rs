@@ -132,12 +132,12 @@ impl HttpService {
     }
 }
 
-#[derive(Debug, serde_derive::Serialize, typed_builder::TypedBuilder)]
+#[derive(Debug, serde_derive::Serialize, bon::Builder)]
 #[cfg_attr(feature = "cli", derive(clap::Parser))]
 #[non_exhaustive]
 pub struct OpenApiArgs {
     /// The file to write the schema to. If not provided, will write to stdout.
-    #[builder(default, setter(strip_option))]
+    #[builder(into)]
     #[cfg_attr(feature = "cli", clap(short, long, value_name = "FILE", value_hint = clap::ValueHint::FilePath))]
     pub output: Option<PathBuf>,
 

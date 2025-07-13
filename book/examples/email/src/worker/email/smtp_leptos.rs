@@ -10,10 +10,9 @@ use roadster::worker::Worker;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use tracing::{info, instrument};
-use typed_builder::TypedBuilder;
 use uuid::Uuid;
 
-#[derive(Debug, TypedBuilder, Serialize, Deserialize)]
+#[derive(Debug, bon::Builder, Serialize, Deserialize)]
 pub struct EmailConfirmationHtmlArgs {
     user_id: Uuid,
 }

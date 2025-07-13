@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 pub mod db;
 pub mod default;
 #[cfg(feature = "email")]
@@ -17,34 +15,48 @@ use schemars::JsonSchema;
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_with::{serde_as, skip_serializing_none};
+use std::time::Duration;
 use tracing::error;
-use typed_builder::TypedBuilder;
 
 #[serde_as]
 #[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize, TypedBuilder)]
+#[derive(Debug, Clone, Serialize, Deserialize, bon::Builder)]
 #[cfg_attr(feature = "open-api", derive(JsonSchema))]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub struct CheckResponse {
     pub status: Status,
     /// Total latency of checking the health of the resource in milliseconds.
-    #[builder(setter(transform = |duration: std::time::Duration| duration.as_millis()))]
+    #[builder(setters(vis = "", name = latency_internal))]
     pub latency: u128,
     /// Custom health data, for example, separate latency measurements for acquiring a connection
     /// from a resource pool vs making a request with the connection.
-    #[builder(
-        default,
-        setter(transform = |custom: impl serde::Serialize| serialize_custom(custom))
-    )]
+    #[builder(setters(vis = "", name = custom_internal))]
     pub custom: Option<Value>,
 }
 
-fn serialize_custom(custom: impl serde::Serialize) -> Option<Value> {
-    Some(
-        serde_json::to_value(custom)
-            .unwrap_or_else(|err| Value::String(format!("Unable to serialize custom data: {err}"))),
-    )
+impl<S: check_response_builder::State> CheckResponseBuilder<S> {
+    pub fn latency(
+        self,
+        duration: Duration,
+    ) -> CheckResponseBuilder<check_response_builder::SetLatency<S>>
+    where
+        S::Latency: check_response_builder::IsUnset,
+    {
+        self.latency_internal(duration.as_millis())
+    }
+
+    pub fn custom(
+        self,
+        custom: impl serde::Serialize,
+    ) -> CheckResponseBuilder<check_response_builder::SetCustom<S>>
+    where
+        S::Custom: check_response_builder::IsUnset,
+    {
+        let custom = serde_json::to_value(custom)
+            .unwrap_or_else(|err| Value::String(format!("Unable to serialize custom data: {err}")));
+        self.custom_internal(custom)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -57,12 +69,12 @@ pub enum Status {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize, TypedBuilder)]
+#[derive(Debug, Clone, Serialize, Deserialize, bon::Builder)]
 #[cfg_attr(feature = "open-api", derive(JsonSchema))]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub struct ErrorData {
-    #[builder(default, setter(strip_option))]
+    #[builder(into)]
     pub msg: Option<String>,
 }
 

@@ -6,23 +6,20 @@ use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_with::serde_as;
 use std::collections::BTreeMap;
-use typed_builder::TypedBuilder;
 
 /// JWT Claims. Provides fields for the default/recommended registered claim names. Additional
 /// claim names are collected in the `custom` map.
 /// See: <https://www.rfc-editor.org/rfc/rfc7519.html#section-4>
 #[serde_as]
-#[derive(Debug, Clone, Deserialize, Serialize, TypedBuilder)]
+#[derive(Debug, Clone, Deserialize, Serialize, bon::Builder)]
 #[non_exhaustive]
 pub struct Claims<C = BTreeMap<String, Value>> {
     /// See: <https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.1>
     #[serde(rename = "iss")]
-    #[builder(default, setter(strip_option))]
     pub issuer: Option<UriOrString>,
 
     /// See: <https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.2>
     #[serde(rename = "sub")]
-    #[builder(default, setter(strip_option))]
     pub subject: Option<Subject>,
 
     /// See: <https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.3>
@@ -39,18 +36,16 @@ pub struct Claims<C = BTreeMap<String, Value>> {
     /// See: <https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.5>
     #[serde(rename = "nbf")]
     #[serde_as(as = "Option<serde_with::TimestampSeconds>")]
-    #[builder(default, setter(strip_option))]
     pub not_before: Option<DateTime<Utc>>,
 
     /// See: <https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.6>
     #[serde(rename = "iat")]
     #[serde_as(as = "Option<serde_with::TimestampSeconds>")]
-    #[builder(default, setter(strip_option))]
     pub issued_at: Option<DateTime<Utc>>,
 
     /// See: <https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.7>
     #[serde(rename = "jti")]
-    #[builder(default, setter(strip_option))]
+    #[builder(into)]
     pub jwt_id: Option<String>,
 
     #[serde(flatten)]

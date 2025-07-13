@@ -6,7 +6,6 @@ use axum_core::extract::FromRef;
 use std::future::Future;
 use std::marker::PhantomData;
 use tokio_util::sync::CancellationToken;
-use typed_builder::TypedBuilder;
 
 /// A generic [Service] to allow creating a service from an async function.
 ///
@@ -40,7 +39,7 @@ use typed_builder::TypedBuilder;
 ///     .add_service(service)
 ///     .build();
 /// ```
-#[derive(TypedBuilder)]
+#[derive(bon::Builder)]
 pub struct FunctionService<S, F, Fut>
 where
     S: Clone + Send + Sync + 'static,
@@ -48,12 +47,11 @@ where
     F: Send + Sync + Fn(S, CancellationToken) -> Fut,
     Fut: Send + Future<Output = RoadsterResult<()>>,
 {
-    #[builder(setter(into))]
+    #[builder(into)]
     name: String,
-    #[builder(default, setter(strip_option))]
     enabled: Option<bool>,
     function: F,
-    #[builder(default, setter(skip))]
+    #[builder(skip)]
     _state: PhantomData<S>,
 }
 
