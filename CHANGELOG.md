@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0-alpha.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.0-alpha...roadster-v0.8.0-alpha.1) - 2025-07-13
+
+### Added
+
+- [**breaking**] Postgres-backed queue ([#826](https://github.com/roadster-rs/roadster/pull/826))
+
 ## [0.7.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.3...roadster-v0.7.4) - 2025-04-29
 
 ### Added

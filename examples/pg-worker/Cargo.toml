@@ -9,7 +9,7 @@ publish = false
 [features]
 
 [dependencies]
-roadster = { version = "0.8.0-alpha", path = "../..", default-features = false, features = ["worker-pg", "open-api", "cli"] }
+roadster = { version = "0.8.0-alpha.1", path = "../..", default-features = false, features = ["worker-pg", "open-api", "cli"] }
 tokio = { workspace = true }
 tokio-util = { workspace = true }
 anyhow = { workspace = true }
@@ -37,7 +37,7 @@ bon = { workspace = true }
 cron = { workspace = true }
 
 [dev-dependencies]
-roadster = { version = "0.8.0-alpha", path = "../..", default-features = false, features = ["testing"] }
+roadster = { version = "0.8.0-alpha.1", path = "../..", default-features = false, features = ["testing"] }
 tower-util = { workspace = true }
 
 [build-dependencies]
