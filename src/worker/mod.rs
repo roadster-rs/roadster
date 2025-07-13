@@ -73,48 +73,54 @@ where
     }
 
     #[instrument(skip_all)]
-    async fn enqueue<T>(state: &S, args: T) -> Result<(), <Self::Enqueuer as Enqueuer>::Error>
+    async fn enqueue<ArgsRef>(
+        state: &S,
+        args: ArgsRef,
+    ) -> Result<(), <Self::Enqueuer as Enqueuer>::Error>
     where
         Self: 'static + Sized,
-        T: Send + Sync + Borrow<Args> + Serialize,
+        ArgsRef: Send + Sync + Borrow<Args> + Serialize,
     {
         Self::Enqueuer::enqueue::<Self, _, _, _, Self::Error>(state, args).await?;
         Ok(())
     }
 
     #[instrument(skip_all)]
-    async fn enqueue_delayed(
+    async fn enqueue_delayed<ArgsRef>(
         state: &S,
-        args: &Args,
+        args: ArgsRef,
         delay: Duration,
     ) -> Result<(), <Self::Enqueuer as Enqueuer>::Error>
     where
         Self: 'static + Sized,
+        ArgsRef: Send + Sync + Borrow<Args> + Serialize,
     {
         Self::Enqueuer::enqueue_delayed::<Self, _, _, _, Self::Error>(state, args, delay).await?;
         Ok(())
     }
 
     #[instrument(skip_all)]
-    async fn enqueue_batch(
+    async fn enqueue_batch<ArgsRef>(
         state: &S,
-        args: &[Args],
+        args: &[ArgsRef],
     ) -> Result<(), <Self::Enqueuer as Enqueuer>::Error>
     where
         Self: 'static + Sized,
+        ArgsRef: Send + Sync + Borrow<Args> + Serialize,
     {
         Self::Enqueuer::enqueue_batch::<Self, _, _, _, Self::Error>(state, args).await?;
         Ok(())
     }
 
     #[instrument(skip_all)]
-    async fn enqueue_batch_delayed(
+    async fn enqueue_batch_delayed<ArgsRef>(
         state: &S,
-        args: &[Args],
+        args: &[ArgsRef],
         delay: Duration,
     ) -> Result<(), <Self::Enqueuer as Enqueuer>::Error>
     where
         Self: 'static + Sized,
+        ArgsRef: Send + Sync + Borrow<Args> + Serialize,
     {
         Self::Enqueuer::enqueue_batch_delayed::<Self, _, _, _, Self::Error>(state, args, delay)
             .await?;
