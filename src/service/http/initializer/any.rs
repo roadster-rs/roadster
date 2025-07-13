@@ -3,7 +3,6 @@ use crate::error::RoadsterResult;
 use crate::service::http::initializer::Initializer;
 use axum::Router;
 use axum_core::extract::FromRef;
-use typed_builder::TypedBuilder;
 
 type ApplyFn<S> = Box<dyn Fn(Router, &S) -> RoadsterResult<Router> + Send>;
 
@@ -26,22 +25,37 @@ type ApplyFn<S> = Box<dyn Fn(Router, &S) -> RoadsterResult<Router> + Send>;
 ///     })
 ///     .build();
 /// ```
-#[derive(TypedBuilder)]
+#[derive(bon::Builder)]
 pub struct AnyInitializer<S>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    #[builder(setter(into))]
+    #[builder(into)]
     name: String,
-    #[builder(default, setter(strip_option(fallback = enabled_opt)))]
     enabled: Option<bool>,
-    #[builder(default, setter(strip_option(fallback = priority_opt)))]
     priority: Option<i32>,
     #[builder(default)]
     stage: Stage,
-    #[builder(setter(transform = |a: impl Fn(Router, &S) -> RoadsterResult<Router> + Send + 'static| to_box_fn(a) ))]
+    #[builder(setters(vis = "", name = apply_internal))]
     apply: ApplyFn<S>,
+}
+
+impl<S, BS> AnyInitializerBuilder<S, BS>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    BS: any_initializer_builder::State,
+{
+    pub fn apply(
+        self,
+        apply_fn: impl Fn(Router, &S) -> RoadsterResult<Router> + Send + 'static,
+    ) -> AnyInitializerBuilder<S, any_initializer_builder::SetApply<BS>>
+    where
+        BS::Apply: any_initializer_builder::IsUnset,
+    {
+        self.apply_internal(Box::new(apply_fn))
+    }
 }
 
 #[derive(Default)]
@@ -52,10 +66,6 @@ pub enum Stage {
     #[default]
     AfterMiddleware,
     BeforeServe,
-}
-
-fn to_box_fn<S>(p: impl Fn(Router, &S) -> RoadsterResult<Router> + Send + 'static) -> ApplyFn<S> {
-    Box::new(p)
 }
 
 impl<S> Initializer<S> for AnyInitializer<S>
@@ -214,7 +224,7 @@ mod tests {
 
         let initializer = AnyInitializer::builder()
             .name(NAME)
-            .enabled_opt(enabled_field)
+            .maybe_enabled(enabled_field)
             .apply(|router, _state| Ok(router))
             .build();
 
@@ -254,7 +264,7 @@ mod tests {
 
         let initializer = AnyInitializer::builder()
             .name(NAME)
-            .priority_opt(field_priority)
+            .maybe_priority(field_priority)
             .apply(|router, _state| Ok(router))
             .build();
 

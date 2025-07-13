@@ -9,7 +9,6 @@ use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use serde_derive::Serialize;
 use strum_macros::{EnumString, IntoStaticStr};
-use typed_builder::TypedBuilder;
 
 #[cfg(feature = "db-diesel")]
 pub mod diesel;
@@ -17,29 +16,27 @@ pub mod diesel;
 pub mod sea_orm;
 
 #[serde_with::skip_serializing_none]
-#[derive(Debug, Serialize, TypedBuilder)]
+#[derive(Debug, Serialize, bon::Builder)]
 #[cfg_attr(feature = "cli", derive(clap::Parser))]
 #[non_exhaustive]
 pub struct UpArgs {
     /// The number of pending migration steps to apply.
     #[cfg_attr(feature = "cli", clap(short = 'n', long))]
-    #[builder(default, setter(strip_option(fallback = steps_opt)))]
     pub steps: Option<usize>,
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Debug, Serialize, TypedBuilder)]
+#[derive(Debug, Serialize, bon::Builder)]
 #[cfg_attr(feature = "cli", derive(clap::Parser))]
 #[non_exhaustive]
 pub struct DownArgs {
     /// The number of applied migration steps to roll back.
     #[cfg_attr(feature = "cli", clap(short = 'n', long))]
-    #[builder(default, setter(strip_option(fallback = steps_opt)))]
     pub steps: Option<usize>,
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Debug, Serialize, TypedBuilder)]
+#[derive(Debug, Serialize, bon::Builder)]
 pub struct MigrationInfo {
     pub name: String,
     pub status: MigrationStatus,

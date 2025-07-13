@@ -3,11 +3,11 @@ source: src/app/prepare.rs
 expression: options
 ---
 PrepareOptions {
+    config_sources: [],
     env: Some(
         Test,
     ),
     parse_cli: false,
     config_dir: None,
-    config_sources: [],
     config: None,
 }

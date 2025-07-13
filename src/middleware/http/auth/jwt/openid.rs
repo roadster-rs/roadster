@@ -5,7 +5,6 @@ use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_with::serde_as;
 use std::collections::BTreeMap;
-use typed_builder::TypedBuilder;
 use url::Url;
 
 use crate::util::serde::{UriOrString, deserialize_from_str, serialize_to_str};
@@ -14,7 +13,7 @@ use crate::util::serde::{UriOrString, deserialize_from_str, serialize_to_str};
 /// claim names are collected in the `custom` map.
 /// See: <https://openid.net/specs/openid-connect-core-1_0.html#IDToken>
 #[serde_as]
-#[derive(Debug, Clone, Deserialize, Serialize, TypedBuilder)]
+#[derive(Debug, Clone, Deserialize, Serialize, bon::Builder)]
 #[non_exhaustive]
 pub struct Claims<C = BTreeMap<String, Value>> {
     #[serde(rename = "iss")]
@@ -35,14 +34,12 @@ pub struct Claims<C = BTreeMap<String, Value>> {
     pub issued_at: DateTime<Utc>,
 
     #[serde_as(as = "Option<serde_with::TimestampSeconds>")]
-    #[builder(setter(strip_option))]
     pub auth_time: Option<DateTime<Utc>>,
 
-    #[builder(setter(strip_option))]
+    #[builder(into)]
     pub nonce: Option<String>,
 
     #[serde(rename = "acr")]
-    #[builder(setter(strip_option))]
     pub auth_cxt_class_reference: Option<Acr>,
 
     #[serde(rename = "amr", default, skip_serializing_if = "Vec::is_empty")]
@@ -53,7 +50,6 @@ pub struct Claims<C = BTreeMap<String, Value>> {
     /// beyond the scope of this specification are used; therefore, implementations not using such
     /// extensions are encouraged to not use azp and to ignore it when it does occur."
     #[serde(rename = "azp")]
-    #[builder(setter(strip_option))]
     pub authorized_party: Option<UriOrString>,
 
     #[serde(flatten)]

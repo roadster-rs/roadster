@@ -157,7 +157,6 @@ chrono = { workspace = true, features = ["serde"] }
 byte-unit = { workspace = true }
 convert_case = { workspace = true }
 const_format = { workspace = true }
-typed-builder = { workspace = true }
 bon = { workspace = true }
 num-traits = { workspace = true }
 validator = { workspace = true }
@@ -280,7 +279,6 @@ vergen-gitcl = { version = "1.0.0" }
 reqwest = { version = "0.12.8", default-features = false, features = ["rustls-tls", "charset", "http2", "macos-system-configuration"] }
 itertools = "0.14.0"
 cargo-manifest = "0.19.1"
-typed-builder = "0.21.0"
 bon = "3.0.0"
 rand = "0.9.0"
 thiserror = "2.0.9"

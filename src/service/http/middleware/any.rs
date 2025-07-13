@@ -3,7 +3,6 @@ use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
 use axum::Router;
 use axum_core::extract::FromRef;
-use typed_builder::TypedBuilder;
 
 type ApplyFn<S> = Box<dyn Fn(Router, &S) -> RoadsterResult<Router> + Send>;
 
@@ -33,25 +32,37 @@ type ApplyFn<S> = Box<dyn Fn(Router, &S) -> RoadsterResult<Router> + Send>;
 ///     })
 ///     .build();
 /// ```
-#[derive(TypedBuilder)]
+#[derive(bon::Builder)]
 #[non_exhaustive]
 pub struct AnyMiddleware<S>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    #[builder(setter(into))]
+    #[builder(into)]
     name: String,
-    #[builder(default, setter(strip_option(fallback = enabled_opt)))]
     enabled: Option<bool>,
-    #[builder(default, setter(strip_option(fallback = priority_opt)))]
     priority: Option<i32>,
-    #[builder(setter(transform = |a: impl Fn(Router, &S) -> RoadsterResult<Router> + Send + 'static| to_box_fn(a) ))]
+    // #[builder(setter(transform = |a: impl Fn(Router, &S) -> RoadsterResult<Router> + Send + 'static| to_box_fn(a) ))]
+    #[builder(setters(vis = "", name = apply_internal))]
     apply: ApplyFn<S>,
 }
 
-fn to_box_fn<S>(p: impl Fn(Router, &S) -> RoadsterResult<Router> + Send + 'static) -> ApplyFn<S> {
-    Box::new(p)
+impl<S, BS> AnyMiddlewareBuilder<S, BS>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+    BS: any_middleware_builder::State,
+{
+    pub fn apply(
+        self,
+        apply_fn: impl Fn(Router, &S) -> RoadsterResult<Router> + Send + 'static,
+    ) -> AnyMiddlewareBuilder<S, any_middleware_builder::SetApply<BS>>
+    where
+        BS::Apply: any_middleware_builder::IsUnset,
+    {
+        self.apply_internal(Box::new(apply_fn))
+    }
 }
 
 impl<S> Middleware<S> for AnyMiddleware<S>
@@ -182,7 +193,7 @@ mod tests {
 
         let middleware = AnyMiddleware::builder()
             .name(NAME)
-            .enabled_opt(enabled_field)
+            .maybe_enabled(enabled_field)
             .apply(|router, _state| Ok(router))
             .build();
 
@@ -222,7 +233,7 @@ mod tests {
 
         let middleware = AnyMiddleware::builder()
             .name(NAME)
-            .priority_opt(field_priority)
+            .maybe_priority(field_priority)
             .apply(|router, _state| Ok(router))
             .build();
 

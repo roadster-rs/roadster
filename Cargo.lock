@@ -1495,6 +1495,7 @@ dependencies = [
  "aide",
  "async-trait",
  "axum",
+ "bon",
  "leptos",
  "lettre",
  "roadster",
@@ -1503,7 +1504,6 @@ dependencies = [
  "serde",
  "tokio-util",
  "tracing",
- "typed-builder 0.21.0",
  "uuid",
 ]
 
@@ -3942,6 +3942,7 @@ name = "powerset_matrix"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bon",
  "cargo-manifest",
  "clap",
  "insta",
@@ -3954,7 +3955,6 @@ dependencies = [
  "serde_json",
  "strum 0.27.1",
  "strum_macros",
- "typed-builder 0.21.0",
 ]
 
 [[package]]
@@ -4678,7 +4678,6 @@ dependencies = [
  "tracing",
  "tracing-opentelemetry",
  "tracing-subscriber",
- "typed-builder 0.21.0",
  "url",
  "uuid",
  "validator",

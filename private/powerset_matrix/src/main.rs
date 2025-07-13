@@ -7,9 +7,8 @@ use powerset_matrix::cli::{Cli, Format};
 use powerset_matrix::powerset;
 use serde_derive::Serialize;
 use std::collections::BTreeSet;
-use typed_builder::TypedBuilder;
 
-#[derive(Debug, Serialize, TypedBuilder)]
+#[derive(Debug, Serialize, bon::Builder)]
 struct Output {
     indexes: Vec<usize>,
     powersets: Vec<Vec<String>>,

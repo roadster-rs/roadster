@@ -15,7 +15,6 @@ use crate::service::registry::ServiceRegistry;
 use axum_core::extract::FromRef;
 use std::marker::PhantomData;
 use std::path::PathBuf;
-use typed_builder::TypedBuilder;
 
 /// Contains all the objects needed to run the [`App`]. Useful if a consumer needs access to some
 /// of the prepared state before running the app.
@@ -57,42 +56,50 @@ where
 /// or CLI arguments when running the [`crate::app::run`] method. However, if [`prepare`] is called
 /// directly, especially from somewhere without an env or CLI, then this can be used to configure
 /// the prepared app.
-#[derive(Default, Debug, TypedBuilder)]
+#[derive(Default, Debug, bon::Builder)]
 #[non_exhaustive]
-#[builder(mutators(
-    fn config_sources(&mut self, config_sources: Vec<Box<dyn config::Source + Send + Sync>>) -> &mut Self{
-        self.config_sources = config_sources;
-    self
-    }
-    pub fn add_config_source(&mut self, source: impl config::Source + Send + Sync + 'static) -> &mut Self{
-        self.config_sources.push(Box::new(source));
-    self
-    }
-    pub fn add_config_source_boxed(&mut self, source: Box<dyn config::Source + Send + Sync>) -> &mut Self{
-        self.config_sources.push(source);
-    self
-    }
-))]
 pub struct PrepareOptions {
-    #[builder(default, setter(strip_option))]
+    /// Manually provide custom config sources. This is mostly intended to allow overriding
+    /// specific app config fields for tests (e.g., using the [`ConfigOverrideSource`]), but it
+    /// can also be used to provide other custom config sources outside of tests.
+    #[builder(field)]
+    pub config_sources: Vec<Box<dyn config::Source + Send + Sync>>,
+
     pub env: Option<Environment>,
 
     #[builder(default = true)]
     pub parse_cli: bool,
 
-    #[builder(default, setter(strip_option))]
     pub config_dir: Option<PathBuf>,
-
-    /// Manually provide custom config sources. This is mostly intended to allow overriding
-    /// specific app config fields for tests (e.g., using the [`ConfigOverrideSource`]), but it
-    /// can also be used to provide other custom config sources outside of tests.
-    #[builder(via_mutators)]
-    pub config_sources: Vec<Box<dyn config::Source + Send + Sync>>,
 
     /// Explicitly override the entire [`AppConfig`] to run the app with. If provided, the other
     /// config-related fields in this struct will not be used.
-    #[builder(default, setter(strip_option))]
     pub config: Option<AppConfig>,
+}
+
+impl<S: prepare_options_builder::State> PrepareOptionsBuilder<S> {
+    pub fn config_sources(
+        mut self,
+        config_sources: Vec<Box<dyn config::Source + Send + Sync>>,
+    ) -> Self {
+        self.config_sources.extend(config_sources);
+        self
+    }
+
+    pub fn add_config_source(
+        mut self,
+        source: impl config::Source + Send + Sync + 'static,
+    ) -> Self {
+        self.config_sources.push(Box::new(source));
+        self
+    }
+    pub fn add_config_source_boxed(
+        mut self,
+        source: Box<dyn config::Source + Send + Sync>,
+    ) -> Self {
+        self.config_sources.push(source);
+        self
+    }
 }
 
 impl PrepareOptions {
@@ -185,7 +192,7 @@ where
 
     let app_config_options = AppConfigOptions::builder()
         .environment(environment)
-        .config_dir_opt(config_dir)
+        .maybe_config_dir(config_dir)
         .config_sources(options.config_sources);
     let app_config_options = async_config_sources
         .into_iter()

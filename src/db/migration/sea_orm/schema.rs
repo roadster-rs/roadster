@@ -7,7 +7,6 @@
 
 use crate::db::migration::sea_orm::timestamp::Timestamps;
 use sea_orm_migration::{prelude::*, schema::*};
-use typed_builder::TypedBuilder;
 
 /// Create a table if it does not exist yet and add some default columns
 /// (e.g., create/update timestamps).
@@ -48,7 +47,7 @@ where
 }
 
 /// Configuration options for creating an `IDENTITY` column.
-#[derive(TypedBuilder)]
+#[derive(bon::Builder)]
 pub struct IdentityOptions {
     /// If `true`, will add `ALWAYS` to the column definition, which will prevent the application
     /// from providing a value for the column. If the application needs to be able to set the
