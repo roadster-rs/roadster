@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0-alpha.2](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.0-alpha.1...roadster-v0.8.0-alpha.2) - 2025-07-13
+
+### Other
+
+- [**breaking**] Migrate from `typed-builder` to `bon` ([#831](https://github.com/roadster-rs/roadster/pull/831))
+- [**breaking**] Add `skip_serializing_none` to serialized structs ([#830](https://github.com/roadster-rs/roadster/pull/830))
+
 ## [0.8.0-alpha.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.0-alpha...roadster-v0.8.0-alpha.1) - 2025-07-13
 
 ### Added
