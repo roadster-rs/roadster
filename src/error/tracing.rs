@@ -8,6 +8,10 @@ pub enum TracingError {
     Init(#[from] TracingInitError),
 
     #[error(transparent)]
+    #[cfg(any(feature = "worker-pg", feature = "db-sea-orm"))]
+    ParseLevel(#[from] log::ParseLevelError),
+
+    #[error(transparent)]
     Other(#[from] Box<dyn std::error::Error + Send + Sync>),
 }
 
@@ -63,6 +67,13 @@ impl From<opentelemetry_otlp::ExporterBuildError> for Error {
 impl From<tracing::metadata::ParseLevelError> for Error {
     fn from(value: tracing::metadata::ParseLevelError) -> Self {
         Self::Tracing(TracingError::from(TracingInitError::from(value)))
+    }
+}
+
+#[cfg(any(feature = "worker-pg", feature = "db-sea-orm"))]
+impl From<log::ParseLevelError> for Error {
+    fn from(value: log::ParseLevelError) -> Self {
+        Self::Tracing(TracingError::from(value))
     }
 }
 

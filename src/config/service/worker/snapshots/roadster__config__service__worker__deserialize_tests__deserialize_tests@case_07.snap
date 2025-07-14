@@ -39,6 +39,7 @@ min-connections = 1
 max-connections = 2
 test-on-checkout = false
 retry-connection = false
+enable-statement-logging = false
 
 [pg.periodic]
 enable = false
