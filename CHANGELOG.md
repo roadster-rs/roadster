@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0-alpha.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.0-alpha.2...roadster-v0.8.0-alpha.3) - 2025-07-14
+
+### Fixed
+
+- Allow enqueue_delayed and enqueue_batch* to take owned or ref ([#834](https://github.com/roadster-rs/roadster/pull/834))
+
+### Other
+
+- Use `#[builder(with)]` for custom builder setters ([#836](https://github.com/roadster-rs/roadster/pull/836))
+
 ## [0.8.0-alpha.2](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.0-alpha.1...roadster-v0.8.0-alpha.2) - 2025-07-13
 
 ### Other
