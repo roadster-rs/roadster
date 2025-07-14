@@ -27,36 +27,17 @@ use tracing::error;
 pub struct CheckResponse {
     pub status: Status,
     /// Total latency of checking the health of the resource in milliseconds.
-    #[builder(setters(vis = "", name = latency_internal))]
+    #[builder(with = |duration: std::time::Duration| duration.as_millis())]
     pub latency: u128,
     /// Custom health data, for example, separate latency measurements for acquiring a connection
     /// from a resource pool vs making a request with the connection.
-    #[builder(setters(vis = "", name = custom_internal))]
+    #[builder(with = |custom: impl serde::Serialize| serialize_custom(custom))]
     pub custom: Option<Value>,
 }
 
-impl<S: check_response_builder::State> CheckResponseBuilder<S> {
-    pub fn latency(
-        self,
-        duration: Duration,
-    ) -> CheckResponseBuilder<check_response_builder::SetLatency<S>>
-    where
-        S::Latency: check_response_builder::IsUnset,
-    {
-        self.latency_internal(duration.as_millis())
-    }
-
-    pub fn custom(
-        self,
-        custom: impl serde::Serialize,
-    ) -> CheckResponseBuilder<check_response_builder::SetCustom<S>>
-    where
-        S::Custom: check_response_builder::IsUnset,
-    {
-        let custom = serde_json::to_value(custom)
-            .unwrap_or_else(|err| Value::String(format!("Unable to serialize custom data: {err}")));
-        self.custom_internal(custom)
-    }
+fn serialize_custom(custom: impl serde::Serialize) -> Value {
+    serde_json::to_value(custom)
+        .unwrap_or_else(|err| Value::String(format!("Unable to serialize custom data: {err}")))
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
