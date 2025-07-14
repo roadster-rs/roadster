@@ -13,3 +13,4 @@ min-connections = 0
 max-connections = 1
 test-on-checkout = true
 retry-connection = true
+enable-statement-logging = false

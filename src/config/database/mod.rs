@@ -1,9 +1,10 @@
 use crate::util::serde::default_true;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
+use std::str::FromStr;
 use std::time::Duration;
 use url::Url;
-use validator::Validate;
+use validator::{Validate, ValidationError};
 
 #[serde_as]
 #[serde_with::skip_serializing_none]
@@ -32,6 +33,11 @@ pub struct Database {
     #[validate(nested)]
     #[serde(flatten)]
     pub pool_config: DbPoolConfig,
+
+    #[validate(nested)]
+    #[serde(default, flatten)]
+    #[cfg(any(feature = "worker-pg", feature = "db-sea-orm"))]
+    pub statement_log_config: StatementLogConfig,
 
     /// Options for creating a Test Container instance for the DB. If enabled, the `Database#uri`
     /// field will be overridden to be the URI for the Test Container instance that's created when
@@ -91,6 +97,37 @@ impl DbPoolConfig {
     }
 }
 
+#[serde_as]
+#[skip_serializing_none]
+#[derive(Debug, Default, Clone, Validate, Serialize, Deserialize)]
+#[serde(default, rename_all = "kebab-case")]
+#[non_exhaustive]
+#[cfg(any(feature = "db-sea-orm", feature = "worker-pg"))]
+pub struct StatementLogConfig {
+    #[serde(default)]
+    pub enable_statement_logging: bool,
+    #[serde(default)]
+    #[validate(custom(function = "valid_level_filter"))]
+    pub statement_log_level: Option<String>,
+    #[serde(default)]
+    #[validate(custom(function = "valid_level_filter"))]
+    pub slow_statement_log_level: Option<String>,
+    #[serde(default)]
+    #[serde_as(as = "Option<serde_with::DurationMilliSeconds>")]
+    pub slow_statement_duration_threshold: Option<std::time::Duration>,
+}
+
+#[cfg(any(feature = "db-sea-orm", feature = "worker-pg"))]
+fn valid_level_filter(level: &str) -> Result<(), ValidationError> {
+    log::LevelFilter::from_str(level).map_err(|err| {
+        let mut validation_error = ValidationError::new("Invalid level filter");
+        validation_error.add_param("level".into(), &level);
+        validation_error.add_param("error".into(), &err.to_string());
+        validation_error
+    })?;
+    Ok(())
+}
+
 #[cfg(feature = "db-sea-orm")]
 impl From<Database> for sea_orm::ConnectOptions {
     fn from(database: Database) -> Self {
@@ -108,8 +145,32 @@ impl From<&Database> for sea_orm::ConnectOptions {
             .connect_lazy(database.pool_config.connect_lazy)
             .acquire_timeout(database.pool_config.acquire_timeout)
             .min_connections(database.pool_config.min_connections)
-            .max_connections(database.pool_config.max_connections)
-            .sqlx_logging(false);
+            .max_connections(database.pool_config.max_connections);
+
+        if let Some(level) = database.statement_log_config.statement_log_level.as_ref() {
+            if let Ok(level) = log::LevelFilter::from_str(level) {
+                options.sqlx_logging_level(level);
+            }
+        }
+
+        if let Some((level, duration)) = database
+            .statement_log_config
+            .slow_statement_log_level
+            .as_ref()
+            .zip(
+                database
+                    .statement_log_config
+                    .slow_statement_duration_threshold
+                    .as_ref(),
+            )
+        {
+            if let Ok(level) = log::LevelFilter::from_str(level) {
+                options.sqlx_slow_statements_logging_settings(level, *duration);
+            }
+        }
+
+        options.sqlx_logging(database.statement_log_config.enable_statement_logging);
+
         if let Some(idle_timeout) = database.pool_config.idle_timeout {
             options.idle_timeout(idle_timeout);
         }
@@ -199,6 +260,7 @@ mod tests {
                 #[cfg(feature = "db-diesel-pool-async")]
                 retry_connection: true,
             },
+            statement_log_config: Default::default(),
             temporary_test_db: false,
             temporary_test_db_clean_up: false,
         }

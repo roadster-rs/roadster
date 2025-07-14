@@ -171,6 +171,11 @@ impl AppContext {
                 let pool = if let Some(pool) = pool {
                     pool
                 } else {
+                    use log::LevelFilter;
+                    use sqlx::ConnectOptions;
+                    use sqlx::postgres::PgConnectOptions;
+                    use std::str::FromStr;
+
                     let db_config = config.service.worker.pg.custom.custom.database.as_ref();
 
                     let uri = db_config
@@ -185,11 +190,41 @@ impl AppContext {
 
                     let pool = app.worker_pg_sqlx_pool_options(&config)?;
 
-                    if connect_lazy {
-                        pool.connect_lazy(uri)
+                    let stmt_log_config = db_config
+                        .as_ref()
+                        .and_then(|config| config.statement_log_config.as_ref())
+                        .unwrap_or(&config.database.statement_log_config);
+
+                    let connect_options = PgConnectOptions::from_str(uri)?;
+                    let connect_options =
+                        if let Some(level) = stmt_log_config.statement_log_level.as_ref() {
+                            connect_options.log_statements(LevelFilter::from_str(level)?)
+                        } else {
+                            connect_options
+                        };
+
+                    let connect_options = if let Some((level, duration)) = stmt_log_config
+                        .slow_statement_log_level
+                        .as_ref()
+                        .zip(stmt_log_config.slow_statement_duration_threshold.as_ref())
+                    {
+                        connect_options
+                            .log_slow_statements(LevelFilter::from_str(level)?, *duration)
                     } else {
-                        pool.connect(uri).await
-                    }?
+                        connect_options
+                    };
+
+                    let connect_options = if !stmt_log_config.enable_statement_logging {
+                        connect_options.disable_statement_logging()
+                    } else {
+                        connect_options
+                    };
+
+                    if connect_lazy {
+                        pool.connect_lazy_with(connect_options)
+                    } else {
+                        pool.connect_with(connect_options).await?
+                    }
                 };
 
                 pgmq::PGMQueue::new_with_pool(pool).await

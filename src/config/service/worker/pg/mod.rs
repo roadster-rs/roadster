@@ -1,4 +1,4 @@
-use crate::config::database::DbPoolConfig;
+use crate::config::database::{DbPoolConfig, StatementLogConfig};
 use crate::config::service::worker::StaleCleanUpBehavior;
 use crate::util::serde::default_true;
 use serde_derive::{Deserialize, Serialize};
@@ -40,6 +40,10 @@ pub struct DbConfig {
     #[validate(nested)]
     #[serde(flatten, default)]
     pub pool_config: Option<DbPoolConfig>,
+
+    #[validate(nested)]
+    #[serde(default, flatten)]
+    pub statement_log_config: Option<StatementLogConfig>,
 }
 
 #[derive(Default, Debug, Clone, Validate, Serialize, Deserialize)]

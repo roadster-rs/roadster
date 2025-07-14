@@ -127,10 +127,10 @@ validate-codecov-config:
 
 # Start docker dependencies used by examples for local development
 docker:
-    docker run -d -p 6379:6379 redis:7.2-alpine
-    docker run -d -p 8025:8025 -p 1025:1025 axllent/mailpit:v1.21
-    docker run -d -p 5432:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=example_dev -e POSTGRES_PASSWORD=roadster postgres:15.3-alpine
-    docker run -d -p 4000:3000 -p 4317:4317 -p 4318:4318 --rm -ti grafana/otel-lgtm
+    docker run -d --name redis -p 6379:6379 redis:7.2-alpine || true
+    docker run -d --name mailpit -p 8025:8025 -p 1025:1025 axllent/mailpit:v1.21 || true
+    docker run -d --name pg-roadster -p 5432:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=example_dev -e POSTGRES_PASSWORD=roadster postgres:15.3-alpine || true
+    docker run -d --name grafana -p 4000:3000 -p 4317:4317 -p 4318:4318 --rm -ti grafana/otel-lgtm || true
 
 clean: coverage-clean
     cargo clean
