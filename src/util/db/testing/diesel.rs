@@ -1,9 +1,7 @@
 use crate::error::RoadsterResult;
-use diesel::RunQueryDsl;
 use diesel::backend::Backend;
-use diesel::connection::Connection;
-use diesel::query_builder::*;
-use diesel::result::QueryResult;
+use diesel::query_builder::{AstPass, QueryFragment, QueryId};
+use diesel::{Connection, QueryResult, RunQueryDsl};
 use url::Url;
 
 pub fn create_database(uri: &Url, db_name: &str) -> RoadsterResult<()> {

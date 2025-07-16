@@ -3,6 +3,8 @@ source: src/config/service/worker/pg/mod.rs
 expression: worker_pg
 ---
 [database]
+temporary-test-db = false
+temporary-test-db-clean-up = true
 connect-timeout = 1000
 connect-lazy = true
 acquire-timeout = 1000

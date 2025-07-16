@@ -1,5 +1,5 @@
 ---
-source: src/util/db/sea_orm.rs
+source: src/util/db/testing/sea_orm.rs
 expression: statement
 ---
 Statement {

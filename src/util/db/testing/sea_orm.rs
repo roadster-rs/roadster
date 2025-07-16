@@ -49,12 +49,14 @@ mod tests {
     use sea_orm::DbBackend;
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn create_database_statement() {
         let statement = super::create_database_statement(DbBackend::Postgres, "test");
         assert_debug_snapshot!(statement);
     }
 
     #[test]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn drop_database_statement() {
         let statement = super::drop_database_statement(DbBackend::Postgres, "test");
         assert_debug_snapshot!(statement);

@@ -1,0 +1,5 @@
+---
+source: src/util/db/testing/sqlx.rs
+expression: statement
+---
+DROP DATABASE IF EXISTS "test" WITH (FORCE)

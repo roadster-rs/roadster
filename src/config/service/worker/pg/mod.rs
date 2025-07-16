@@ -33,6 +33,17 @@ pub struct DbConfig {
     #[serde(default)]
     pub uri: Option<Url>,
 
+    /// Create a temporary database in the same DB host from the `uri` field.
+    #[serde(default)]
+    pub temporary_test_db: bool,
+
+    /// Automatically clean up (drop) the temporary test DB that was created by setting
+    /// `temporary_test_db` to `true`. Note that the test DB will only be cleaned up if the closure
+    /// passed to [`crate::app::run_test`] or [`crate::app::run_test_with_result`] doesn't panic.
+    #[cfg(feature = "testing")]
+    #[serde(default = "default_true")]
+    pub temporary_test_db_clean_up: bool,
+
     /// Configuration for the DB pool. If not provided, will re-use the configuration from
     /// [`crate::config::database::Database`], including the DB URI. If not provided and the
     /// `db-sea-orm` feature is enabled, the underlying [`sqlx::Pool`] from `sea-orm` will be
