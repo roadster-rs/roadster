@@ -20,7 +20,8 @@ by changing the `Enqueuer` associated type for a `Worker` implementation.
 ## Built-in worker backends
 
 Roadster provides built-in support for running async workers using either Postgres (via [pgmq](https://docs.rs/pgmq)) or
-Redis/Sidekiq (via [rusty-sidekiq](https://docs.rs/rusty-sidekiq)) as the backing store. See the following chapters for more details on
+Redis/Sidekiq (via [rusty-sidekiq](https://docs.rs/rusty-sidekiq)) as the backing store. See the following chapters for
+more details on
 each.
 
 ## Benchmarks
@@ -29,7 +30,8 @@ Roadster has a (small) [benchmark suite](https://github.com/roadster-rs/roadster
 the worker backends we support. Below is a link to an example run of the benchmark. The number in the benchmark name
 indicates the number of worker tasks used to handle the jobs.
 
-- [Benchmark run on an M3 Macbook Air](./benchmarks/report/index.html)
+- [Benchmark run on an M3 Macbook Air](benchmarks/m3/report/index.html)
+- [Benchmark run on an Arch Linux destkop with an AMD 5800X and 32GB RAM](benchmarks/AMD-5800X/report/index.html)
 
 ## Example
 
