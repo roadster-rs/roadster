@@ -1328,6 +1328,7 @@ impl TemporaryTestDb {
         };
 
         #[cfg(feature = "db-sea-orm")]
+        #[allow(unused_variables)]
         let done = {
             if done {
                 return Ok(());
