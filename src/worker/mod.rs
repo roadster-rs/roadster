@@ -177,6 +177,7 @@ where
     worker_config: WorkerConfig,
     worker_fn: WorkerFn<S>,
     #[cfg(feature = "bench")]
+    #[allow(dead_code)]
     on_complete_fn: OnCompleteFn,
 }
 

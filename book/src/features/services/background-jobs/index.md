@@ -29,7 +29,7 @@ Roadster has a (small) [benchmark suite](https://github.com/roadster-rs/roadster
 the worker backends we support. Below is a link to an example run of the benchmark. The number in the benchmark name
 indicates the number of worker tasks used to handle the jobs.
 
-- [Benchmark run on an M3 Macbook Air](./benchmarks/report)
+- [Benchmark run on an M3 Macbook Air](./benchmarks/report/index.html)
 
 ## Example
 
