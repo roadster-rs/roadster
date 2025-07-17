@@ -68,8 +68,15 @@ impl AppContext {
             #[cfg(all(feature = "worker-sidekiq", feature = "test-containers"))]
             let sidekiq_redis_test_container = sidekiq_redis_test_container(&mut config).await?;
 
-            #[cfg(all(feature = "db-sql", feature = "testing"))]
-            let temporary_test_db = create_temporary_test_db(&mut config).await?;
+            #[cfg(all(any(feature = "db-sql", feature = "worker-pg"), feature = "testing"))]
+            let timestamp = chrono::Utc::now();
+
+            #[cfg(all(any(feature = "db-sql", feature = "worker-pg"), feature = "testing"))]
+            let temporary_test_db = create_temporary_test_db(&mut config, timestamp).await?;
+
+            #[cfg(all(feature = "worker-pg", feature = "testing"))]
+            let worker_temporary_test_db =
+                create_worker_temporary_test_db(&mut config, timestamp).await?;
 
             #[cfg(feature = "db-sea-orm")]
             let sea_orm =
@@ -250,6 +257,8 @@ impl AppContext {
                 db_test_container,
                 #[cfg(all(feature = "db-sql", feature = "testing"))]
                 temporary_test_db,
+                #[cfg(all(feature = "worker-pg", feature = "testing"))]
+                worker_temporary_test_db,
                 #[cfg(feature = "worker-sidekiq")]
                 redis_enqueue,
                 #[cfg(feature = "worker-sidekiq")]
@@ -957,25 +966,25 @@ async fn sidekiq_redis_test_container(
     Ok(container)
 }
 
-#[cfg(all(feature = "db-sql", feature = "testing"))]
+#[cfg(all(any(feature = "db-sql", feature = "worker-pg"), feature = "testing"))]
 const MAX_DB_NAME_LENGTH: usize = 63;
 
-#[cfg(all(feature = "db-sql", feature = "testing"))]
-#[cfg_attr(test, allow(dead_code))]
-async fn create_temporary_test_db(
-    config: &mut AppConfig,
-) -> RoadsterResult<Option<TemporaryTestDb>> {
-    if !config.database.temporary_test_db {
-        return Ok(None);
-    }
-
-    let original_uri = config.database.uri.clone();
-
-    let thread_name = std::thread::current()
-        .name()
-        .ok_or_else(|| crate::error::other::OtherError::Message("Thread name missing".to_owned()))?
-        .to_string();
-    let mod_path = thread_name
+#[cfg(all(any(feature = "db-sql", feature = "worker-pg"), feature = "testing"))]
+fn temporary_test_db_name(
+    thread_name: Option<String>,
+    timestamp: chrono::DateTime<chrono::Utc>,
+) -> RoadsterResult<String> {
+    let thread_name = if let Some(thread_name) = thread_name {
+        thread_name
+    } else {
+        std::thread::current()
+            .name()
+            .ok_or_else(|| {
+                crate::error::other::OtherError::Message("Thread name missing".to_owned())
+            })?
+            .to_string()
+    };
+    let mut mod_path = thread_name
         .split("::")
         .filter(|segment| !segment.starts_with("case_"))
         .map(|segment| segment.get(0..1).unwrap_or(""))
@@ -984,9 +993,10 @@ async fn create_temporary_test_db(
         .rev()
         .get(1..)
         .rev()
-        .join("/");
-    let prefix = format!("tmp/{mod_path}/");
-    let suffix = format!("/{}", chrono::Utc::now().timestamp());
+        .collect_vec();
+    mod_path.insert(0, "tmp");
+    let prefix = mod_path.into_iter().join("/");
+    let suffix = format!("{}", timestamp.timestamp());
 
     let test_name = thread_name
         .split("::")
@@ -1008,8 +1018,22 @@ async fn create_temporary_test_db(
             "Invalid indexes used to truncate test name".to_owned(),
         )
     })?;
-    let db_name = format!("{prefix}{test_name_truncated}{suffix}");
-    tracing::debug!("Creating test db {db_name} using connection {original_uri}");
+    Ok(format!("{prefix}/{test_name_truncated}/{suffix}"))
+}
+
+#[cfg(all(any(feature = "db-sql", feature = "worker-pg"), feature = "testing"))]
+#[cfg_attr(test, allow(dead_code))]
+async fn create_temporary_test_db(
+    config: &mut AppConfig,
+    timestamp: chrono::DateTime<chrono::Utc>,
+) -> RoadsterResult<Option<TemporaryTestDb>> {
+    if !config.database.temporary_test_db {
+        return Ok(None);
+    }
+
+    let original_uri = config.database.uri.clone();
+
+    let db_name = temporary_test_db_name(None, timestamp)?;
 
     #[allow(unused_variables)]
     let done = false;
@@ -1017,19 +1041,41 @@ async fn create_temporary_test_db(
     #[cfg(any(feature = "db-diesel-postgres", feature = "db-diesel-mysql"))]
     #[allow(unused_variables)]
     let done = {
-        crate::util::db::diesel::create_database(&original_uri, &db_name)?;
+        crate::util::db::testing::diesel::create_database(&original_uri, &db_name)?;
         true
     };
 
     #[cfg(feature = "db-sea-orm")]
     let done = {
         if !done {
-            crate::util::db::sea_orm::create_database(&original_uri, &db_name).await?;
+            crate::util::db::testing::sea_orm::create_database(&original_uri, &db_name).await?;
+            true
+        } else {
+            done
         }
-        true
+    };
+
+    #[cfg(feature = "worker-pg")]
+    let done = {
+        let worker_db = config
+            .service
+            .worker
+            .pg
+            .custom
+            .custom
+            .database
+            .as_ref()
+            .and_then(|config| config.uri.as_ref());
+        if !done && worker_db.is_none() {
+            crate::util::db::testing::sqlx::create_database(&original_uri, &db_name).await?;
+            true
+        } else {
+            done
+        }
     };
 
     if done {
+        tracing::debug!("Created test db {db_name} using connection {original_uri}");
         let mut new_uri = original_uri.clone();
         new_uri.set_path(&db_name);
         config.database.uri = new_uri.clone();
@@ -1043,6 +1089,55 @@ async fn create_temporary_test_db(
     } else {
         Ok(None)
     }
+}
+
+#[cfg(all(feature = "worker-pg", feature = "testing"))]
+#[cfg_attr(test, allow(dead_code))]
+async fn create_worker_temporary_test_db(
+    config: &mut AppConfig,
+    timestamp: chrono::DateTime<chrono::Utc>,
+) -> RoadsterResult<Option<TemporaryTestDb>> {
+    let worker_db_config = config.service.worker.pg.custom.custom.database.as_mut();
+    let worker_db_config = if let Some(worker_db_config) = worker_db_config {
+        worker_db_config
+    } else {
+        return Ok(None);
+    };
+
+    let (original_uri, clean_up) = if let Some(worker_pg_uri) = worker_db_config.uri.as_ref() {
+        if worker_db_config.temporary_test_db {
+            (
+                worker_pg_uri.clone(),
+                worker_db_config.temporary_test_db_clean_up,
+            )
+        } else {
+            return Ok(None);
+        }
+    } else {
+        return Ok(None);
+    };
+
+    let db_name = temporary_test_db_name(None, timestamp)?;
+    let mut new_uri = original_uri.clone();
+    new_uri.set_path(&db_name);
+
+    if config.database.uri == new_uri {
+        return Ok(None);
+    }
+
+    crate::util::db::testing::sqlx::create_database(&original_uri, &db_name).await?;
+
+    if !clean_up {
+        return Ok(None);
+    }
+
+    tracing::debug!("Created worker-pg test db {db_name} using connection {original_uri}");
+    worker_db_config.uri = Some(new_uri);
+
+    Ok(Some(TemporaryTestDb {
+        original_uri,
+        db_name,
+    }))
 }
 
 struct AppContextInner {
@@ -1066,6 +1161,8 @@ struct AppContextInner {
     db_test_container: Option<DbTestContainer>,
     #[cfg(all(feature = "db-sql", feature = "testing"))]
     temporary_test_db: Option<TemporaryTestDb>,
+    #[cfg(all(feature = "worker-pg", feature = "testing"))]
+    worker_temporary_test_db: Option<TemporaryTestDb>,
     #[cfg(feature = "worker-sidekiq")]
     redis_enqueue: RedisEnqueue,
     /// The Redis connection pool used by [sidekiq::Processor] to fetch Sidekiq jobs from Redis.
@@ -1097,6 +1194,11 @@ impl AppContextInner {
         #[cfg(feature = "db-sql")]
         if let Some(temporary_test_db) = self.temporary_test_db.as_ref() {
             temporary_test_db.drop_temporary_test_db().await?;
+        }
+
+        #[cfg(feature = "worker-pg")]
+        if let Some(worker_temporary_test_db) = self.worker_temporary_test_db.as_ref() {
+            worker_temporary_test_db.drop_temporary_test_db().await?;
         }
 
         Ok(())
@@ -1220,17 +1322,59 @@ impl TemporaryTestDb {
         #[cfg(any(feature = "db-diesel-postgres", feature = "db-diesel-mysql"))]
         #[allow(unused_variables)]
         let done = {
-            crate::util::db::diesel::drop_database(&self.original_uri, &self.db_name).await?;
+            crate::util::db::testing::diesel::drop_database(&self.original_uri, &self.db_name)
+                .await?;
             true
         };
 
         #[cfg(feature = "db-sea-orm")]
+        #[allow(unused_variables)]
+        let done = {
+            if done {
+                return Ok(());
+            }
+            crate::util::db::testing::sea_orm::drop_database(&self.original_uri, &self.db_name)
+                .await?;
+            true
+        };
+
+        #[cfg(feature = "worker-pg")]
         {
             if done {
                 return Ok(());
             }
-            crate::util::db::sea_orm::drop_database(&self.original_uri, &self.db_name).await?;
+            crate::util::db::testing::sqlx::drop_database(&self.original_uri, &self.db_name)
+                .await?;
         };
+
         Ok(())
+    }
+}
+
+#[cfg(test)]
+#[cfg(all(any(feature = "db-sql", feature = "worker-pg"), feature = "testing"))]
+mod tests {
+    use crate::testing::snapshot::TestCase;
+    use insta::assert_snapshot;
+    use rstest::{fixture, rstest};
+
+    #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn case() -> TestCase {
+        Default::default()
+    }
+
+    #[rstest]
+    #[case(None)]
+    #[case(Some("a::b::c::some_test_name"))]
+    #[case(Some("main"))]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn temporary_test_db_name(_case: TestCase, #[case] thread_name: Option<&str>) {
+        let thread_name = thread_name.map(|thread_name| thread_name.to_owned());
+        let timestamp =
+            chrono::DateTime::<chrono::Utc>::from_timestamp_millis(1752709103000).unwrap();
+        let temporary_test_db_name = super::temporary_test_db_name(thread_name, timestamp).unwrap();
+
+        assert_snapshot!(temporary_test_db_name);
     }
 }
