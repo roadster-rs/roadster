@@ -1,0 +1,15 @@
+[tracing]
+level = "warn"
+
+[auth.jwt]
+secret = "secret-test"
+
+[database]
+uri = "postgres://roadster:roadster@localhost:5432/example_dev"
+
+[service.worker.sidekiq.redis]
+uri = "redis://localhost:6379"
+
+[service.worker.pg.queue-fetch-config]
+error-delay = 0
+empty-delay = 0

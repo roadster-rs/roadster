@@ -63,6 +63,20 @@ jobs:
       - name: Test
         run: just test-private
 
+  test-bench:
+    name: Test benches
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+      - uses: taiki-e/install-action@21517c4e721ab8b872d9b8e90828e584dcabe8e2
+        with:
+          tool: just
+
+      - name: Test
+        run: just test-bench
+
   generate_feature_matrix:
     runs-on: ubuntu-latest
     outputs:

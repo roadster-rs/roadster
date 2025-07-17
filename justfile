@@ -15,6 +15,9 @@ test-examples:
 test-private:
     for dir in ./private/*/; do cd $dir && pwd && cargo test --all-features --no-fail-fast && cd ../.. && pwd; done
 
+test-bench:
+    for dir in ./benches/*/; do cd $dir && pwd && cargo test --all-features --no-fail-fast && cd ../.. && pwd; done
+
 # Run all of our unit tests.
 test-unit: test test-doc
 
@@ -27,7 +30,7 @@ test-book-examples:
 test-book-all: test-book test-book-examples
 
 # Run all of our tests
-test-all: test-unit test-book-all
+test-all: test-unit test-book-all test-examples test-private test-bench
 
 # Run all of our unit tests whenever files in the repo change.
 test-watch:
