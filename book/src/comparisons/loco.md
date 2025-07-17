@@ -50,10 +50,11 @@ missing features are not planned but we'd be open to adding if there was enough 
 | Cache abstraction                                                                                                               | ❌*             | ✅                                         |
 | Background jobs                                                                                                                 | ✅              | ✅                                         |
 | &ensp;↳ via Sidekiq                                                                                                             | ✅              | ✅                                         |
-| &ensp;↳ via Postgres                                                                                                            | ❌              | ✅                                         |
+| &ensp;↳ via Postgres                                                                                                            | ✅              | ✅                                         |
 | &ensp;↳ via in-process threading with Tokio                                                                                     | ❌              | ✅                                         |
 | Periodic jobs                                                                                                                   | ✅              | ✅                                         |
-| &ensp;↳ via Sidekiq                                                                                                             | ✅              | ✅                                         |
+| &ensp;↳ via Sidekiq                                                                                                             | ✅              | ❌                                         |
+| &ensp;↳ via Postgres                                                                                                             | ✅              | ❌                                         |
 | &ensp;↳ via custom scheduler                                                                                                    | ❌              | ✅                                         |
 | Configuration via config files                                                                                                  | ✅              | ✅                                         |
 | &ensp;↳ Toml                                                                                                                    | ✅              | ❌                                         |
