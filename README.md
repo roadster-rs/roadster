@@ -39,8 +39,8 @@ and [Loco](https://github.com/loco-rs/loco).
   the `db-sea-orm` feature)
 - Built-in support for [Deisel](https://docs.rs/diesel), including creating DB connections (requires a subset
   of the `db-diesel-*` collection of features, depending on what's needed)
-- Built-in support for async workers backed by Postgres via [pgmq](https://docs.rs/pgmq)
-  or [Sidekiq.rs](https://docs.rs/rusty-sidekiq). Requires the `worker-pg` or `worker-sidekiq` features,
+- Built-in support for async workers backed by Postgres (via [pgmq](https://docs.rs/pgmq))
+  or Redis/Sidekiq (via [rusty-sidekiq](https://docs.rs/rusty-sidekiq)). Requires the `worker-pg` or `worker-sidekiq` features,
   respectively.
 - Built-in support for sending emails via SMTP (requires the `email-smtp` feature)
   or [Sendgrid's Mail Send API](https://www.twilio.com/docs/sendgrid/api-reference/mail-send/mail-send) (requires the
