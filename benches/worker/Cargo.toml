@@ -1,0 +1,36 @@
+[package]
+name = "worker-bench"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+
+[dependencies]
+roadster = { version = "0.8.0-alpha.3", path = "../..", default-features = false, features = ["worker-pg", "worker-sidekiq"] }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+tracing = { workspace = true }
+async-trait = { workspace = true }
+
+serde = { workspace = true, features = ["derive"] }
+
+bon = { workspace = true }
+itertools = { workspace = true }
+sqlx = { workspace = true }
+
+[dev-dependencies]
+roadster = { version = "0.8.0-alpha.3", path = "../..", default-features = false, features = ["testing", "bench"] }
+criterion = { version = "0.6.0", features = ["html_reports"] }
+fake = { workspace = true }
+
+[[bench]]
+name = "worker_bench"
+path = "src/bench.rs"
+harness = false
+
+[lib]
+name = "worker_bench"
+path = "src/lib.rs"

@@ -492,6 +492,9 @@ where
                     .await;
                 }
 
+                #[cfg(feature = "bench")]
+                (worker.inner.on_complete_fn)().await;
+
                 queue.next_fetch = Utc::now();
             }
         }

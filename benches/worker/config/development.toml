@@ -1,0 +1,11 @@
+[tracing]
+level = "debug"
+
+[auth.jwt]
+secret = "secret-dev"
+
+[database]
+uri = "postgres://roadster:roadster@localhost:5432/example_dev"
+
+[service.worker.sidekiq.redis]
+uri = "redis://localhost:6379"

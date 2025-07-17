@@ -1,0 +1,31 @@
+[app]
+name = "Postgres Worker Benchmark"
+
+[tracing]
+level = "info"
+
+[database]
+auto-migrate = true
+connect-timeout = 5000
+acquire-timeout = 5000
+idle-timeout = 60000
+min-connections = 0
+max-connections = 10
+
+[service.worker.enqueue-config]
+queue = "default"
+
+[service.worker.pg]
+enable = false
+num-workers = 0
+
+[service.worker.sidekiq]
+enable = false
+num-workers = 0
+
+[service.http]
+# Listen on any ipv4 or ipv6 addr, useful to allow connections from LAN for local dev
+# host = "[::]"
+# Listen only on localhost
+host = "127.0.0.1"
+port = 3000

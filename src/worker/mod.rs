@@ -22,7 +22,7 @@ use tracing::{error, instrument};
 
 pub mod backend;
 pub mod config;
-pub(crate) mod enqueue;
+pub mod enqueue;
 pub(crate) mod job;
 
 #[async_trait]
@@ -128,6 +128,11 @@ where
     }
 
     async fn handle(&self, state: &S, args: Args) -> Result<(), Self::Error>;
+
+    /// This is a "private" API that's only intended for usage in Roadster's internal benchmarking suite.
+    /// This method does not follow any semver guarantees.
+    #[cfg(feature = "bench")]
+    async fn on_complete(&self) {}
 }
 
 #[cfg(any(feature = "worker-pg", feature = "worker-sidekiq"))]
@@ -141,6 +146,13 @@ type WorkerFn<S> = Box<
             Box<dyn 'a + Send + Future<Output = crate::error::RoadsterResult<()>>>,
         >,
 >;
+
+#[cfg(all(
+    feature = "bench",
+    any(feature = "worker-pg", feature = "worker-sidekiq")
+))]
+type OnCompleteFn =
+    Box<dyn Send + Sync + Fn() -> std::pin::Pin<Box<dyn Send + Future<Output = ()>>>>;
 
 #[derive(Clone)]
 #[cfg(any(feature = "worker-pg", feature = "worker-sidekiq"))]
@@ -164,6 +176,8 @@ where
     enqueue_config: EnqueueConfig,
     worker_config: WorkerConfig,
     worker_fn: WorkerFn<S>,
+    #[cfg(feature = "bench")]
+    on_complete_fn: OnCompleteFn,
 }
 
 #[cfg(any(feature = "worker-pg", feature = "worker-sidekiq"))]
@@ -186,6 +200,9 @@ where
 
         let worker = std::sync::Arc::new(worker);
 
+        #[cfg(feature = "bench")]
+        let worker2 = worker.clone();
+
         Ok(Self {
             inner: std::sync::Arc::new(WorkerWrapperInner {
                 name: W::name(),
@@ -204,6 +221,13 @@ where
                                 crate::error::worker::WorkerError::Handle(W::name(), Box::new(err)),
                             )),
                         }
+                    })
+                }),
+                #[cfg(feature = "bench")]
+                on_complete_fn: Box::new(move || {
+                    let worker = worker2.clone();
+                    Box::pin(async move {
+                        worker.clone().on_complete().await;
                     })
                 }),
             }),
