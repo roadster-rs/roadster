@@ -7,12 +7,12 @@ and differences between Loco and Roadster.
 
 ## Feature breakdown
 
-Below is a detailed breakdown of the features included in Roadster and Loco. Note that because both frameworks are
+Below is a detailed breakdown of the features built-in to Roadster and Loco. Note that because both frameworks are
 based on Axum and Tokio, there's not a lot technically preventing either framework from implementing features they're
 missing compared to the other. Features that Roadster would like to add in the near future are marked with '*'. Other
-missing features are not planned but we'd be open to adding if there was enough interest in them.
+missing features are not planned but we'd be open to adding if there was interest in them.
 
-*Last updated in Feb 2025.*
+*Last updated in July 2025.*
 
 | Feature                                                                                                                         | Roadster       | Loco                                      |
 |:--------------------------------------------------------------------------------------------------------------------------------|:---------------|:------------------------------------------|
@@ -54,17 +54,20 @@ missing features are not planned but we'd be open to adding if there was enough 
 | &ensp;↳ via in-process threading with Tokio                                                                                     | ❌              | ✅                                         |
 | Periodic jobs                                                                                                                   | ✅              | ✅                                         |
 | &ensp;↳ via Sidekiq                                                                                                             | ✅              | ❌                                         |
-| &ensp;↳ via Postgres                                                                                                             | ✅              | ❌                                         |
+| &ensp;↳ via Postgres                                                                                                            | ✅              | ❌                                         |
 | &ensp;↳ via custom scheduler                                                                                                    | ❌              | ✅                                         |
 | Configuration via config files                                                                                                  | ✅              | ✅                                         |
 | &ensp;↳ Toml                                                                                                                    | ✅              | ❌                                         |
 | &ensp;↳ Yaml                                                                                                                    | ✅              | ✅                                         |
 | Config files can be split into multiple files                                                                                   | ✅              | ❌                                         |
 | Config values can be overridden via env vars                                                                                    | ✅              | ✅                                         |
+| Config values can be fetch from async sources, such as secrets manager services                                                 | ✅              | ❌                                         |
 | Tracing via the [tracing](https://crates.io/crates/tracing) crate                                                               | ✅              | ✅                                         |
 | &ensp;↳ Built-in support for trace/metric exporting via OpenTelemetry                                                           | ✅              | ❌ <!--todo: double check-->               |
-| [insta](https://crates.io/crates/insta) snapshot utilities                                                                      | ✅              | ✅                                         |
-| Data seeding and cleanup hooks for tests                                                                                        | ❌*             | ✅<br/>(⚠️ makes tests non-parallelizable) |
+| Testing support                                                                                                                 | ✅              | ✅                                         |
+| &ensp;↳ Test app bootstrapping                                                                                                  | ✅              | ✅                                         |
+| &ensp;↳  [insta](https://crates.io/crates/insta) snapshot utilities                                                             | ✅              | ❌                                         |
+| &ensp;↳ Data seeding and cleanup                                                                                                | ❌*             | ✅<br/>(⚠️ makes tests non-parallelizable) |
 | Mock DB support for tests                                                                                                       | ✅              | ❌                                         |
 | &ensp;↳ via Temporary Test DBs                                                                                                  | ✅              | ✅                                         |
 | &ensp;↳ via SeaORM's [MockDatabase](https://www.sea-ql.org/SeaORM/docs/write-test/mock/)                                        | ✅              | ❌                                         |
