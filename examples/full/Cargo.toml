@@ -8,7 +8,7 @@ publish = false
 
 [features]
 default = ["grpc"]
-grpc = ["roadster/grpc", "dep:tonic", "dep:tonic-reflection", "dep:prost"]
+grpc = ["roadster/grpc", "dep:tonic", "dep:tonic-reflection"]
 
 [dependencies]
 roadster = { version = "0.8.0-rc", path = "../..", features = ["email-smtp", "email-sendgrid", "config-yml", "otel-grpc"] }
@@ -26,7 +26,7 @@ schemars = { workspace = true }
 # gRPC API
 tonic = { workspace = true, optional = true }
 tonic-reflection = { workspace = true, optional = true }
-prost = { workspace = true, optional = true }
+#prost = { workspace = true, optional = true }
 
 # DB
 migration = { path = "migration" }
