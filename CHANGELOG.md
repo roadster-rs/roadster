@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0-rc.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.0-rc...roadster-v0.8.0-rc.1) - 2025-07-18
+
+### Fixed
+
+- *(docs)* Fix sidekiq benchmark header links ([#854](https://github.com/roadster-rs/roadster/pull/854))
+- *(docs)* Fix worker-sidekiq benchmark links ([#853](https://github.com/roadster-rs/roadster/pull/853))
+- *(docs)* Fix worker benchmark image links ([#852](https://github.com/roadster-rs/roadster/pull/852))
+
+### Other
+
+- Update dependencies ([#856](https://github.com/roadster-rs/roadster/pull/856))
+- Use `#[doc(hidden)]` to hide bench-only trait method ([#855](https://github.com/roadster-rs/roadster/pull/855))
+
 ## [0.8.0-rc](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.0-alpha.3...roadster-v0.8.0-rc) - 2025-07-18
 
 ### Added
