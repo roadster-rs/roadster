@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 use std::borrow::Borrow;
 use std::panic::AssertUnwindSafe;
 use std::time::Duration;
-use tracing::{error, instrument};
+use tracing::{Instrument, error, error_span, instrument};
 
 pub mod backend;
 pub mod config;
@@ -235,57 +235,68 @@ where
         })
     }
 
-    #[instrument(skip_all)]
     async fn handle(&self, state: &S, args: serde_json::Value) -> crate::error::RoadsterResult<()> {
-        let inner = AssertUnwindSafe((self.inner.worker_fn)(state, args)).catch_unwind();
+        let span_name = format!("WORKER {}::handle", self.inner.name);
+        let span = error_span!(
+            "WORKER",
+            otel.name = span_name,
+            otel.kind = "CONSUMER",
+            worker.name = self.inner.name
+        );
 
-        let context = AppContext::from_ref(state);
-        let timeout = self
-            .inner
-            .worker_config
-            .timeout
-            .or(context.config().service.worker.worker_config.timeout)
-            .unwrap_or_default();
+        async {
+            let inner = AssertUnwindSafe((self.inner.worker_fn)(state, args)).catch_unwind();
 
-        let max_duration = if timeout {
-            self.inner.worker_config.max_duration.or(context
-                .config()
-                .service
-                .worker
+            let context = AppContext::from_ref(state);
+            let timeout = self
+                .inner
                 .worker_config
-                .max_duration)
-        } else {
-            None
-        };
+                .timeout
+                .or(context.config().service.worker.worker_config.timeout)
+                .unwrap_or_default();
 
-        let result = if let Some(max_duration) = max_duration {
-            tokio::time::timeout(max_duration, inner)
-                .await
-                .map_err(|_| {
-                    tracing::error!(
-                        worker = self.inner.name,
-                        max_duration = max_duration.as_secs(),
-                        "Worker timed out"
+            let max_duration = if timeout {
+                self.inner.worker_config.max_duration.or(context
+                    .config()
+                    .service
+                    .worker
+                    .worker_config
+                    .max_duration)
+            } else {
+                None
+            };
+
+            let result = if let Some(max_duration) = max_duration {
+                tokio::time::timeout(max_duration, inner)
+                    .await
+                    .map_err(|_| {
+                        tracing::error!(
+                            worker.name = self.inner.name,
+                            max_duration = max_duration.as_secs(),
+                            "Worker timed out"
+                        );
+                        crate::error::worker::WorkerError::Timeout(
+                            self.inner.name.clone(),
+                            max_duration,
+                        )
+                    })?
+            } else {
+                inner.await
+            };
+
+            match result {
+                Ok(result) => result,
+                Err(unwind_error) => {
+                    error!(
+                        worker.name = self.inner.name,
+                        "Worker panicked while handling a job: {unwind_error:?}"
                     );
-                    crate::error::worker::WorkerError::Timeout(
-                        self.inner.name.clone(),
-                        max_duration,
-                    )
-                })?
-        } else {
-            inner.await
-        };
-
-        match result {
-            Ok(result) => result,
-            Err(unwind_error) => {
-                error!(
-                    worker = self.inner.name,
-                    "Worker panicked while handling a job: {unwind_error:?}"
-                );
-                Err(crate::error::worker::WorkerError::Panic(self.inner.name.clone()).into())
+                    Err(crate::error::worker::WorkerError::Panic(self.inner.name.clone()).into())
+                }
             }
         }
+        .instrument(span.or_current())
+        .await
     }
 }
 
