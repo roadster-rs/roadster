@@ -1,6 +1,12 @@
 [tracing]
 format = "pretty"
 
+metrics-export-interval = 1000
+
+[tracing.otlp.endpoint]
+protocol = "grpc"
+url = "http://localhost:4317"
+
 [auth.jwt]
 secret = "secret-dev"
 
