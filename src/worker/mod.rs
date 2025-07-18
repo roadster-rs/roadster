@@ -237,11 +237,20 @@ where
 
     async fn handle(&self, state: &S, args: serde_json::Value) -> crate::error::RoadsterResult<()> {
         let span_name = format!("WORKER {}::handle", self.inner.name);
+        let context = AppContext::from_ref(state);
+        let queue_name = self.inner.enqueue_config.queue.as_ref().or(context
+            .config()
+            .service
+            .worker
+            .enqueue_config
+            .queue
+            .as_ref());
         let span = error_span!(
             "WORKER",
             otel.name = span_name,
             otel.kind = "CONSUMER",
-            worker.name = self.inner.name
+            worker.name = self.inner.name,
+            worker.queue.name = queue_name
         );
 
         async {
