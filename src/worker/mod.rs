@@ -132,6 +132,7 @@ where
     /// This is a "private" API that's only intended for usage in Roadster's internal benchmarking suite.
     /// This method does not follow any semver guarantees.
     #[cfg(feature = "bench")]
+    #[doc(hidden)]
     async fn on_complete(&self) {}
 }
 

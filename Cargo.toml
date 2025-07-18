@@ -303,40 +303,8 @@ tokio-test = "0.4.4"
 fake = { version = "4.0.0" }
 
 [package.metadata.docs.rs]
-features = [
-    "http",
-    "open-api",
-    "worker",
-    "worker-sidekiq",
-    "worker-pg",
-    "db-sql",
-    "db-sea-orm",
-    "db-diesel",
-    "db-diesel-postgres",
-    "db-diesel-mysql",
-    "db-diesel-sqlite",
-    "db-diesel-pool",
-    "db-diesel-postgres-pool",
-    "db-diesel-mysql-pool",
-    "db-diesel-sqlite-pool",
-    "db-diesel-pool-async",
-    "db-diesel-postgres-pool-async",
-    "db-diesel-mysql-pool-async",
-    "email",
-    "email-smtp",
-    "email-sendgrid",
-    "jwt",
-    "jwt-ietf",
-    "jwt-openid",
-    "cli",
-    "otel",
-    "otel-grpc",
-    "grpc",
-    "testing",
-    "test-containers",
-    "testing-mocks",
-    "config-yml"
-]
+# Have docs.rs pass `--all-features` to ensure all features have their documentation built.
+all-features = true
 
 [lints.rust]
 unexpected_cfgs = { level = "allow", check-cfg = ['cfg(coverage_nightly)'] }
