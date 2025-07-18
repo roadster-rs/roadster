@@ -54,8 +54,8 @@ jwt-ietf = ["jwt"]
 jwt-openid = ["jwt"]
 cli = ["dep:clap"]
 otel = ["dep:opentelemetry", "dep:opentelemetry_sdk", "dep:opentelemetry-otlp", "dep:tracing-opentelemetry"]
-otel-grpc = ["otel", "opentelemetry-otlp/grpc-tonic"]
-grpc = ["dep:tonic", "dep:tonic-reflection"]
+otel-grpc = ["otel", "opentelemetry-otlp/grpc-tonic", "dep:prost"]
+grpc = ["dep:tonic", "dep:tonic-reflection", "dep:prost"]
 testing = ["dep:insta", "dep:rstest", "dep:regex"]
 test-containers = ["testing", "dep:testcontainers-modules"]
 testing-mocks = ["testing", "dep:mockall", "sea-orm?/mock"]
@@ -133,6 +133,10 @@ clap = { workspace = true, features = ["derive", "string"], optional = true }
 # gRPC
 tonic = { workspace = true, optional = true }
 tonic-reflection = { workspace = true, optional = true }
+# Roadster technically doesn't need a direct dependency on `prost`, but we add one here to allow our
+# `cargo minimal-versions check` check to pass -- `opentelemetry-proto` requires version `0.13.2` or higher
+# in order to compile -- it fails to compile with `0.13.1` even though its dependencies don't specify `0.13.2`.
+prost = { workspace = true, optional = true }
 
 # Testing
 insta = { workspace = true, optional = true }
@@ -231,6 +235,10 @@ jsonwebtoken = { version = "9.0.0" }
 tonic = { version = "0.13.0" }
 tonic-build = { version = "0.13.0" }
 tonic-reflection = { version = "0.13.0" }
+# Roadster technically doesn't need a direct dependency on `prost`, but we add one here to allow our
+# `cargo minimal-versions check` check to pass -- `opentelemetry-proto` requires version `0.13.2` or higher
+# in order to compile -- it fails to compile with `0.13.1` even though its dependencies don't specify `0.13.2`.
+prost = { version = "0.13.2" }
 
 # Workers
 ## Sidekiq
