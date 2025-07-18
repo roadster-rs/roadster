@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0-alpha.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.0-alpha.3...roadster-v0.8.0-alpha.4) - 2025-07-18
+
+### Added
+
+- Improve Worker::handle trace span name ([#850](https://github.com/roadster-rs/roadster/pull/850))
+- Allow configuring sqlx statement logging ([#838](https://github.com/roadster-rs/roadster/pull/838))
+
+### Fixed
+
+- [**breaking**] Create temp test DB when only the `worker-pg` feature is enabled ([#842](https://github.com/roadster-rs/roadster/pull/842))
+
+### Other
+
+- Add AMD 5800X benchmark ([#849](https://github.com/roadster-rs/roadster/pull/849))
+- Update background jobs index ([#847](https://github.com/roadster-rs/roadster/pull/847))
+- Update loco comparision ([#846](https://github.com/roadster-rs/roadster/pull/846))
+- Update loco comparison  ([#845](https://github.com/roadster-rs/roadster/pull/845))
+- Update README.md ([#844](https://github.com/roadster-rs/roadster/pull/844))
+- Add benchmarks for PG- and Sidekiq-backed workers ([#843](https://github.com/roadster-rs/roadster/pull/843))
+
 ## [0.8.0-alpha.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.0-alpha.2...roadster-v0.8.0-alpha.3) - 2025-07-14
 
 ### Fixed
