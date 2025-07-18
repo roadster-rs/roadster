@@ -26,7 +26,6 @@ schemars = { workspace = true }
 # gRPC API
 tonic = { workspace = true, optional = true }
 tonic-reflection = { workspace = true, optional = true }
-#prost = { workspace = true, optional = true }
 
 # DB
 migration = { path = "migration" }

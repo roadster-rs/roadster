@@ -24,7 +24,6 @@ cron = "0.15.0"
 # gRPC API
 tonic = { workspace = true, optional = true }
 tonic-reflection = { workspace = true, optional = true }
-#prost = { workspace = true, optional = true }
 
 [build-dependencies]
 tonic-build = { workspace = true }
