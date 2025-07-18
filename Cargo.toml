@@ -1,6 +1,6 @@
 [package]
 name = "roadster"
-version = "0.8.0-rc"
+version = "0.8.0-rc.1"
 edition = "2024"
 publish = true
 description = "A \"Batteries Included\" web framework for rust designed to get you moving fast."
