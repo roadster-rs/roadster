@@ -233,37 +233,51 @@ where
             },
         );
 
-        let register_sidekiq_periodic_fn: RegisterSidekiqPeriodicFn<S> = Box::new(
-            move |state: &S,
-                  processor: &mut Processor,
-                  worker_wrapper: WorkerWrapper<S>,
-                  args: PeriodicArgsJson| {
-                let queue = queue.clone();
-                Box::pin(async move {
-                    let roadster_worker =
-                        RoadsterWorker::<S, W, Args, E>::new(state, worker_wrapper);
-                    let mut job = Job::from(&args);
-                    let id = job
-                        .metadata
-                        .periodic
-                        .as_ref()
-                        .map(|p| p.hash)
-                        .map(|hash| hash.to_string());
-                    let id = if let Some(id) = id {
-                        id
-                    } else {
-                        warn!("Periodic job created without a hash/id");
-                        Default::default()
-                    };
-                    job.metadata.id = id.clone();
-                    let builder = ::sidekiq::periodic::builder(&args.schedule.to_string())?
-                        .args(job)?
-                        .queue(queue.clone());
-                    builder.register(processor, roadster_worker).await?;
-                    Ok(id)
-                })
-            },
-        );
+        let register_sidekiq_periodic_fn: RegisterSidekiqPeriodicFn<S> =
+            Box::new(
+                move |state: &S,
+                      processor: &mut Processor,
+                      worker_wrapper: WorkerWrapper<S>,
+                      args: PeriodicArgsJson| {
+                    let queue = queue.clone();
+                    Box::pin(async move {
+                        use sidekiq::Worker as SidekiqWorker;
+
+                        let roadster_worker =
+                            RoadsterWorker::<S, W, Args, E>::new(state, worker_wrapper);
+                        let mut job = Job::from(&args);
+                        /*
+                        We need a deterministic job id for periodic jobs in order to avoid creating
+                        duplicate jobs in Redis. This is because Redis dedupes on the entire serialized
+                        job, so having non-deterministic ID (e.g., a UUID) would result in duplicate
+                        entries being created in Redis. So, for periodic jobs, we use the periodic hash
+                        as the job ID.
+                         */
+                        let id = job
+                            .metadata
+                            .periodic
+                            .as_ref()
+                            .map(|p| p.hash)
+                            .map(|hash| hash.to_string());
+                        let id = if let Some(id) = id {
+                            id
+                        } else {
+                            warn!("Periodic job created with empty hash/id");
+                            Default::default()
+                        };
+                        job.metadata.id = id.clone();
+                        let builder = ::sidekiq::periodic::builder(&args.schedule.to_string())?
+                            .args(job)?
+                            .queue(queue.clone());
+                        let json = serde_json::to_string(
+                            &builder
+                                .into_periodic_job(RoadsterWorker::<S, W, Args, E>::class_name())?,
+                        )?;
+                        builder.register(processor, roadster_worker).await?;
+                        Ok(json)
+                    })
+                },
+            );
 
         let worker_data = Arc::new(WorkerData {
             worker_wrapper: WorkerWrapper::new(&self.state, worker, worker_enqueue_config)?,

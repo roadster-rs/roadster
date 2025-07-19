@@ -137,7 +137,7 @@ pub fn build_app() -> App {
                     .register_periodic(
                         ExampleWorker,
                         PeriodicArgs::builder()
-                            .schedule(cron::Schedule::from_str("*/10 * * * * *")?)
+                            .schedule(cron::Schedule::from_str("* * * * * *")?)
                             .args("foo".to_owned())
                             .build(),
                     )?

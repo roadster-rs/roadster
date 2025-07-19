@@ -3,10 +3,9 @@ use crate::config::service::worker::StaleCleanUpBehavior;
 use crate::error::RoadsterResult;
 use crate::util::redis::RedisCommands;
 use crate::worker::backend::sidekiq::processor::builder::SidekiqProcessorBuilder;
-use crate::worker::job::Job;
 use crate::worker::{PeriodicArgsJson, WorkerWrapper};
 use axum_core::extract::FromRef;
-use log::debug;
+use itertools::Itertools;
 use sidekiq::periodic;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::pin::Pin;
@@ -134,7 +133,7 @@ where
             return Ok(());
         };
 
-        let mut registered_periodic_jobs_hashes: HashSet<String> = Default::default();
+        let mut registered_periodic_jobs_json: HashSet<String> = Default::default();
         for (periodic_args, worker_data) in self.inner.periodic_workers.iter() {
             let hash = (worker_data.register_sidekiq_periodic_fn)(
                 &self.inner.state,
@@ -143,13 +142,12 @@ where
                 periodic_args.clone(),
             )
             .await?;
-            registered_periodic_jobs_hashes.insert(hash);
+            registered_periodic_jobs_json.insert(hash);
         }
 
         if periodic_config.stale_cleanup == StaleCleanUpBehavior::AutoCleanStale {
             let mut conn = context.redis_enqueue().get().await?;
-            remove_stale_periodic_jobs(&mut conn, &context, &registered_periodic_jobs_hashes)
-                .await?;
+            remove_stale_periodic_jobs(&mut conn, &context, &registered_periodic_jobs_json).await?;
         }
 
         Ok(())
@@ -213,42 +211,12 @@ async fn remove_stale_periodic_jobs<C: RedisCommands>(
     context: &AppContext,
     registered_periodic_workers: &HashSet<String>,
 ) -> RoadsterResult<()> {
-    let mut stale_jobs: Vec<String> = Default::default();
-    // Todo: this doesn't prevent duplicates
-    let jobs = conn.zrange(PERIODIC_KEY.to_string(), 0, -1).await?;
-    for job_str in jobs {
-        let job: serde_json::Value = serde_json::from_str(&job_str)?;
-        let args = job
-            .as_object()
-            .and_then(|job| job.get("args"))
-            .and_then(|args| args.as_str())
-            .and_then(|args| serde_json::from_str::<serde_json::Value>(args).ok());
-        let args = if let Some(args) = args {
-            args
-        } else {
-            warn!("Unable to parse args for periodic sidekiq job");
-            continue;
-        };
-
-        let args = if args.is_array() {
-            args.as_array().and_then(|args| args.get(0))
-        } else {
-            Some(&args)
-        };
-
-        let args = if let Some(args) = args {
-            args.clone()
-        } else {
-            warn!("Unable to parse args for periodic sidekiq job");
-            continue;
-        };
-
-        let job: Job = serde_json::from_value(args)?;
-
-        if !registered_periodic_workers.contains(&job.metadata.id) {
-            stale_jobs.push(job_str)
-        }
-    }
+    let stale_jobs = conn
+        .zrange(PERIODIC_KEY.to_string(), 0, -1)
+        .await?
+        .into_iter()
+        .filter(|job| !registered_periodic_workers.contains(job))
+        .collect_vec();
 
     if stale_jobs.is_empty() {
         info!("No stale periodic jobs found");
