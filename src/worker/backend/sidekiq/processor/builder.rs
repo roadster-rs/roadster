@@ -253,19 +253,14 @@ where
                         entries being created in Redis. So, for periodic jobs, we use the periodic hash
                         as the job ID.
                          */
-                        let id = job
-                            .metadata
-                            .periodic
-                            .as_ref()
-                            .map(|p| p.hash)
-                            .map(|hash| hash.to_string());
+                        let id = job.metadata.periodic.as_ref().map(|p| p.hash);
                         let id = if let Some(id) = id {
                             id
                         } else {
                             warn!("Periodic job created with empty hash/id");
                             Default::default()
                         };
-                        job.metadata.id = id.clone();
+                        job.metadata.id = id.into();
                         let builder = ::sidekiq::periodic::builder(&args.schedule.to_string())?
                             .args(job)?
                             .queue(queue.clone());
