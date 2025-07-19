@@ -10,6 +10,7 @@ pub use crate::worker::backend::sidekiq::enqueue::SidekiqEnqueuer;
 pub use crate::worker::backend::sidekiq::processor::SidekiqProcessor;
 use crate::worker::config::{EnqueueConfig, WorkerConfig};
 use crate::worker::enqueue::Enqueuer;
+use crate::worker::job::JobMetadata;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use cron::Schedule;
@@ -236,7 +237,12 @@ where
         })
     }
 
-    async fn handle(&self, state: &S, args: serde_json::Value) -> crate::error::RoadsterResult<()> {
+    async fn handle(
+        &self,
+        state: &S,
+        job_metadata: &JobMetadata,
+        args: serde_json::Value,
+    ) -> crate::error::RoadsterResult<()> {
         let span_name = format!("WORKER {}::handle", self.inner.name);
         let context = AppContext::from_ref(state);
         let queue_name = self.inner.enqueue_config.queue.as_ref().or(context
@@ -250,6 +256,7 @@ where
             "WORKER",
             otel.name = span_name,
             otel.kind = "CONSUMER",
+            job.id = %job_metadata.id,
             worker.name = self.inner.name,
             worker.queue.name = queue_name
         );

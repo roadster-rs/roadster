@@ -4,6 +4,7 @@ use crate::app::context::AppContext;
 use crate::config::AppConfig;
 use crate::config::service::worker::{BalanceStrategy, StaleCleanUpBehavior};
 use crate::error::RoadsterResult;
+use crate::util::tracing::optional_trace_field;
 use crate::worker::PeriodicArgsJson;
 use crate::worker::WorkerWrapper;
 use crate::worker::backend::pg::{failure_action, retry_delay, success_action};
@@ -409,6 +410,7 @@ where
                     worker
                 } else {
                     error!(
+                        job.id = %job.metadata.id,
                         job.msg_id = msg.msg_id,
                         job.read_count = msg.read_ct,
                         worker.queue.name = queue.name,
@@ -458,10 +460,13 @@ where
                     .await;
                 }
 
-                let result = worker.handle(&self.inner.state, job.args).await;
+                let result = worker
+                    .handle(&self.inner.state, &job.metadata, job.args)
+                    .await;
 
                 if let Err(err) = result {
                     error!(
+                        job.id = %job.metadata.id,
                         job.msg_id = msg.msg_id,
                         job.read_count = msg.read_ct,
                         worker.queue.name = queue.name,
@@ -618,6 +623,7 @@ where
                 (worker, queue, periodic)
             } else {
                 error!(
+                    job.id = %job.metadata.id,
                     job.msg_id = msg.msg_id,
                     job.read_count = msg.read_ct,
                     job.is_periodic = periodic.is_some(),
@@ -629,6 +635,7 @@ where
                 // be re-enqueued the next time the app starts
                 if let Err(err) = context.pgmq().delete(PERIODIC_QUEUE_NAME, msg.msg_id).await {
                     error!(
+                        job.id = %job.metadata.id,
                         job.msg_id = msg.msg_id,
                         job.read_count = msg.read_ct,
                         worker.queue.name = PERIODIC_QUEUE_NAME,
@@ -651,6 +658,7 @@ where
                 .build();
             if let Err(err) = context.pgmq().send(queue, &job_to_enqueue).await {
                 error!(
+                    job.id = %job.metadata.id,
                     job.msg_id = msg.msg_id,
                     job.read_count = msg.read_ct,
                     worker.name = worker.inner.name,
@@ -668,6 +676,7 @@ where
                 .await
             {
                 error!(
+                    job.id = %job.metadata.id,
                     job.msg_id = msg.msg_id,
                     job.read_count = msg.read_ct,
                     job.delay = ?delay,
@@ -740,6 +749,7 @@ where
             .await
         {
             error!(
+                job.id = optional_trace_field(job_metadata.map(|meta| meta.id)),
                 job.msg_id = msg_id,
                 job.read_count = read_count,
                 worker.queue.name = queue.name,
@@ -760,6 +770,7 @@ where
         action: &CompletedAction,
     ) {
         debug!(
+            job.id = optional_trace_field(job_metadata.map(|meta| meta.id)),
             job.msg_id = msg_id,
             job.read_count = read_count,
             job.completed_action = ?action,
@@ -775,6 +786,7 @@ where
 
         if let Err(err) = result {
             error!(
+                job.id = optional_trace_field(job_metadata.map(|meta| meta.id)),
                 job.msg_id = msg_id,
                 job.read_count = read_count,
                 job.completed_action = ?action,
