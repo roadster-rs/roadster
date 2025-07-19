@@ -10,6 +10,7 @@ pub use crate::worker::backend::sidekiq::enqueue::SidekiqEnqueuer;
 pub use crate::worker::backend::sidekiq::processor::SidekiqProcessor;
 use crate::worker::config::{EnqueueConfig, WorkerConfig};
 use crate::worker::enqueue::Enqueuer;
+#[cfg(any(feature = "worker-sidekiq", feature = "worker-pg"))]
 use crate::worker::job::JobMetadata;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
