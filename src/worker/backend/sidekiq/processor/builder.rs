@@ -7,6 +7,7 @@ use crate::worker::backend::sidekiq::processor::{
     SidekiqProcessorError, SidekiqProcessorInner, WorkerData,
 };
 use crate::worker::backend::sidekiq::roadster_worker::RoadsterWorker;
+use crate::worker::job::Job;
 use crate::worker::{PeriodicArgs, PeriodicArgsJson, Worker, WorkerWrapper};
 use axum_core::extract::FromRef;
 use itertools::Itertools;
@@ -232,30 +233,25 @@ where
             },
         );
 
-        let register_sidekiq_periodic_fn: RegisterSidekiqPeriodicFn<S> =
-            Box::new(
-                move |state: &S,
-                      processor: &mut Processor,
-                      worker_wrapper: WorkerWrapper<S>,
-                      args: PeriodicArgsJson| {
-                    let queue = queue.clone();
-                    Box::pin(async move {
-                        use sidekiq::Worker as SidekiqWorker;
-
-                        let roadster_worker =
-                            RoadsterWorker::<S, W, Args, E>::new(state, worker_wrapper);
-                        let builder = ::sidekiq::periodic::builder(&args.schedule.to_string())?
-                            .args(args.args.clone())?
-                            .queue(queue.clone());
-                        let json = serde_json::to_string(
-                            &builder
-                                .into_periodic_job(RoadsterWorker::<S, W, Args, E>::class_name())?,
-                        )?;
-                        builder.register(processor, roadster_worker).await?;
-                        Ok(json)
-                    })
-                },
-            );
+        let register_sidekiq_periodic_fn: RegisterSidekiqPeriodicFn<S> = Box::new(
+            move |state: &S,
+                  processor: &mut Processor,
+                  worker_wrapper: WorkerWrapper<S>,
+                  args: PeriodicArgsJson| {
+                let queue = queue.clone();
+                Box::pin(async move {
+                    let roadster_worker =
+                        RoadsterWorker::<S, W, Args, E>::new(state, worker_wrapper);
+                    let job = Job::from(&args);
+                    let hash = job.metadata.periodic.as_ref().map(|p| p.hash);
+                    let builder = ::sidekiq::periodic::builder(&args.schedule.to_string())?
+                        .args(Job::from(&args))?
+                        .queue(queue.clone());
+                    builder.register(processor, roadster_worker).await?;
+                    Ok(hash)
+                })
+            },
+        );
 
         let worker_data = Arc::new(WorkerData {
             worker_wrapper: WorkerWrapper::new(&self.state, worker, worker_enqueue_config)?,
