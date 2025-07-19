@@ -6,6 +6,7 @@ use crate::worker::backend::sidekiq::processor::builder::SidekiqProcessorBuilder
 use crate::worker::job::Job;
 use crate::worker::{PeriodicArgsJson, WorkerWrapper};
 use axum_core::extract::FromRef;
+use log::debug;
 use sidekiq::periodic;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::pin::Pin;
@@ -215,19 +216,37 @@ async fn remove_stale_periodic_jobs<C: RedisCommands>(
     registered_periodic_workers: &HashSet<u64>,
 ) -> RoadsterResult<()> {
     let mut stale_jobs: Vec<String> = Default::default();
+    // Todo: this doesn't prevent duplicates
     let jobs = conn.zrange(PERIODIC_KEY.to_string(), 0, -1).await?;
-    for job in jobs {
-        let hash = serde_json::from_str::<Job>(&job)
-            .ok()
-            .and_then(|job| job.metadata.periodic)
-            .map(|periodic| periodic.hash);
+    for job_str in jobs {
+        // let hash = serde_json::from_str::<Job>(&job)?
+        //     // .and_then(|job| job.metadata.periodic)
+        //     .metadata
+        //     .periodic
+        //     .map(|periodic| periodic.hash);
+        let job: serde_json::Value = serde_json::from_str(&job_str)?;
+        debug!("{job:?}");
+        // Todo: error handling
+        let args = job
+            .as_object()
+            .unwrap()
+            .get("args")
+            .unwrap()
+            .as_str()
+            .unwrap();
+        debug!("{args:?}");
+
+        let args = serde_json::from_str::<serde_json::Value>(args).unwrap();
+        let args = args.as_array().unwrap().get(0).unwrap().clone();
+        let job: Job = serde_json::from_value(args).unwrap();
+        let hash = job.metadata.periodic.map(|periodic| periodic.hash);
         let hash = if let Some(hash) = hash {
             hash
         } else {
             continue;
         };
         if !registered_periodic_workers.contains(&hash) {
-            stale_jobs.push(job)
+            stale_jobs.push(job_str)
         }
     }
 

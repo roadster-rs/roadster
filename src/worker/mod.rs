@@ -201,6 +201,7 @@ where
     {
         use std::any::Any;
 
+        let type_id = worker.type_id();
         let worker = std::sync::Arc::new(worker);
 
         #[cfg(feature = "bench")]
@@ -209,7 +210,7 @@ where
         Ok(Self {
             inner: std::sync::Arc::new(WorkerWrapperInner {
                 name: W::name(),
-                type_id: worker.type_id(),
+                type_id,
                 enqueue_config,
                 worker_config: worker.worker_config(state),
                 worker_fn: Box::new(move |state: &S, args: serde_json::Value| {
