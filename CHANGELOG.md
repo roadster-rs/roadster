@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0-rc.2](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.0-rc.1...roadster-v0.8.0-rc.2) - 2025-07-19
+
+### Added
+
+- [**breaking**] Add `id` field to internal `Job` struct ([#862](https://github.com/roadster-rs/roadster/pull/862))
+- Add meaningful prefix to some generic trace event labels ([#861](https://github.com/roadster-rs/roadster/pull/861))
+
+### Other
+
+- Disable auto release PRs for now ([#860](https://github.com/roadster-rs/roadster/pull/860))
+- Disable workflows on v0.8 branch ([#859](https://github.com/roadster-rs/roadster/pull/859))
+- Remove previous results from worker m3 benchmarks ([#858](https://github.com/roadster-rs/roadster/pull/858))
+
 ## [0.8.0-rc.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.0-rc...roadster-v0.8.0-rc.1) - 2025-07-18
 
 ### Fixed
