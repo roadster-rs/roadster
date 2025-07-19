@@ -198,14 +198,14 @@ where
         let router = initializers
             .iter()
             .try_fold(router, |router, initializer| {
-                info!(name=%initializer.name(), "Running Initializer::after_router");
+                info!(http_initializer.name=%initializer.name(), "Running Initializer::after_router");
                 initializer.after_router(router, state)
             })?;
 
         let router = initializers
             .iter()
             .try_fold(router, |router, initializer| {
-                info!(name=%initializer.name(), "Running Initializer::before_middleware");
+                info!(http_initializer.name=%initializer.name(), "Running Initializer::before_middleware");
                 initializer.before_middleware(router, state)
             })?;
 
@@ -220,21 +220,21 @@ where
             // Reverse due to how Axum's `Router#layer` method adds middleware.
             .rev()
             .try_fold(router, |router, middleware| {
-                info!(name=%middleware.name(), "Installing middleware");
+                info!(http_middleware.name=%middleware.name(), "Installing middleware");
                 middleware.install(router, state)
             })?;
 
         let router = initializers
             .iter()
             .try_fold(router, |router, initializer| {
-                info!(name=%initializer.name(), "Running Initializer::after_middleware");
+                info!(http_initializer.name=%initializer.name(), "Running Initializer::after_middleware");
                 initializer.after_middleware(router, state)
             })?;
 
         let router = initializers
             .iter()
             .try_fold(router, |router, initializer| {
-                info!(name=%initializer.name(), "Running Initializer::before_serve");
+                info!(http_initializer.name=%initializer.name(), "Running Initializer::before_serve");
                 initializer.before_serve(router, state)
             })?;
 

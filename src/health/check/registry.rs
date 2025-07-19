@@ -47,11 +47,11 @@ impl HealthCheckRegistry {
         let name = health_check.name();
 
         if !health_check.enabled() {
-            info!(name=%name, "Health check is not enabled, skipping registration");
+            info!(health_check.name=%name, "Health check is not enabled, skipping registration");
             return Ok(());
         }
 
-        info!(name=%name, "Registering health check");
+        info!(health_check.name=%name, "Registering health check");
 
         if self
             .health_checks

@@ -75,7 +75,10 @@ where
         queue.to_owned()
     } else {
         let worker_name = W::name();
-        tracing::error!(worker_name, "Unable to enqueue job, no queue configured");
+        tracing::error!(
+            worker.name = worker_name,
+            "Unable to enqueue job, no queue configured"
+        );
         return Err(crate::error::worker::EnqueueError::NoQueue(worker_name));
     };
 

@@ -70,7 +70,7 @@ impl Enqueuer for SidekiqEnqueuer {
                     &job.args,
                 )
                 .await?;
-                debug!(delay = delay.as_secs(), "Job enqueued");
+                debug!(job.delay = delay.as_secs(), "Job enqueued");
                 Ok(())
             },
         )
@@ -141,7 +141,7 @@ impl Enqueuer for SidekiqEnqueuer {
                         &job.args,
                     )
                     .await?;
-                    debug!(delay = delay.as_secs(), "Job enqueued");
+                    debug!(job.delay = delay.as_secs(), "Job enqueued");
                 }
                 Ok(())
             },

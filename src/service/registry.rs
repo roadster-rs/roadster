@@ -70,11 +70,11 @@ where
         B: ServiceBuilder<S, Srvc>,
     {
         if !builder.enabled(&self.state) {
-            info!(name=%builder.name(), "Service is not enabled, skipping building and registration");
+            info!(service.builder.name=%builder.name(), "Service is not enabled, skipping building and registration");
             return Ok(());
         }
 
-        info!(name=%builder.name(), "Building service");
+        info!(service.builder.name=%builder.name(), "Building service");
         let service = builder.build(&self.state).await?;
 
         self.register_boxed(Box::new(service))
@@ -83,7 +83,7 @@ where
     pub(crate) fn register_boxed(&mut self, service: Box<dyn Service<S>>) -> RoadsterResult<()> {
         let name = service.name();
 
-        info!(name=%name, "Registering service");
+        info!(service.name=%name, "Registering service");
 
         if !self.service_names.insert(name.clone())
             || self

@@ -43,7 +43,7 @@ where
         E: 'static + std::error::Error + Send + Sync,
     {
         let name = W::name();
-        info!(name, "Registering PG worker");
+        info!(worker.name = name, "Registering PG worker");
 
         self.register_internal(worker, name, true)?;
 
@@ -61,7 +61,7 @@ where
         E: 'static + std::error::Error + Send + Sync,
     {
         let name = W::name();
-        info!(name, "Registering periodic PG worker");
+        info!(worker.name = name, "Registering periodic PG worker");
 
         self.register_internal(worker, name.clone(), false)?;
 
@@ -117,7 +117,7 @@ where
             queue
         } else {
             error!(
-                worker_name = W::name(),
+                worker.name = W::name(),
                 "Unable to register worker, no queue configured"
             );
             return Err(PgProcessorError::NoQueue(W::name()).into());

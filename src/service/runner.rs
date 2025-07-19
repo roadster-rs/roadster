@@ -47,7 +47,7 @@ where
 {
     for (_, service) in service_registry.services.iter() {
         let name = service.name();
-        info!(%name, "Running service::before_run");
+        info!(service.name = name, "Running service::before_run");
         service.before_run(state).await?;
     }
 
@@ -81,7 +81,7 @@ where
         let state = state.clone();
         let cancel_token = cancel_token.clone();
         join_set.spawn(Box::pin(async move {
-            info!(%name, "Running service");
+            info!(service.name = name, "Running service");
             service.run(&state, cancel_token).await
         }));
     }

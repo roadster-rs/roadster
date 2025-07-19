@@ -91,11 +91,11 @@ where
         let name = handler.name();
 
         if !handler.enabled(&self.state) {
-            info!(name=%name, "Lifecycle handler is not enabled, skipping registration");
+            info!(lifecycle_handler.name=%name, "Lifecycle handler is not enabled, skipping registration");
             return Ok(());
         }
 
-        info!(name=%name, "Registering lifecycle handler");
+        info!(lifecycle_handler.name=%name, "Registering lifecycle handler");
 
         if self.handlers.insert(name.clone(), handler).is_some() {
             return Err(LifecycleHandlerRegistryError::AlreadyRegistered(name).into());

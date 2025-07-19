@@ -271,7 +271,7 @@ impl<B> OnRequest<B> for CustomOnRequest {
         See: <https://docs.rs/tracing/latest/tracing/#recording-fields>
         See: <https://opentelemetry.io/docs/specs/semconv/attributes-registry/http/>
          */
-        info!(?request_headers, "started processing request");
+        info!(http.request.headers = ?request_headers, "started processing request");
     }
 }
 
@@ -321,7 +321,7 @@ impl<B> OnResponse<B> for CustomOnResponse {
         See: <https://opentelemetry.io/docs/specs/semconv/attributes-registry/http/>
          */
         info!(
-            ?response_headers,
+            http.response.headers = ?response_headers,
             // The latency can easily be derived from the trace itself. However, the `DefaultOnResponse`
             // impl includes the latency, so we include it as well.
             latency = latency.as_millis(),

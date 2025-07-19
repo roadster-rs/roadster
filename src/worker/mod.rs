@@ -280,9 +280,9 @@ where
                 tokio::time::timeout(max_duration, inner)
                     .await
                     .map_err(|_| {
-                        tracing::error!(
+                        error!(
                             worker.name = self.inner.name,
-                            max_duration = max_duration.as_secs(),
+                            worker.max_duration = max_duration.as_secs(),
                             "Worker timed out"
                         );
                         crate::error::worker::WorkerError::Timeout(

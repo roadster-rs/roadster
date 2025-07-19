@@ -126,7 +126,7 @@ where
         E: 'static + std::error::Error + Send + Sync,
     {
         let name = W::name();
-        info!(name, "Registering Sidekiq worker");
+        info!(worker.name = name, "Registering Sidekiq worker");
 
         self.register_internal(worker, name, true)?;
 
@@ -144,7 +144,7 @@ where
         E: 'static + std::error::Error + Send + Sync,
     {
         let name = W::name();
-        info!(name, "Registering periodic PG worker");
+        info!(worker.name = name, "Registering periodic PG worker");
 
         let worker_data = self.register_internal(worker, name.clone(), false)?;
 
@@ -218,7 +218,7 @@ where
             queue.to_owned()
         } else {
             error!(
-                worker_name = W::name(),
+                worker.name = W::name(),
                 "Unable to register worker, no queue configured"
             );
             return Err(SidekiqProcessorError::NoQueue(W::name()).into());
