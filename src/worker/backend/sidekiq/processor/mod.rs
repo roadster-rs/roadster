@@ -6,6 +6,7 @@ use crate::worker::backend::sidekiq::processor::builder::SidekiqProcessorBuilder
 use crate::worker::job::Job;
 use crate::worker::{PeriodicArgsJson, WorkerWrapper};
 use axum_core::extract::FromRef;
+use log::debug;
 use sidekiq::periodic;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::pin::Pin;
@@ -133,7 +134,7 @@ where
             return Ok(());
         };
 
-        let mut registered_periodic_jobs_hashes: HashSet<u64> = Default::default();
+        let mut registered_periodic_jobs_hashes: HashSet<String> = Default::default();
         for (periodic_args, worker_data) in self.inner.periodic_workers.iter() {
             let hash = (worker_data.register_sidekiq_periodic_fn)(
                 &self.inner.state,
@@ -142,9 +143,7 @@ where
                 periodic_args.clone(),
             )
             .await?;
-            if let Some(hash) = hash {
-                registered_periodic_jobs_hashes.insert(hash);
-            }
+            registered_periodic_jobs_hashes.insert(hash);
         }
 
         if periodic_config.stale_cleanup == StaleCleanUpBehavior::AutoCleanStale {
@@ -212,22 +211,42 @@ where
 async fn remove_stale_periodic_jobs<C: RedisCommands>(
     conn: &mut C,
     context: &AppContext,
-    registered_periodic_workers: &HashSet<u64>,
+    registered_periodic_workers: &HashSet<String>,
 ) -> RoadsterResult<()> {
     let mut stale_jobs: Vec<String> = Default::default();
+    // Todo: this doesn't prevent duplicates
     let jobs = conn.zrange(PERIODIC_KEY.to_string(), 0, -1).await?;
-    for job in jobs {
-        let hash = serde_json::from_str::<Job>(&job)
-            .ok()
-            .and_then(|job| job.metadata.periodic)
-            .map(|periodic| periodic.hash);
-        let hash = if let Some(hash) = hash {
-            hash
+    for job_str in jobs {
+        let job: serde_json::Value = serde_json::from_str(&job_str)?;
+        let args = job
+            .as_object()
+            .and_then(|job| job.get("args"))
+            .and_then(|args| args.as_str())
+            .and_then(|args| serde_json::from_str::<serde_json::Value>(args).ok());
+        let args = if let Some(args) = args {
+            args
         } else {
+            warn!("Unable to parse args for periodic sidekiq job");
             continue;
         };
-        if !registered_periodic_workers.contains(&hash) {
-            stale_jobs.push(job)
+
+        let args = if args.is_array() {
+            args.as_array().and_then(|args| args.get(0))
+        } else {
+            Some(&args)
+        };
+
+        let args = if let Some(args) = args {
+            args.clone()
+        } else {
+            warn!("Unable to parse args for periodic sidekiq job");
+            continue;
+        };
+
+        let job: Job = serde_json::from_value(args)?;
+
+        if !registered_periodic_workers.contains(&job.metadata.id) {
+            stale_jobs.push(job_str)
         }
     }
 
@@ -268,8 +287,7 @@ type RegisterSidekiqPeriodicFn<S> = Box<
             &'a mut ::sidekiq::Processor,
             WorkerWrapper<S>,
             PeriodicArgsJson,
-        )
-            -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<Option<u64>>>>>,
+        ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<String>>>>,
 >;
 type RegisterSidekiqMiddlewareFn = Box<
     dyn Send

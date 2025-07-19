@@ -16,8 +16,8 @@ pub(crate) struct Job {
 #[non_exhaustive]
 #[cfg(any(feature = "worker-sidekiq", feature = "worker-pg"))]
 pub(crate) struct JobMetadata {
-    #[builder(default = Uuid::now_v7())]
-    pub(crate) id: Uuid,
+    #[builder(default = Uuid::now_v7().to_string())]
+    pub(crate) id: String,
     #[builder(into)]
     pub(crate) worker_name: String,
     pub(crate) periodic: Option<PeriodicConfig>,
@@ -42,7 +42,6 @@ impl From<&crate::worker::PeriodicArgsJson> for Job {
         value.hash(&mut hash);
         let hash = hash.finish();
 
-        // let hash = periodic_hash(&value.worker_name, &value.schedule, &value.args);
         Job::builder()
             .args(value.args.clone())
             .metadata(

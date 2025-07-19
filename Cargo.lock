@@ -211,6 +211,7 @@ dependencies = [
  "cfg-if",
  "clap",
  "config",
+ "cron",
  "roadster",
  "rusty-sidekiq",
  "schemars",

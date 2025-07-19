@@ -18,7 +18,7 @@ use std::any::Any;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 #[non_exhaustive]
 pub struct SidekiqProcessorBuilder<S>
@@ -242,13 +242,25 @@ where
                 Box::pin(async move {
                     let roadster_worker =
                         RoadsterWorker::<S, W, Args, E>::new(state, worker_wrapper);
-                    let job = Job::from(&args);
-                    let hash = job.metadata.periodic.as_ref().map(|p| p.hash);
+                    let mut job = Job::from(&args);
+                    let id = job
+                        .metadata
+                        .periodic
+                        .as_ref()
+                        .map(|p| p.hash)
+                        .map(|hash| hash.to_string());
+                    let id = if let Some(id) = id {
+                        id
+                    } else {
+                        warn!("Periodic job created without a hash/id");
+                        Default::default()
+                    };
+                    job.metadata.id = id.clone();
                     let builder = ::sidekiq::periodic::builder(&args.schedule.to_string())?
-                        .args(Job::from(&args))?
+                        .args(job)?
                         .queue(queue.clone());
                     builder.register(processor, roadster_worker).await?;
-                    Ok(hash)
+                    Ok(id)
                 })
             },
         );
