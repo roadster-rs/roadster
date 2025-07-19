@@ -3,6 +3,7 @@ pub mod req_res_logging;
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
+use crate::util::tracing::optional_trace_field;
 use axum::Router;
 use axum::extract::{FromRef, MatchedPath};
 use axum::http::{HeaderMap, HeaderName, HeaderValue, Request, Response};
@@ -18,7 +19,7 @@ use std::iter::{IntoIterator, Iterator};
 use std::str::FromStr;
 use std::time::Duration;
 use tower_http::trace::{MakeSpan, OnRequest, OnResponse, TraceLayer};
-use tracing::{Span, Value, error_span, field, info};
+use tracing::{Span, error_span, field, info};
 use url::Url;
 use validator::Validate;
 
@@ -217,15 +218,6 @@ fn get_query_redacted<B>(
         .join("&");
 
     Some(redacted)
-}
-
-fn optional_trace_field<T>(value: Option<T>) -> Box<dyn Value>
-where
-    T: ToString,
-{
-    value
-        .map(|x| Box::new(field::display(x.to_string())) as Box<dyn Value>)
-        .unwrap_or(Box::new(field::Empty))
 }
 
 #[derive(Debug, Clone)]

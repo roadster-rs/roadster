@@ -3,9 +3,10 @@ use crate::config::service::worker::StaleCleanUpBehavior;
 use crate::error::RoadsterResult;
 use crate::util::redis::RedisCommands;
 use crate::worker::backend::sidekiq::processor::builder::SidekiqProcessorBuilder;
+use crate::worker::job::Job;
 use crate::worker::{PeriodicArgsJson, WorkerWrapper};
 use axum_core::extract::FromRef;
-use itertools::Itertools;
+use log::debug;
 use sidekiq::periodic;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::pin::Pin;
@@ -133,21 +134,24 @@ where
             return Ok(());
         };
 
-        let mut registered_periodic_jobs_json: HashSet<String> = Default::default();
+        let mut registered_periodic_jobs_hashes: HashSet<u64> = Default::default();
         for (periodic_args, worker_data) in self.inner.periodic_workers.iter() {
-            let json = (worker_data.register_sidekiq_periodic_fn)(
+            let hash = (worker_data.register_sidekiq_periodic_fn)(
                 &self.inner.state,
                 processor,
                 worker_data.worker_wrapper.clone(),
                 periodic_args.clone(),
             )
             .await?;
-            registered_periodic_jobs_json.insert(json);
+            if let Some(hash) = hash {
+                registered_periodic_jobs_hashes.insert(hash);
+            }
         }
 
         if periodic_config.stale_cleanup == StaleCleanUpBehavior::AutoCleanStale {
             let mut conn = context.redis_enqueue().get().await?;
-            remove_stale_periodic_jobs(&mut conn, &context, &registered_periodic_jobs_json).await?;
+            remove_stale_periodic_jobs(&mut conn, &context, &registered_periodic_jobs_hashes)
+                .await?;
         }
 
         Ok(())
@@ -209,14 +213,42 @@ where
 async fn remove_stale_periodic_jobs<C: RedisCommands>(
     conn: &mut C,
     context: &AppContext,
-    registered_periodic_workers: &HashSet<String>,
+    registered_periodic_workers: &HashSet<u64>,
 ) -> RoadsterResult<()> {
-    let stale_jobs = conn
-        .zrange(PERIODIC_KEY.to_string(), 0, -1)
-        .await?
-        .into_iter()
-        .filter(|job| !registered_periodic_workers.contains(job))
-        .collect_vec();
+    let mut stale_jobs: Vec<String> = Default::default();
+    // Todo: this doesn't prevent duplicates
+    let jobs = conn.zrange(PERIODIC_KEY.to_string(), 0, -1).await?;
+    for job_str in jobs {
+        // let hash = serde_json::from_str::<Job>(&job)?
+        //     // .and_then(|job| job.metadata.periodic)
+        //     .metadata
+        //     .periodic
+        //     .map(|periodic| periodic.hash);
+        let job: serde_json::Value = serde_json::from_str(&job_str)?;
+        debug!("{job:?}");
+        // Todo: error handling
+        let args = job
+            .as_object()
+            .unwrap()
+            .get("args")
+            .unwrap()
+            .as_str()
+            .unwrap();
+        debug!("{args:?}");
+
+        let args = serde_json::from_str::<serde_json::Value>(args).unwrap();
+        let args = args.as_array().unwrap().get(0).unwrap().clone();
+        let job: Job = serde_json::from_value(args).unwrap();
+        let hash = job.metadata.periodic.map(|periodic| periodic.hash);
+        let hash = if let Some(hash) = hash {
+            hash
+        } else {
+            continue;
+        };
+        if !registered_periodic_workers.contains(&hash) {
+            stale_jobs.push(job_str)
+        }
+    }
 
     if stale_jobs.is_empty() {
         info!("No stale periodic jobs found");
@@ -255,7 +287,8 @@ type RegisterSidekiqPeriodicFn<S> = Box<
             &'a mut ::sidekiq::Processor,
             WorkerWrapper<S>,
             PeriodicArgsJson,
-        ) -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<String>>>>,
+        )
+            -> Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<Option<u64>>>>>,
 >;
 type RegisterSidekiqMiddlewareFn = Box<
     dyn Send

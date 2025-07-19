@@ -1,3 +1,5 @@
+use uuid::Uuid;
+
 // Todo: Not sure if this should be public yet.
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, bon::Builder, Eq, PartialEq)]
@@ -14,6 +16,8 @@ pub(crate) struct Job {
 #[non_exhaustive]
 #[cfg(any(feature = "worker-sidekiq", feature = "worker-pg"))]
 pub(crate) struct JobMetadata {
+    #[builder(default = Uuid::now_v7())]
+    pub(crate) id: Uuid,
     #[builder(into)]
     pub(crate) worker_name: String,
     pub(crate) periodic: Option<PeriodicConfig>,
@@ -130,6 +134,8 @@ mod tests {
     #[test]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn job_serde() {
+        let _case = TestCase::new();
+
         let job = Job::builder()
             .args(serde_json::json!({"foo": "bar"}))
             .metadata(
@@ -151,6 +157,8 @@ mod tests {
     #[test]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn job_serde_no_periodic() {
+        let _case = TestCase::new();
+
         let job = Job::builder()
             .args(serde_json::json!({"foo": "bar"}))
             .metadata(JobMetadata::builder().worker_name("foo").build())

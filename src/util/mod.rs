@@ -6,4 +6,5 @@ pub mod empty;
 pub(crate) mod redis;
 pub mod regex;
 pub mod serde;
+pub mod tracing;
 pub mod types;
