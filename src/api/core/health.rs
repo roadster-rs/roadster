@@ -66,16 +66,16 @@ where
     let check_futures = checks.into_iter().map(|check| {
         Box::pin(async move {
             let name = check.name();
-            info!(%name, "Running check");
+            info!(health_check.name = name, "Running check");
             let check_timer = Instant::now();
             let result = match run_check(check, duration).await {
                 Ok(response) => {
-                    info!(%name, latency_ms=%response.latency, "Check completed");
+                    info!(health_check.name = name, latency_ms=%response.latency, "Check completed");
                     match &response.status {
                         Status::Ok => {}
                         Status::Err(_) => {
-                            error!(%name, "Resource is not healthy");
-                            debug!(%name, "Error details: {response:?}");
+                            error!(health_check.name = name, "Resource is not healthy");
+                            debug!(health_check.name = name, "Error details: {response:?}");
                         }
                     }
                     response

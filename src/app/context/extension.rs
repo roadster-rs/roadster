@@ -57,7 +57,7 @@ impl ExtensionRegistry {
     where
         T: 'static + Send + Sync,
     {
-        info!(name=%type_name::<T>(), "Registering extension");
+        info!(extension.name=%type_name::<T>(), "Registering extension");
 
         if self
             .extensions

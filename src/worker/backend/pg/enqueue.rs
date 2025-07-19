@@ -1,10 +1,12 @@
 use crate::app::context::AppContext;
+use crate::config::AppConfig;
 use crate::error::RoadsterResult;
 use crate::worker::{Enqueuer, Worker, enqueue};
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use serde::{Deserialize, Serialize};
 use std::borrow::Borrow;
+use std::str::FromStr;
 use std::time::Duration;
 use tracing::{debug, instrument};
 
@@ -29,7 +31,7 @@ impl Enqueuer for PgEnqueuer {
             async |state, queue, job| -> RoadsterResult<()> {
                 let context = AppContext::from_ref(state);
                 let id = context.pgmq().send(queue, &job).await?;
-                debug!(id, "Job enqueued");
+                debug!(job.msg_id = id, "Job enqueued");
                 Ok(())
             },
         )
@@ -58,7 +60,7 @@ impl Enqueuer for PgEnqueuer {
                     .pgmq()
                     .send_delay(queue, &job, delay.as_secs())
                     .await?;
-                debug!(id, delay = delay.as_secs(), "Job enqueued");
+                debug!(job.msg_id = id, job.delay = delay.as_secs(), "Job enqueued");
                 Ok(())
             },
         )
@@ -84,7 +86,10 @@ impl Enqueuer for PgEnqueuer {
                 let context = AppContext::from_ref(state);
                 let ids = context.pgmq().send_batch(queue, &jobs).await?;
                 debug!(count = ids.len(), "Jobs enqueued");
-                ids.iter().for_each(|id| debug!(id, "Job enqueued"));
+                if debug_tracing_enabled(context.config()) {
+                    ids.iter()
+                        .for_each(|id| debug!(job.msg_id = id, "Job enqueued"));
+                }
                 Ok(())
             },
         )
@@ -114,11 +119,56 @@ impl Enqueuer for PgEnqueuer {
                     .send_batch_delay(queue, &jobs, delay.as_secs())
                     .await?;
                 debug!(count = ids.len(), delay = delay.as_secs(), "Jobs enqueued");
-                ids.iter()
-                    .for_each(|id| debug!(id, delay = delay.as_secs(), "Job enqueued"));
+                if debug_tracing_enabled(context.config()) {
+                    ids.iter().for_each(|id| {
+                        debug!(job.msg_id = id, job.delay = delay.as_secs(), "Job enqueued")
+                    });
+                }
                 Ok(())
             },
         )
         .await
+    }
+}
+
+fn debug_tracing_enabled(config: &AppConfig) -> bool {
+    tracing::Level::from_str(&config.tracing.level)
+        .map(|level| level >= tracing::Level::DEBUG)
+        .unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::config::AppConfig;
+    use crate::testing::snapshot::TestCase;
+    use rstest::{fixture, rstest};
+
+    #[fixture]
+    fn case() -> TestCase {
+        Default::default()
+    }
+
+    #[fixture]
+    fn config() -> AppConfig {
+        AppConfig::test(None).unwrap()
+    }
+
+    #[rstest]
+    #[case("trace", true)]
+    #[case("debug", true)]
+    #[case("info", false)]
+    #[case("warn", false)]
+    #[case("error", false)]
+    #[case("invalid", false)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn debug_tracing_enabled(
+        _case: TestCase,
+        mut config: AppConfig,
+        #[case] level: &str,
+        #[case] expected: bool,
+    ) {
+        config.tracing.level = level.to_owned();
+        let enabled = super::debug_tracing_enabled(&config);
+        assert_eq!(enabled, expected);
     }
 }

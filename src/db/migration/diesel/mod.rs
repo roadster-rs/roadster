@@ -136,7 +136,7 @@ where
             let migration_to_revert = migrations
                 .remove(&version)
                 .ok_or(MigrationError::UnknownMigrationVersion(version))?;
-            info!(name=%migration_to_revert.name(), "Rolling back migration");
+            info!(migration.name = %migration_to_revert.name(), "Rolling back migration");
             conn.revert_migration(&migration_to_revert)?;
         }
 

@@ -371,7 +371,7 @@ where
                     }
                     Err(err) => {
                         error!(
-                            queue = queue.name,
+                            worker.queue.name = queue.name,
                             "An error occurred while reading from pgmq: {err}"
                         );
                         queue.next_fetch = Utc::now() + error_delay;
@@ -383,9 +383,9 @@ where
                     Ok(job) => job,
                     Err(err) => {
                         error!(
-                            msg_id = msg.msg_id,
-                            read_count = msg.read_ct,
-                            queue = queue.name,
+                            job.msg_id = msg.msg_id,
+                            job.read_count = msg.read_ct,
+                            worker.queue.name = queue.name,
                             "An error occurred while deserializing message from pgmq: {err}"
                         );
                         self.retry(
@@ -409,10 +409,10 @@ where
                     worker
                 } else {
                     error!(
-                        msg_id = msg.msg_id,
-                        read_count = msg.read_ct,
-                        queue = queue.name,
-                        worker_name = job.metadata.worker_name,
+                        job.msg_id = msg.msg_id,
+                        job.read_count = msg.read_ct,
+                        worker.queue.name = queue.name,
+                        worker.name = job.metadata.worker_name,
                         "Unable to handle job, worker not registered"
                     );
                     self.retry(
@@ -462,10 +462,10 @@ where
 
                 if let Err(err) = result {
                     error!(
-                        msg_id = msg.msg_id,
-                        read_count = msg.read_ct,
-                        queue = queue.name,
-                        worker_name = job.metadata.worker_name,
+                        job.msg_id = msg.msg_id,
+                        job.read_count = msg.read_ct,
+                        worker.queue.name = queue.name,
+                        worker.name = job.metadata.worker_name,
                         "An error occurred while handling a job: {err}"
                     );
                     self.retry(
@@ -572,7 +572,7 @@ where
                 }
                 Err(err) => {
                     error!(
-                        queue = PERIODIC_QUEUE_NAME,
+                        worker.queue.name = PERIODIC_QUEUE_NAME,
                         "An error occurred while reading from pgmq: {err}"
                     );
                     next_fetch = Utc::now() + error_delay;
@@ -584,18 +584,18 @@ where
                 Ok(job) => job,
                 Err(err) => {
                     error!(
-                        msg_id = msg.msg_id,
-                        read_count = msg.read_ct,
-                        queue = PERIODIC_QUEUE_NAME,
+                        job.msg_id = msg.msg_id,
+                        job.read_count = msg.read_ct,
+                        worker.queue.name = PERIODIC_QUEUE_NAME,
                         "An error occurred while deserializing message from pgmq: {err}"
                     );
                     // For periodic jobs, we simply delete the failing msg. It will
                     // be re-enqueued the next time the app starts
                     if let Err(err) = context.pgmq().delete(PERIODIC_QUEUE_NAME, msg.msg_id).await {
                         error!(
-                            msg_id = msg.msg_id,
-                            read_count = msg.read_ct,
-                            queue = PERIODIC_QUEUE_NAME,
+                            job.msg_id = msg.msg_id,
+                            job.read_count = msg.read_ct,
+                            worker.queue.name = PERIODIC_QUEUE_NAME,
                             "An error occurred while deleting periodic job: {err}"
                         );
                         next_fetch = Utc::now() + error_delay;
@@ -618,20 +618,20 @@ where
                 (worker, queue, periodic)
             } else {
                 error!(
-                    msg_id = msg.msg_id,
-                    read_count = msg.read_ct,
-                    worker_name = job.metadata.worker_name,
-                    queue,
-                    ?periodic,
+                    job.msg_id = msg.msg_id,
+                    job.read_count = msg.read_ct,
+                    job.is_periodic = periodic.is_some(),
+                    worker.name = job.metadata.worker_name,
+                    worker.queue.name = queue,
                     "Unable to enqueue job; worker not registered, no queue configured, or no periodic metadata configured"
                 );
                 // For periodic jobs, we simply delete the failing msg. It will
                 // be re-enqueued the next time the app starts
                 if let Err(err) = context.pgmq().delete(PERIODIC_QUEUE_NAME, msg.msg_id).await {
                     error!(
-                        msg_id = msg.msg_id,
-                        read_count = msg.read_ct,
-                        queue = PERIODIC_QUEUE_NAME,
+                        job.msg_id = msg.msg_id,
+                        job.read_count = msg.read_ct,
+                        worker.queue.name = PERIODIC_QUEUE_NAME,
                         "An error occurred while deleting periodic job: {err}"
                     );
                     next_fetch = Utc::now() + error_delay;
@@ -651,10 +651,10 @@ where
                 .build();
             if let Err(err) = context.pgmq().send(queue, &job_to_enqueue).await {
                 error!(
-                    msg_id = msg.msg_id,
-                    read_count = msg.read_ct,
-                    worker_name = worker.inner.name,
-                    queue,
+                    job.msg_id = msg.msg_id,
+                    job.read_count = msg.read_ct,
+                    worker.name = worker.inner.name,
+                    worker.queue.name = queue,
                     "An error occurred while enqueuing periodic job: {err}"
                 );
 
@@ -668,11 +668,11 @@ where
                 .await
             {
                 error!(
-                    msg_id = msg.msg_id,
-                    read_count = msg.read_ct,
-                    queue = PERIODIC_QUEUE_NAME,
-                    worker_name = worker.inner.name,
-                    ?delay,
+                    job.msg_id = msg.msg_id,
+                    job.read_count = msg.read_ct,
+                    job.delay = ?delay,
+                    worker.queue.name = PERIODIC_QUEUE_NAME,
+                    worker.name = worker.inner.name,
                     "An error occurred while updating periodic job's view timeout: {err}"
                 );
                 next_fetch = Utc::now() + error_delay;
@@ -740,10 +740,10 @@ where
             .await
         {
             error!(
-                msg_id,
-                read_count,
-                queue = queue.name,
-                worker_name = job_metadata.map(|metadata| &metadata.worker_name),
+                job.msg_id = msg_id,
+                job.read_count = read_count,
+                worker.queue.name = queue.name,
+                worker.name = job_metadata.map(|metadata| &metadata.worker_name),
                 "An error occurred while updating job's view timeout: {err}"
             );
         }
@@ -760,11 +760,11 @@ where
         action: &CompletedAction,
     ) {
         debug!(
-            msg_id,
-            read_count,
-            queue = queue.name,
-            worker_name = job_metadata.map(|metadata| &metadata.worker_name),
-            ?action,
+            job.msg_id = msg_id,
+            job.read_count = read_count,
+            job.completed_action = ?action,
+            worker.queue.name = queue.name,
+            worker.name = job_metadata.map(|metadata| &metadata.worker_name),
             "Performing completed action for a job"
         );
 
@@ -775,11 +775,11 @@ where
 
         if let Err(err) = result {
             error!(
-                msg_id,
-                read_count,
-                queue = queue.name,
-                worker_name = job_metadata.map(|metadata| &metadata.worker_name),
-                ?action,
+                job.msg_id = msg_id,
+                job.read_count = read_count,
+                job.completed_action = ?action,
+                worker.queue.name = queue.name,
+                worker.name = job_metadata.map(|metadata| &metadata.worker_name),
                 "An error occurred while performing completed action for a job: {err}"
             );
         }

@@ -120,7 +120,10 @@ where
 
     info!("Running AppLifecycleHandler::before_health_checks");
     for handler in lifecycle_handlers.iter() {
-        info!(name=%handler.name(), "Running AppLifecycleHandler::before_health_checks");
+        info!(
+            lifecycle_handler.name = handler.name(),
+            "Running AppLifecycleHandler::before_health_checks"
+        );
         handler.before_health_checks(prepared_app).await?;
     }
 
@@ -129,7 +132,10 @@ where
 
     info!("Running AppLifecycleHandler::before_services");
     for handler in lifecycle_handlers.iter() {
-        info!(name=%handler.name(), "Running AppLifecycleHandler::before_services");
+        info!(
+            lifecycle_handler.name = handler.name(),
+            "Running AppLifecycleHandler::before_services"
+        );
         handler.before_services(prepared_app).await?
     }
     crate::service::runner::before_run(&prepared_app.service_registry, &prepared_app.state).await?;
@@ -153,10 +159,16 @@ where
 
     info!("Running AppLifecycleHandler::before_shutdown");
     for handler in lifecycle_handlers.iter() {
-        info!(name=%handler.name(), "Running AppLifecycleHandler::before_shutdown");
+        info!(
+            lifecycle_handler.name = handler.name(),
+            "Running AppLifecycleHandler::before_shutdown"
+        );
         let result = handler.on_shutdown(state).await;
         if let Err(err) = result {
-            error!(name=%handler.name(), "An error occurred when running AppLifecycleHandler::before_shutdown: {err}");
+            error!(
+                lifecycle_handler.name = handler.name(),
+                "An error occurred when running AppLifecycleHandler::before_shutdown: {err}"
+            );
         }
     }
 

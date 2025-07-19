@@ -6,6 +6,7 @@ use itertools::Itertools;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::serde_as;
 use std::borrow::Cow;
+use std::str::FromStr;
 use strum_macros::{EnumString, IntoStaticStr};
 use tracing_subscriber::EnvFilter;
 #[cfg(feature = "otel")]
@@ -33,6 +34,7 @@ pub(crate) fn default_config_per_env(
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct Tracing {
+    #[validate(custom(function = "validate_level"))]
     pub level: String,
 
     /// The format to use when printing traces to logs.
@@ -84,6 +86,22 @@ pub struct Tracing {
     #[serde(default)]
     #[cfg(feature = "otel")]
     pub otlp: Option<Otlp>,
+}
+
+fn validate_level(level: &str) -> Result<(), ValidationError> {
+    let result = tracing::Level::from_str(level);
+    let err = match result {
+        Ok(_) => {
+            return Ok(());
+        }
+        Err(err) => err,
+    };
+
+    let mut validation_error = ValidationError::new("Invalid level string");
+    validation_error.add_param(Cow::from("level"), &level);
+    validation_error.add_param(Cow::from("error"), &err.to_string());
+
+    Err(validation_error)
 }
 
 fn validate_env_filter_str(trace_filters: &[String]) -> Result<(), ValidationError> {
