@@ -22,7 +22,7 @@ default-diesel = ["default-common", "db-diesel-postgres-pool-async"]
 http = ["dep:axum", "dep:axum-extra", "dep:tower", "dep:tower-http", "dep:http-body-util", "dep:mime"]
 open-api = ["http", "dep:aide", "dep:schemars"]
 
-worker = ["dep:rand", "dep:num_cpus", "dep:cron"]
+worker = ["dep:rand", "dep:num_cpus", "dep:cron", "uuid/v7", "dep:derive_more"]
 worker-sidekiq = ["worker", "dep:rusty-sidekiq", "dep:bb8"]
 worker-pg = ["worker", "db-sql", "dep:pgmq", "dep:sqlx", "sea-orm?/sqlx-postgres", "dep:log"]
 
@@ -112,6 +112,7 @@ lettre = { workspace = true, features = ["serde"], optional = true }
 sendgrid = { workspace = true, optional = true }
 
 # Workers
+derive_more = { workspace = true, features = ["display"], optional = true }
 ## Sidekiq
 rusty-sidekiq = { workspace = true, optional = true }
 num_cpus = { workspace = true, optional = true }
@@ -292,6 +293,7 @@ async-trait = "0.1.81"
 regex = "1.11.1"
 cron = { version = "0.15.0", features = ["serde"] }
 log = "0.4.27"
+derive_more = "2.0.0"
 
 # Build dependencies
 rustc_version = "0.4.1"

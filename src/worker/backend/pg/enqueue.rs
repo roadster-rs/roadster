@@ -1,6 +1,7 @@
 use crate::app::context::AppContext;
 use crate::config::AppConfig;
 use crate::error::RoadsterResult;
+use crate::worker::job::Job;
 use crate::worker::{Enqueuer, Worker, enqueue};
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
@@ -28,10 +29,14 @@ impl Enqueuer for PgEnqueuer {
         enqueue::enqueue::<W, _, _, _, _, _>(
             state,
             args,
-            async |state, queue, job| -> RoadsterResult<()> {
+            async |state, queue, job: Job| -> RoadsterResult<()> {
                 let context = AppContext::from_ref(state);
-                let id = context.pgmq().send(queue, &job).await?;
-                debug!(job.msg_id = id, "Job enqueued");
+                let msg_id = context.pgmq().send(queue, &job).await?;
+                debug!(
+                    job.id = %job.metadata.id,
+                    job.msg_id = msg_id,
+                    "Job enqueued"
+                );
                 Ok(())
             },
         )
@@ -54,13 +59,18 @@ impl Enqueuer for PgEnqueuer {
         enqueue::enqueue::<W, _, _, _, _, _>(
             state,
             args,
-            async move |state, queue, job| -> RoadsterResult<()> {
+            async move |state, queue, job: Job| -> RoadsterResult<()> {
                 let context = AppContext::from_ref(state);
-                let id = context
+                let msg_id = context
                     .pgmq()
                     .send_delay(queue, &job, delay.as_secs())
                     .await?;
-                debug!(job.msg_id = id, job.delay = delay.as_secs(), "Job enqueued");
+                debug!(
+                    job.id = %job.metadata.id,
+                    job.msg_id = msg_id,
+                    job.delay = delay.as_secs(),
+                    "Job enqueued"
+                );
                 Ok(())
             },
         )
@@ -82,13 +92,18 @@ impl Enqueuer for PgEnqueuer {
         enqueue::enqueue_batch::<W, _, _, _, _, _>(
             state,
             args,
-            async |state, queue, jobs| -> RoadsterResult<()> {
+            async |state, queue, jobs: Vec<Job>| -> RoadsterResult<()> {
                 let context = AppContext::from_ref(state);
-                let ids = context.pgmq().send_batch(queue, &jobs).await?;
-                debug!(count = ids.len(), "Jobs enqueued");
+                let msg_ids = context.pgmq().send_batch(queue, &jobs).await?;
+                debug!(count = msg_ids.len(), "Jobs enqueued");
                 if debug_tracing_enabled(context.config()) {
-                    ids.iter()
-                        .for_each(|id| debug!(job.msg_id = id, "Job enqueued"));
+                    msg_ids.iter().zip(jobs.iter()).for_each(|(msg_id, job)| {
+                        debug!(
+                            job.id = %job.metadata.id,
+                            job.msg_id = msg_id,
+                            "Job enqueued"
+                        )
+                    })
                 }
                 Ok(())
             },
@@ -112,17 +127,26 @@ impl Enqueuer for PgEnqueuer {
         enqueue::enqueue_batch::<W, _, _, _, _, _>(
             state,
             args,
-            async move |state, queue, jobs| -> RoadsterResult<()> {
+            async move |state, queue, jobs: Vec<Job>| -> RoadsterResult<()> {
                 let context = AppContext::from_ref(state);
-                let ids = context
+                let msg_ids = context
                     .pgmq()
                     .send_batch_delay(queue, &jobs, delay.as_secs())
                     .await?;
-                debug!(count = ids.len(), delay = delay.as_secs(), "Jobs enqueued");
+                debug!(
+                    count = msg_ids.len(),
+                    delay = delay.as_secs(),
+                    "Jobs enqueued"
+                );
                 if debug_tracing_enabled(context.config()) {
-                    ids.iter().for_each(|id| {
-                        debug!(job.msg_id = id, job.delay = delay.as_secs(), "Job enqueued")
-                    });
+                    msg_ids.iter().zip(jobs.iter()).for_each(|(msg_id, job)| {
+                        debug!(
+                            job.id = %job.metadata.id,
+                            job.msg_id = msg_id,
+                            job.delay = delay.as_secs(),
+                            "Job enqueued"
+                        )
+                    })
                 }
                 Ok(())
             },

@@ -7,6 +7,7 @@ use crate::worker::backend::sidekiq::processor::{
     SidekiqProcessorError, SidekiqProcessorInner, WorkerData,
 };
 use crate::worker::backend::sidekiq::roadster_worker::RoadsterWorker;
+use crate::worker::job::Job;
 use crate::worker::{PeriodicArgs, PeriodicArgsJson, Worker, WorkerWrapper};
 use axum_core::extract::FromRef;
 use itertools::Itertools;
@@ -17,7 +18,7 @@ use std::any::Any;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 #[non_exhaustive]
 pub struct SidekiqProcessorBuilder<S>
@@ -244,8 +245,24 @@ where
 
                         let roadster_worker =
                             RoadsterWorker::<S, W, Args, E>::new(state, worker_wrapper);
+                        let mut job = Job::from(&args);
+                        /*
+                        We need a deterministic job id for periodic jobs in order to avoid creating
+                        duplicate jobs in Redis. This is because Redis dedupes on the entire serialized
+                        job, so having non-deterministic ID (e.g., a UUID) would result in duplicate
+                        entries being created in Redis. So, for periodic jobs, we use the periodic hash
+                        as the job ID.
+                         */
+                        let id = job.metadata.periodic.as_ref().map(|p| p.hash);
+                        let id = if let Some(id) = id {
+                            id
+                        } else {
+                            warn!("Periodic job created with empty hash/id");
+                            Default::default()
+                        };
+                        job.metadata.id = id.into();
                         let builder = ::sidekiq::periodic::builder(&args.schedule.to_string())?
-                            .args(args.args.clone())?
+                            .args(job)?
                             .queue(queue.clone());
                         let json = serde_json::to_string(
                             &builder

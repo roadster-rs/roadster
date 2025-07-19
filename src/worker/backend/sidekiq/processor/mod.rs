@@ -135,14 +135,14 @@ where
 
         let mut registered_periodic_jobs_json: HashSet<String> = Default::default();
         for (periodic_args, worker_data) in self.inner.periodic_workers.iter() {
-            let json = (worker_data.register_sidekiq_periodic_fn)(
+            let hash = (worker_data.register_sidekiq_periodic_fn)(
                 &self.inner.state,
                 processor,
                 worker_data.worker_wrapper.clone(),
                 periodic_args.clone(),
             )
             .await?;
-            registered_periodic_jobs_json.insert(json);
+            registered_periodic_jobs_json.insert(hash);
         }
 
         if periodic_config.stale_cleanup == StaleCleanUpBehavior::AutoCleanStale {

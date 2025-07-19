@@ -1,4 +1,5 @@
 use crate::app::context::AppContext;
+use crate::worker::job::Job;
 use crate::worker::{Worker, WorkerWrapper};
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
@@ -44,7 +45,7 @@ where
 }
 
 #[async_trait]
-impl<S, W, Args, E> ::sidekiq::Worker<serde_json::Value> for RoadsterWorker<S, W, Args, E>
+impl<S, W, Args, E> ::sidekiq::Worker<Job> for RoadsterWorker<S, W, Args, E>
 where
     S: 'static + Clone + Send + Sync,
     AppContext: FromRef<S>,
@@ -73,7 +74,7 @@ where
             })
     }
 
-    fn opts() -> WorkerOpts<serde_json::Value, Self>
+    fn opts() -> WorkerOpts<Job, Self>
     where
         Self: Sized,
     {
@@ -116,27 +117,23 @@ where
         W::name()
     }
 
-    async fn perform_async(_redis: &RedisPool, _args: serde_json::Value) -> sidekiq::Result<()>
+    async fn perform_async(_redis: &RedisPool, _args: Job) -> sidekiq::Result<()>
     where
         Self: Sized,
     {
         unimplemented!("`RoadsterWorker` should not be enqueued directly")
     }
 
-    async fn perform_in(
-        _redis: &RedisPool,
-        _duration: Duration,
-        _args: serde_json::Value,
-    ) -> sidekiq::Result<()>
+    async fn perform_in(_redis: &RedisPool, _duration: Duration, _args: Job) -> sidekiq::Result<()>
     where
         Self: Sized,
     {
         unimplemented!("`RoadsterWorker` should not be enqueued directly")
     }
 
-    async fn perform(&self, args: serde_json::Value) -> sidekiq::Result<()> {
+    async fn perform(&self, job: Job) -> sidekiq::Result<()> {
         self.inner
-            .handle(&self.state, args)
+            .handle(&self.state, &job.metadata, job.args)
             .await
             .map_err(|err| sidekiq::Error::Any(Box::new(err)))?;
         Ok(())

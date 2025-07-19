@@ -211,6 +211,7 @@ dependencies = [
  "cfg-if",
  "clap",
  "config",
+ "cron",
  "roadster",
  "rusty-sidekiq",
  "schemars",
@@ -1376,6 +1377,27 @@ checksum = "ab63b0e2bf4d5928aff72e83a7dace85d7bba5fe12dcc3c5a572d78caffd3f3c"
 dependencies = [
  "derive_builder_core",
  "syn 2.0.100",
+]
+
+[[package]]
+name = "derive_more"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "093242cf7570c207c83073cf82f79706fe7b8317e98620a47d5be7c3d8497678"
+dependencies = [
+ "derive_more-impl",
+]
+
+[[package]]
+name = "derive_more-impl"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bda628edc44c4bb645fbe0f758797143e4e07926f7ebf4e9bdfbd3d2ce621df3"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.100",
+ "unicode-xid",
 ]
 
 [[package]]
@@ -4800,6 +4822,7 @@ dependencies = [
  "const_format",
  "convert_case 0.8.0",
  "cron",
+ "derive_more",
  "diesel",
  "diesel-async",
  "diesel_migrations",

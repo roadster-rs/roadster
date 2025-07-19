@@ -12,8 +12,10 @@ use roadster::error::RoadsterResult;
 use roadster::service::function::service::FunctionService;
 use roadster::service::http::service::HttpService;
 use roadster::service::worker::SidekiqWorkerService;
+use roadster::worker::PeriodicArgs;
 use roadster::worker::backend::sidekiq::processor::SidekiqProcessor;
 use std::future;
+use std::str::FromStr;
 use tokio_util::sync::CancellationToken;
 
 pub mod api;
@@ -132,6 +134,13 @@ pub fn build_app() -> App {
             Box::pin(async {
                 let processor = SidekiqProcessor::builder(state)
                     .register(ExampleWorker)?
+                    .register_periodic(
+                        ExampleWorker,
+                        PeriodicArgs::builder()
+                            .schedule(cron::Schedule::from_str("* * * * * *")?)
+                            .args("foo".to_owned())
+                            .build(),
+                    )?
                     .build()
                     .await?;
                 registry.register_service(

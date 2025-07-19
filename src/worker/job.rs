@@ -14,9 +14,36 @@ pub(crate) struct Job {
 #[non_exhaustive]
 #[cfg(any(feature = "worker-sidekiq", feature = "worker-pg"))]
 pub(crate) struct JobMetadata {
+    #[builder(into, default = JobId::Uuid(uuid::Uuid::now_v7()))]
+    pub(crate) id: JobId,
     #[builder(into)]
     pub(crate) worker_name: String,
     pub(crate) periodic: Option<PeriodicConfig>,
+}
+
+#[derive(
+    Debug, Copy, Clone, derive_more::Display, serde::Serialize, serde::Deserialize, Eq, PartialEq,
+)]
+#[serde(untagged)]
+#[non_exhaustive]
+#[cfg(any(feature = "worker-sidekiq", feature = "worker-pg"))]
+pub(crate) enum JobId {
+    Uuid(uuid::Uuid),
+    Hash(u64),
+}
+
+#[cfg(any(feature = "worker-sidekiq", feature = "worker-pg"))]
+impl From<uuid::Uuid> for JobId {
+    fn from(value: uuid::Uuid) -> Self {
+        Self::Uuid(value)
+    }
+}
+
+#[cfg(any(feature = "worker-sidekiq", feature = "worker-pg"))]
+impl From<u64> for JobId {
+    fn from(value: u64) -> Self {
+        Self::Hash(value)
+    }
 }
 
 // Todo: Not sure if this should be public yet.
@@ -38,7 +65,6 @@ impl From<&crate::worker::PeriodicArgsJson> for Job {
         value.hash(&mut hash);
         let hash = hash.finish();
 
-        // let hash = periodic_hash(&value.worker_name, &value.schedule, &value.args);
         Job::builder()
             .args(value.args.clone())
             .metadata(
@@ -130,6 +156,8 @@ mod tests {
     #[test]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn job_serde() {
+        let _case = TestCase::new();
+
         let job = Job::builder()
             .args(serde_json::json!({"foo": "bar"}))
             .metadata(
@@ -151,6 +179,8 @@ mod tests {
     #[test]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn job_serde_no_periodic() {
+        let _case = TestCase::new();
+
         let job = Job::builder()
             .args(serde_json::json!({"foo": "bar"}))
             .metadata(JobMetadata::builder().worker_name("foo").build())

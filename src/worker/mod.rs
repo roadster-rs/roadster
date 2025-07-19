@@ -10,6 +10,8 @@ pub use crate::worker::backend::sidekiq::enqueue::SidekiqEnqueuer;
 pub use crate::worker::backend::sidekiq::processor::SidekiqProcessor;
 use crate::worker::config::{EnqueueConfig, WorkerConfig};
 use crate::worker::enqueue::Enqueuer;
+#[cfg(any(feature = "worker-sidekiq", feature = "worker-pg"))]
+use crate::worker::job::JobMetadata;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use cron::Schedule;
@@ -200,6 +202,7 @@ where
     {
         use std::any::Any;
 
+        let type_id = worker.type_id();
         let worker = std::sync::Arc::new(worker);
 
         #[cfg(feature = "bench")]
@@ -208,7 +211,7 @@ where
         Ok(Self {
             inner: std::sync::Arc::new(WorkerWrapperInner {
                 name: W::name(),
-                type_id: worker.type_id(),
+                type_id,
                 enqueue_config,
                 worker_config: worker.worker_config(state),
                 worker_fn: Box::new(move |state: &S, args: serde_json::Value| {
@@ -236,7 +239,12 @@ where
         })
     }
 
-    async fn handle(&self, state: &S, args: serde_json::Value) -> crate::error::RoadsterResult<()> {
+    async fn handle(
+        &self,
+        state: &S,
+        job_metadata: &JobMetadata,
+        args: serde_json::Value,
+    ) -> crate::error::RoadsterResult<()> {
         let span_name = format!("WORKER {}::handle", self.inner.name);
         let context = AppContext::from_ref(state);
         let queue_name = self.inner.enqueue_config.queue.as_ref().or(context
@@ -250,6 +258,7 @@ where
             "WORKER",
             otel.name = span_name,
             otel.kind = "CONSUMER",
+            job.id = %job_metadata.id,
             worker.name = self.inner.name,
             worker.queue.name = queue_name
         );
