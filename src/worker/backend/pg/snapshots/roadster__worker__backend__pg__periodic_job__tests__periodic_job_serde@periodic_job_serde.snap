@@ -1,11 +1,15 @@
 ---
-source: src/worker/job.rs
+source: src/worker/backend/pg/periodic_job.rs
 expression: job
 ---
 {
   "metadata": {
     "id": "[uuid]",
     "worker_name": "foo"
+  },
+  "periodic": {
+    "hash": 1234,
+    "schedule": "* * * * * *"
   },
   "args": {
     "foo": "bar"

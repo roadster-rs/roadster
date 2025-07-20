@@ -166,3 +166,79 @@ where
 
     Ok(())
 }
+
+#[cfg(test)]
+pub(crate) mod test {
+    use crate::app::context::AppContext;
+    use crate::worker::Worker;
+    use crate::worker::enqueue::Enqueuer;
+    use async_trait::async_trait;
+    use axum_core::extract::FromRef;
+    use serde::{Deserialize, Serialize};
+    use std::borrow::Borrow;
+    use std::time::Duration;
+
+    pub(crate) struct TestEnqueuer;
+    #[async_trait]
+    impl Enqueuer for TestEnqueuer {
+        type Error = crate::error::Error;
+
+        async fn enqueue<W, S, Args, ArgsRef, E>(
+            _state: &S,
+            _args: ArgsRef,
+        ) -> Result<(), Self::Error>
+        where
+            W: 'static + Worker<S, Args, Error = E>,
+            S: Clone + Send + Sync + 'static,
+            AppContext: FromRef<S>,
+            Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+            ArgsRef: Send + Sync + Borrow<Args> + Serialize,
+        {
+            unimplemented!()
+        }
+
+        async fn enqueue_delayed<W, S, Args, ArgsRef, E>(
+            _state: &S,
+            _args: ArgsRef,
+            _delay: Duration,
+        ) -> Result<(), Self::Error>
+        where
+            W: 'static + Worker<S, Args, Error = E>,
+            S: Clone + Send + Sync + 'static,
+            AppContext: FromRef<S>,
+            Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+            ArgsRef: Send + Sync + Borrow<Args> + Serialize,
+        {
+            unimplemented!()
+        }
+
+        async fn enqueue_batch<W, S, Args, ArgsRef, E>(
+            _state: &S,
+            _args: &[ArgsRef],
+        ) -> Result<(), Self::Error>
+        where
+            W: 'static + Worker<S, Args, Error = E>,
+            S: Clone + Send + Sync + 'static,
+            AppContext: FromRef<S>,
+            Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+            ArgsRef: Send + Sync + Borrow<Args> + Serialize,
+        {
+            unimplemented!()
+        }
+
+        async fn enqueue_batch_delayed<W, S, Args, ArgsRef, E>(
+            _state: &S,
+            _args: &[ArgsRef],
+            _delay: Duration,
+        ) -> Result<(), Self::Error>
+        where
+            W: 'static + Worker<S, Args, Error = E>,
+            S: Clone + Send + Sync + 'static,
+            AppContext: FromRef<S>,
+            Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
+            ArgsRef: Send + Sync + Borrow<Args> + Serialize,
+        {
+            unimplemented!()
+        }
+    }
+}

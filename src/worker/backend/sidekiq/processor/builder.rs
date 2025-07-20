@@ -293,3 +293,130 @@ where
         Ok(worker_data)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::app::context::AppContext;
+    use crate::worker::backend::sidekiq::processor::builder::SidekiqProcessorBuilder;
+    use crate::worker::enqueue::test::TestEnqueuer;
+    use crate::worker::test::TestWorker;
+    use crate::worker::{PeriodicArgs, Worker};
+    use async_trait::async_trait;
+    use cron::Schedule;
+    use rstest::{fixture, rstest};
+    use std::str::FromStr;
+
+    struct TestWorkerNoQueue;
+    #[async_trait]
+    impl Worker<AppContext, ()> for TestWorkerNoQueue {
+        type Error = crate::error::Error;
+        type Enqueuer = TestEnqueuer;
+
+        async fn handle(&self, _state: &AppContext, _args: ()) -> Result<(), Self::Error> {
+            unimplemented!()
+        }
+    }
+
+    #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn context() -> AppContext {
+        AppContext::test(None, None, None).unwrap()
+    }
+
+    #[fixture]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn builder(context: AppContext) -> SidekiqProcessorBuilder<AppContext> {
+        SidekiqProcessorBuilder::new(&context)
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn builder_register(builder: SidekiqProcessorBuilder<AppContext>) {
+        builder.register(TestWorker).unwrap();
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn builder_register_duplicate(builder: SidekiqProcessorBuilder<AppContext>) {
+        let result = builder.register(TestWorker).unwrap().register(TestWorker);
+        assert!(result.is_err());
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn builder_register_no_queue(builder: SidekiqProcessorBuilder<AppContext>) {
+        let result = builder.register(TestWorkerNoQueue);
+        assert!(result.is_err());
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn builder_register_periodic(builder: SidekiqProcessorBuilder<AppContext>) {
+        builder
+            .register_periodic(
+                TestWorker,
+                PeriodicArgs::builder()
+                    .args(())
+                    .schedule(Schedule::from_str("* * * * * *").unwrap())
+                    .build(),
+            )
+            .unwrap();
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn builder_register_periodic_duplicate(builder: SidekiqProcessorBuilder<AppContext>) {
+        let result = builder
+            .register_periodic(
+                TestWorker,
+                PeriodicArgs::builder()
+                    .args(())
+                    .schedule(Schedule::from_str("* * * * * *").unwrap())
+                    .build(),
+            )
+            .unwrap()
+            .register_periodic(
+                TestWorker,
+                PeriodicArgs::builder()
+                    .args(())
+                    .schedule(Schedule::from_str("* * * * * *").unwrap())
+                    .build(),
+            );
+        assert!(result.is_err());
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn builder_register_periodic_same_worker(builder: SidekiqProcessorBuilder<AppContext>) {
+        let result = builder
+            .register_periodic(
+                TestWorker,
+                PeriodicArgs::builder()
+                    .args(())
+                    .schedule(Schedule::from_str("* * * * * *").unwrap())
+                    .build(),
+            )
+            .unwrap()
+            .register_periodic(
+                TestWorker,
+                PeriodicArgs::builder()
+                    .args(())
+                    .schedule(Schedule::from_str("*/10 * * * * *").unwrap())
+                    .build(),
+            );
+        assert!(result.is_ok());
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn builder_register_periodic_no_queue(builder: SidekiqProcessorBuilder<AppContext>) {
+        let result = builder.register_periodic(
+            TestWorkerNoQueue,
+            PeriodicArgs::builder()
+                .args(())
+                .schedule(Schedule::from_str("* * * * * *").unwrap())
+                .build(),
+        );
+        assert!(result.is_err());
+    }
+}
