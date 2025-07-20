@@ -29,12 +29,12 @@ async fn run_jobs<W: 'static + Worker<AppContext, ExampleWorkerArgs>>(
     .take(num_jobs as usize)
     .collect_vec();
 
-    let start = Instant::now();
+    let timer = Instant::now();
     W::enqueue_batch(state, &jobs).await.unwrap();
 
     latch_wait.await;
 
-    Instant::now() - start
+    timer.elapsed()
 }
 
 fn worker_benchmark<W: 'static + Worker<AppContext, ExampleWorkerArgs>>(
