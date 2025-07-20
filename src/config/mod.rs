@@ -23,7 +23,6 @@ use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::fs;
-use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
 use validator::{Validate, ValidationErrors};
 
@@ -91,24 +90,19 @@ pub struct AppConfig {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Debug, Default, Clone, Validate, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Default,
+    Clone,
+    derive_more::Deref,
+    derive_more::DerefMut,
+    Validate,
+    Serialize,
+    Deserialize,
+)]
 pub struct CustomConfig {
     #[serde(flatten)]
     inner: BTreeMap<String, Value>,
-}
-
-impl Deref for CustomConfig {
-    type Target = BTreeMap<String, Value>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-
-impl DerefMut for CustomConfig {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
-    }
 }
 
 impl From<CustomConfig> for BTreeMap<String, Value> {
