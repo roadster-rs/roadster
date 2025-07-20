@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0-rc.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.0-rc.2...roadster-v0.8.0-rc.3) - 2025-07-20
+
+### Fixed
+
+- [**breaking**] Create separate `PeriodicJob` that's only needed for pg worker ([#865](https://github.com/roadster-rs/roadster/pull/865))
+
 ## [0.8.0-rc.2](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.0-rc.1...roadster-v0.8.0-rc.2) - 2025-07-19
 
 ### Added
