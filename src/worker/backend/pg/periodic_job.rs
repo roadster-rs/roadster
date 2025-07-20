@@ -1,3 +1,4 @@
+use crate::worker::PeriodicArgsJson;
 use crate::worker::job::JobMetadata;
 
 // Todo: Not sure if this should be public yet.
@@ -19,8 +20,8 @@ pub(crate) struct PeriodicConfig {
     pub(crate) schedule: cron::Schedule,
 }
 
-impl From<&crate::worker::PeriodicArgsJson> for PeriodicJob {
-    fn from(value: &crate::worker::PeriodicArgsJson) -> Self {
+impl From<&PeriodicArgsJson> for PeriodicJob {
+    fn from(value: &PeriodicArgsJson) -> Self {
         use std::hash::{DefaultHasher, Hash, Hasher};
 
         let mut hash = DefaultHasher::new();
