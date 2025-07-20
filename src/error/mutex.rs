@@ -3,27 +3,11 @@ use std::any::type_name;
 use std::ops::Deref;
 use std::sync::PoisonError;
 
-#[derive(Debug)]
+#[derive(Debug, derive_more::Deref)]
 pub struct MutexType(String);
 
-impl Deref for MutexType {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, derive_more::Deref)]
 pub struct MutexErrMsg(String);
-
-impl Deref for MutexErrMsg {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
 
 #[derive(Debug, Error)]
 #[non_exhaustive]

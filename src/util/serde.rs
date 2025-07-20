@@ -1,8 +1,6 @@
-use std::fmt::Display;
-use std::str::FromStr;
-
 use serde::{Deserializer, Serializer, de};
 use serde_derive::{Deserialize, Serialize};
+use std::str::FromStr;
 use url::Url;
 
 /// Custom deserializer to allow deserializing a string field as the given type `T`, as long as
@@ -34,20 +32,11 @@ where
 /// Type that can be used to deserialize a value to a URI or, if the value is not a valid URI, fall
 /// back to deserializing as a string.
 // Intentionally not annotated with `#[non_exhaustive]`
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, derive_more::Display, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(untagged)]
 pub enum UriOrString {
     Uri(Url),
     String(String),
-}
-
-impl Display for UriOrString {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            UriOrString::Uri(inner) => write!(f, "{inner}"),
-            UriOrString::String(inner) => write!(f, "{inner}"),
-        }
-    }
 }
 
 /// Function to default a boolean field to `true`.
