@@ -7,7 +7,7 @@ use crate::worker::backend::sidekiq::processor::{
     SidekiqProcessorError, SidekiqProcessorInner, WorkerData,
 };
 use crate::worker::backend::sidekiq::roadster_worker::RoadsterWorker;
-use crate::worker::job::Job;
+use crate::worker::job::{Job, JobMetadata, periodic_hash};
 use crate::worker::{PeriodicArgs, PeriodicArgsJson, Worker, WorkerWrapper};
 use axum_core::extract::FromRef;
 use itertools::Itertools;
@@ -16,9 +16,10 @@ use serde::{Deserialize, Serialize};
 use sidekiq::{Processor, ServerMiddleware};
 use std::any::Any;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::hash::{DefaultHasher, Hasher};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::{error, info, warn};
+use tracing::{error, info};
 
 #[non_exhaustive]
 pub struct SidekiqProcessorBuilder<S>
@@ -243,9 +244,6 @@ where
                     Box::pin(async move {
                         use sidekiq::Worker as SidekiqWorker;
 
-                        let roadster_worker =
-                            RoadsterWorker::<S, W, Args, E>::new(state, worker_wrapper);
-                        let mut job = Job::from(&args);
                         /*
                         We need a deterministic job id for periodic jobs in order to avoid creating
                         duplicate jobs in Redis. This is because Redis dedupes on the entire serialized
@@ -253,22 +251,33 @@ where
                         entries being created in Redis. So, for periodic jobs, we use the periodic hash
                         as the job ID.
                          */
-                        let id = job.metadata.periodic.as_ref().map(|p| p.hash);
-                        let id = if let Some(id) = id {
-                            id
-                        } else {
-                            warn!("Periodic job created with empty hash/id");
-                            Default::default()
-                        };
-                        job.metadata.id = id.into();
+                        let mut hash = DefaultHasher::new();
+                        periodic_hash(&mut hash, &args.worker_name, &args.schedule, &args.args);
+                        let hash = hash.finish();
+
+                        let job = Job::builder()
+                            .args(args.args)
+                            .metadata(
+                                JobMetadata::builder()
+                                    .id(hash)
+                                    .worker_name(args.worker_name)
+                                    .build(),
+                            )
+                            .build();
+
                         let builder = ::sidekiq::periodic::builder(&args.schedule.to_string())?
                             .args(job)?
                             .queue(queue.clone());
+
                         let json = serde_json::to_string(
                             &builder
                                 .into_periodic_job(RoadsterWorker::<S, W, Args, E>::class_name())?,
                         )?;
+
+                        let roadster_worker =
+                            RoadsterWorker::<S, W, Args, E>::new(state, worker_wrapper);
                         builder.register(processor, roadster_worker).await?;
+
                         Ok(json)
                     })
                 },

@@ -322,6 +322,7 @@ mod tests {
 
     mod periodic_args {
         use crate::worker::PeriodicArgsJson;
+        use crate::worker::backend::pg::periodic_job::PeriodicJob;
         use crate::worker::job::Job;
         use cron::Schedule;
         use insta::assert_snapshot;
@@ -356,15 +357,15 @@ mod tests {
         #[rstest]
         #[cfg_attr(coverage_nightly, coverage(off))]
         fn job_from_periodic_args_hash(periodic_args_json: PeriodicArgsJson) {
-            let job = Job::from(&periodic_args_json);
+            let job = PeriodicJob::from(&periodic_args_json);
             let mut hasher = DefaultHasher::new();
             crate::worker::job::periodic_hash(
                 &mut hasher,
                 &job.metadata.worker_name,
-                &job.metadata.periodic.as_ref().unwrap().schedule,
+                &job.periodic.schedule,
                 &job.args,
             );
-            assert_eq!(hasher.finish(), job.metadata.periodic.unwrap().hash);
+            assert_eq!(hasher.finish(), job.periodic.hash);
         }
     }
 }

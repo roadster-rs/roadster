@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM pgmq.q_periodic where message->'periodic'->'hash' != ALL($1)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "JsonbArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4a66feca0aab3e519a27f837bfd33d1fd5d39bd1c221ce651f241f45298f6d1a"
+}
