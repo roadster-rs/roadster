@@ -21,6 +21,8 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::{error, info};
 
+// Todo: The `SidekiqProcessorBuilder` and the `PgProcessorBuilder` have a lot of similar code, can
+//  we consolidate some of it?
 #[non_exhaustive]
 pub struct SidekiqProcessorBuilder<S>
 where

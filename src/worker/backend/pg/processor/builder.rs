@@ -7,6 +7,8 @@ use serde::{Deserialize, Serialize};
 use std::any::Any;
 use tracing::{error, info};
 
+// Todo: The `SidekiqProcessorBuilder` and the `PgProcessorBuilder` have a lot of similar code, can
+//  we consolidate some of it?
 #[non_exhaustive]
 pub struct PgProcessorBuilder<S>
 where
