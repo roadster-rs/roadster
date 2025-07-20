@@ -18,9 +18,9 @@ pub(crate) struct JobMetadata {
     pub(crate) id: JobId,
     #[builder(into)]
     pub(crate) worker_name: String,
-    pub(crate) periodic: Option<PeriodicConfig>,
 }
 
+// Todo: Not sure if this should be public yet.
 #[derive(
     Debug, Copy, Clone, derive_more::Display, serde::Serialize, serde::Deserialize, Eq, PartialEq,
 )]
@@ -47,41 +47,6 @@ impl From<u64> for JobId {
 }
 
 // Todo: Not sure if this should be public yet.
-#[serde_with::skip_serializing_none]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, bon::Builder, Eq, PartialEq)]
-#[non_exhaustive]
-#[cfg(any(feature = "worker-sidekiq", feature = "worker-pg"))]
-pub(crate) struct PeriodicConfig {
-    pub(crate) hash: u64,
-    pub(crate) schedule: cron::Schedule,
-}
-
-#[cfg(any(feature = "worker-sidekiq", feature = "worker-pg"))]
-impl From<&crate::worker::PeriodicArgsJson> for Job {
-    fn from(value: &crate::worker::PeriodicArgsJson) -> Self {
-        use std::hash::{DefaultHasher, Hash, Hasher};
-
-        let mut hash = DefaultHasher::new();
-        value.hash(&mut hash);
-        let hash = hash.finish();
-
-        Job::builder()
-            .args(value.args.clone())
-            .metadata(
-                JobMetadata::builder()
-                    .worker_name(value.worker_name.clone())
-                    .periodic(
-                        PeriodicConfig::builder()
-                            .hash(hash)
-                            .schedule(value.schedule.clone())
-                            .build(),
-                    )
-                    .build(),
-            )
-            .build()
-    }
-}
-
 #[cfg(any(feature = "worker-sidekiq", feature = "worker-pg"))]
 pub(crate) fn periodic_hash<H: std::hash::Hasher>(
     hasher: &mut H,
@@ -100,7 +65,7 @@ pub(crate) fn periodic_hash<H: std::hash::Hasher>(
 #[cfg(any(feature = "worker-sidekiq", feature = "worker-pg"))]
 mod tests {
     use crate::testing::snapshot::TestCase;
-    use crate::worker::job::{Job, JobMetadata, PeriodicConfig};
+    use crate::worker::job::{Job, JobMetadata};
     use cron::Schedule;
     use insta::{assert_json_snapshot, assert_snapshot};
     use rstest::{fixture, rstest};
@@ -133,17 +98,7 @@ mod tests {
     fn job_ser_and_deser() {
         let job = Job::builder()
             .args(serde_json::json!({"foo": "bar"}))
-            .metadata(
-                JobMetadata::builder()
-                    .worker_name("foo")
-                    .periodic(
-                        PeriodicConfig::builder()
-                            .hash(1234) // fake hash
-                            .schedule(Schedule::from_str("* * * * * *").unwrap())
-                            .build(),
-                    )
-                    .build(),
-            )
+            .metadata(JobMetadata::builder().worker_name("foo").build())
             .build();
 
         let ser = serde_json::to_value(&job).unwrap();
@@ -156,29 +111,6 @@ mod tests {
     #[test]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn job_serde() {
-        let _case = TestCase::new();
-
-        let job = Job::builder()
-            .args(serde_json::json!({"foo": "bar"}))
-            .metadata(
-                JobMetadata::builder()
-                    .worker_name("foo")
-                    .periodic(
-                        PeriodicConfig::builder()
-                            .hash(1234) // fake hash
-                            .schedule(Schedule::from_str("* * * * * *").unwrap())
-                            .build(),
-                    )
-                    .build(),
-            )
-            .build();
-
-        assert_json_snapshot!(job);
-    }
-
-    #[test]
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    fn job_serde_no_periodic() {
         let _case = TestCase::new();
 
         let job = Job::builder()

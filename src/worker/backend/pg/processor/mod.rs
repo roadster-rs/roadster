@@ -7,6 +7,7 @@ use crate::error::RoadsterResult;
 use crate::util::tracing::optional_trace_field;
 use crate::worker::PeriodicArgsJson;
 use crate::worker::WorkerWrapper;
+use crate::worker::backend::pg::periodic_job::PeriodicJob;
 use crate::worker::backend::pg::{failure_action, retry_delay, success_action};
 use crate::worker::backend::shared_queues;
 use crate::worker::config::CompletedAction;
@@ -143,7 +144,7 @@ where
         // Create a unique index on the periodic job hash. This ensures we don't enqueue duplicate
         // periodic jobs.
         sqlx::query!(
-            r#"CREATE UNIQUE INDEX IF NOT EXISTS roadster_periodic_hash_idx ON pgmq.q_periodic USING btree ((message->'metadata'->'periodic'->'hash'))"#
+            r#"CREATE UNIQUE INDEX IF NOT EXISTS roadster_periodic_hash_idx ON pgmq.q_periodic USING btree ((message->'periodic'->'hash'))"#
         ).execute(&context.pgmq().connection).await?;
 
         let periodic_config = &context.config().service.worker.pg.custom.custom.periodic;
@@ -152,7 +153,7 @@ where
             .inner
             .periodic_workers
             .iter()
-            .map(Job::from)
+            .map(PeriodicJob::from)
             .collect_vec();
 
         match periodic_config.stale_cleanup {
@@ -167,16 +168,16 @@ where
             StaleCleanUpBehavior::AutoCleanStale => {
                 let current_job_hashes = periodic_jobs
                     .iter()
-                    .filter_map(|job| {
-                        job.metadata.periodic.as_ref().map(|periodic| {
-                            serde_json::Value::Number(serde_json::Number::from(periodic.hash))
-                        })
+                    .map(|job| {
+                        serde_json::Value::Number(serde_json::Number::from(job.periodic.hash))
                     })
                     .collect_vec();
                 let result = sqlx::query!(
-                    r#"DELETE FROM pgmq.q_periodic where message->'metadata'->'periodic'->'hash' != ALL($1)"#,
+                    r#"DELETE FROM pgmq.q_periodic where message->'periodic'->'hash' != ALL($1)"#,
                     current_job_hashes.as_slice()
-                ).execute(&context.pgmq().connection).await?;
+                )
+                .execute(&context.pgmq().connection)
+                .await?;
                 info!(
                     count = result.rows_affected(),
                     "Deleted stale periodic jobs"
@@ -185,38 +186,23 @@ where
         }
 
         for job in periodic_jobs.iter() {
-            if let Some(schedule) = job
-                .metadata
-                .periodic
-                .as_ref()
-                .map(|periodic| &periodic.schedule)
-            {
-                let delay = periodic_next_run_delay(schedule, None);
-                let result = context
-                    .pgmq()
-                    .send_delay(PERIODIC_QUEUE_NAME, job, delay.as_secs())
-                    .await;
+            let delay = periodic_next_run_delay(&job.periodic.schedule, None);
+            let result = context
+                .pgmq()
+                .send_delay(PERIODIC_QUEUE_NAME, job, delay.as_secs())
+                .await;
 
-                match result {
-                    Ok(_) => Ok(()),
-                    Err(PgmqError::DatabaseError(Error::Database(err))) => match err.kind() {
-                        // We use a unique index constraint to ensure we don't enqueue duplicate periodic
-                        // jobs, so we ignore `UniqueViolation` errors, but allow all other errors
-                        // to be returned.
-                        ErrorKind::UniqueViolation => Ok(()),
-                        _ => Err(PgmqError::DatabaseError(Error::Database(err))),
-                    },
-                    Err(err) => Err(err),
-                }?;
-            } else {
-                return Err(
-                    crate::error::worker::EnqueueError::PeriodicJobMissingSchedule(
-                        job.metadata.worker_name.clone(),
-                        job.args.clone(),
-                    )
-                    .into(),
-                );
-            }
+            match result {
+                Ok(_) => Ok(()),
+                Err(PgmqError::DatabaseError(Error::Database(err))) => match err.kind() {
+                    // We use a unique index constraint to ensure we don't enqueue duplicate periodic
+                    // jobs, so we ignore `UniqueViolation` errors, but allow all other errors
+                    // to be returned.
+                    ErrorKind::UniqueViolation => Ok(()),
+                    _ => Err(PgmqError::DatabaseError(Error::Database(err))),
+                },
+                Err(err) => Err(err),
+            }?;
         }
 
         Ok(())
@@ -585,7 +571,7 @@ where
                 }
             };
 
-            let job: Job = match serde_json::from_value(msg.message) {
+            let job: PeriodicJob = match serde_json::from_value(msg.message) {
                 Ok(job) => job,
                 Err(err) => {
                     error!(
@@ -615,21 +601,17 @@ where
             let queue = worker
                 .and_then(|worker| worker.inner.enqueue_config.queue.as_ref())
                 .or(default_enqueue_config.queue.as_ref());
-            let periodic = job.metadata.periodic.as_ref();
 
-            let (worker, queue, periodic) = if let Some(((worker, queue), periodic)) =
-                worker.zip(queue).zip(periodic)
-            {
-                (worker, queue, periodic)
+            let (worker, queue) = if let Some((worker, queue)) = worker.zip(queue) {
+                (worker, queue)
             } else {
                 error!(
                     job.id = %job.metadata.id,
                     job.msg_id = msg.msg_id,
                     job.read_count = msg.read_ct,
-                    job.is_periodic = periodic.is_some(),
                     worker.name = job.metadata.worker_name,
                     worker.queue.name = queue,
-                    "Unable to enqueue job; worker not registered, no queue configured, or no periodic metadata configured"
+                    "Unable to enqueue job; worker not registered or no queue configured"
                 );
                 // For periodic jobs, we simply delete the failing msg. It will
                 // be re-enqueued the next time the app starts
@@ -670,7 +652,7 @@ where
                 continue;
             }
 
-            let delay = periodic_next_run_delay(&periodic.schedule, None);
+            let delay = periodic_next_run_delay(&job.periodic.schedule, None);
             if let Err(err) = pgmq
                 .set_vt::<serde_json::Value>(PERIODIC_QUEUE_NAME, msg.msg_id, Utc::now() + delay)
                 .await

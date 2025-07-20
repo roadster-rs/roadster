@@ -1,5 +1,5 @@
 ---
 source: src/worker/job.rs
-expression: "super::periodic_hash(name, &schedule, &value)"
+expression: hasher.finish()
 ---
 11189630487790136136

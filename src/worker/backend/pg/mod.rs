@@ -9,6 +9,7 @@ use std::sync::OnceLock;
 use std::time::Duration;
 
 pub mod enqueue;
+pub(crate) mod periodic_job;
 pub mod processor;
 
 static DEFAULT_COMPLETED_ACTION: OnceLock<CompletedAction> = OnceLock::new();

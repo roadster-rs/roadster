@@ -346,6 +346,30 @@ impl std::hash::Hash for PeriodicArgsJson {
 }
 
 #[cfg(test)]
+pub(crate) mod test {
+    use crate::app::context::AppContext;
+    use crate::worker::Worker;
+    use crate::worker::config::EnqueueConfig;
+    use crate::worker::enqueue::test::TestEnqueuer;
+    use async_trait::async_trait;
+
+    pub(crate) struct TestWorker;
+    #[async_trait]
+    impl Worker<AppContext, ()> for TestWorker {
+        type Error = crate::error::Error;
+        type Enqueuer = TestEnqueuer;
+
+        fn enqueue_config(_state: &AppContext) -> EnqueueConfig {
+            EnqueueConfig::builder().queue("default").build()
+        }
+
+        async fn handle(&self, _state: &AppContext, _args: ()) -> Result<(), Self::Error> {
+            unimplemented!()
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use crate::app::context::AppContext;
     use crate::config::AppConfig;

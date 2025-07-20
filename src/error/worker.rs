@@ -45,9 +45,6 @@ pub enum EnqueueError {
 
     #[error("Unable to serialize job args: `{0}`")]
     Serde(#[from] serde_json::Error),
-
-    #[error("Periodic job does not have a schedule. Worker: `{0}`, Args: `{1:?}`")]
-    PeriodicJobMissingSchedule(String, serde_json::Value),
 }
 
 #[derive(Debug, Error)]

@@ -7,6 +7,8 @@ use serde::{Deserialize, Serialize};
 use std::any::Any;
 use tracing::{error, info};
 
+// Todo: The `SidekiqProcessorBuilder` and the `PgProcessorBuilder` have a lot of similar code, can
+//  we consolidate some of it?
 #[non_exhaustive]
 pub struct PgProcessorBuilder<S>
 where
@@ -137,96 +139,13 @@ where
 mod tests {
     use crate::app::context::AppContext;
     use crate::worker::backend::pg::processor::builder::PgProcessorBuilder;
-    use crate::worker::config::EnqueueConfig;
-    use crate::worker::enqueue::Enqueuer;
+    use crate::worker::enqueue::test::TestEnqueuer;
+    use crate::worker::test::TestWorker;
     use crate::worker::{PeriodicArgs, Worker};
     use async_trait::async_trait;
-    use axum_core::extract::FromRef;
     use cron::Schedule;
     use rstest::{fixture, rstest};
-    use serde::{Deserialize, Serialize};
-    use std::borrow::Borrow;
     use std::str::FromStr;
-    use std::time::Duration;
-
-    struct TestEnqueuer;
-    #[async_trait]
-    impl Enqueuer for TestEnqueuer {
-        type Error = crate::error::Error;
-
-        async fn enqueue<W, S, Args, ArgsRef, E>(
-            _state: &S,
-            _args: ArgsRef,
-        ) -> Result<(), Self::Error>
-        where
-            W: 'static + Worker<S, Args, Error = E>,
-            S: Clone + Send + Sync + 'static,
-            AppContext: FromRef<S>,
-            Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-            ArgsRef: Send + Sync + Borrow<Args> + Serialize,
-        {
-            unimplemented!()
-        }
-
-        async fn enqueue_delayed<W, S, Args, ArgsRef, E>(
-            _state: &S,
-            _args: ArgsRef,
-            _delay: Duration,
-        ) -> Result<(), Self::Error>
-        where
-            W: 'static + Worker<S, Args, Error = E>,
-            S: Clone + Send + Sync + 'static,
-            AppContext: FromRef<S>,
-            Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-            ArgsRef: Send + Sync + Borrow<Args> + Serialize,
-        {
-            unimplemented!()
-        }
-
-        async fn enqueue_batch<W, S, Args, ArgsRef, E>(
-            _state: &S,
-            _args: &[ArgsRef],
-        ) -> Result<(), Self::Error>
-        where
-            W: 'static + Worker<S, Args, Error = E>,
-            S: Clone + Send + Sync + 'static,
-            AppContext: FromRef<S>,
-            Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-            ArgsRef: Send + Sync + Borrow<Args> + Serialize,
-        {
-            unimplemented!()
-        }
-
-        async fn enqueue_batch_delayed<W, S, Args, ArgsRef, E>(
-            _state: &S,
-            _args: &[ArgsRef],
-            _delay: Duration,
-        ) -> Result<(), Self::Error>
-        where
-            W: 'static + Worker<S, Args, Error = E>,
-            S: Clone + Send + Sync + 'static,
-            AppContext: FromRef<S>,
-            Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-            ArgsRef: Send + Sync + Borrow<Args> + Serialize,
-        {
-            unimplemented!()
-        }
-    }
-
-    struct TestWorker;
-    #[async_trait]
-    impl Worker<AppContext, ()> for TestWorker {
-        type Error = crate::error::Error;
-        type Enqueuer = TestEnqueuer;
-
-        fn enqueue_config(_state: &AppContext) -> EnqueueConfig {
-            EnqueueConfig::builder().queue("default").build()
-        }
-
-        async fn handle(&self, _state: &AppContext, _args: ()) -> Result<(), Self::Error> {
-            unimplemented!()
-        }
-    }
 
     struct TestWorkerNoQueue;
     #[async_trait]
@@ -309,6 +228,28 @@ mod tests {
 
     #[rstest]
     #[cfg_attr(coverage_nightly, coverage(off))]
+    fn builder_register_periodic_same_worker(builder: PgProcessorBuilder<AppContext>) {
+        let result = builder
+            .register_periodic(
+                TestWorker,
+                PeriodicArgs::builder()
+                    .args(())
+                    .schedule(Schedule::from_str("* * * * * *").unwrap())
+                    .build(),
+            )
+            .unwrap()
+            .register_periodic(
+                TestWorker,
+                PeriodicArgs::builder()
+                    .args(())
+                    .schedule(Schedule::from_str("*/10 * * * * *").unwrap())
+                    .build(),
+            );
+        assert!(result.is_ok());
+    }
+
+    #[rstest]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn builder_register_periodic_no_queue(builder: PgProcessorBuilder<AppContext>) {
         let result = builder.register_periodic(
             TestWorkerNoQueue,
@@ -318,53 +259,5 @@ mod tests {
                 .build(),
         );
         assert!(result.is_err());
-    }
-
-    mod periodic_args {
-        use crate::worker::PeriodicArgsJson;
-        use crate::worker::job::Job;
-        use cron::Schedule;
-        use insta::assert_snapshot;
-        use rstest::{fixture, rstest};
-        use std::hash::DefaultHasher;
-        use std::hash::Hasher;
-        use std::str::FromStr;
-
-        #[fixture]
-        #[cfg_attr(coverage_nightly, coverage(off))]
-        fn periodic_args_json() -> PeriodicArgsJson {
-            PeriodicArgsJson::builder()
-                .worker_name("a".to_string())
-                .schedule(Schedule::from_str("* * * * * *").unwrap())
-                .args(serde_json::json!({"foo": "bar"}))
-                .build()
-        }
-
-        #[rstest]
-        #[cfg_attr(coverage_nightly, coverage(off))]
-        fn periodic_args_json_hash(periodic_args_json: PeriodicArgsJson) {
-            let mut hasher = DefaultHasher::new();
-            crate::worker::job::periodic_hash(
-                &mut hasher,
-                &periodic_args_json.worker_name,
-                &periodic_args_json.schedule,
-                &periodic_args_json.args,
-            );
-            assert_snapshot!(hasher.finish());
-        }
-
-        #[rstest]
-        #[cfg_attr(coverage_nightly, coverage(off))]
-        fn job_from_periodic_args_hash(periodic_args_json: PeriodicArgsJson) {
-            let job = Job::from(&periodic_args_json);
-            let mut hasher = DefaultHasher::new();
-            crate::worker::job::periodic_hash(
-                &mut hasher,
-                &job.metadata.worker_name,
-                &job.metadata.periodic.as_ref().unwrap().schedule,
-                &job.args,
-            );
-            assert_eq!(hasher.finish(), job.metadata.periodic.unwrap().hash);
-        }
     }
 }

@@ -5,11 +5,7 @@ expression: job
 {
   "metadata": {
     "id": "[uuid]",
-    "worker_name": "foo",
-    "periodic": {
-      "hash": 1234,
-      "schedule": "* * * * * *"
-    }
+    "worker_name": "foo"
   },
   "args": {
     "foo": "bar"
