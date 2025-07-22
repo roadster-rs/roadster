@@ -1,4 +1,4 @@
-# Background jobs with Sidekiq
+# Background jobs with Postgres
 
 Roadster provides built-in support for running background jobs using Postgres as the queue backing store. Roadster
 uses the Rust-only integration provided by [pgmq](https://docs.rs/pgmq/) (as opposed to the Postgres extension
