@@ -96,7 +96,7 @@ will override any duplicate fields from other sources).
 - [`AsyncSource`](https://docs.rs/config/latest/config/trait.AsyncSource.html)s (highest -- overrides lower precedence
   values)
 
-If the `config-yml` feature is enabled, files with extensions `.yml` and `.yaml`. The precedence of all supported file
+If the `config-yml` feature is enabled, files with extensions `.yml` and `.yaml` will be read as well. The precedence of all supported file
 extensions is the following:
 
 - `.yml` (lowest)
