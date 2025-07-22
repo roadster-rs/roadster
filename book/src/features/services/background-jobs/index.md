@@ -31,7 +31,7 @@ the worker backends we support. Below is a link to an example run of the benchma
 indicates the number of worker tasks used to handle the jobs.
 
 - [Benchmark run on an M3 Macbook Air](benchmarks/m3/report/index.html)
-- [Benchmark run on an Arch Linux destkop with an AMD 5800X and 32GB RAM](benchmarks/AMD-5800X/report/index.html)
+- [Benchmark run on a Linux destkop with an AMD 5800X and 32GB RAM](benchmarks/AMD-5800X/report/index.html)
 
 ## Example
 
