@@ -5,7 +5,7 @@ edition = "2024"
 publish = false
 
 [dependencies]
-roadster = { path = "../../.." }
+roadster = { path = "../../..", features = ["db-sea-orm"] }
 sea-orm = { workspace = true }
 sea-orm-migration = { workspace = true }
 clap = { workspace = true }
