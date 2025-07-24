@@ -13,6 +13,7 @@ use serde_derive::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
 #[cfg(feature = "worker-sidekiq")]
 use sidekiq::redis_rs::cmd;
+use sqlx::Connection;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::Duration;
@@ -157,6 +158,59 @@ async fn ping_db_sea_orm(
         db.ping().await?;
     }
     Ok(())
+}
+
+#[cfg(feature = "worker-pg")]
+pub(crate) async fn worker_pg_health(
+    context: &AppContext,
+    duration: Option<Duration>,
+) -> CheckResponse {
+    let db_timer = Instant::now();
+    let (db_status, acquire_conn_latency, ping_latency) =
+        match ping_worker_pg(context.pgmq(), duration).await {
+            Ok((acquire_latency, ping_latency)) => (
+                Status::Ok,
+                Some(acquire_latency.as_millis()),
+                Some(ping_latency.as_millis()),
+            ),
+            Err(err) => (
+                Status::Err(ErrorData::builder().msg(err.to_string()).build()),
+                None,
+                None,
+            ),
+        };
+    let db_timer = db_timer.elapsed();
+    CheckResponse::builder()
+        .status(db_status)
+        .latency(db_timer)
+        .custom(Latency {
+            acquire_conn_latency,
+            ping_latency,
+        })
+        .build()
+}
+
+#[cfg(feature = "worker-pg")]
+#[instrument(skip_all)]
+async fn ping_worker_pg(
+    pgmq: &pgmq::PGMQueue,
+    duration: Option<Duration>,
+) -> RoadsterResult<(Duration, Duration)> {
+    use sqlx::Connection;
+
+    let timer = Instant::now();
+    let mut conn = if let Some(duration) = duration {
+        timeout(duration, pgmq.connection.acquire()).await??
+    } else {
+        pgmq.connection.acquire().await?
+    };
+    let acquire_conn_latency = timer.elapsed();
+
+    let timer = Instant::now();
+    conn.ping().await?;
+    let ping_latency = timer.elapsed();
+
+    Ok((acquire_conn_latency, ping_latency))
 }
 
 // Todo: reduce duplication

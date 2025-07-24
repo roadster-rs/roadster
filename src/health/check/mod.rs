@@ -3,10 +3,8 @@ pub mod default;
 #[cfg(feature = "email")]
 pub mod email;
 pub mod registry;
-#[cfg(feature = "worker-sidekiq")]
-pub mod sidekiq_enqueue;
-#[cfg(feature = "worker-sidekiq")]
-pub mod sidekiq_fetch;
+#[cfg(feature = "worker")]
+pub mod worker;
 
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
