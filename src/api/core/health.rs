@@ -198,15 +198,21 @@ async fn ping_worker_pg(
     use sqlx::Connection;
 
     let timer = Instant::now();
+    let acquire_conn_fut = pgmq.connection.acquire();
     let mut conn = if let Some(duration) = duration {
-        timeout(duration, pgmq.connection.acquire()).await??
+        timeout(duration, acquire_conn_fut).await??
     } else {
-        pgmq.connection.acquire().await?
+        acquire_conn_fut.await?
     };
     let acquire_conn_latency = timer.elapsed();
 
     let timer = Instant::now();
-    conn.ping().await?;
+    let ping_fut = conn.ping();
+    if let Some(duration) = duration {
+        timeout(duration.saturating_sub(timer.elapsed()), ping_fut).await??;
+    } else {
+        ping_fut.await?;
+    }
     let ping_latency = timer.elapsed();
 
     Ok((acquire_conn_latency, ping_latency))
@@ -311,16 +317,21 @@ async fn ping_diesel_db_pg_async(
     use diesel_async::pooled_connection::PoolableConnection;
 
     let timer = Instant::now();
+    let acquire_conn_fut = context.diesel_pg_pool_async().get();
     let mut conn = if let Some(duration) = duration {
-        timeout(duration, context.diesel_pg_pool_async().get()).await??
+        timeout(duration, acquire_conn_fut).await??
     } else {
-        context.diesel_pg_pool_async().get().await?
+        acquire_conn_fut.await?
     };
     let acquire_conn_latency = timer.elapsed();
 
     let timer = Instant::now();
-    conn.ping(&diesel_async::pooled_connection::RecyclingMethod::Fast)
-        .await?;
+    let ping_fut = conn.ping(&diesel_async::pooled_connection::RecyclingMethod::Fast);
+    if let Some(duration) = duration {
+        timeout(duration.saturating_sub(timer.elapsed()), ping_fut).await??;
+    } else {
+        ping_fut.await?;
+    }
     let ping_latency = timer.elapsed();
 
     Ok((acquire_conn_latency, ping_latency))
@@ -367,16 +378,21 @@ async fn ping_diesel_db_mysql_async(
     use diesel_async::pooled_connection::PoolableConnection;
 
     let timer = Instant::now();
+    let acquire_conn_fut = context.diesel_mysql_pool_async().get();
     let mut conn = if let Some(duration) = duration {
-        timeout(duration, context.diesel_mysql_pool_async().get()).await??
+        timeout(duration, acquire_conn_fut).await??
     } else {
-        context.diesel_mysql_pool_async().get().await?
+        acquire_conn_fut.await?
     };
     let acquire_conn_latency = timer.elapsed();
 
     let timer = Instant::now();
-    conn.ping(&diesel_async::pooled_connection::RecyclingMethod::Fast)
-        .await?;
+    let ping_fut = conn.ping(&diesel_async::pooled_connection::RecyclingMethod::Fast);
+    if let Some(duration) = duration {
+        timeout(duration.saturating_sub(timer.elapsed()), ping_fut).await??;
+    } else {
+        ping_fut.await?;
+    }
     let ping_latency = timer.elapsed();
 
     Ok((acquire_conn_latency, ping_latency))
