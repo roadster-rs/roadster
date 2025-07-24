@@ -8,10 +8,12 @@ use crate::health::check::db::diesel_pg_async::DbDieselPgAsyncHealthCheck;
 use crate::health::check::db::sea_orm::DbSeaOrmHealthCheck;
 #[cfg(feature = "email-smtp")]
 use crate::health::check::email::smtp::SmtpHealthCheck;
+#[cfg(feature = "worker-pg")]
+use crate::health::check::worker::pg::PgWorkerHealthCheck;
 #[cfg(feature = "worker-sidekiq")]
-use crate::health::check::sidekiq_enqueue::SidekiqEnqueueHealthCheck;
+use crate::health::check::worker::sidekiq::sidekiq_enqueue::SidekiqEnqueueHealthCheck;
 #[cfg(feature = "worker-sidekiq")]
-use crate::health::check::sidekiq_fetch::SidekiqFetchHealthCheck;
+use crate::health::check::worker::sidekiq::sidekiq_fetch::SidekiqFetchHealthCheck;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
@@ -55,6 +57,10 @@ pub fn default_health_checks(
         }),
         #[cfg(feature = "worker-sidekiq")]
         Arc::new(SidekiqFetchHealthCheck {
+            context: context.downgrade(),
+        }),
+        #[cfg(feature = "worker-pg")]
+        Arc::new(PgWorkerHealthCheck {
             context: context.downgrade(),
         }),
         #[cfg(feature = "email-smtp")]
@@ -103,7 +109,7 @@ mod tests {
     #[case(true)]
     #[tokio::test]
     #[cfg_attr(coverage_nightly, coverage(off))]
-    async fn default_middleware(_case: TestCase, #[case] default_enable: bool) {
+    async fn default_health_checks(_case: TestCase, #[case] default_enable: bool) {
         // Arrange
         let mut config = AppConfig::test(None).unwrap();
         config.health_check.default_enable = default_enable;

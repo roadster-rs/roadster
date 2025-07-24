@@ -5,6 +5,8 @@ cli = 10000
 
 [health-check.database]
 
-[health-check.sidekiq]
+[health-check.worker-sidekiq]
+
+[health-check.worker-pg]
 
 [health-check.smtp]

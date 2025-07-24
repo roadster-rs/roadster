@@ -12,4 +12,5 @@ expression: health_checks
     'sidekiq-enqueue',
     'sidekiq-fetch',
     'smtp',
+    'worker-pg',
 ]

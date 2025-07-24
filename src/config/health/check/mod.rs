@@ -30,7 +30,11 @@ pub struct HealthCheck {
 
     #[cfg(feature = "worker-sidekiq")]
     #[validate(nested)]
-    pub sidekiq: HealthCheckConfig<crate::config::EmptyConfig>,
+    pub worker_sidekiq: HealthCheckConfig<crate::config::EmptyConfig>,
+
+    #[cfg(feature = "worker-pg")]
+    #[validate(nested)]
+    pub worker_pg: HealthCheckConfig<crate::config::EmptyConfig>,
 
     #[cfg(feature = "email-smtp")]
     #[validate(nested)]
