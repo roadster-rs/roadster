@@ -8,6 +8,7 @@ use crate::health::check::db::diesel_pg_async::DbDieselPgAsyncHealthCheck;
 use crate::health::check::db::sea_orm::DbSeaOrmHealthCheck;
 #[cfg(feature = "email-smtp")]
 use crate::health::check::email::smtp::SmtpHealthCheck;
+#[cfg(feature = "worker-pg")]
 use crate::health::check::worker::pg::PgWorkerHealthCheck;
 #[cfg(feature = "worker-sidekiq")]
 use crate::health::check::worker::sidekiq::sidekiq_enqueue::SidekiqEnqueueHealthCheck;
