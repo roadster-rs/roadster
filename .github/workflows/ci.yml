@@ -111,11 +111,11 @@ jobs:
           length=${#features[@]}
           i=1
           for feature_list in "${features[@]}"; do
-            echo "::group::[$i/$length]: cargo nextest run --no-fail-fast --features $feature_list"
-            cargo nextest run --no-fail-fast --features "$feature_list"
+            echo "::group::[$i/$length]: cargo nextest run --no-fail-fast --no-default-features --features $feature_list"
+            cargo nextest run --no-fail-fast --no-default-features --features "$feature_list"
             echo "::endgroup::"
-            echo "::group::[$i/$length]: cargo test --doc --no-fail-fast --features $feature_list"
-            cargo test --doc --no-fail-fast --features "$feature_list"
+            echo "::group::[$i/$length]: cargo test --doc --no-fail-fast --no-default-features --features $feature_list"
+            cargo test --doc --no-fail-fast --no-default-features --features "$feature_list"
             cargo clean -p roadster
             i=$(expr $i + 1)
             echo "::endgroup::"
@@ -179,8 +179,8 @@ jobs:
           length=${#features[@]}
           i=1
           for feature_list in "${features[@]}"; do
-            echo "::group::[$i/$length]: cargo clippy --features $feature_list -- -D warnings"
-            cargo clippy --features "$feature_list" -- -D warnings
+            echo "::group::[$i/$length]: cargo clippy --no-default-features --features $feature_list -- -D warnings"
+            cargo clippy --no-default-features --features "$feature_list" -- -D warnings
             cargo clean -p roadster
             i=$(expr $i + 1)
             echo "::endgroup::"

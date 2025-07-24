@@ -1,10 +1,11 @@
 use crate::util::serde::default_true;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
+#[cfg(any(feature = "db-sea-orm", feature = "worker-pg"))]
 use std::str::FromStr;
 use std::time::Duration;
 use url::Url;
-use validator::{Validate, ValidationError};
+use validator::Validate;
 
 #[serde_as]
 #[serde_with::skip_serializing_none]
@@ -118,9 +119,9 @@ pub struct StatementLogConfig {
 }
 
 #[cfg(any(feature = "db-sea-orm", feature = "worker-pg"))]
-fn valid_level_filter(level: &str) -> Result<(), ValidationError> {
+fn valid_level_filter(level: &str) -> Result<(), validator::ValidationError> {
     log::LevelFilter::from_str(level).map_err(|err| {
-        let mut validation_error = ValidationError::new("Invalid level filter");
+        let mut validation_error = validator::ValidationError::new("Invalid level filter");
         validation_error.add_param("level".into(), &level);
         validation_error.add_param("error".into(), &err.to_string());
         validation_error
@@ -232,7 +233,10 @@ mod tests {
         max-lifetime = 4000
         "#
     )]
-    #[cfg(feature = "db-diesel-pool-async")]
+    #[cfg(all(
+        feature = "db-diesel-pool-async",
+        any(feature = "worker-pg", feature = "db-sea-orm")
+    ))]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn serialization(_case: TestCase, #[case] config: &str) {
         let database: Database = toml::from_str(config).unwrap();
@@ -260,6 +264,7 @@ mod tests {
                 #[cfg(feature = "db-diesel-pool-async")]
                 retry_connection: true,
             },
+            #[cfg(any(feature = "worker-pg", feature = "db-sea-orm"))]
             statement_log_config: Default::default(),
             temporary_test_db: false,
             temporary_test_db_clean_up: false,

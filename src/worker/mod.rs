@@ -15,12 +15,10 @@ use crate::worker::job::JobMetadata;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use cron::Schedule;
-use futures::FutureExt;
 use serde::{Deserialize, Serialize};
 use std::borrow::Borrow;
-use std::panic::AssertUnwindSafe;
 use std::time::Duration;
-use tracing::{Instrument, error, error_span, instrument};
+use tracing::instrument;
 
 pub mod backend;
 pub mod config;
@@ -245,6 +243,9 @@ where
         job_metadata: &JobMetadata,
         args: serde_json::Value,
     ) -> crate::error::RoadsterResult<()> {
+        use futures::FutureExt;
+        use tracing::Instrument;
+
         let span_name = format!("WORKER {}::handle", self.inner.name);
         let context = AppContext::from_ref(state);
         let queue_name = self.inner.enqueue_config.queue.as_ref().or(context
@@ -254,7 +255,7 @@ where
             .enqueue_config
             .queue
             .as_ref());
-        let span = error_span!(
+        let span = tracing::error_span!(
             "WORKER",
             otel.name = span_name,
             otel.kind = "CONSUMER",
@@ -264,7 +265,8 @@ where
         );
 
         async {
-            let inner = AssertUnwindSafe((self.inner.worker_fn)(state, args)).catch_unwind();
+            let inner =
+                std::panic::AssertUnwindSafe((self.inner.worker_fn)(state, args)).catch_unwind();
 
             let context = AppContext::from_ref(state);
             let timeout = self
@@ -289,7 +291,7 @@ where
                 tokio::time::timeout(max_duration, inner)
                     .await
                     .map_err(|_| {
-                        error!(
+                        tracing::error!(
                             worker.name = self.inner.name,
                             worker.max_duration = max_duration.as_secs(),
                             "Worker timed out"
@@ -306,7 +308,7 @@ where
             match result {
                 Ok(result) => result,
                 Err(unwind_error) => {
-                    error!(
+                    tracing::error!(
                         worker.name = self.inner.name,
                         "Worker panicked while handling a job: {unwind_error:?}"
                     );

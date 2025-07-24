@@ -5,7 +5,7 @@ edition = "2024"
 publish = false
 
 [dependencies]
-roadster = { path = "../../..", default-features = false, features = ["default-diesel"] }
+roadster = { path = "../../..", features = ["db-diesel-postgres-pool-async"] }
 diesel_migrations = { workspace = true }
 clap = { workspace = true }
 async-trait = { workspace = true }

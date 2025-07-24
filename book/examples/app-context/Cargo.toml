@@ -12,6 +12,6 @@ anyhow = { workspace = true }
 sea-orm = { workspace = true }
 
 [dev-dependencies]
-roadster = { path = "../../..", features = ["testing-mocks"] }
+roadster = { path = "../../..", features = ["db-sea-orm", "testing-mocks"] }
 sea-orm = { workspace = true, features = ["mock"] }
 tokio = { workspace = true, features = ["test-util"] }

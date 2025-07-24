@@ -14,10 +14,7 @@ rust-version = "1.85"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["default-common", "db-sea-orm"]
-default-common = ["worker-sidekiq", "open-api", "jwt-ietf", "cli", "otel"]
-# The same as `default`, except using `diesel` as the SQL ORM instead of `sea-orm`
-default-diesel = ["default-common", "db-diesel-postgres-pool-async"]
+default = ["open-api", "jwt-ietf", "cli", "otel"]
 
 http = ["dep:axum", "dep:axum-extra", "dep:tower", "dep:tower-http", "dep:http-body-util", "dep:mime"]
 open-api = ["http", "dep:aide", "dep:schemars"]
