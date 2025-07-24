@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0-rc.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.0-rc.3...roadster-v0.8.0-rc.4) - 2025-07-24
+
+### Added
+
+- [**breaking**] Add health check for Postgres-backed worker ([#873](https://github.com/roadster-rs/roadster/pull/873))
+
+### Fixed
+
+- *(docs)* Fix typo in config chapter ([#871](https://github.com/roadster-rs/roadster/pull/871))
+- *(docs)* Fix typos in book ([#870](https://github.com/roadster-rs/roadster/pull/870))
+
+### Other
+
+- [**breaking**] Remove sidekiq and sea-orm from default features ([#872](https://github.com/roadster-rs/roadster/pull/872))
+- `derive_more` to impl Display and Deref/DerefMut for some types ([#867](https://github.com/roadster-rs/roadster/pull/867))
+
 ## [0.8.0-rc.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.0-rc.2...roadster-v0.8.0-rc.3) - 2025-07-20
 
 ### Fixed
