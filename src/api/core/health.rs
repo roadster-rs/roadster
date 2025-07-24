@@ -13,7 +13,6 @@ use serde_derive::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
 #[cfg(feature = "worker-sidekiq")]
 use sidekiq::redis_rs::cmd;
-use sqlx::Connection;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::Duration;
