@@ -40,7 +40,8 @@ and [Loco](https://github.com/loco-rs/loco).
 - Built-in support for [Deisel](https://docs.rs/diesel), including creating DB connections (requires a subset
   of the `db-diesel-*` collection of features, depending on what's needed)
 - Built-in support for async workers backed by Postgres (via [pgmq](https://docs.rs/pgmq))
-  or Redis/Sidekiq (via [rusty-sidekiq](https://docs.rs/rusty-sidekiq)). Requires the `worker-pg` or `worker-sidekiq` features,
+  or Redis/Sidekiq (via [rusty-sidekiq](https://docs.rs/rusty-sidekiq)). Requires the `worker-pg` or `worker-sidekiq`
+  features,
   respectively.
 - Built-in support for sending emails via SMTP (requires the `email-smtp` feature)
   or [Sendgrid's Mail Send API](https://www.twilio.com/docs/sendgrid/api-reference/mail-send/mail-send) (requires the
@@ -52,7 +53,12 @@ and [Loco](https://github.com/loco-rs/loco).
 - Support for auto-updating timestamp columns, e.g. `updated_at`, when updating DB rows (Postgres only currently) (
   requires the `db-sea-orm` feature)
 
+A full list of features and their documentation can also be found in the [Roadster book](https://roadster.dev).
+
 # Getting started
+
+Below are some example commands for running local instances of external dependencies, such as Postgres, Redis, and SMTP
+servers.
 
 ## Start local DB
 
@@ -89,11 +95,12 @@ docker run -d -p 1080:1080 -p 1025:1025 maildev/maildev
 
 ## Create your app
 
+<!-- Todo: Add instructions for creating a new app -->
+
 ```shell
-# Todo: Add instructions for creating a new app
 # Using one of our examples for now 
 git clone https://github.com/roadster-rs/roadster.git
-cd roadster/examples/full
+cd roadster/examples/app-builder
 ```
 
 ## Set the environment (production/development/test)
@@ -120,8 +127,7 @@ Navigate to http://localhost:3000/api/_docs to explore the app's OpenAPI playgro
 Currently, Roadster is focused on back-end API development with Rust. We leave it to the consumer to decide how they
 prefer to add a front-end, e.g., using an established JS/TS
 framework ([React](https://react.dev/) / [Next](https://nextjs.org/) / [Vue](https://vuejs.org/) / [Svelte](https://svelte.dev/) / [Solid](https://www.solidjs.com/)
-/ etc) or
-using a Rust front-end
+/ etc) or using a Rust front-end
 framework ([Leptos](https://github.com/leptos-rs/leptos) / [Yew](https://github.com/yewstack/yew) / [Perseus](https://github.com/framesurge/perseus/) / [Sycamore](https://github.com/sycamore-rs/sycamore)
 / etc). That said, we do have some examples of how to use Roadster with some these frameworks.
 
@@ -131,28 +137,23 @@ framework ([Leptos](https://github.com/leptos-rs/leptos) / [Yew](https://github.
 |-----------------------------------------------|-------------------------------------------------------------------------------------|
 | [Leptos](https://github.com/leptos-rs/leptos) | [leptos-ssr](https://github.com/roadster-rs/roadster/tree/main/examples/leptos-ssr) |
 
-# Email
-
-## Local testing of sending emails via SMTP
-
-If you're using our SMTP integration to send emails, you can test locally using a mock SMTP server. Some options:
-
-- [maildev](https://github.com/maildev/maildev)
-- [smtp4dev](https://github.com/rnwood/smtp4dev)
-
 # Tracing + OpenTelemetry
 
-Roadster allows reporting traces and metrics using the `tracing` and `opentelemetry_rust` integrations. Provide the URL
-of your OTLP exporter in order to report the trace/metric data to your telemetry provider (e.g., Grafana, SigNoz, New
-Relic,
-Datadog, etc).
+Roadster allows reporting traces and metrics using the [`tracing`](https://docs.rs/tracing/latest/tracing/) and
+[opentelemetry-rust](https://github.com/open-telemetry/opentelemetry-rust) integrations. Enable the `otel` and/or
+`otel-grpc` features and provide the URL of your OTLP exporter in order to report the OTEL trace/metric data to your
+telemetry provider (e.g., Grafana, SigNoz, New Relic, Datadog, etc).
 
-# Background/async job queue using [Sidekiq.rs](https://docs.rs/rusty-sidekiq)
+# Background/async job queue
 
-This crate is a rust implementation of [Sidekiq](https://sidekiq.org/), which is usually used with Ruby on Rails. All we
-need in order to use this is a Redis instance.
+Roadster provides built-in support for running async workers using either Postgres (via [pgmq](https://docs.rs/pgmq)) or
+Redis/Sidekiq (via [rusty-sidekiq](https://docs.rs/rusty-sidekiq)) as the backing store. See
+the [Background jobs chapter](https://roadster.dev/features/services/background-jobs/index.html) of the book for more
+details.
 
-## Sidekiq dashboard
+## Inspecting the Sidekiq state
+
+### Sidekiq dashboard
 
 We provide a [sample repo](https://github.com/roadster-rs/standalone_sidekiq_dashboard) to run the sidekiq dashboard
 locally in a standalone docker container.
@@ -174,7 +175,7 @@ docker run -d -p 9292:9292 -e REDIS_URL=redis://host.docker.internal:6379 standa
 docker run -d -p 9292:9292 -e REDIS_URL=redis://host.docker.internal:6380 standalone-sidekiq
 ```
 
-## Redis Insights
+### Redis Insights
 
 You can also inspect the Redis DB directly using [RedisInsight](https://redis.io/docs/connect/insight/).
 
@@ -185,3 +186,20 @@ docker run -d --name redisinsight --network=host -p 5540:5540 redis/redisinsight
 # Use `host.docker.internal` as the host domain in redis insight (instead of `127.0.0.1`)
 docker run -d --name redisinsight -p 5540:5540 redis/redisinsight:latest
 ```
+
+# Learning more
+
+## Book
+
+The [Roadster book](https://roadster.dev) provides more details on how to use all of Roadster's features.
+
+## Examples
+
+We also provide several examples for how to configure and use Roadster's features. These can be found the [
+examples](https://github.com/roadster-rs/roadster/tree/main/examples) directory of this repository.
+
+## GitHub Discussions
+
+If you have a question not answered in the book or the examples,
+please [open a GitHub Discussion](https://github.com/roadster-rs/roadster/discussions) and we'll be happy to
+help.
