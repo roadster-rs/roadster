@@ -9,7 +9,7 @@ publish = false
 [features]
 
 [dependencies]
-roadster = { version = "0.8.0-rc.5", path = "../..", default-features = false, features = ["worker-pg", "worker-sidekiq"] }
+roadster = { version = "0.8.0", path = "../..", default-features = false, features = ["worker-pg", "worker-sidekiq"] }
 tokio = { workspace = true }
 tokio-util = { workspace = true }
 tracing = { workspace = true }
@@ -22,7 +22,7 @@ itertools = { workspace = true }
 sqlx = { workspace = true }
 
 [dev-dependencies]
-roadster = { version = "0.8.0-rc.5", path = "../..", default-features = false, features = ["testing", "bench"] }
+roadster = { version = "0.8.0", path = "../..", default-features = false, features = ["testing", "bench"] }
 criterion = { version = "0.6.0", features = ["html_reports"] }
 fake = { workspace = true }
 
