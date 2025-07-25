@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.4...roadster-v0.8.0) - 2025-07-25
+
+The main feature added in v0.8.0 compared to v0.7* is support for using Postgres as the backing store for async queues
+in addition to Redis/Sidekiq. Adding this feature required making breaking changes to our Sidekiq support in order to
+align both solutions to use the same `Worker` trait. Some config structs were refactored as well, particularly ones
+related to the DB and workers. See the release notes for [0.8.0-alpha.1](#080-alpha1---2025-07-13) for more details. See
+also the [background jobs chapter](https://roadster.dev/features/services/background-jobs/index.html) of the book
+for details on the new background job support.
+
+In addition, v0.8.0 release contains a few smaller features and breaking changes. A full list can be found in the
+changelog for the pre-release versions, but a summary is included below.
+
+### Added
+
+- [**breaking**] Remove `sidekiq` and `sea-orm` from default
+  features ([#872](https://github.com/roadster-rs/roadster/pull/872))
+- Add meaningful prefix to some generic trace event labels ([#861](https://github.com/roadster-rs/roadster/pull/861))
+- Improve Worker::handle trace span name ([#850](https://github.com/roadster-rs/roadster/pull/850))
+- Allow configuring sqlx statement logging ([#838](https://github.com/roadster-rs/roadster/pull/838))
+
 ## [0.8.0-rc.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.0-rc.3...roadster-v0.8.0-rc.4) - 2025-07-24
 
 ### Added
@@ -20,14 +40,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Other
 
-- [**breaking**] Remove sidekiq and sea-orm from default features ([#872](https://github.com/roadster-rs/roadster/pull/872))
-- `derive_more` to impl Display and Deref/DerefMut for some types ([#867](https://github.com/roadster-rs/roadster/pull/867))
+- [**breaking**] Remove sidekiq and sea-orm from default
+  features ([#872](https://github.com/roadster-rs/roadster/pull/872))
+- `derive_more` to impl Display and Deref/DerefMut for some
+  types ([#867](https://github.com/roadster-rs/roadster/pull/867))
 
 ## [0.8.0-rc.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.0-rc.2...roadster-v0.8.0-rc.3) - 2025-07-20
 
 ### Fixed
 
-- [**breaking**] Create separate `PeriodicJob` that's only needed for pg worker ([#865](https://github.com/roadster-rs/roadster/pull/865))
+- [**breaking**] Create separate `PeriodicJob` that's only needed for pg
+  worker ([#865](https://github.com/roadster-rs/roadster/pull/865))
 
 ## [0.8.0-rc.2](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.0-rc.1...roadster-v0.8.0-rc.2) - 2025-07-19
 
