@@ -37,7 +37,7 @@ and [Loco](https://github.com/loco-rs/loco).
   JWT extractor for Axum that simply puts all claims into a map (available with the `jwt` feature)
 - Built-in support for [SeaORM](https://docs.rs/sea-orm), including creating DB connections (requires
   the `db-sea-orm` feature)
-- Built-in support for [Deisel](https://docs.rs/diesel), including creating DB connections (requires a subset
+- Built-in support for [Diesel](https://docs.rs/diesel), including creating DB connections (requires a subset
   of the `db-diesel-*` collection of features, depending on what's needed)
 - Built-in support for async workers backed by Postgres (via [pgmq](https://docs.rs/pgmq))
   or Redis/Sidekiq (via [rusty-sidekiq](https://docs.rs/rusty-sidekiq)). Requires the `worker-pg` or `worker-sidekiq`
