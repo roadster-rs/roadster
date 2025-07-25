@@ -57,37 +57,39 @@ A full list of features and their documentation can also be found in the [Roadst
 
 # Getting started
 
+## Start local dependencies
+
 Below are some example commands for running local instances of external dependencies, such as Postgres, Redis, and SMTP
 servers.
 
-## Start local DB
+### Database
 
 ```shell
 # Replace `example_dev` with your app name, e.g., `myapp_dev`
 docker run -d -p 5432:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=example_dev -e POSTGRES_PASSWORD=roadster postgres:15.3-alpine
 ```
 
-## Start local Redis instance (for [Sidekiq.rs](https://docs.rs/rusty-sidekiq))
+### Redis instance (for [Sidekiq.rs](https://docs.rs/rusty-sidekiq))
 
 ```shell
 docker run -d -p 6379:6379 redis:7.2-alpine
 ```
 
-## Start local SMTP server instance
+### SMTP server
 
-### [Mailpit](https://github.com/axllent/mailpit)
+#### [Mailpit](https://github.com/axllent/mailpit)
 
 ```shell
 docker run -d -p 8025:8025 -p 1025:1025 axllent/mailpit
 ```
 
-### [smtp4dev](https://github.com/rnwood/smtp4dev)
+#### [smtp4dev](https://github.com/rnwood/smtp4dev)
 
 ```shell
 docker run -d -p 1080:80 -p 1025:25 rnwood/smtp4dev
 ```
 
-### [maildev](https://github.com/maildev/maildev)
+#### [maildev](https://github.com/maildev/maildev)
 
 ```shell
 docker run -d -p 1080:1080 -p 1025:1025 maildev/maildev
