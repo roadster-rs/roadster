@@ -24,7 +24,7 @@ Redis/Sidekiq (via [rusty-sidekiq](https://docs.rs/rusty-sidekiq)) as the backin
 more details on
 each.
 
-## Benchmarks
+### Benchmarks
 
 Roadster has a (small) [benchmark suite](https://github.com/roadster-rs/roadster/tree/main/benches/worker) to compare
 the worker backends we support. Below is a link to an example run of the benchmark. The number in the benchmark name
@@ -33,9 +33,9 @@ indicates the number of worker tasks used to handle the jobs.
 - [Benchmark run on an M3 Macbook Air](benchmarks/m3/report/index.html)
 - [Benchmark run on a Linux destkop with an AMD 5800X and 32GB RAM](benchmarks/AMD-5800X/report/index.html)
 
-## Example
+### Example
 
-### Pg vs Sidekiq worker definition
+#### Pg vs Sidekiq worker definition
 
 Notice that the `Worker` implementation is identical for both a Postgres- vs a Sidekiq-backed queue. The only difference
 is the `Enqueuer` associated type.
@@ -50,7 +50,7 @@ is the `Enqueuer` associated type.
 {{#include ../../../../examples/service/src/worker/sidekiq/worker.rs:24:}}
 ```
 
-### Pg vs Sidekiq worker registration
+#### Pg vs Sidekiq worker registration
 
 Workers need to be registered with a queue processor. The processor should at least be registered with the processor
 that matches its `Enqueuer`. However, it can also be registered with a processor that's different from its `Enqueuer`.
@@ -71,7 +71,7 @@ The built-in Postgres and Sidekiq processors have the same APIs, so migrating be
 {{#include ../../../../examples/service/src/worker/sidekiq/register.rs:26:33}}
 ```
 
-### Enqueuing jobs
+#### Enqueuing jobs
 
 Enqueueing jobs from the application code is identical between each type of queue backend.
 
