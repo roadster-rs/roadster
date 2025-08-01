@@ -21,4 +21,4 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - name: Check semver
-        uses: obi1kenobi/cargo-semver-checks-action@7272cc2caa468d3e009a2b0a9cc366839348237b
+        uses: obi1kenobi/cargo-semver-checks-action@5b298c9520f7096a4683c0bd981a7ac5a7e249ae
