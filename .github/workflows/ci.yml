@@ -40,7 +40,7 @@ jobs:
           - 1025:1025
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       # protoc is needed to build examples that have grpc enabled
       - uses: taiki-e/install-action@21517c4e721ab8b872d9b8e90828e584dcabe8e2
@@ -54,7 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - uses: taiki-e/install-action@21517c4e721ab8b872d9b8e90828e584dcabe8e2
         with:
@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - uses: taiki-e/install-action@21517c4e721ab8b872d9b8e90828e584dcabe8e2
         with:
@@ -100,7 +100,7 @@ jobs:
       features: ${{ join(fromJson(needs.generate_feature_matrix.outputs.data).powersets[ matrix.index ], ' ') }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - uses: taiki-e/install-action@21517c4e721ab8b872d9b8e90828e584dcabe8e2
         with:
@@ -133,7 +133,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - uses: taiki-e/install-action@21517c4e721ab8b872d9b8e90828e584dcabe8e2
         with:
@@ -147,7 +147,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - uses: taiki-e/install-action@21517c4e721ab8b872d9b8e90828e584dcabe8e2
         with:
@@ -167,7 +167,7 @@ jobs:
       features: ${{ join(fromJson(needs.generate_feature_matrix.outputs.data).powersets[ matrix.index ], ' ') }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - uses: taiki-e/install-action@21517c4e721ab8b872d9b8e90828e584dcabe8e2
         with:
@@ -210,7 +210,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - uses: taiki-e/install-action@21517c4e721ab8b872d9b8e90828e584dcabe8e2
         with:
@@ -224,7 +224,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: rui314/setup-mold@e16410e7f8d9e167b74ad5697a9089a35126eb50
+      - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - uses: taiki-e/install-action@21517c4e721ab8b872d9b8e90828e584dcabe8e2
         with:
