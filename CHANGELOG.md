@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.0...roadster-v0.9.0) - 2025-08-05
+
+### Fixed
+
+- [**breaking**] Add default worker retry config values ([#892](https://github.com/roadster-rs/roadster/pull/892))
+- *(docs)* Change background jobs header levels ([#881](https://github.com/roadster-rs/roadster/pull/881))
+- *(docs)* Fix typo in docs ([#879](https://github.com/roadster-rs/roadster/pull/879))
+- *(docs)* Update references to Service in book ([#878](https://github.com/roadster-rs/roadster/pull/878))
+
+### Other
+
+- *(deps)* bump taiki-e/install-action from 2.56.3 to 2.57.5 ([#883](https://github.com/roadster-rs/roadster/pull/883))
+- *(deps)* bump obi1kenobi/cargo-semver-checks-action from 2.6 to 2.8 ([#882](https://github.com/roadster-rs/roadster/pull/882))
+- *(deps)* bump MarcoIeni/release-plz-action from 0.5.106 to 0.5.110 ([#884](https://github.com/roadster-rs/roadster/pull/884))
+- *(deps)* bump rui314/setup-mold from e16410e7f8d9e167b74ad5697a9089a35126eb50 to 7344740a9418dcdcb481c7df83d9fbd1d5072d7d ([#885](https://github.com/roadster-rs/roadster/pull/885))
+- *(deps)* bump tonic from 0.13.0 to 0.13.1 ([#888](https://github.com/roadster-rs/roadster/pull/888))
+- *(deps)* bump rand from 0.9.0 to 0.9.2 ([#886](https://github.com/roadster-rs/roadster/pull/886))
+- *(deps)* bump tokio from 1.44.2 to 1.46.1 ([#887](https://github.com/roadster-rs/roadster/pull/887))
+- *(deps)* bump sqlx from 0.8.5 to 0.8.6 ([#889](https://github.com/roadster-rs/roadster/pull/889))
+- *(deps)* bump config from 0.15.11 to 0.15.13 ([#890](https://github.com/roadster-rs/roadster/pull/890))
+
 ## [0.8.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.4...roadster-v0.8.0) - 2025-07-25
 
 The main feature added in v0.8.0 compared to v0.7* is support for using Postgres as the backing store for async queues
