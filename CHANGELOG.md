@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.0...roadster-v0.8.1) - 2025-08-05
+
+### Fixed
+
+- Add default worker retry config values ([#892](https://github.com/roadster-rs/roadster/pull/892))
+
+### Other
+
+- Minor changes is docs and book
+
 ## [0.8.0](https://github.com/roadster-rs/roadster/compare/roadster-v0.7.4...roadster-v0.8.0) - 2025-07-25
 
 The main feature added in v0.8.0 compared to v0.7* is support for using Postgres as the backing store for async queues
