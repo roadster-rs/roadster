@@ -2,7 +2,6 @@
 
 use crate::config::AppConfig;
 use crate::worker::config::{BackoffStrategy, CompletedAction, PgWorkerConfig, RetryConfig};
-use num_traits::pow;
 use rand::Rng;
 use std::cmp::min;
 use std::sync::OnceLock;
@@ -56,7 +55,8 @@ pub(crate) fn retry_delay(
     worker_retry_config: Option<&RetryConfig>,
     attempt_num: i32,
 ) -> Option<Duration> {
-    let attempt_num = usize::try_from(attempt_num).unwrap_or(usize::MAX);
+    let attempt_u32 = u32::try_from(attempt_num).ok()?;
+    let attempt_num = usize::try_from(attempt_u32).unwrap_or(usize::MAX);
 
     let default_retry_config = app_config
         .service
@@ -88,9 +88,9 @@ pub(crate) fn retry_delay(
         .and_then(|config| config.delay_offset)
         .or(default_retry_config.and_then(|config| config.delay_offset));
     let delay = match delay_offset {
-        Some(delay_offset) => {
-            delay + Duration::from_secs(rand::rng().random_range(0..delay_offset.as_secs()))
-        }
+        Some(delay_offset) => delay.saturating_add(Duration::from_secs(
+            rand::rng().random_range(0..delay_offset.as_secs()),
+        )),
         None => delay,
     };
 
@@ -105,11 +105,12 @@ pub(crate) fn retry_delay(
     };
 
     let delay = match backoff_strategy {
-        BackoffStrategy::Exponential => Duration::from_secs(pow(delay.as_secs(), attempt_num)),
-        BackoffStrategy::Linear => match u32::try_from(attempt_num) {
-            Ok(attempt_num) => delay * attempt_num,
-            Err(_) => return None,
-        },
+        BackoffStrategy::Exponential => Duration::from_secs(
+            delay
+                .as_secs()
+                .saturating_mul(2u64.saturating_pow(attempt_u32)),
+        ),
+        BackoffStrategy::Linear => delay.saturating_mul(attempt_u32),
         BackoffStrategy::None => delay,
     };
 

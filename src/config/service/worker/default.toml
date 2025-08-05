@@ -2,9 +2,14 @@
 balance-strategy = "round-robin"
 
 [service.worker.worker-config]
-max-retries = 25
 timeout = true
 max-duration = 60000
+# Retry config
+max-retries = 25
+delay = 1000
+delay-offset = 10000
+max-delay = 86400000 # 24 hours
+backoff-strategy = "exponential"
 
 [service.worker.worker-config.pg]
 success-action = "delete"
