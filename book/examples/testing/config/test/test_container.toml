@@ -1,6 +1,6 @@
 [database.test-container]
 enable = true
-tag = "15.3-alpine"
+tag = "17.6-alpine3.22"
 
 [service.sidekiq.redis.test-container]
 enable = true

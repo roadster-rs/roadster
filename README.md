@@ -66,7 +66,7 @@ servers.
 
 ```shell
 # Replace `example_dev` with your app name, e.g., `myapp_dev`
-docker run -d -p 5432:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=example_dev -e POSTGRES_PASSWORD=roadster postgres:15.3-alpine
+docker run -d -p 5432:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=example_dev -e POSTGRES_PASSWORD=roadster postgres:17.6-alpine3.22
 ```
 
 ### Redis instance (for [Sidekiq.rs](https://docs.rs/rusty-sidekiq))
