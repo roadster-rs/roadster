@@ -1078,7 +1078,7 @@ async fn create_temporary_test_db(
         tracing::debug!("Created test db {db_name} using connection {original_uri}");
         let mut new_uri = original_uri.clone();
         new_uri.set_path(&db_name);
-        config.database.uri = new_uri.clone();
+        config.database.uri = new_uri;
     }
 
     if done && config.database.temporary_test_db_clean_up {
@@ -1121,6 +1121,8 @@ async fn create_worker_temporary_test_db(
     let mut new_uri = original_uri.clone();
     new_uri.set_path(&db_name);
 
+    worker_db_config.uri = Some(new_uri.clone());
+
     if config.database.uri == new_uri {
         return Ok(None);
     }
@@ -1132,7 +1134,6 @@ async fn create_worker_temporary_test_db(
     }
 
     tracing::debug!("Created worker-pg test db {db_name} using connection {original_uri}");
-    worker_db_config.uri = Some(new_uri);
 
     Ok(Some(TemporaryTestDb {
         original_uri,
