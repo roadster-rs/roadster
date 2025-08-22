@@ -78,7 +78,7 @@ alias fmt := format
 
 # Format the project
 format:
-    cargo fmt
+    cargo fmt --all
 
 check-fmt:
     cargo fmt --all --check
