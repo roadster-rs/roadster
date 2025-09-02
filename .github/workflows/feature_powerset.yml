@@ -32,7 +32,7 @@ jobs:
       should_run1: ${{ steps.schedule_trigger.outputs.should_run }}
       should_run2: ${{ steps.label_trigger.outputs.should_run }}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - name: print latest_commit
         run: echo ${{ github.sha }}
 
@@ -55,7 +55,7 @@ jobs:
     outputs:
       data: ${{ steps.build_data.outputs.data }}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - name: Random seed
         id: random_seed
         run: |
@@ -83,7 +83,7 @@ jobs:
     env:
       features: ${{ join(fromJson(needs.generate_powerset.outputs.data).powersets[ matrix.index ], ' ') }}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
       - uses: taiki-e/install-action@d31232495ad76f47aad66e3501e47780b49f0f3e
         with:
@@ -116,7 +116,7 @@ jobs:
     env:
       features: ${{ join(fromJson(needs.generate_powerset.outputs.data).powersets[ matrix.index ], ' ') }}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
       - name: Check
         run: |
@@ -142,7 +142,7 @@ jobs:
     env:
       features: ${{ join(fromJson(needs.generate_powerset.outputs.data).powersets[ matrix.index ], ' ') }}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
       - name: Clippy
         run: |

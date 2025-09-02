@@ -32,7 +32,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - uses: taiki-e/install-action@d31232495ad76f47aad66e3501e47780b49f0f3e
         with:
           tool: mdbook
