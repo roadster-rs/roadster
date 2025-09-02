@@ -30,7 +30,7 @@ jobs:
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - name: Install zsh
         run: sudo apt install -y zsh
-      - uses: taiki-e/install-action@d31232495ad76f47aad66e3501e47780b49f0f3e
+      - uses: taiki-e/install-action@c0dee14250395ae6b1754a99f67c1d693138b102
         with:
           tool: just,nextest,cargo-llvm-cov
       - name: Collect coverage data
