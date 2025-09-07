@@ -210,8 +210,8 @@ mime = "0.3.17"
 http-body-util = { version = "0.1.2" }
 
 # DB - SeaORM
-sea-orm = { version = "1.1.11" }
-sea-orm-migration = { version = "1.1.11" }
+sea-orm = { version = "1.1.15" }
+sea-orm-migration = { version = "1.1.15" }
 
 # DB - Diesel
 diesel = { version = "2.2.3" }
@@ -287,7 +287,7 @@ thiserror = "2.0.9"
 uuid = { version = "1.11.0", features = ["v4", "serde"] }
 chrono = { version = "0.4.34", features = ["serde"] }
 async-trait = "0.1.81"
-regex = "1.11.1"
+regex = "1.11.2"
 cron = { version = "0.15.0", features = ["serde"] }
 log = "0.4.27"
 derive_more = "2.0.0"

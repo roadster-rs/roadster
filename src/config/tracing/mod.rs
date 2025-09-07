@@ -331,7 +331,7 @@ mod tests {
         r#"
         level = "debug"
         format = "none"
-        trace-filters = [ "foo=warn", "invalid filter"  ]
+        trace-filters = [ "foo=warn", "foo=invalid"  ]
         "#,
         true
     )]
