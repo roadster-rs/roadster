@@ -111,11 +111,11 @@ jobs:
           length=${#features[@]}
           i=1
           for feature_list in "${features[@]}"; do
-            echo "::group::[$i/$length]: cargo nextest run --no-fail-fast --no-default-features --features $feature_list"
-            cargo nextest run --no-fail-fast --no-default-features --features "$feature_list"
+            echo "::group::[$i/$length]: cargo nextest run --no-fail-fast --no-default-features --locked --features $feature_list"
+            cargo nextest run --no-fail-fast --no-default-features --locked --features "$feature_list"
             echo "::endgroup::"
-            echo "::group::[$i/$length]: cargo test --doc --no-fail-fast --no-default-features --features $feature_list"
-            cargo test --doc --no-fail-fast --no-default-features --features "$feature_list"
+            echo "::group::[$i/$length]: cargo test --doc --no-fail-fast --no-default-features --locked --features $feature_list"
+            cargo test --doc --no-fail-fast --no-default-features --locked --features "$feature_list"
             cargo clean -p roadster
             i=$(expr $i + 1)
             echo "::endgroup::"
@@ -140,7 +140,7 @@ jobs:
           tool: cargo-hack
 
       - name: Doc test
-        run: cargo hack test --doc --no-fail-fast --each-feature --log-group github-actions
+        run: cargo hack test --doc --no-fail-fast --locked --each-feature --log-group github-actions
 
   check:
     name: Check
@@ -154,7 +154,7 @@ jobs:
           tool: cargo-hack
 
       - name: Check
-        run: cargo hack check --each-feature --no-dev-deps --log-group github-actions
+        run: cargo hack check --locked --each-feature --log-group github-actions
 
   clippy_matrix:
     needs: generate_feature_matrix
@@ -179,8 +179,8 @@ jobs:
           length=${#features[@]}
           i=1
           for feature_list in "${features[@]}"; do
-            echo "::group::[$i/$length]: cargo clippy --no-default-features --features $feature_list -- -D warnings"
-            cargo clippy --no-default-features --features "$feature_list" -- -D warnings
+            echo "::group::[$i/$length]: cargo clippy --no-default-features --locked --features $feature_list -- -D warnings"
+            cargo clippy --no-default-features --locked --features "$feature_list" -- -D warnings
             cargo clean -p roadster
             i=$(expr $i + 1)
             echo "::endgroup::"
@@ -201,7 +201,7 @@ jobs:
       - uses: EmbarkStudios/cargo-deny-action@34899fc7ba81ca6268d5947a7a16b4649013fea1
         with:
           command: check
-          arguments: --all-features
+          arguments: "--all-features --locked"
           command-arguments: "-A duplicate advisories ban sources"
 
   # https://doc.rust-lang.org/cargo/guide/continuous-integration.html#verifying-rust-version
@@ -258,4 +258,4 @@ jobs:
       - name: Docs each feature
         env:
           RUSTDOCFLAGS: "-D rustdoc::all -A rustdoc::private_intra_doc_links"
-        run: cargo hack doc --ignore-private --log-group github-actions --each-feature --no-deps
+        run: cargo hack doc --locked --ignore-private --log-group github-actions --each-feature --no-deps

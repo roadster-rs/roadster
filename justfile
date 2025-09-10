@@ -4,19 +4,19 @@ help:
 
 # Run all of our unit tests.
 test:
-    cargo nextest run --all-features --no-fail-fast
+    cargo nextest run --all-features --no-fail-fast --locked
 
 test-doc:
-    cargo test --doc --all-features --no-fail-fast
+    cargo test --doc --all-features --no-fail-fast --locked
 
 test-examples:
-    for dir in ./examples/*/; do cd $dir && pwd && cargo test --all-features --no-fail-fast && cd ../.. && pwd; done
+    for dir in ./examples/*/; do cd $dir && pwd && cargo test --all-features --no-fail-fast --locked && cd ../.. && pwd; done
 
 test-private:
-    for dir in ./private/*/; do cd $dir && pwd && cargo test --all-features --no-fail-fast && cd ../.. && pwd; done
+    for dir in ./private/*/; do cd $dir && pwd && cargo test --all-features --no-fail-fast --locked && cd ../.. && pwd; done
 
 test-bench:
-    for dir in ./benches/*/; do cd $dir && pwd && cargo test --all-features --no-fail-fast && cd ../.. && pwd; done
+    for dir in ./benches/*/; do cd $dir && pwd && cargo test --all-features --no-fail-fast --locked && cd ../.. && pwd; done
 
 # Run all of our unit tests.
 test-unit: test test-doc
@@ -25,7 +25,7 @@ test-book:
     mdbook test book
 
 test-book-examples:
-    for dir in ./book/examples/*/; do cd $dir && pwd && cargo test --all-features --no-fail-fast && cd ../../.. && pwd; done
+    for dir in ./book/examples/*/; do cd $dir && pwd && cargo test --all-features --no-fail-fast --locked && cd ../../.. && pwd; done
 
 test-book-all: test-book test-book-examples
 
@@ -56,8 +56,8 @@ coverage-clean:
 
 # Run tests with coverage.
 coverage-tests: coverage-clean
-    cargo +nightly llvm-cov --no-report nextest --all-features
-    cargo +nightly llvm-cov --no-report --doc --all-features
+    cargo +nightly llvm-cov --no-report nextest --all-features --locked
+    cargo +nightly llvm-cov --no-report --doc --all-features --locked
 
 # Run tests with coverage and generate an html report.
 coverage: coverage-tests
@@ -88,33 +88,33 @@ pre-commit: check-fmt
 pre-push: check-fmt
 
 check-no-features:
-    cargo nextest run --no-default-features --no-fail-fast
+    cargo nextest run --no-default-features --no-fail-fast --locked
     # Nextest doesn't support doc tests, run those separately
-    cargo test --doc --no-default-features --no-fail-fast
-    cargo check --no-default-features
-    cargo clippy --all-targets --no-default-features -- -D warnings
+    cargo test --doc --no-default-features --no-fail-fast --locked
+    cargo check --no-default-features --locked
+    cargo clippy --all-targets --no-default-features --locked -- -D warnings
 
 check-default-features:
     # With default features
-    cargo nextest run --no-fail-fast
+    cargo nextest run --no-fail-fast --locked
     # Nextest doesn't support doc tests, run those separately
-    cargo test --doc --no-fail-fast
-    cargo check
-    cargo clippy --all-targets -- -D warnings
+    cargo test --doc --no-fail-fast --locked
+    cargo check --locked
+    cargo clippy --all-targets --locked -- -D warnings
 
 check-all-features:
     # With all features
-    cargo nextest run --all-features --no-fail-fast
+    cargo nextest run --all-features --no-fail-fast --locked
     # Nextest doesn't support doc tests, run those separately
-    cargo test --doc --all-features --no-fail-fast
-    cargo check --all-features
-    cargo clippy --all-targets --all-features -- -D warnings
+    cargo test --doc --all-features --no-fail-fast --locked
+    cargo check --all-features --locked
+    cargo clippy --all-targets --all-features --locked -- -D warnings
 
 doc:
-    RUSTDOCFLAGS="-D rustdoc::all -A rustdoc::private_intra_doc_links" cargo doc --all-features --no-deps
+    RUSTDOCFLAGS="-D rustdoc::all -A rustdoc::private_intra_doc_links" cargo doc --all-features --no-deps --locked
 
 doc-open:
-    RUSTDOCFLAGS="-D rustdoc::all -A rustdoc::private_intra_doc_links" cargo doc --all-features --no-deps --open
+    RUSTDOCFLAGS="-D rustdoc::all -A rustdoc::private_intra_doc_links" cargo doc --all-features --no-deps --open --locked
 
 check-docs: doc
 
