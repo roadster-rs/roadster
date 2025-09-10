@@ -154,7 +154,7 @@ jobs:
           tool: cargo-hack
 
       - name: Check
-        run: cargo hack check --locked --each-feature --no-dev-deps --log-group github-actions
+        run: cargo hack check --locked --each-feature --log-group github-actions
 
   clippy_matrix:
     needs: generate_feature_matrix
