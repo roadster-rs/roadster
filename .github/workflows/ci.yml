@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:17.6-alpine3.22
+        image: postgres:18.0-alpine3.22
         ports:
           - 5432:5432
         env:
@@ -29,12 +29,12 @@ jobs:
           POSTGRES_USER: roadster
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
       redis:
-        image: redis:7.2-alpine
+        image: redis:8.2.2-alpine
         ports:
           - 6379:6379
         options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
       smtp:
-        image: axllent/mailpit:v1.21
+        image: axllent/mailpit:v1.27.10
         ports:
           - 8025:8025
           - 1025:1025
