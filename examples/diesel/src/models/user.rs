@@ -17,7 +17,6 @@ pub struct User {
 #[derive(Insertable)]
 #[diesel(table_name = crate::schema::user)]
 pub struct NewUser<'a> {
-    id: Uuid,
     name: &'a str,
     username: &'a str,
     email: &'a str,
@@ -27,7 +26,6 @@ pub struct NewUser<'a> {
 impl<'a> NewUser<'a> {
     pub fn new(name: &'a str, username: &'a str, email: &'a str, password: &'a str) -> Self {
         Self {
-            id: Uuid::now_v7(),
             name,
             username,
             email,
