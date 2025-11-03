@@ -46,7 +46,7 @@ impl<S, C> FromRequestParts<S> for Jwt<C>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    C: for<'de> serde::Deserialize<'de>,
+    C: for<'de> serde::Deserialize<'de> + Clone,
 {
     type Rejection = Error;
 
@@ -84,7 +84,7 @@ impl<S, C> FromRequestParts<S> for JwtCsrf<C>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    C: for<'de> serde::Deserialize<'de>,
+    C: for<'de> serde::Deserialize<'de> + Clone,
 {
     type Rejection = Error;
 
@@ -117,7 +117,7 @@ async fn extract_from_request_parts_maybe_cookie<S, C>(
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    C: for<'de> serde::Deserialize<'de>,
+    C: for<'de> serde::Deserialize<'de> + Clone,
 {
     let context = AppContext::from_ref(state);
 
@@ -168,7 +168,7 @@ pub fn decode_auth_token<S, C>(state: &S, token: &str) -> RoadsterResult<Jwt<C>>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
-    C: for<'de> serde::Deserialize<'de>,
+    C: for<'de> serde::Deserialize<'de> + Clone,
 {
     let context = AppContext::from_ref(state);
     let token: TokenData<C> = decode_auth_token_internal(
@@ -193,7 +193,7 @@ fn decode_auth_token_internal<T1, T2, C>(
 where
     T1: ToString,
     T2: ToString,
-    C: for<'de> serde::Deserialize<'de>,
+    C: for<'de> serde::Deserialize<'de> + Clone,
 {
     let mut validation = Validation::default();
     validation.set_audience(audience);
