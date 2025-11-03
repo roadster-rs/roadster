@@ -30,4 +30,5 @@ ConnectOptions {
     schema_search_path: None,
     test_before_acquire: true,
     connect_lazy: true,
+    ..
 }

@@ -8,7 +8,7 @@ publish = false
 
 [features]
 default = ["grpc"]
-grpc = ["roadster/grpc", "dep:tonic", "dep:tonic-reflection", "dep:prost"]
+grpc = ["roadster/grpc", "dep:tonic", "dep:tonic-reflection", "dep:tonic-prost-build", "dep:prost"]
 
 [dependencies]
 roadster = { version = "0.8.1", path = "../..", features = ["worker-sidekiq", "db-sea-orm", "email-smtp", "email-sendgrid", "config-yml", "otel-grpc"] }
@@ -26,6 +26,7 @@ schemars = { workspace = true }
 # gRPC API
 tonic = { workspace = true, optional = true }
 tonic-reflection = { workspace = true, optional = true }
+tonic-prost = { workspace = true, optional = true }
 prost = { workspace = true, optional = true }
 
 # DB
@@ -51,7 +52,7 @@ tokio = { workspace = true, features = ["test-util"] }
 tower-util = { workspace = true }
 
 [build-dependencies]
-tonic-build = { workspace = true }
+tonic-prost-build = { workspace = true, optional = true }
 vergen = { workspace = true }
 vergen-gitcl = { workspace = true }
 
