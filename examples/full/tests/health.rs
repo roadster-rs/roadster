@@ -13,12 +13,18 @@ async fn health() {
         App,
         PrepareOptions::test(),
         async |app| -> RoadsterResult<()> {
-            let http_service = app.service_registry.get::<HttpService>()?;
-            let router = http_service.router().clone();
+            let response = app
+                .service_registry
+                .invoke(
+                    async |srvc: &HttpService| -> RoadsterResult<Response<Body>> {
+                        let router = srvc.router().clone();
+                        let request: Request<Body> =
+                            Request::builder().uri("/api/_health").body(().into())?;
 
-            let request: Request<Body> = Request::builder().uri("/api/_health").body(().into())?;
-
-            let response: Response<Body> = router.oneshot(request).await?;
+                        Ok(router.oneshot(request).await?)
+                    },
+                )
+                .await??;
 
             if response.status() != StatusCode::OK {
                 return Err(anyhow!(

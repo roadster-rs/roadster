@@ -8,15 +8,20 @@ use tower_util::ServiceExt;
 #[tokio::test]
 async fn ping() {
     run_test(App, PrepareOptions::test(), async |app| {
-        let http_service = app.service_registry.get::<HttpService>().unwrap();
-        let router = http_service.router().clone();
+        let response = app
+            .service_registry
+            .invoke(async |srvc: &HttpService| {
+                let router = srvc.router().clone();
 
-        let request: Request<Body> = Request::builder()
-            .uri("/api/_ping")
-            .body(().into())
+                let request: Request<Body> = Request::builder()
+                    .uri("/api/_ping")
+                    .body(().into())
+                    .unwrap();
+
+                router.oneshot(request).await.unwrap()
+            })
+            .await
             .unwrap();
-
-        let response = router.oneshot(request).await.unwrap();
 
         assert_eq!(response.status(), StatusCode::OK);
     })

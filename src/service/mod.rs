@@ -34,13 +34,15 @@ pub mod worker;
     feature = "grpc",
     doc = r"- [gRPC API][crate::service::grpc::service::GrpcService]"
 )]
-#[cfg_attr(test, mockall::automock)]
+#[cfg_attr(test, mockall::automock(type Error = crate::error::Error;))]
 #[async_trait]
 pub trait Service<S>: Send + Sync + ServiceAsAny<S>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
+    type Error: std::error::Error + Send + Sync;
+
     /// The name of the service.
     fn name(&self) -> String;
 
@@ -54,7 +56,7 @@ where
     ///
     /// Note that this is run for every service that's registered in the
     /// [`crate::service::registry::ServiceRegistry`] regardless of whether it's enabled or not.
-    async fn before_run(&self, _state: &S) -> RoadsterResult<()> {
+    async fn before_run(&self, _state: &S) -> Result<(), Self::Error> {
         Ok(())
     }
 
@@ -62,8 +64,11 @@ where
     ///
     /// * cancel_token - A tokio [`CancellationToken`] to use as a signal to gracefully shut down
     /// the service.
-    async fn run(self: Box<Self>, state: &S, cancel_token: CancellationToken)
-    -> RoadsterResult<()>;
+    async fn run(
+        self: Box<Self>,
+        state: &S,
+        cancel_token: CancellationToken,
+    ) -> Result<(), Self::Error>;
 }
 
 /// Trait used to build a [`Service`]. It's not a requirement that services implement this
@@ -89,7 +94,7 @@ where
 /// Allows getting an `&dyn Any` reference to the [`Service`]. This is to enable getting
 /// a concrete reference to a specific [`Service`] implementation from the
 /// [`registry::ServiceRegistry`] (which works via a downcast) in order to call methods that are
-/// specific to a certain implementation. See [`registry::ServiceRegistry::get`] for more details
+/// specific to a certain implementation. See [`registry::ServiceRegistry::invoke`] for more details
 /// and examples.
 /*
 A note for future maintainers: This `Service`-specific trait is required to get a `&dyn Any`
