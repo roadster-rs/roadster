@@ -70,13 +70,11 @@ where
 
     let context = AppContext::from_ref(state);
 
-    let services = service_registry
-        .services
-        .into_values()
-        .filter(|service| service.enabled(state));
-
     // Spawn tasks for the app's services
-    for service in services {
+    for service in service_registry.services.into_values() {
+        if !service.enabled(state).await {
+            continue;
+        }
         let name = service.name();
         let state = state.clone();
         let cancel_token = cancel_token.clone();

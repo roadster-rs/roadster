@@ -88,11 +88,15 @@ fn worker_benchmark<W: 'static + Worker<AppContext, ExampleWorkerArgs>>(
                         let state = app.state.clone();
 
                         runtime.block_on(async {
-                            let srv = app
-                                .service_registry
-                                .get::<PgWorkerService<AppContext>>()
+                            app.service_registry
+                                .invoke({
+                                    let state = state.clone();
+                                    async move |srvc: &PgWorkerService<AppContext>| {
+                                        srvc.before_run(&state).await.unwrap();
+                                    }
+                                })
+                                .await
                                 .unwrap();
-                            srv.before_run(&state).await.unwrap();
                             sqlx::query(&format!(
                                 "truncate pgmq.q_{}",
                                 worker_bench::worker::example::QUEUE

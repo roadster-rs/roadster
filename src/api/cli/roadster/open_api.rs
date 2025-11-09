@@ -15,9 +15,10 @@ where
     A: App<S>,
 {
     async fn run(&self, cli: &CliState<A, S>) -> RoadsterResult<bool> {
-        let http_service = cli.service_registry.get::<HttpService>()?;
-
-        http_service.print_open_api_schema(self)?;
+        let _ = cli
+            .service_registry
+            .invoke(async |srvc: &HttpService| srvc.print_open_api_schema(self))
+            .await?;
 
         Ok(true)
     }

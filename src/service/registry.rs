@@ -1,10 +1,14 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
+use crate::error::other::OtherError;
 use crate::service::{Service, ServiceBuilder};
 use axum_core::extract::FromRef;
-use std::any::{TypeId, type_name};
+use std::any::{Any, TypeId, type_name};
 use std::collections::{BTreeMap, HashSet};
+use std::sync::Arc;
 use thiserror::Error;
+use tokio::sync::Mutex;
+use tokio_util::sync::CancellationToken;
 use tracing::info;
 
 #[derive(Debug, Error)]
@@ -19,6 +23,11 @@ pub enum ServiceRegistryError {
     /// of the requested type.
     #[error("Unable to find an `Service` instance of type `{0}`")]
     NotRegistered(String),
+
+    /// The [`Service`] was already ran using [`Service::run`], so it is no longer available
+    /// in the [`ServiceRegistry`].
+    #[error("`Service` instance of type `{0}` was already ran")]
+    AlreadyRan(String),
 
     /// Unable to downcast the registered instance to the requested type. Contains the [`type_name`]
     /// of the requested type.
@@ -37,7 +46,7 @@ where
 {
     pub(crate) state: S,
     pub(crate) service_names: HashSet<String>,
-    pub(crate) services: BTreeMap<TypeId, Box<dyn Service<S>>>,
+    pub(crate) services: BTreeMap<TypeId, ServiceWrapper<S>>,
 }
 
 impl<S> ServiceRegistry<S>
@@ -59,7 +68,7 @@ where
     where
         Srvc: Service<S> + 'static,
     {
-        self.register_boxed(Box::new(service))
+        self.register_wrapped(ServiceWrapper::new(service))
     }
 
     /// Build and register a new service. If the service is not enabled (e.g.,
@@ -77,26 +86,24 @@ where
         info!(service.builder.name=%builder.name(), "Building service");
         let service = builder.build(&self.state).await?;
 
-        self.register_boxed(Box::new(service))
+        self.register_wrapped(ServiceWrapper::new(service))
     }
 
-    pub(crate) fn register_boxed(&mut self, service: Box<dyn Service<S>>) -> RoadsterResult<()> {
+    pub(crate) fn register_wrapped(&mut self, service: ServiceWrapper<S>) -> RoadsterResult<()> {
         let name = service.name();
 
         info!(service.name=%name, "Registering service");
 
         if !self.service_names.insert(name.clone())
-            || self
-                .services
-                .insert(service.as_any().type_id(), service)
-                .is_some()
+            || self.services.insert(service.type_id, service).is_some()
         {
-            return Err(ServiceRegistryError::AlreadyRegistered(name.clone()).into());
+            return Err(ServiceRegistryError::AlreadyRegistered(name).into());
         }
         Ok(())
     }
 
-    /// Get a reference to a previously registered [`Service`] of the specified type.
+    /// Invoke a callback on a reference to a previously registered [`Service`] of the specified
+    /// type.
     ///
     /// This is useful to call a method that only exists on a concrete [`Service`]
     /// implementor after the app was prepared.
@@ -105,7 +112,7 @@ where
         doc = r##"
 For example, to get the OpenAPI schema for an app,
 setup and register the [`crate::service::http::service::HttpService`], get the service
-from the registry with this method ([`ServiceRegistry::get`]), and call
+from the registry with this method ([`ServiceRegistry::invoke`]), and call
 [`crate::service::http::service::HttpService::print_open_api_schema`] to get the schema.
     "##
     )]
@@ -156,26 +163,182 @@ let prepared = prepare(
 #       .config_dir(PathBuf::from("examples/full/config").canonicalize().unwrap())
         .build()
 ).await.unwrap();
-// Get the `HttpService` from the `ServiceRegistry`
-let http_service = prepared.service_registry.get::<HttpService>().unwrap();
-// Get the OpenAPI schema from the `HttpService`
-http_service.open_api_schema(&OpenApiArgs::builder().build()).unwrap();
+// Get the `HttpService` from the `ServiceRegistry` and get the OpenAPI schema.
+prepared.service_registry.invoke(async |service: &HttpService| {
+    service.open_api_schema(&OpenApiArgs::builder().build()).unwrap();
+}).await;
 # })
 ```
 "##
     )]
-    pub fn get<Srvc>(&self) -> RoadsterResult<&Srvc>
+    pub async fn invoke<Srvc, F, R>(&self, invoke: F) -> RoadsterResult<R>
     where
         Srvc: Service<S> + 'static,
+        F: AsyncFnOnce(&Srvc) -> R,
     {
-        let service = self
+        let service_wrapper = self
             .services
             .get(&TypeId::of::<Srvc>())
-            .ok_or_else(|| ServiceRegistryError::NotRegistered(type_name::<Srvc>().to_string()))?
-            .as_any()
+            .ok_or_else(|| ServiceRegistryError::NotRegistered(type_name::<Srvc>().to_string()))?;
+        let guard = service_wrapper.inner.lock().await;
+        let inner = guard
+            .as_ref()
+            .ok_or_else(|| ServiceRegistryError::AlreadyRan(type_name::<Srvc>().to_string()))?;
+        let srvc = inner
             .downcast_ref::<Srvc>()
             .ok_or_else(|| ServiceRegistryError::Downcast(type_name::<Srvc>().to_string()))?;
-        Ok(service)
+        let result = invoke(srvc).await;
+        Ok(result)
+    }
+}
+
+type EnabledFn<S> = Box<
+    dyn Send
+        + Sync
+        + for<'a> Fn(&'a S) -> std::pin::Pin<Box<dyn 'a + Send + Future<Output = bool>>>,
+>;
+
+type BeforeRunFn<S> = Box<
+    dyn Send
+        + Sync
+        + for<'a> Fn(&'a S) -> std::pin::Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>>,
+>;
+
+type RunFn<S> = Box<
+    dyn Send
+        + Sync
+        + for<'a> Fn(
+            &'a S,
+            CancellationToken,
+        )
+            -> std::pin::Pin<Box<dyn 'a + Send + Future<Output = RoadsterResult<()>>>>,
+>;
+
+/// Wrapper around a [`Service`] to allow storing the [`Service`]s in a collection regardless of
+/// their [`Service::Error`] associated types.
+pub(crate) struct ServiceWrapper<S>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    type_id: TypeId,
+    name: String,
+    enabled_fn: EnabledFn<S>,
+    before_run_fn: BeforeRunFn<S>,
+    run_fn: RunFn<S>,
+    inner: Arc<Mutex<Option<Box<dyn Any + Send + Sync>>>>,
+}
+
+impl<S> ServiceWrapper<S>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    pub(crate) fn new<Srvc>(service: Srvc) -> Self
+    where
+        Srvc: Any + Send + Sync + Service<S> + 'static,
+    {
+        let type_id = service.type_id();
+        let name = service.name();
+        /*
+        For some reason, we need to explicitly annotate the type here. If we don't, Rust
+        complains about the value inside the `Box` not being compatible with the `Any + Send + Sync`
+        trait bounds when trying to assign the value to the `ServiceWrapper#inner` field. This is
+        also why we need to downcast in the method wrappers below (we don't have a handle to a
+        `Service` instance, just an `Any`.
+         */
+        let inner: Arc<Mutex<Option<Box<dyn Any + Send + Sync>>>> =
+            Arc::new(Mutex::new(Some(Box::new(service))));
+        let enabled_fn: EnabledFn<S> = {
+            let inner = inner.clone();
+            Box::new(move |state| {
+                let inner = inner.clone();
+                Box::pin(async move {
+                    let guard = inner.lock().await;
+                    #[allow(clippy::expect_used)]
+                    let inner = guard
+                        .as_ref()
+                        .unwrap_or_else(|| panic!("`Service#enabled` can not be called for `Service` of type `{}`; `Service#run` was already called", type_name::<Srvc>()))
+                        .downcast_ref::<Srvc>()
+                        .unwrap_or_else(|| panic!("Registered `Service` can not be downcast to type `{}`", type_name::<Srvc>()));
+                    inner.enabled(state)
+                })
+            })
+        };
+        let before_run_fn: BeforeRunFn<S> = {
+            let inner = inner.clone();
+            Box::new(move |state| {
+                let inner = inner.clone();
+                Box::pin(async move {
+                    let guard = inner.lock().await;
+                    let inner = guard
+                        .as_ref()
+                        .ok_or_else(|| {
+                            ServiceRegistryError::AlreadyRan(type_name::<Srvc>().to_string())
+                        })?
+                        .downcast_ref::<Srvc>()
+                        .ok_or_else(|| {
+                            ServiceRegistryError::Downcast(type_name::<Srvc>().to_string())
+                        })?;
+                    inner
+                        .before_run(state)
+                        .await
+                        .map_err(|err| OtherError::Other(Box::new(err)))?;
+                    Ok(())
+                })
+            })
+        };
+        let run_fn: RunFn<S> = {
+            let inner = inner.clone();
+            Box::new(move |state, cancellation_token| {
+                let inner = inner.clone();
+                Box::pin(async move {
+                    let mut guard = inner.lock().await;
+                    let inner = guard
+                        .take()
+                        .ok_or_else(|| {
+                            ServiceRegistryError::AlreadyRan(type_name::<Srvc>().to_string())
+                        })?
+                        .downcast::<Srvc>()
+                        .map_err(|_err| {
+                            ServiceRegistryError::Downcast(type_name::<Srvc>().to_string())
+                        })?;
+                    inner
+                        .run(state, cancellation_token)
+                        .await
+                        .map_err(|err| OtherError::Other(Box::new(err)))?;
+                    Ok(())
+                })
+            })
+        };
+        Self {
+            type_id,
+            name,
+            enabled_fn,
+            before_run_fn,
+            run_fn,
+            inner,
+        }
+    }
+
+    pub(crate) fn name(&self) -> String {
+        self.name.clone()
+    }
+
+    pub(crate) async fn enabled(&self, state: &S) -> bool {
+        (self.enabled_fn)(state).await
+    }
+
+    pub(crate) async fn before_run(&self, state: &S) -> RoadsterResult<()> {
+        (self.before_run_fn)(state).await
+    }
+
+    pub(crate) async fn run(
+        &self,
+        state: &S,
+        cancel_token: CancellationToken,
+    ) -> RoadsterResult<()> {
+        (self.run_fn)(state, cancel_token).await
     }
 }
 
@@ -261,6 +424,8 @@ mod tests {
     #[async_trait]
     #[cfg_attr(coverage_nightly, coverage(off))]
     impl Service<AppContext> for FooService {
+        type Error = crate::error::Error;
+
         fn name(&self) -> String {
             "foo".to_string()
         }
@@ -278,6 +443,8 @@ mod tests {
     #[async_trait]
     #[cfg_attr(coverage_nightly, coverage(off))]
     impl Service<AppContext> for BarService {
+        type Error = crate::error::Error;
+
         fn name(&self) -> String {
             "bar".to_string()
         }
@@ -297,7 +464,7 @@ mod tests {
     #[case(false, false)]
     #[tokio::test]
     #[cfg_attr(coverage_nightly, coverage(off))]
-    async fn get(#[case] registered: bool, #[case] correct_type: bool) {
+    async fn invoke(#[case] registered: bool, #[case] correct_type: bool) {
         // Arrange
         let context = AppContext::test(None, None, None).unwrap();
 
@@ -320,7 +487,9 @@ mod tests {
         }
 
         // Act
-        let service = subject.get::<FooService>();
+        let service = subject
+            .invoke::<FooService, _, _>(async |srvc| srvc.id)
+            .await;
 
         if !registered {
             assert!(matches!(
@@ -335,7 +504,7 @@ mod tests {
                 Err(Error::ServiceRegistry(ServiceRegistryError::Downcast(_)))
             ));
         } else {
-            assert_eq!(service.unwrap().id, id);
+            assert_eq!(service.unwrap(), id);
         }
     }
 }

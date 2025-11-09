@@ -14,7 +14,7 @@ use crate::health::check::registry::HealthCheckRegistry;
 use crate::lifecycle::AppLifecycleHandler;
 use crate::lifecycle::registry::LifecycleHandlerRegistry;
 use crate::service::Service;
-use crate::service::registry::ServiceRegistry;
+use crate::service::registry::{ServiceRegistry, ServiceWrapper};
 use crate::util::empty::Empty;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
@@ -78,7 +78,7 @@ type LifecycleHandlerProviders<A, S> =
     Vec<Box<dyn Send + Sync + Fn(&mut LifecycleHandlerRegistry<A, S>, &S) -> RoadsterResult<()>>>;
 type HealthCheckProviders<S> =
     Vec<Box<dyn Send + Sync + Fn(&mut HealthCheckRegistry, &S) -> RoadsterResult<()>>>;
-type Services<S> = Vec<Box<dyn Service<S>>>;
+type Services<S> = Vec<ServiceWrapper<S>>;
 type ServiceProviders<S> = Vec<
     Box<
         dyn Send
@@ -1040,7 +1040,7 @@ where
     ///
     /// This method can be called multiple times to register multiple services.
     pub fn add_service(mut self, service: impl 'static + Service<S>) -> Self {
-        self.services.push(Box::new(service));
+        self.services.push(ServiceWrapper::new(service));
         self
     }
 
@@ -1397,7 +1397,7 @@ where
         {
             let mut services = self.services.lock().map_err(crate::error::Error::from)?;
             for service in services.drain(..) {
-                registry.register_boxed(service)?;
+                registry.register_wrapped(service)?;
             }
         }
 

@@ -63,6 +63,8 @@ where
     F: 'static + Send + Sync + Fn(S, CancellationToken) -> Fut,
     Fut: 'static + Send + Future<Output = RoadsterResult<()>>,
 {
+    type Error = crate::error::Error;
+
     fn name(&self) -> String {
         self.name.clone()
     }

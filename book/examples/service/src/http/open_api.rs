@@ -23,11 +23,11 @@ async fn open_api() -> RoadsterResult<()> {
     // Prepare the app
     let prepared = prepare(app, PrepareOptions::builder().build()).await?;
 
-    // Get the `HttpService`
-    let http_service = prepared.service_registry.get::<HttpService>()?;
-
-    // Get the OpenAPI schema
-    let schema = http_service.open_api_schema(&OpenApiArgs::builder().build())?;
+    // Get the OpenAPI schema from the `HttpService`
+    let schema = prepared
+        .service_registry
+        .invoke(async |srvc: &HttpService| srvc.open_api_schema(&OpenApiArgs::builder().build()))
+        .await??;
 
     println!("{schema}");
 
