@@ -1,5 +1,4 @@
 use crate::app::context::AppContext;
-use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use tokio_util::sync::CancellationToken;
@@ -75,7 +74,7 @@ where
 /// the [`ServiceRegistry`][crate::service::registry::ServiceRegistry] instead of a [`Service`],
 /// in which case the [`ServiceRegistry`][crate::service::registry::ServiceRegistry] will only
 /// build and register the service if [`Service::enabled`] is `true`.
-#[cfg_attr(test, mockall::automock)]
+#[cfg_attr(test, mockall::automock(type Error = crate::error::Error;))]
 #[async_trait]
 pub trait ServiceBuilder<S, Srvc>
 where
@@ -83,9 +82,11 @@ where
     AppContext: FromRef<S>,
     Srvc: Service<S>,
 {
+    type Error: Send + Sync + std::error::Error;
+
     fn name(&self) -> String;
 
     fn enabled(&self, state: &S) -> bool;
 
-    async fn build(self, state: &S) -> RoadsterResult<Srvc>;
+    async fn build(self, state: &S) -> Result<Srvc, Self::Error>;
 }
