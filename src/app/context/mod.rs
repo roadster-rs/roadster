@@ -54,7 +54,7 @@ impl AppContext {
     where
         S: Clone + Send + Sync + 'static,
         AppContext: FromRef<S>,
-        A: App<S>,
+        A: 'static + App<S>,
     {
         #[cfg(test)]
         // The `config.clone()` here is technically not necessary. However, without it, RustRover
@@ -79,41 +79,59 @@ impl AppContext {
                 create_worker_temporary_test_db(&mut config, timestamp).await?;
 
             #[cfg(feature = "db-sea-orm")]
-            let sea_orm =
-                sea_orm::Database::connect(app.sea_orm_connection_options(&config)?).await?;
+            let sea_orm = {
+                let options = app
+                    .sea_orm_connection_options(&config)
+                    .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
+                sea_orm::Database::connect(options).await?
+            };
 
             #[cfg(feature = "db-diesel-postgres-pool")]
             let diesel_pg_pool = build_diesel_pool::<crate::db::DieselPgConn>(
                 &config,
-                app.diesel_connection_customizer(&config)?
-                    .unwrap_or(app.diesel_pg_connection_customizer(&config)?),
+                app.diesel_connection_customizer(&config)
+                    .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?
+                    .unwrap_or(
+                        app.diesel_pg_connection_customizer(&config)
+                            .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?,
+                    ),
             )?;
 
             #[cfg(feature = "db-diesel-mysql-pool")]
             let diesel_mysql_pool = build_diesel_pool::<crate::db::DieselMysqlConn>(
                 &config,
-                app.diesel_connection_customizer(&config)?
-                    .unwrap_or(app.diesel_mysql_connection_customizer(&config)?),
+                app.diesel_connection_customizer(&config)
+                    .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?
+                    .unwrap_or(
+                        app.diesel_mysql_connection_customizer(&config)
+                            .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?,
+                    ),
             )?;
 
             #[cfg(feature = "db-diesel-sqlite-pool")]
             let diesel_sqlite_pool = build_diesel_pool::<crate::db::DieselSqliteConn>(
                 &config,
-                app.diesel_connection_customizer(&config)?
-                    .unwrap_or(app.diesel_sqlite_connection_customizer(&config)?),
+                app.diesel_connection_customizer(&config)
+                    .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?
+                    .unwrap_or(
+                        app.diesel_sqlite_connection_customizer(&config)
+                            .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?,
+                    ),
             )?;
 
             #[cfg(feature = "db-diesel-postgres-pool-async")]
             let diesel_pg_pool_async = build_diesel_pg_async_pool(
                 &config,
-                app.diesel_pg_async_connection_customizer(&config)?,
+                app.diesel_pg_async_connection_customizer(&config)
+                    .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?,
             )
             .await?;
 
             #[cfg(feature = "db-diesel-mysql-pool-async")]
             let diesel_mysql_pool_async = build_diesel_mysql_async_pool(
                 &config,
-                app.diesel_mysql_async_connection_customizer(&config)?,
+                app.diesel_mysql_async_connection_customizer(&config)
+                    .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?,
             )
             .await?;
 
@@ -195,7 +213,9 @@ impl AppContext {
                         .map(|config| config.connect_lazy)
                         .unwrap_or(config.database.pool_config.connect_lazy);
 
-                    let pool = app.worker_pg_sqlx_pool_options(&config)?;
+                    let pool = app
+                        .worker_pg_sqlx_pool_options(&config)
+                        .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
 
                     let stmt_log_config = db_config
                         .as_ref()

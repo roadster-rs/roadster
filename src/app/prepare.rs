@@ -188,7 +188,9 @@ where
     #[cfg(not(feature = "cli"))]
     let config_dir: Option<std::path::PathBuf> = options.config_dir;
 
-    let async_config_sources = app.async_config_sources(&environment)?;
+    let async_config_sources = app
+        .async_config_sources(&environment)
+        .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
 
     let app_config_options = AppConfigOptions::builder()
         .environment(environment)
@@ -206,7 +208,8 @@ where
         AppConfig::new_with_options(app_config_options).await?
     };
 
-    app.init_tracing(&config)?;
+    app.init_tracing(&config)
+        .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
 
     #[cfg(not(feature = "cli"))]
     config.validate(true)?;
@@ -238,11 +241,14 @@ where
     A: App<S> + Send + Sync + 'static,
 {
     #[cfg(not(test))]
-    let metadata = app.metadata(&config)?;
+    let metadata = app
+        .metadata(&config)
+        .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
 
     let mut extension_registry = Default::default();
     app.provide_context_extensions(&config, &mut extension_registry)
-        .await?;
+        .await
+        .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
 
     // The `config.clone()` here is technically not necessary. However, without it, RustRover
     // is giving a "value used after move" error when creating an actual `AppContext` below.
@@ -251,7 +257,12 @@ where
     #[cfg(not(test))]
     let context = AppContext::new::<A, S>(app, config, metadata, extension_registry).await?;
 
-    app.provide_state(context).await
+    let result = app
+        .provide_state(context)
+        .await
+        .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
+
+    Ok(result)
 }
 
 pub(crate) async fn prepare_from_cli_and_state<A, S>(
@@ -331,19 +342,25 @@ where
     let context = AppContext::from_ref(&state);
 
     #[cfg(feature = "db-sql")]
-    let migrators = app.migrators(&state)?;
+    let migrators = app
+        .migrators(&state)
+        .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
 
     let mut lifecycle_handler_registry = LifecycleHandlerRegistry::new(&state);
     app.lifecycle_handlers(&mut lifecycle_handler_registry, &state)
-        .await?;
+        .await
+        .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
 
     let mut health_check_registry = HealthCheckRegistry::new(&context);
     app.health_checks(&mut health_check_registry, &state)
-        .await?;
+        .await
+        .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
     context.set_health_checks(health_check_registry)?;
 
     let mut service_registry = ServiceRegistry::new(&state);
-    app.services(&mut service_registry, &state).await?;
+    app.services(&mut service_registry, &state)
+        .await
+        .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
 
     Ok(PreparedAppWithoutCli {
         app,
