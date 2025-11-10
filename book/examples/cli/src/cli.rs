@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use clap::{Parser, Subcommand};
 use roadster::api::cli::{CliState, RunCommand};
 use roadster::app::context::AppContext;
-use roadster::error::RoadsterResult;
+use std::convert::Infallible;
 use tracing::info;
 
 /// CLI example: Commands specific to managing the `cli-example` app are provided in the CLI
@@ -18,8 +18,10 @@ pub struct AppCli {
 
 #[async_trait]
 impl RunCommand<App, AppContext> for AppCli {
+    type Error = Infallible;
+
     #[allow(clippy::disallowed_types)]
-    async fn run(&self, prepared_app: &CliState<App, AppContext>) -> RoadsterResult<bool> {
+    async fn run(&self, prepared_app: &CliState<App, AppContext>) -> Result<bool, Self::Error> {
         if let Some(command) = self.command.as_ref() {
             command.run(prepared_app).await
         } else {
@@ -39,7 +41,9 @@ pub enum AppCommand {
 
 #[async_trait]
 impl RunCommand<App, AppContext> for AppCommand {
-    async fn run(&self, _prepared_app: &CliState<App, AppContext>) -> RoadsterResult<bool> {
+    type Error = Infallible;
+
+    async fn run(&self, _prepared_app: &CliState<App, AppContext>) -> Result<bool, Self::Error> {
         match self {
             AppCommand::HelloWorld => {
                 info!("Hello, world!");

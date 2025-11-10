@@ -36,6 +36,8 @@ where
     AppContext: FromRef<S>,
     A: App<S> + Sync,
 {
+    type Error: Send + Sync + std::error::Error;
+
     /// Run the command.
     ///
     /// # Returns
@@ -45,7 +47,7 @@ where
     ///     continue execution after the command is complete.
     /// * `Err(...)` - If the implementation experienced an error while handling the command. The
     ///     app should end execution after the command is complete.
-    async fn run(&self, cli: &CliState<A, S>) -> RoadsterResult<bool>;
+    async fn run(&self, cli: &CliState<A, S>) -> Result<bool, Self::Error>;
 }
 
 pub(crate) fn parse_cli<A, S, I, T>(args: I) -> RoadsterResult<(RoadsterCli, A::Cli)>
@@ -104,7 +106,12 @@ where
     if cli.roadster_cli.run(cli).await? {
         return Ok(true);
     }
-    if cli.app_cli.run(cli).await? {
+    if cli
+        .app_cli
+        .run(cli)
+        .await
+        .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?
+    {
         return Ok(true);
     }
     Ok(false)
@@ -133,7 +140,9 @@ mockall::mock! {
         S: Clone + Send + Sync + 'static,
         AppContext: FromRef<S>,
     {
-        async fn run(&self, prepared: &CliState<MockApp<S>, S>) -> RoadsterResult<bool>;
+        type Error = std::convert::Infallible;
+
+        async fn run(&self, prepared: &CliState<MockApp<S>, S>) -> Result<bool, <MockTestCli<S> as RunCommand<MockApp<S>, S>>::Error>;
     }
 
     impl<S> clap::FromArgMatches for TestCli<S>
