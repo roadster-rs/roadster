@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0-alpha.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.9.0-alpha...roadster-v0.9.0-alpha.1) - 2025-11-10
+
+### Added
+
+- [**breaking**] Allow `App` trait to return custom
+  errors ([#927](https://github.com/roadster-rs/roadster/pull/927)) ([#928](https://github.com/roadster-rs/roadster/pull/928))
+- [**breaking**] Allow `ServiceBuilder` trait to return custom
+  errors ([#927](https://github.com/roadster-rs/roadster/pull/927))
+- [**breaking**] Allow `RunCommand` trait to return custom
+  errors ([#924](https://github.com/roadster-rs/roadster/pull/924))
+
+### Other
+
+- [**breaking**] Remove the `ServiceAsAny` trait because it's no longer
+  needed ([#925](https://github.com/roadster-rs/roadster/pull/925))
+- Update deps ([#923](https://github.com/roadster-rs/roadster/pull/923))
+
+## [0.9.0-alpha](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.1...roadster-v0.9.0-alpha) - 2025-11-09
+
+### Added
+
+- [**breaking**] Allow Service trait to return custom errors ([#921](https://github.com/roadster-rs/roadster/pull/921))
+
+### Other
+
+- Use pg native uuidv7 for id field default in diesel example ([#918](https://github.com/roadster-rs/roadster/pull/918))
+- Run CI checks with --locked ([#915](https://github.com/roadster-rs/roadster/pull/915))
+- Move where the worker db URI is set to ensure it's set
+  correctly ([#895](https://github.com/roadster-rs/roadster/pull/895))
+
 ## [0.8.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.8.0...roadster-v0.8.1) - 2025-08-05
 
 ### Fixed
