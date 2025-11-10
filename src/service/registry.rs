@@ -75,8 +75,8 @@ where
     /// [`Service::enabled`] is `false`), the service will not be built or registered.
     pub async fn register_builder<Srvc, B>(&mut self, builder: B) -> RoadsterResult<()>
     where
-        Srvc: Service<S> + 'static,
-        B: ServiceBuilder<S, Srvc>,
+        Srvc: 'static + Service<S>,
+        B: 'static + ServiceBuilder<S, Srvc>,
     {
         if !builder.enabled(&self.state) {
             info!(service.builder.name=%builder.name(), "Service is not enabled, skipping building and registration");
@@ -84,7 +84,10 @@ where
         }
 
         info!(service.builder.name=%builder.name(), "Building service");
-        let service = builder.build(&self.state).await?;
+        let service = builder
+            .build(&self.state)
+            .await
+            .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
 
         self.register_wrapped(ServiceWrapper::new(service))
     }
