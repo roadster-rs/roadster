@@ -36,22 +36,29 @@ pub struct App;
 
 #[async_trait]
 impl RoadsterApp<AppState> for App {
+    type Error = roadster::error::Error;
     type Cli = AppCli;
 
-    fn metadata(&self, _config: &AppConfig) -> RoadsterResult<AppMetadata> {
+    fn metadata(&self, _config: &AppConfig) -> Result<AppMetadata, Self::Error> {
         Ok(AppMetadata::builder()
             .version(env!("VERGEN_GIT_SHA").to_string())
             .build())
     }
 
-    async fn provide_state(&self, app_context: AppContext) -> RoadsterResult<AppState> {
+    fn init_tracing(&self, config: &AppConfig) -> Result<(), Self::Error> {
+        roadster::tracing::init_tracing(config, &self.metadata(config)?)?;
+
+        Ok(())
+    }
+
+    async fn provide_state(&self, app_context: AppContext) -> Result<AppState, Self::Error> {
         Ok(AppState::new(app_context))
     }
 
     fn migrators(
         &self,
         _state: &AppState,
-    ) -> RoadsterResult<Vec<Box<dyn roadster::db::migration::Migrator<AppState>>>> {
+    ) -> Result<Vec<Box<dyn roadster::db::migration::Migrator<AppState>>>, Self::Error> {
         Ok(vec![Box::new(SeaOrmMigrator::new(Migrator))])
     }
 
@@ -59,7 +66,7 @@ impl RoadsterApp<AppState> for App {
         &self,
         registry: &mut HealthCheckRegistry,
         state: &AppState,
-    ) -> RoadsterResult<()> {
+    ) -> Result<(), Self::Error> {
         registry.register(ExampleHealthCheck::new(state))?;
         Ok(())
     }
@@ -68,7 +75,7 @@ impl RoadsterApp<AppState> for App {
         &self,
         registry: &mut LifecycleHandlerRegistry<Self, AppState>,
         _state: &AppState,
-    ) -> RoadsterResult<()> {
+    ) -> Result<(), Self::Error> {
         registry.register(ExampleLifecycleHandler)?;
         Ok(())
     }
@@ -77,7 +84,7 @@ impl RoadsterApp<AppState> for App {
         &self,
         registry: &mut ServiceRegistry<AppState>,
         state: &AppState,
-    ) -> RoadsterResult<()> {
+    ) -> Result<(), Self::Error> {
         registry
             .register_builder(
                 HttpService::builder(Some(BASE), state)

@@ -1122,6 +1122,7 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
+    type Error = crate::error::Error;
     type Cli = Cli;
 
     fn async_config_sources(

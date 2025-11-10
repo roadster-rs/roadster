@@ -37,11 +37,9 @@ use crate::config::AppConfig;
 use crate::config::environment::Environment;
 #[cfg(feature = "db-sql")]
 use crate::db::migration::Migrator;
-use crate::error::RoadsterResult;
 use crate::health::check::registry::HealthCheckRegistry;
 use crate::lifecycle::registry::LifecycleHandlerRegistry;
 use crate::service::registry::ServiceRegistry;
-use crate::tracing::init_tracing;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use context::AppContext;
@@ -50,7 +48,7 @@ use sea_orm::ConnectOptions;
 use std::future;
 use std::sync::Arc;
 
-#[cfg_attr(all(test, feature = "cli"), mockall::automock(type Cli = MockTestCli<S>;))]
+#[cfg_attr(all(test, feature = "cli"), mockall::automock(type Error = crate::error::Error; type Cli = MockTestCli<S>;))]
 #[cfg_attr(
     all(test, not(feature = "cli")),
     mockall::automock(type Cli = crate::util::empty::Empty;)
@@ -61,6 +59,7 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
+    type Error: Send + Sync + std::error::Error;
     #[cfg(feature = "cli")]
     type Cli: clap::Args + RunCommand<Self, S> + Send + Sync;
     #[cfg(not(feature = "cli"))]
@@ -68,39 +67,45 @@ where
 
     fn async_config_sources(
         &self,
-        _environment: &Environment,
-    ) -> RoadsterResult<Vec<Box<dyn config::AsyncSource + Send + Sync>>> {
+        #[allow(unused_variables)] environment: &Environment,
+    ) -> Result<Vec<Box<dyn config::AsyncSource + Send + Sync>>, Self::Error> {
         Ok(vec![])
     }
 
-    fn init_tracing(&self, config: &AppConfig) -> RoadsterResult<()> {
-        init_tracing(config, &self.metadata(config)?)?;
+    fn init_tracing(
+        &self,
+        #[allow(unused_variables)] config: &AppConfig,
+    ) -> Result<(), Self::Error>;
 
-        Ok(())
-    }
-
-    fn metadata(&self, _config: &AppConfig) -> RoadsterResult<AppMetadata> {
+    fn metadata(
+        &self,
+        #[allow(unused_variables)] config: &AppConfig,
+    ) -> Result<AppMetadata, Self::Error> {
         Ok(Default::default())
     }
 
     async fn provide_context_extensions(
         &self,
-        _config: &AppConfig,
-        _extension_registry: &mut ExtensionRegistry,
-    ) -> RoadsterResult<()> {
+        #[allow(unused_variables)] config: &AppConfig,
+        #[allow(unused_variables)] extension_registry: &mut ExtensionRegistry,
+    ) -> Result<(), Self::Error> {
         Ok(())
     }
 
     #[cfg(feature = "db-sea-orm")]
-    fn sea_orm_connection_options(&self, config: &AppConfig) -> RoadsterResult<ConnectOptions> {
+    fn sea_orm_connection_options(
+        &self,
+        config: &AppConfig,
+    ) -> Result<ConnectOptions, Self::Error> {
         Ok(ConnectOptions::from(&config.database))
     }
 
     #[cfg(feature = "db-diesel-pool")]
+    #[allow(clippy::type_complexity)]
     fn diesel_connection_customizer<C>(
         &self,
-        _config: &AppConfig,
-    ) -> RoadsterResult<Option<Box<dyn r2d2::CustomizeConnection<C, diesel::r2d2::Error>>>>
+        #[allow(unused_variables)] config: &AppConfig,
+    ) -> Result<Option<Box<dyn r2d2::CustomizeConnection<C, diesel::r2d2::Error>>>, Self::Error>
     where
         C: 'static + diesel::connection::Connection + diesel::r2d2::R2D2Connection,
     {
@@ -110,9 +115,10 @@ where
     #[cfg(feature = "db-diesel-postgres-pool")]
     fn diesel_pg_connection_customizer(
         &self,
-        _config: &AppConfig,
-    ) -> RoadsterResult<
+        #[allow(unused_variables)] config: &AppConfig,
+    ) -> Result<
         Box<dyn r2d2::CustomizeConnection<crate::db::DieselPgConn, diesel::r2d2::Error>>,
+        Self::Error,
     > {
         Ok(Box::new(r2d2::NopConnectionCustomizer))
     }
@@ -120,9 +126,10 @@ where
     #[cfg(feature = "db-diesel-mysql-pool")]
     fn diesel_mysql_connection_customizer(
         &self,
-        _config: &AppConfig,
-    ) -> RoadsterResult<
+        #[allow(unused_variables)] config: &AppConfig,
+    ) -> Result<
         Box<dyn r2d2::CustomizeConnection<crate::db::DieselMysqlConn, diesel::r2d2::Error>>,
+        Self::Error,
     > {
         Ok(Box::new(r2d2::NopConnectionCustomizer))
     }
@@ -130,9 +137,10 @@ where
     #[cfg(feature = "db-diesel-sqlite-pool")]
     fn diesel_sqlite_connection_customizer(
         &self,
-        _config: &AppConfig,
-    ) -> RoadsterResult<
+        #[allow(unused_variables)] config: &AppConfig,
+    ) -> Result<
         Box<dyn r2d2::CustomizeConnection<crate::db::DieselSqliteConn, diesel::r2d2::Error>>,
+        Self::Error,
     > {
         Ok(Box::new(r2d2::NopConnectionCustomizer))
     }
@@ -140,14 +148,15 @@ where
     #[cfg(feature = "db-diesel-postgres-pool-async")]
     fn diesel_pg_async_connection_customizer(
         &self,
-        _config: &AppConfig,
-    ) -> RoadsterResult<
+        #[allow(unused_variables)] config: &AppConfig,
+    ) -> Result<
         Box<
             dyn bb8::CustomizeConnection<
                     crate::db::DieselPgConnAsync,
                     diesel_async::pooled_connection::PoolError,
                 >,
         >,
+        Self::Error,
     > {
         Ok(Box::new(crate::util::empty::Empty))
     }
@@ -155,14 +164,15 @@ where
     #[cfg(feature = "db-diesel-mysql-pool-async")]
     fn diesel_mysql_async_connection_customizer(
         &self,
-        _config: &AppConfig,
-    ) -> RoadsterResult<
+        #[allow(unused_variables)] config: &AppConfig,
+    ) -> Result<
         Box<
             dyn bb8::CustomizeConnection<
                     crate::db::DieselMysqlConnAsync,
                     diesel_async::pooled_connection::PoolError,
                 >,
         >,
+        Self::Error,
     > {
         Ok(Box::new(crate::util::empty::Empty))
     }
@@ -172,7 +182,7 @@ where
     fn worker_pg_sqlx_pool_options(
         &self,
         config: &AppConfig,
-    ) -> RoadsterResult<sqlx::pool::PoolOptions<sqlx::Postgres>> {
+    ) -> Result<sqlx::pool::PoolOptions<sqlx::Postgres>, Self::Error> {
         if let Some(pool_config) = config
             .service
             .worker
@@ -194,35 +204,42 @@ where
     /// extract its [`AppContext`] when needed.
     ///
     /// See the following for more details regarding [`FromRef`]: <https://docs.rs/axum/0.7.5/axum/extract/trait.FromRef.html>
-    async fn provide_state(&self, context: AppContext) -> RoadsterResult<S>;
+    async fn provide_state(&self, context: AppContext) -> Result<S, Self::Error>;
 
     /// Note: SeaORM and Diesel migrations expect all of the applied migrations to be available
     /// to the provided migrator, so multiple SeaORM or Diesel migrators should not be provided
     /// via this method.
     #[cfg(feature = "db-sql")]
-    fn migrators(&self, _state: &S) -> RoadsterResult<Vec<Box<dyn Migrator<S>>>> {
+    fn migrators(
+        &self,
+        #[allow(unused_variables)] state: &S,
+    ) -> Result<Vec<Box<dyn Migrator<S>>>, Self::Error> {
         Ok(Default::default())
     }
 
     async fn lifecycle_handlers(
         &self,
-        _registry: &mut LifecycleHandlerRegistry<Self, S>,
-        _state: &S,
-    ) -> RoadsterResult<()> {
+        #[allow(unused_variables)] registry: &mut LifecycleHandlerRegistry<Self, S>,
+        #[allow(unused_variables)] state: &S,
+    ) -> Result<(), Self::Error> {
         Ok(())
     }
 
     /// Provide the [`crate::health::check::HealthCheck`]s to use throughout the app.
     async fn health_checks(
         &self,
-        _registry: &mut HealthCheckRegistry,
-        _state: &S,
-    ) -> RoadsterResult<()> {
+        #[allow(unused_variables)] registry: &mut HealthCheckRegistry,
+        #[allow(unused_variables)] state: &S,
+    ) -> Result<(), Self::Error> {
         Ok(())
     }
 
     /// Provide the [`crate::service::Service`]s to run in the app.
-    async fn services(&self, _registry: &mut ServiceRegistry<S>, _state: &S) -> RoadsterResult<()> {
+    async fn services(
+        &self,
+        #[allow(unused_variables)] registry: &mut ServiceRegistry<S>,
+        #[allow(unused_variables)] state: &S,
+    ) -> Result<(), Self::Error> {
         Ok(())
     }
 
