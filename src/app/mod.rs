@@ -101,6 +101,7 @@ where
     }
 
     #[cfg(feature = "db-diesel-pool")]
+    #[allow(clippy::type_complexity)]
     fn diesel_connection_customizer<C>(
         &self,
         #[allow(unused_variables)] config: &AppConfig,
