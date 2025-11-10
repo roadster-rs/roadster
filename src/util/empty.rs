@@ -14,10 +14,11 @@ where
     S: Clone + Send + Sync + 'static,
     crate::app::context::AppContext: axum_core::extract::FromRef<S>,
 {
+    type Error = std::convert::Infallible;
     async fn run(
         &self,
         _prepared_app: &crate::api::cli::CliState<crate::app::RoadsterApp<S, Empty>, S>,
-    ) -> crate::error::RoadsterResult<bool> {
+    ) -> Result<bool, Self::Error> {
         Ok(false)
     }
 }
