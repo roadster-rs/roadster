@@ -2,7 +2,6 @@ use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
-use std::any::Any;
 use tokio_util::sync::CancellationToken;
 
 pub mod function;
@@ -36,7 +35,7 @@ pub mod worker;
 )]
 #[cfg_attr(test, mockall::automock(type Error = crate::error::Error;))]
 #[async_trait]
-pub trait Service<S>: Send + Sync + ServiceAsAny<S>
+pub trait Service<S>: Send + Sync
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
@@ -89,66 +88,4 @@ where
     fn enabled(&self, state: &S) -> bool;
 
     async fn build(self, state: &S) -> RoadsterResult<Srvc>;
-}
-
-/// Allows getting an `&dyn Any` reference to the [`Service`]. This is to enable getting
-/// a concrete reference to a specific [`Service`] implementation from the
-/// [`registry::ServiceRegistry`] (which works via a downcast) in order to call methods that are
-/// specific to a certain implementation. See [`registry::ServiceRegistry::invoke`] for more details
-/// and examples.
-/*
-A note for future maintainers: This `Service`-specific trait is required to get a `&dyn Any`
-for the service because the following don't work:
-
-1. General `AsAny` trait with a global impl -- doesn't work because this also implements `AsAny`
-   for `Box`, which prevents us from getting `&dyn Any` for the actual `Service` that we want.
-```rust
-trait AsAny {
-    fn as_any(&self) -> &dyn Any;
-}
-impl<T> AsAny for T {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-}
-```
-
-2. General `AsAny` trait only implemented for specific traits, e.g. `Service` -- doesn't work
-   for `Service` because Rust considers the `A` and `S` type parameters as unconstrained.
-```rust
-trait AsAny {
-    fn as_any(&self) -> &dyn Any;
-}
-impl<T, A, S> AsAny for T
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-    A: App<S> + 'static,
-    // Even though `A` and `S` appear here, Rust considers them unconstrained.
-    T: Service<A, S>
-{
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-}
-```
-*/
-pub trait ServiceAsAny<S>
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-{
-    fn as_any(&self) -> &dyn Any;
-}
-
-/// Provide an auto-impl of [`ServiceAsAny`] for any type that implements [`Service`].
-impl<T, S> ServiceAsAny<S> for T
-where
-    S: Clone + Send + Sync + 'static,
-    AppContext: FromRef<S>,
-    T: Service<S> + 'static,
-{
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
 }
