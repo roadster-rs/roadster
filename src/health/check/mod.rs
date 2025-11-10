@@ -6,7 +6,6 @@ pub mod registry;
 #[cfg(feature = "worker")]
 pub mod worker;
 
-use crate::error::RoadsterResult;
 use async_trait::async_trait;
 #[cfg(feature = "open-api")]
 use schemars::JsonSchema;
@@ -68,9 +67,11 @@ pub struct ErrorData {
 /// Another benefit of using a separate trait is, because the health checks are decoupled from
 /// services, they can potentially be used in other parts of the app. For example, they can
 /// be used to implement the "health check" API endpoint.
-#[cfg_attr(test, mockall::automock)]
+#[cfg_attr(test, mockall::automock(type Error = crate::error::Error;))]
 #[async_trait]
 pub trait HealthCheck: Send + Sync {
+    type Error: Send + Sync + std::error::Error;
+
     /// The name of the [`HealthCheck`].
     fn name(&self) -> String;
 
@@ -84,7 +85,7 @@ pub trait HealthCheck: Send + Sync {
     // not "dyn-compatible", which means it can't be made into an object. If a `HealthCheck` impl
     // needs the state/AppContext, it needs to have it as a field in its struct, and it should
     // use an `AppContextWeak` to avoid a reference cycle.
-    async fn check(&self) -> RoadsterResult<CheckResponse>;
+    async fn check(&self) -> Result<CheckResponse, Self::Error>;
 }
 
 // This method is not used in all feature configurations.

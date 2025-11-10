@@ -46,7 +46,7 @@ where
 
 #[instrument(skip_all)]
 pub(crate) async fn health_check_with_checks<S>(
-    checks: Vec<Arc<dyn HealthCheck>>,
+    checks: Vec<Arc<dyn HealthCheck<Error = crate::error::Error>>>,
     duration: Option<Duration>,
 ) -> RoadsterResult<HeathCheckResponse>
 where
@@ -105,7 +105,7 @@ where
 }
 
 async fn run_check(
-    check: Arc<dyn HealthCheck>,
+    check: Arc<dyn HealthCheck<Error = crate::error::Error>>,
     duration: Option<Duration>,
 ) -> RoadsterResult<CheckResponse> {
     if let Some(duration) = duration {

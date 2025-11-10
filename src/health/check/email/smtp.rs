@@ -1,6 +1,5 @@
 use crate::api::core::health::smtp_health;
 use crate::app::context::{AppContext, AppContextWeak};
-use crate::error::RoadsterResult;
 use crate::health::check::{CheckResponse, HealthCheck, missing_context_response};
 use async_trait::async_trait;
 use tracing::instrument;
@@ -11,6 +10,8 @@ pub struct SmtpHealthCheck {
 
 #[async_trait]
 impl HealthCheck for SmtpHealthCheck {
+    type Error = crate::error::Error;
+
     fn name(&self) -> String {
         "smtp".to_string()
     }
@@ -23,7 +24,7 @@ impl HealthCheck for SmtpHealthCheck {
     }
 
     #[instrument(skip_all)]
-    async fn check(&self) -> RoadsterResult<CheckResponse> {
+    async fn check(&self) -> Result<CheckResponse, Self::Error> {
         let context = self.context.upgrade();
         let response = match context {
             Some(context) => smtp_health(&context, None).await,
