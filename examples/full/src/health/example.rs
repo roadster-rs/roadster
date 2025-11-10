@@ -2,6 +2,7 @@ use crate::app_state::{AppState, AppStateWeak};
 use async_trait::async_trait;
 use roadster::error::RoadsterResult;
 use roadster::health::check::{CheckResponse, ErrorData, HealthCheck, Status};
+use std::convert::Infallible;
 use std::time::Duration;
 use tracing::error;
 
@@ -33,6 +34,8 @@ impl ExampleHealthCheck {
 
 #[async_trait]
 impl HealthCheck for ExampleHealthCheck {
+    type Error = Infallible;
+
     fn name(&self) -> String {
         "example".to_string()
     }
@@ -52,7 +55,7 @@ impl HealthCheck for ExampleHealthCheck {
             .unwrap_or(state.app_context.config().health_check.default_enable)
     }
 
-    async fn check(&self) -> RoadsterResult<CheckResponse> {
+    async fn check(&self) -> Result<CheckResponse, Self::Error> {
         let state = self.state.upgrade();
 
         let response = match state {

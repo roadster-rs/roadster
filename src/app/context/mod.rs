@@ -357,7 +357,7 @@ impl AppContext {
 
     /// Returns the [`HealthCheck`]s that were registered in the [`HealthCheckRegistry`], or
     /// an empty [`Vec`] if no [`HealthCheck`]s were registered.
-    pub fn health_checks(&self) -> Vec<Arc<dyn HealthCheck>> {
+    pub fn health_checks(&self) -> Vec<Arc<dyn HealthCheck<Error = crate::error::Error>>> {
         self.inner.health_checks()
     }
 
@@ -672,8 +672,8 @@ impl Provide<AppMetadata> for AppContext {
     }
 }
 
-impl Provide<Vec<Arc<dyn HealthCheck>>> for AppContext {
-    fn provide(&self) -> Vec<Arc<dyn HealthCheck>> {
+impl Provide<Vec<Arc<dyn HealthCheck<Error = crate::error::Error>>>> for AppContext {
+    fn provide(&self) -> Vec<Arc<dyn HealthCheck<Error = crate::error::Error>>> {
         self.health_checks()
     }
 }
@@ -1233,7 +1233,7 @@ impl AppContextInner {
         &self.metadata
     }
 
-    fn health_checks(&self) -> Vec<Arc<dyn HealthCheck>> {
+    fn health_checks(&self) -> Vec<Arc<dyn HealthCheck<Error = crate::error::Error>>> {
         self.health_checks
             .get()
             .map(|health_checks| health_checks.checks())

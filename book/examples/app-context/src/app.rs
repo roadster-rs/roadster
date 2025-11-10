@@ -4,7 +4,6 @@ use async_trait::async_trait;
 use axum::extract::FromRef;
 use roadster::app::RoadsterApp;
 use roadster::app::context::{AppContext, AppContextWeak};
-use roadster::error::RoadsterResult;
 use roadster::health::check::{CheckResponse, HealthCheck, Status};
 use std::time::Duration;
 
@@ -17,6 +16,8 @@ pub struct ExampleHealthCheck {
 
 #[async_trait]
 impl HealthCheck for ExampleHealthCheck {
+    type Error = roadster::error::Error;
+
     fn name(&self) -> String {
         "example".to_string()
     }
@@ -25,7 +26,7 @@ impl HealthCheck for ExampleHealthCheck {
         true
     }
 
-    async fn check(&self) -> RoadsterResult<CheckResponse> {
+    async fn check(&self) -> Result<CheckResponse, Self::Error> {
         // Upgrade the `AppContext` in order to use it
         let _context = self
             .context

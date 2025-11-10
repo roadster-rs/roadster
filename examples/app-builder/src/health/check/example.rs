@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use roadster::error::RoadsterResult;
 use roadster::health::check::{CheckResponse, HealthCheck, Status};
+use std::convert::Infallible;
 use std::time::Duration;
 
 pub struct ExampleHealthCheck {
@@ -17,6 +18,8 @@ impl ExampleHealthCheck {
 
 #[async_trait]
 impl HealthCheck for ExampleHealthCheck {
+    type Error = Infallible;
+
     fn name(&self) -> String {
         self.name.clone()
     }
@@ -25,7 +28,7 @@ impl HealthCheck for ExampleHealthCheck {
         true
     }
 
-    async fn check(&self) -> RoadsterResult<CheckResponse> {
+    async fn check(&self) -> Result<CheckResponse, Self::Error> {
         Ok(CheckResponse::builder()
             .status(Status::Ok)
             .latency(Duration::from_secs(0))

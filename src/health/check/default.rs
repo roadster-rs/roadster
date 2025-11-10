@@ -19,8 +19,8 @@ use std::sync::Arc;
 
 pub fn default_health_checks(
     #[allow(unused_variables)] context: &AppContext,
-) -> BTreeMap<String, Arc<dyn HealthCheck>> {
-    let health_checks: Vec<Arc<dyn HealthCheck>> = vec![
+) -> BTreeMap<String, Arc<dyn HealthCheck<Error = crate::error::Error>>> {
+    let health_checks: Vec<Arc<dyn HealthCheck<Error = crate::error::Error>>> = vec![
         #[cfg(feature = "db-sea-orm")]
         Arc::new(DbSeaOrmHealthCheck {
             context: context.downgrade(),

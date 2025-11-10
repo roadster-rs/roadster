@@ -10,7 +10,7 @@ use crate::config::environment::Environment;
 use crate::db::migration::Migrator;
 use crate::error::RoadsterResult;
 use crate::health::check::HealthCheck;
-use crate::health::check::registry::HealthCheckRegistry;
+use crate::health::check::registry::{HealthCheckRegistry, HealthCheckWrapper};
 use crate::lifecycle::AppLifecycleHandler;
 use crate::lifecycle::registry::LifecycleHandlerRegistry;
 use crate::service::Service;
@@ -132,7 +132,7 @@ struct Inner<
     worker_pg_sqlx_pool_options_provider: Option<Box<SqlxPgPoolOptionsProvider>>,
     #[cfg(feature = "db-sql")]
     migrator_providers: Vec<Box<MigratorProvider<S>>>,
-    health_checks: Vec<Arc<dyn HealthCheck>>,
+    health_checks: Vec<Arc<HealthCheckWrapper>>,
     health_check_providers: HealthCheckProviders<S>,
     graceful_shutdown_signal_provider: GracefulShutdownSignalProvider<S>,
     lifecycle_handler_providers: LifecycleHandlerProviders<RoadsterApp<S, Cli>, S>,
@@ -374,7 +374,8 @@ where
     }
 
     fn add_health_check(&mut self, health_check: impl 'static + HealthCheck) {
-        self.health_checks.push(Arc::new(health_check));
+        self.health_checks
+            .push(Arc::new(HealthCheckWrapper::new(health_check)));
     }
 
     fn add_health_check_provider(

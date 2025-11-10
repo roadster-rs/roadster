@@ -15,7 +15,9 @@ use tokio_util::sync::CancellationToken;
 use tracing::{error, info, instrument, warn};
 
 #[instrument(skip_all)]
-pub(crate) async fn health_checks(checks: Vec<Arc<dyn HealthCheck>>) -> RoadsterResult<()> {
+pub(crate) async fn health_checks(
+    checks: Vec<Arc<dyn HealthCheck<Error = crate::error::Error>>>,
+) -> RoadsterResult<()> {
     let duration = Duration::from_secs(60);
     let response = health_check_with_checks(checks, Some(duration)).await?;
 

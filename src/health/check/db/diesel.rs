@@ -1,6 +1,5 @@
 use crate::api::core::health::db_diesel_health;
 use crate::app::context::{AppContext, AppContextWeak};
-use crate::error::RoadsterResult;
 use crate::health::check::{CheckResponse, HealthCheck, missing_context_response};
 use async_trait::async_trait;
 use tracing::instrument;
@@ -43,6 +42,8 @@ where
     C: 'static + diesel::connection::Connection + diesel::r2d2::R2D2Connection,
     F: Send + Sync + Fn(&AppContext) -> &r2d2::Pool<diesel::r2d2::ConnectionManager<C>>,
 {
+    type Error = crate::error::Error;
+
     fn name(&self) -> String {
         format!("db-diesel-{}", self.name)
     }
@@ -55,7 +56,7 @@ where
     }
 
     #[instrument(skip_all)]
-    async fn check(&self) -> RoadsterResult<CheckResponse> {
+    async fn check(&self) -> Result<CheckResponse, Self::Error> {
         let context = self.context.upgrade();
         let response = match context {
             Some(context) => db_diesel_health((self.get_pool)(&context), None).await,

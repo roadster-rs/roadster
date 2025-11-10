@@ -1,6 +1,5 @@
 use crate::api::core::health::db_diesel_health_pg_async;
 use crate::app::context::{AppContext, AppContextWeak};
-use crate::error::RoadsterResult;
 use crate::health::check::{CheckResponse, HealthCheck, missing_context_response};
 use async_trait::async_trait;
 use tracing::instrument;
@@ -11,6 +10,8 @@ pub struct DbDieselPgAsyncHealthCheck {
 
 #[async_trait]
 impl HealthCheck for DbDieselPgAsyncHealthCheck {
+    type Error = crate::error::Error;
+
     fn name(&self) -> String {
         "db-diesel-postgres-async".to_string()
     }
@@ -23,7 +24,7 @@ impl HealthCheck for DbDieselPgAsyncHealthCheck {
     }
 
     #[instrument(skip_all)]
-    async fn check(&self) -> RoadsterResult<CheckResponse> {
+    async fn check(&self) -> Result<CheckResponse, Self::Error> {
         let context = self.context.upgrade();
         let response = match context {
             Some(context) => db_diesel_health_pg_async(&context, None).await,
