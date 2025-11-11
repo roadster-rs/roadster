@@ -4,12 +4,15 @@ use crate::service::http::initializer::normalize_path::NormalizePathInitializer;
 use axum_core::extract::FromRef;
 use std::collections::BTreeMap;
 
-pub fn default_initializers<S>(state: &S) -> BTreeMap<String, Box<dyn Initializer<S>>>
+pub fn default_initializers<S>(
+    state: &S,
+) -> BTreeMap<String, Box<dyn Initializer<S, Error = crate::error::Error>>>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
-    let initializers: Vec<Box<dyn Initializer<S>>> = vec![Box::new(NormalizePathInitializer)];
+    let initializers: Vec<Box<dyn Initializer<S, Error = crate::error::Error>>> =
+        vec![Box::new(NormalizePathInitializer)];
 
     initializers
         .into_iter()

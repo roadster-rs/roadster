@@ -1,5 +1,4 @@
 use crate::app::context::AppContext;
-use crate::error::RoadsterResult;
 use crate::service::http::initializer::Initializer;
 use axum::Router;
 use axum_core::extract::FromRef;
@@ -20,6 +19,8 @@ where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
+    type Error = crate::error::Error;
+
     fn name(&self) -> String {
         "normalize-path".to_string()
     }
@@ -59,7 +60,7 @@ where
     /// is applied after all the routes and normal middleware have been applied.
     ///
     /// See: <https://docs.rs/axum/latest/axum/middleware/index.html#rewriting-request-uri-in-middleware>
-    fn before_serve(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
+    fn before_serve(&self, router: Router, _state: &S) -> Result<Router, Self::Error> {
         let router = NormalizePathLayer::trim_trailing_slash().layer(router);
         let router = Router::new().fallback_service(router);
         Ok(router)

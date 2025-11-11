@@ -1,5 +1,4 @@
 use async_trait::async_trait;
-use roadster::error::RoadsterResult;
 use roadster::health::check::{CheckResponse, HealthCheck, Status};
 use std::convert::Infallible;
 use std::time::Duration;

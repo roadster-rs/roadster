@@ -15,7 +15,6 @@ use roadster::app::context::AppContext;
 use roadster::app::metadata::AppMetadata;
 use roadster::config::AppConfig;
 use roadster::db::migration::sea_orm::SeaOrmMigrator;
-use roadster::error::RoadsterResult;
 use roadster::health::check::registry::HealthCheckRegistry;
 use roadster::lifecycle::registry::LifecycleHandlerRegistry;
 use roadster::service::function::service::FunctionService;
@@ -27,6 +26,7 @@ use roadster::service::http::service::HttpService;
 use roadster::service::registry::ServiceRegistry;
 use roadster::service::worker::SidekiqWorkerService;
 use roadster::worker::backend::sidekiq::processor::SidekiqProcessor;
+use std::convert::Infallible;
 use tracing::info;
 
 const BASE: &str = "/api";
@@ -90,7 +90,7 @@ impl RoadsterApp<AppState> for App {
                 HttpService::builder(Some(BASE), state)
                     .api_router(http::routes(BASE))
                     .initializer(
-                        AnyInitializer::builder()
+                        AnyInitializer::<AppState, Infallible>::builder()
                             .name("hello-world")
                             .stage(roadster::service::http::initializer::any::Stage::BeforeServe)
                             .apply(|router, _state| {
