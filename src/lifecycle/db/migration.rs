@@ -4,7 +4,6 @@
 use crate::app::context::AppContext;
 use crate::app::{App, PreparedAppWithoutCli};
 use crate::db::migration::UpArgs;
-use crate::error::RoadsterResult;
 use crate::lifecycle::AppLifecycleHandler;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
@@ -19,6 +18,8 @@ where
     AppContext: FromRef<S>,
     A: App<S> + 'static,
 {
+    type Error = crate::error::Error;
+
     fn name(&self) -> String {
         "db-migration".to_string()
     }
@@ -48,7 +49,7 @@ where
     async fn before_services(
         &self,
         prepared_app: &PreparedAppWithoutCli<A, S>,
-    ) -> RoadsterResult<()> {
+    ) -> Result<(), Self::Error> {
         for migrator in prepared_app.migrators.iter() {
             migrator
                 .up(&prepared_app.state, &UpArgs::builder().build())

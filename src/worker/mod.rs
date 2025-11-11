@@ -58,7 +58,7 @@ where
     /// [`crate::config::AppConfig`].
     ///
     /// The [`Worker::enqueue_config`] method will be called when enqueuing a job for the worker.
-    fn enqueue_config(_state: &S) -> EnqueueConfig {
+    fn enqueue_config(#[allow(unused_variables)] state: &S) -> EnqueueConfig {
         EnqueueConfig::default()
     }
 
@@ -68,7 +68,7 @@ where
     ///
     /// The [`Worker::worker_config`] method will be called once for each worker when it is
     /// registered, and the config will be stored to be used when the worker handles a job.
-    fn worker_config(&self, _state: &S) -> WorkerConfig {
+    fn worker_config(&self, #[allow(unused_variables)] state: &S) -> WorkerConfig {
         WorkerConfig::default()
     }
 

@@ -2,7 +2,6 @@
 
 use crate::app::App;
 use crate::app::context::AppContext;
-use crate::error::RoadsterResult;
 use crate::lifecycle::AppLifecycleHandler;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
@@ -17,6 +16,8 @@ where
     AppContext: FromRef<S>,
     A: App<S> + 'static,
 {
+    type Error = crate::error::Error;
+
     fn name(&self) -> String {
         "db-sea-orm-graceful-shutdown".to_string()
     }
@@ -42,7 +43,7 @@ where
     }
 
     #[instrument(skip_all)]
-    async fn on_shutdown(&self, #[allow(unused_variables)] state: &S) -> RoadsterResult<()> {
+    async fn on_shutdown(&self, #[allow(unused_variables)] state: &S) -> Result<(), Self::Error> {
         tracing::info!("Closing the DB connection pool.");
 
         let context = AppContext::from_ref(state);

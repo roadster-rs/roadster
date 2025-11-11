@@ -54,7 +54,7 @@ where
     ///
     /// Note that this is run for every service that's registered in the
     /// [`crate::service::registry::ServiceRegistry`] regardless of whether it's enabled or not.
-    async fn before_run(&self, _state: &S) -> Result<(), Self::Error> {
+    async fn before_run(&self, #[allow(unused_variables)] state: &S) -> Result<(), Self::Error> {
         Ok(())
     }
 

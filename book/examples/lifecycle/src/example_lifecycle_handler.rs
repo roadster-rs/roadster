@@ -1,13 +1,15 @@
 use async_trait::async_trait;
 use roadster::app::context::AppContext;
 use roadster::app::{PreparedAppWithoutCli, RoadsterApp};
-use roadster::error::RoadsterResult;
 use roadster::lifecycle::AppLifecycleHandler;
+use std::convert::Infallible;
 
 pub struct ExampleLifecycleHandler;
 
 #[async_trait]
 impl AppLifecycleHandler<RoadsterApp<AppContext>, AppContext> for ExampleLifecycleHandler {
+    type Error = Infallible;
+
     fn name(&self) -> String {
         "example".to_owned()
     }
@@ -37,18 +39,18 @@ impl AppLifecycleHandler<RoadsterApp<AppContext>, AppContext> for ExampleLifecyc
     async fn before_health_checks(
         &self,
         _prepared_app: &PreparedAppWithoutCli<RoadsterApp<AppContext>, AppContext>,
-    ) -> RoadsterResult<()> {
+    ) -> Result<(), Self::Error> {
         todo!("Implement in order to initialize some state before health checks run")
     }
 
     async fn before_services(
         &self,
         _prepared_app: &PreparedAppWithoutCli<RoadsterApp<AppContext>, AppContext>,
-    ) -> RoadsterResult<()> {
+    ) -> Result<(), Self::Error> {
         todo!("Implement in order to initialize some state before the app's services are started")
     }
 
-    async fn on_shutdown(&self, _state: &AppContext) -> RoadsterResult<()> {
+    async fn on_shutdown(&self, _state: &AppContext) -> Result<(), Self::Error> {
         todo!("Implement in order to perform any necessary clean up on app shutdown")
     }
 }

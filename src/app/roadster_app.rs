@@ -12,7 +12,7 @@ use crate::error::RoadsterResult;
 use crate::health::check::HealthCheck;
 use crate::health::check::registry::{HealthCheckRegistry, HealthCheckWrapper};
 use crate::lifecycle::AppLifecycleHandler;
-use crate::lifecycle::registry::LifecycleHandlerRegistry;
+use crate::lifecycle::registry::{AppLifecycleHandlerWrapper, LifecycleHandlerRegistry};
 use crate::service::Service;
 use crate::service::registry::{ServiceRegistry, ServiceWrapper};
 use crate::util::empty::Empty;
@@ -73,7 +73,7 @@ type DieselAsyncConnectionCustomizerProvider<C> =
     dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<DieselAsyncConnectionCustomizer<C>>;
 #[cfg(feature = "db-sql")]
 type MigratorProvider<S> = dyn Send + Sync + Fn(&S) -> RoadsterResult<Box<dyn Migrator<S>>>;
-type LifecycleHandlers<A, S> = Vec<Box<dyn AppLifecycleHandler<A, S>>>;
+type LifecycleHandlers<A, S> = Vec<AppLifecycleHandlerWrapper<A, S>>;
 type LifecycleHandlerProviders<A, S> =
     Vec<Box<dyn Send + Sync + Fn(&mut LifecycleHandlerRegistry<A, S>, &S) -> RoadsterResult<()>>>;
 type HealthCheckProviders<S> =
@@ -990,7 +990,8 @@ where
         mut self,
         lifecycle_handler: impl 'static + AppLifecycleHandler<RoadsterApp<S, Cli>, S>,
     ) -> Self {
-        self.lifecycle_handlers.push(Box::new(lifecycle_handler));
+        self.lifecycle_handlers
+            .push(AppLifecycleHandlerWrapper::new(lifecycle_handler));
         self
     }
 
@@ -1377,7 +1378,7 @@ where
                 .lock()
                 .map_err(crate::error::Error::from)?;
             for lifecycle_handler in lifecycle_handlers.drain(..) {
-                registry.register_boxed(lifecycle_handler)?;
+                registry.register_boxed(Box::new(lifecycle_handler))?;
             }
         }
 

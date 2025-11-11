@@ -5,7 +5,6 @@ pub mod registry;
 
 use crate::app::context::AppContext;
 use crate::app::{App, PreparedAppWithoutCli};
-use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 
@@ -40,7 +39,7 @@ use axum_core::extract::FromRef;
 ///    when the signal is received.
 /// 11. Run Roadster's graceful shutdown logic
 /// 12. Run the app's registered [`AppLifecycleHandler::on_shutdown`] hooks.
-#[cfg_attr(test, mockall::automock)]
+#[cfg_attr(test, mockall::automock(type Error = crate::error::Error;))]
 #[async_trait]
 pub trait AppLifecycleHandler<A, S>: Send + Sync
 where
@@ -48,11 +47,13 @@ where
     AppContext: FromRef<S>,
     A: App<S> + 'static,
 {
+    type Error: Send + Sync + std::error::Error;
+
     /// The name of the [`AppLifecycleHandler`].
     fn name(&self) -> String;
 
     /// Whether the [`AppLifecycleHandler`] is enabled.
-    fn enabled(&self, _state: &S) -> bool {
+    fn enabled(&self, #[allow(unused_variables)] state: &S) -> bool {
         true
     }
 
@@ -67,7 +68,7 @@ where
     ///
     /// If the order in which your [`AppLifecycleHandler`] runs doesn't particularly matter, it's
     /// generally safe to set its priority as `0`.
-    fn priority(&self, _state: &S) -> i32 {
+    fn priority(&self, #[allow(unused_variables)] state: &S) -> i32 {
         0
     }
 
@@ -75,21 +76,21 @@ where
     /// app startup.
     async fn before_health_checks(
         &self,
-        _prepared_app: &PreparedAppWithoutCli<A, S>,
-    ) -> RoadsterResult<()> {
+        #[allow(unused_variables)] prepared_app: &PreparedAppWithoutCli<A, S>,
+    ) -> Result<(), Self::Error> {
         Ok(())
     }
 
     /// This method is run right before the app's [`crate::service::Service`]s are started.
     async fn before_services(
         &self,
-        _prepared_app: &PreparedAppWithoutCli<A, S>,
-    ) -> RoadsterResult<()> {
+        #[allow(unused_variables)] prepared_app: &PreparedAppWithoutCli<A, S>,
+    ) -> Result<(), Self::Error> {
         Ok(())
     }
 
     /// This method is run after the app's [`crate::service::Service`]s have stopped.
-    async fn on_shutdown(&self, _state: &S) -> RoadsterResult<()> {
+    async fn on_shutdown(&self, #[allow(unused_variables)] state: &S) -> Result<(), Self::Error> {
         Ok(())
     }
 }

@@ -6,13 +6,13 @@ use std::collections::BTreeMap;
 
 pub fn default_lifecycle_handlers<A, S>(
     state: &S,
-) -> BTreeMap<String, Box<dyn AppLifecycleHandler<A, S>>>
+) -> BTreeMap<String, Box<dyn AppLifecycleHandler<A, S, Error = crate::error::Error>>>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
     A: App<S> + 'static,
 {
-    let lifecycle_handlers: Vec<Box<dyn AppLifecycleHandler<A, S>>> = vec![
+    let lifecycle_handlers: Vec<Box<dyn AppLifecycleHandler<A, S, Error = crate::error::Error>>> = vec![
         #[cfg(feature = "db-sql")]
         Box::new(crate::lifecycle::db::migration::DbMigrationLifecycleHandler),
         #[cfg(feature = "db-sea-orm")]
