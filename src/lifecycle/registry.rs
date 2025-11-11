@@ -29,7 +29,8 @@ pub enum LifecycleHandlerRegistryError {
 ///
 /// # Examples
 /// ```rust
-/// # use async_trait::async_trait;
+/// # use std::convert::Infallible;
+/// use async_trait::async_trait;
 /// # use tokio_util::sync::CancellationToken;
 /// # use roadster::app::context::AppContext;
 /// # use roadster::error::RoadsterResult;
@@ -44,6 +45,8 @@ pub enum LifecycleHandlerRegistryError {
 /// type App = RoadsterApp<AppContext>;
 ///
 /// impl AppLifecycleHandler<App, AppContext> for ExampleLifecycleHandler {
+///     type Error = Infallible;
+///
 ///     fn name(&self) -> String {
 ///         "example".to_string()
 ///     }
