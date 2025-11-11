@@ -3,18 +3,19 @@ pub mod default;
 pub mod normalize_path;
 
 use crate::app::context::AppContext;
-use crate::error::RoadsterResult;
 use axum::Router;
 use axum_core::extract::FromRef;
 
 /// Provides hooks into various stages of the app's startup to allow initializing and installing
 /// anything that needs to be done during a specific stage of startup of the HTTP service.
-#[cfg_attr(test, mockall::automock)]
+#[cfg_attr(test, mockall::automock(type Error = crate::error::Error;))]
 pub trait Initializer<S>: Send
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
 {
+    type Error: Send + Sync + std::error::Error;
+
     fn name(&self) -> String;
 
     fn enabled(&self, state: &S) -> bool;
@@ -34,7 +35,7 @@ where
         &self,
         router: Router,
         #[allow(unused_variables)] state: &S,
-    ) -> RoadsterResult<Router> {
+    ) -> Result<Router, Self::Error> {
         Ok(router)
     }
 
@@ -42,7 +43,7 @@ where
         &self,
         router: Router,
         #[allow(unused_variables)] state: &S,
-    ) -> RoadsterResult<Router> {
+    ) -> Result<Router, Self::Error> {
         Ok(router)
     }
 
@@ -50,7 +51,7 @@ where
         &self,
         router: Router,
         #[allow(unused_variables)] state: &S,
-    ) -> RoadsterResult<Router> {
+    ) -> Result<Router, Self::Error> {
         Ok(router)
     }
 
@@ -58,7 +59,7 @@ where
         &self,
         router: Router,
         #[allow(unused_variables)] state: &S,
-    ) -> RoadsterResult<Router> {
+    ) -> Result<Router, Self::Error> {
         Ok(router)
     }
 }

@@ -1,6 +1,5 @@
 use crate::app_state::{AppState, AppStateWeak};
 use async_trait::async_trait;
-use roadster::error::RoadsterResult;
 use roadster::health::check::{CheckResponse, ErrorData, HealthCheck, Status};
 use std::convert::Infallible;
 use std::time::Duration;

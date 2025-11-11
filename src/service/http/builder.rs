@@ -23,7 +23,6 @@ use axum::Router;
 use axum_core::extract::FromRef;
 use itertools::Itertools;
 use std::collections::BTreeMap;
-#[cfg(feature = "open-api")]
 use std::sync::Arc;
 use tracing::info;
 
@@ -42,7 +41,7 @@ where
     #[cfg(feature = "open-api")]
     api_docs: ApiDocs,
     middleware: BTreeMap<String, Box<dyn Middleware<S>>>,
-    initializers: BTreeMap<String, Box<dyn Initializer<S>>>,
+    initializers: BTreeMap<String, Box<dyn Initializer<S, Error = crate::error::Error>>>,
 }
 
 impl<S> HttpServiceBuilder<S>
@@ -116,7 +115,7 @@ where
 
     pub fn initializer<T>(mut self, initializer: T) -> RoadsterResult<Self>
     where
-        T: Initializer<S> + 'static,
+        T: 'static + Send + Sync + Initializer<S>,
     {
         if !initializer.enabled(&self.state) {
             return Ok(self);
@@ -124,7 +123,7 @@ where
         let name = initializer.name();
         if self
             .initializers
-            .insert(name.clone(), Box::new(initializer))
+            .insert(name.clone(), Box::new(InitializerWrapper::new(initializer)))
             .is_some()
         {
             return Err(crate::error::other::OtherError::Message(format!(
@@ -247,6 +246,130 @@ where
         };
 
         Ok(service)
+    }
+}
+
+type EnabledFn<S> = Box<dyn Send + Sync + for<'a> Fn(&'a S) -> bool>;
+type PriorityFn<S> = Box<dyn Send + Sync + for<'a> Fn(&'a S) -> i32>;
+
+type RouterAndStateFn<S> =
+    Box<dyn Send + Sync + for<'a> Fn(Router, &'a S) -> RoadsterResult<Router>>;
+
+pub(crate) struct InitializerWrapper<S>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    name: String,
+    enabled_fn: EnabledFn<S>,
+    priority_fn: PriorityFn<S>,
+    after_router_fn: RouterAndStateFn<S>,
+    before_middleware_fn: RouterAndStateFn<S>,
+    after_middleware_fn: RouterAndStateFn<S>,
+    before_serve_fn: RouterAndStateFn<S>,
+}
+
+impl<S> InitializerWrapper<S>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    pub(crate) fn new<T>(initializer: T) -> Self
+    where
+        T: 'static + Send + Sync + Initializer<S>,
+    {
+        let name = initializer.name();
+        let initializer = Arc::new(initializer);
+        let enabled_fn: EnabledFn<S> = {
+            let initializer = initializer.clone();
+            Box::new(move |state| initializer.enabled(state))
+        };
+        let priority_fn: PriorityFn<S> = {
+            let initializer = initializer.clone();
+            Box::new(move |state| initializer.priority(state))
+        };
+        let after_router_fn: RouterAndStateFn<S> = {
+            let initializer = initializer.clone();
+            Box::new(move |router, state| {
+                let router = initializer
+                    .after_router(router, state)
+                    .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
+                Ok(router)
+            })
+        };
+        let before_middleware_fn: RouterAndStateFn<S> = {
+            let initializer = initializer.clone();
+            Box::new(move |router, state| {
+                let router = initializer
+                    .before_middleware(router, state)
+                    .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
+                Ok(router)
+            })
+        };
+        let after_middleware_fn: RouterAndStateFn<S> = {
+            let initializer = initializer.clone();
+            Box::new(move |router, state| {
+                let router = initializer
+                    .after_middleware(router, state)
+                    .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
+                Ok(router)
+            })
+        };
+        let before_serve_fn: RouterAndStateFn<S> = {
+            let initializer = initializer.clone();
+            Box::new(move |router, state| {
+                let router = initializer
+                    .before_serve(router, state)
+                    .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
+                Ok(router)
+            })
+        };
+        Self {
+            name,
+            enabled_fn,
+            priority_fn,
+            after_router_fn,
+            before_middleware_fn,
+            after_middleware_fn,
+            before_serve_fn,
+        }
+    }
+}
+
+#[async_trait]
+impl<S> Initializer<S> for InitializerWrapper<S>
+where
+    S: Clone + Send + Sync + 'static,
+    AppContext: FromRef<S>,
+{
+    type Error = crate::error::Error;
+
+    fn name(&self) -> String {
+        self.name.clone()
+    }
+
+    fn enabled(&self, state: &S) -> bool {
+        (self.enabled_fn)(state)
+    }
+
+    fn priority(&self, state: &S) -> i32 {
+        (self.priority_fn)(state)
+    }
+
+    fn after_router(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
+        (self.after_router_fn)(router, state)
+    }
+
+    fn before_middleware(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
+        (self.before_middleware_fn)(router, state)
+    }
+
+    fn after_middleware(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
+        (self.after_middleware_fn)(router, state)
+    }
+
+    fn before_serve(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
+        (self.before_serve_fn)(router, state)
     }
 }
 

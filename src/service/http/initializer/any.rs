@@ -1,10 +1,9 @@
 use crate::app::context::AppContext;
-use crate::error::RoadsterResult;
 use crate::service::http::initializer::Initializer;
 use axum::Router;
 use axum_core::extract::FromRef;
 
-type ApplyFn<S> = Box<dyn Fn(Router, &S) -> RoadsterResult<Router> + Send>;
+type ApplyFn<S, E> = Box<dyn Send + Sync + Fn(Router, &S) -> Result<Router, E> + Send>;
 
 /// An [`Initializer`] that can be applied without creating a separate `struct`.
 ///
@@ -26,10 +25,11 @@ type ApplyFn<S> = Box<dyn Fn(Router, &S) -> RoadsterResult<Router> + Send>;
 ///     .build();
 /// ```
 #[derive(bon::Builder)]
-pub struct AnyInitializer<S>
+pub struct AnyInitializer<S, E>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
+    E: Send + Sync + std::error::Error,
 {
     #[builder(into)]
     name: String,
@@ -38,19 +38,20 @@ where
     #[builder(default)]
     stage: Stage,
     #[builder(setters(vis = "", name = apply_internal))]
-    apply: ApplyFn<S>,
+    apply: ApplyFn<S, E>,
 }
 
-impl<S, BS> AnyInitializerBuilder<S, BS>
+impl<S, E, BS> AnyInitializerBuilder<S, E, BS>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
+    E: Send + Sync + std::error::Error,
     BS: any_initializer_builder::State,
 {
     pub fn apply(
         self,
-        apply_fn: impl Fn(Router, &S) -> RoadsterResult<Router> + Send + 'static,
-    ) -> AnyInitializerBuilder<S, any_initializer_builder::SetApply<BS>>
+        apply_fn: impl 'static + Send + Sync + Fn(Router, &S) -> Result<Router, E>,
+    ) -> AnyInitializerBuilder<S, E, any_initializer_builder::SetApply<BS>>
     where
         BS::Apply: any_initializer_builder::IsUnset,
     {
@@ -68,11 +69,14 @@ pub enum Stage {
     BeforeServe,
 }
 
-impl<S> Initializer<S> for AnyInitializer<S>
+impl<S, E> Initializer<S> for AnyInitializer<S, E>
 where
     S: Clone + Send + Sync + 'static,
     AppContext: FromRef<S>,
+    E: Send + Sync + std::error::Error,
 {
+    type Error = E;
+
     fn name(&self) -> String {
         self.name.clone()
     }
@@ -124,7 +128,7 @@ where
             .unwrap_or_default()
     }
 
-    fn after_router(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
+    fn after_router(&self, router: Router, _state: &S) -> Result<Router, Self::Error> {
         if let Stage::AfterRouter = self.stage {
             (self.apply)(router, _state)
         } else {
@@ -132,7 +136,7 @@ where
         }
     }
 
-    fn before_middleware(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
+    fn before_middleware(&self, router: Router, _state: &S) -> Result<Router, Self::Error> {
         if let Stage::BeforeMiddleware = self.stage {
             (self.apply)(router, _state)
         } else {
@@ -140,7 +144,7 @@ where
         }
     }
 
-    fn after_middleware(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
+    fn after_middleware(&self, router: Router, _state: &S) -> Result<Router, Self::Error> {
         if let Stage::AfterMiddleware = self.stage {
             (self.apply)(router, _state)
         } else {
@@ -148,7 +152,7 @@ where
         }
     }
 
-    fn before_serve(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
+    fn before_serve(&self, router: Router, _state: &S) -> Result<Router, Self::Error> {
         if let Stage::BeforeServe = self.stage {
             (self.apply)(router, _state)
         } else {
@@ -166,6 +170,7 @@ mod tests {
     use crate::service::http::initializer::any::AnyInitializer;
     use crate::testing::snapshot::TestCase;
     use rstest::{fixture, rstest};
+    use std::convert::Infallible;
 
     const NAME: &str = "hello-world";
 
@@ -177,7 +182,7 @@ mod tests {
     #[test]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn name() {
-        let initializer = AnyInitializer::builder()
+        let initializer = AnyInitializer::<AppContext, Infallible>::builder()
             .name(NAME)
             .apply(|router, _state| Ok(router))
             .build();
@@ -222,7 +227,7 @@ mod tests {
         }
         let context = AppContext::test(Some(config), None, None).unwrap();
 
-        let initializer = AnyInitializer::builder()
+        let initializer = AnyInitializer::<AppContext, Infallible>::builder()
             .name(NAME)
             .maybe_enabled(enabled_field)
             .apply(|router, _state| Ok(router))
@@ -262,7 +267,7 @@ mod tests {
         }
         let context = AppContext::test(Some(config), None, None).unwrap();
 
-        let initializer = AnyInitializer::builder()
+        let initializer = AnyInitializer::<AppContext, Infallible>::builder()
             .name(NAME)
             .maybe_priority(field_priority)
             .apply(|router, _state| Ok(router))
