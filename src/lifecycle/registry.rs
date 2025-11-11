@@ -182,11 +182,11 @@ where
             Box::new(move |prepared| {
                 let handler = handler.clone();
                 Box::pin(async move {
-                    let result = handler
+                    handler
                         .before_health_checks(prepared)
                         .await
                         .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
-                    Ok(result)
+                    Ok(())
                 })
             })
         };
@@ -195,11 +195,11 @@ where
             Box::new(move |prepared| {
                 let handler = handler.clone();
                 Box::pin(async move {
-                    let result = handler
+                    handler
                         .before_services(prepared)
                         .await
                         .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
-                    Ok(result)
+                    Ok(())
                 })
             })
         };
@@ -208,11 +208,11 @@ where
             Box::new(move |state| {
                 let handler = handler.clone();
                 Box::pin(async move {
-                    let result = handler
+                    handler
                         .on_shutdown(state)
                         .await
                         .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
-                    Ok(result)
+                    Ok(())
                 })
             })
         };
