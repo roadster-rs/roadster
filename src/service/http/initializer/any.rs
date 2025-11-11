@@ -14,8 +14,10 @@ type ApplyFn<S, E> = Box<dyn Send + Sync + Fn(Router, &S) -> Result<Router, E> +
 /// # use axum_core::extract::Request;
 /// # use tracing::info;
 /// # use roadster::service::http::initializer::any::AnyInitializer;
+/// # use roadster::app::context::AppContext;
+/// # use std::convert::Infallible;
 /// #
-/// AnyInitializer::builder()
+/// AnyInitializer::<AppContext, Infallible>::builder()
 ///     .name("hello-world")
 ///     .stage(roadster::service::http::initializer::any::Stage::BeforeServe)
 ///     .apply(|router, _state| {

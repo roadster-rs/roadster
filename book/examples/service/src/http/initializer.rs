@@ -6,6 +6,7 @@ use roadster::app::context::AppContext;
 use roadster::error::RoadsterResult;
 use roadster::service::http::builder::HttpServiceBuilder;
 use roadster::service::http::initializer::any::AnyInitializer;
+use std::convert::Infallible;
 use tracing::info;
 
 const BASE: &str = "/api";
@@ -19,7 +20,7 @@ pub async fn http_service(state: &AppContext) -> RoadsterResult<HttpServiceBuild
             get_with(example_b::example_b_get, example_b::example_b_get_docs),
         ))
         .initializer(
-            AnyInitializer::builder()
+            AnyInitializer::<AppContext, Infallible>::builder()
                 .name("custom-initializer")
                 .apply(|router, _state| {
                     info!("Running custom initializer");
