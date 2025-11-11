@@ -30,19 +30,35 @@ where
     /// safe to set its priority as `0`.
     fn priority(&self, state: &S) -> i32;
 
-    fn after_router(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
+    fn after_router(
+        &self,
+        router: Router,
+        #[allow(unused_variables)] state: &S,
+    ) -> RoadsterResult<Router> {
         Ok(router)
     }
 
-    fn before_middleware(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
+    fn before_middleware(
+        &self,
+        router: Router,
+        #[allow(unused_variables)] state: &S,
+    ) -> RoadsterResult<Router> {
         Ok(router)
     }
 
-    fn after_middleware(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
+    fn after_middleware(
+        &self,
+        router: Router,
+        #[allow(unused_variables)] state: &S,
+    ) -> RoadsterResult<Router> {
         Ok(router)
     }
 
-    fn before_serve(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
+    fn before_serve(
+        &self,
+        router: Router,
+        #[allow(unused_variables)] state: &S,
+    ) -> RoadsterResult<Router> {
         Ok(router)
     }
 }
