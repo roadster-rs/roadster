@@ -14,7 +14,7 @@ use std::sync::Arc;
 /// This API is only available when using Aide.
 pub fn routes<S>(parent: &str, state: &S) -> ApiRouter<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     let context = AppContext::from_ref(state);

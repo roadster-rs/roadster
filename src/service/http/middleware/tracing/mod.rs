@@ -1,7 +1,6 @@
 pub mod req_res_logging;
 
 use crate::app::context::AppContext;
-use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
 use crate::util::tracing::optional_trace_field;
 use axum::Router;
@@ -52,9 +51,11 @@ pub struct TracingConfig {
 pub struct TracingMiddleware;
 impl<S> Middleware<S> for TracingMiddleware
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
+    type Error = crate::error::Error;
+
     fn name(&self) -> String {
         "tracing".to_string()
     }
@@ -83,7 +84,7 @@ where
             .priority
     }
 
-    fn install(&self, router: Router, state: &S) -> RoadsterResult<Router> {
+    fn install(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
         let context = AppContext::from_ref(state);
         let middleware_config = &context.config().service.http.custom.middleware;
         let request_id_header_name = &middleware_config.set_request_id.custom.common.header_name;

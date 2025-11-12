@@ -31,7 +31,7 @@ pub struct DieselMigrator<C>
 where
     C: Send + Connection + MigrationHarness<C::Backend>,
 {
-    migrators: Vec<Box<dyn MigrationSource<C::Backend> + Send + Sync>>,
+    migrators: Vec<Box<dyn Send + Sync + MigrationSource<C::Backend>>>,
     order: MigrationSortOrder,
     // Diesel connections don't implement `Sync`, so we need to wrap the `PhantomData` in a
     // `Mutex` to satisfy `Sync` trait bounds elsewhere.
@@ -43,7 +43,7 @@ impl<C> DieselMigrator<C>
 where
     C: Connection + Send + MigrationHarness<C::Backend>,
 {
-    pub fn new(migrator: impl 'static + MigrationSource<C::Backend> + Send + Sync) -> Self {
+    pub fn new(migrator: impl 'static + Send + Sync + MigrationSource<C::Backend>) -> Self {
         Self {
             migrators: vec![Box::new(migrator)],
             order: Default::default(),
@@ -54,7 +54,7 @@ where
     /// Add another [`MigrationSource`] to run as part of this [`DieselMigrator`].
     pub fn add_migrator(
         mut self,
-        migrator: impl 'static + MigrationSource<C::Backend> + Send + Sync,
+        migrator: impl 'static + Send + Sync + MigrationSource<C::Backend>,
     ) -> Self {
         self.migrators.push(Box::new(migrator));
         self
@@ -71,7 +71,7 @@ where
 #[async_trait::async_trait]
 impl<S, C> Migrator<S> for DieselMigrator<C>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     C: Connection + Send + MigrationHarness<C::Backend>,
 {
@@ -204,7 +204,7 @@ impl<C> TryFrom<&DieselMigrator<C>> for DieselMigrationSourceWrapper<C::Backend>
 where
     C: Connection + Send + MigrationHarness<C::Backend>,
 {
-    type Error = Box<dyn std::error::Error + Send + Sync>;
+    type Error = Box<dyn Send + Sync + std::error::Error>;
 
     fn try_from(value: &DieselMigrator<C>) -> Result<Self, Self::Error> {
         let mut migrations = vec![];

@@ -12,7 +12,7 @@ use tracing::{error, info};
 #[non_exhaustive]
 pub struct PgProcessorBuilder<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     pub(crate) inner: PgProcessorInner<S>,
@@ -20,7 +20,7 @@ where
 
 impl<S> PgProcessorBuilder<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     pub(crate) fn new(state: &S) -> Self {
@@ -42,7 +42,7 @@ where
     where
         W: 'static + Worker<S, Args, Error = E>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-        E: 'static + std::error::Error + Send + Sync,
+        E: 'static + Send + Sync + std::error::Error,
     {
         let name = W::name();
         info!(worker.name = name, "Registering PG worker");
@@ -60,7 +60,7 @@ where
     where
         W: 'static + Worker<S, Args, Error = E>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-        E: 'static + std::error::Error + Send + Sync,
+        E: 'static + Send + Sync + std::error::Error,
     {
         let name = W::name();
         info!(worker.name = name, "Registering periodic PG worker");
@@ -94,7 +94,7 @@ where
     where
         W: 'static + Worker<S, Args, Error = E>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-        E: 'static + std::error::Error + Send + Sync,
+        E: 'static + Send + Sync + std::error::Error,
     {
         let context = AppContext::from_ref(&self.inner.state);
         let enqueue_config = &context.config().service.worker.enqueue_config;

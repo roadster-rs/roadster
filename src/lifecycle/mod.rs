@@ -43,9 +43,9 @@ use axum_core::extract::FromRef;
 #[async_trait]
 pub trait AppLifecycleHandler<A, S>: Send + Sync
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
-    A: App<S> + 'static,
+    A: 'static + App<S>,
 {
     type Error: Send + Sync + std::error::Error;
 

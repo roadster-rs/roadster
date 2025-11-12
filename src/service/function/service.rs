@@ -42,7 +42,7 @@ use tokio_util::sync::CancellationToken;
 #[derive(bon::Builder)]
 pub struct FunctionService<S, F, Fut>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     F: Send + Sync + Fn(S, CancellationToken) -> Fut,
     Fut: Send + Future<Output = RoadsterResult<()>>,
@@ -58,7 +58,7 @@ where
 #[async_trait]
 impl<S, F, Fut> Service<S> for FunctionService<S, F, Fut>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     F: 'static + Send + Sync + Fn(S, CancellationToken) -> Fut,
     Fut: 'static + Send + Future<Output = RoadsterResult<()>>,

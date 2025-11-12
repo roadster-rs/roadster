@@ -36,7 +36,7 @@ pub enum Format {
 #[async_trait]
 impl<A, S> RunRoadsterCommand<A, S> for PrintConfigArgs
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     A: App<S>,
 {

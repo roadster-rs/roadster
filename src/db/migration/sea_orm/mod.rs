@@ -34,14 +34,14 @@ impl From<sea_orm_migration::MigrationStatus> for MigrationStatus {
 
 pub struct SeaOrmMigrator<M>
 where
-    M: MigratorTrait + Send + Sync,
+    M: Send + Sync + MigratorTrait,
 {
     migrator: PhantomData<M>,
 }
 
 impl<M> SeaOrmMigrator<M>
 where
-    M: MigratorTrait + Send + Sync,
+    M: Send + Sync + MigratorTrait,
 {
     pub fn new(_migrator: M) -> Self {
         Self {
@@ -53,9 +53,9 @@ where
 #[async_trait]
 impl<S, M> Migrator<S> for SeaOrmMigrator<M>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
-    M: MigratorTrait + Send + Sync,
+    M: Send + Sync + MigratorTrait,
 {
     #[tracing::instrument(skip_all)]
     async fn up(&self, state: &S, args: &UpArgs) -> crate::error::RoadsterResult<usize> {

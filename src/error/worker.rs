@@ -19,7 +19,7 @@ pub enum WorkerError {
     Dequeue(#[from] DequeueError),
 
     #[error("An error occurred while handling a job in worker `{0}`: {1}")]
-    Handle(String, Box<dyn std::error::Error + Send + Sync>),
+    Handle(String, Box<dyn Send + Sync + std::error::Error>),
 
     #[error("Worker `{0}` panicked while handling a job")]
     Panic(String),
@@ -31,7 +31,7 @@ pub enum WorkerError {
     Cron(#[from] cron::error::Error),
 
     #[error(transparent)]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+    Other(#[from] Box<dyn Send + Sync + std::error::Error>),
 }
 
 #[derive(Debug, Error)]

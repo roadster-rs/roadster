@@ -11,7 +11,7 @@ pub enum ParseError {
     Address(#[from] AddrParseError),
 
     #[error(transparent)]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+    Other(#[from] Box<dyn Send + Sync + std::error::Error>),
 }
 
 impl From<url::ParseError> for Error {

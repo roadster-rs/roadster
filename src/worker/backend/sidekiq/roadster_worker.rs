@@ -12,11 +12,11 @@ use std::time::Duration;
 #[derive(Clone)]
 pub(crate) struct RoadsterWorker<S, W, Args, E>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     W: 'static + Worker<S, Args, Error = E>,
     Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-    E: 'static + std::error::Error + Send + Sync,
+    E: 'static + Send + Sync + std::error::Error,
 {
     state: S,
     inner: WorkerWrapper<S>,
@@ -27,11 +27,11 @@ where
 
 impl<S, W, Args, E> RoadsterWorker<S, W, Args, E>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     W: 'static + Worker<S, Args, Error = E>,
     Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-    E: 'static + std::error::Error + Send + Sync,
+    E: 'static + Send + Sync + std::error::Error,
 {
     pub(crate) fn new(state: &S, inner: WorkerWrapper<S>) -> Self {
         Self {
@@ -47,11 +47,11 @@ where
 #[async_trait]
 impl<S, W, Args, E> ::sidekiq::Worker<Job> for RoadsterWorker<S, W, Args, E>
 where
-    S: 'static + Clone + Send + Sync,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     W: 'static + Worker<S, Args, Error = E>,
     Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-    E: 'static + std::error::Error + Send + Sync,
+    E: 'static + Send + Sync + std::error::Error,
 {
     fn disable_argument_coercion(&self) -> bool {
         let context = AppContext::from_ref(&self.state);

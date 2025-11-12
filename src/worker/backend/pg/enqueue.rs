@@ -21,7 +21,7 @@ impl Enqueuer for PgEnqueuer {
     async fn enqueue<W, S, Args, ArgsRef, E>(state: &S, args: ArgsRef) -> Result<(), Self::Error>
     where
         W: 'static + Worker<S, Args, Error = E>,
-        S: Clone + Send + Sync + 'static,
+        S: 'static + Send + Sync + Clone,
         AppContext: FromRef<S>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
         ArgsRef: Send + Sync + Borrow<Args> + Serialize,
@@ -51,7 +51,7 @@ impl Enqueuer for PgEnqueuer {
     ) -> Result<(), Self::Error>
     where
         W: 'static + Worker<S, Args, Error = E>,
-        S: Clone + Send + Sync + 'static,
+        S: 'static + Send + Sync + Clone,
         AppContext: FromRef<S>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
         ArgsRef: Send + Sync + Borrow<Args> + Serialize,
@@ -84,7 +84,7 @@ impl Enqueuer for PgEnqueuer {
     ) -> Result<(), Self::Error>
     where
         W: 'static + Worker<S, Args, Error = E>,
-        S: Clone + Send + Sync + 'static,
+        S: 'static + Send + Sync + Clone,
         AppContext: FromRef<S>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
         ArgsRef: Send + Sync + Borrow<Args> + Serialize,
@@ -119,7 +119,7 @@ impl Enqueuer for PgEnqueuer {
     ) -> Result<(), Self::Error>
     where
         W: 'static + Worker<S, Args, Error = E>,
-        S: Clone + Send + Sync + 'static,
+        S: 'static + Send + Sync + Clone,
         AppContext: FromRef<S>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
         ArgsRef: Send + Sync + Borrow<Args> + Serialize,

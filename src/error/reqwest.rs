@@ -7,7 +7,7 @@ pub enum ReqwestError {
     Error(#[from] reqwest::Error),
 
     #[error(transparent)]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+    Other(#[from] Box<dyn Send + Sync + std::error::Error>),
 }
 
 impl From<reqwest::Error> for Error {

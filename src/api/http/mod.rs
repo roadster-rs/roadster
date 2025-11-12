@@ -78,7 +78,7 @@ pub fn build_path(parent: &str, child: &str) -> String {
 
 pub fn default_routes<S>(parent: &str, state: &S) -> Router<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     Router::new()
@@ -89,7 +89,7 @@ where
 #[cfg(feature = "open-api")]
 pub fn default_api_routes<S>(parent: &str, state: &S) -> ApiRouter<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     ApiRouter::new()

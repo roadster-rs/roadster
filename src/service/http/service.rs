@@ -34,7 +34,7 @@ pub struct HttpService {
 #[async_trait]
 impl<S> Service<S> for HttpService
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     type Error = crate::error::Error;
@@ -74,7 +74,7 @@ impl HttpService {
     /// Create a new [HttpServiceBuilder].
     pub fn builder<S>(path_root: Option<&str>, state: &S) -> HttpServiceBuilder<S>
     where
-        S: Clone + Send + Sync + 'static,
+        S: 'static + Send + Sync + Clone,
         AppContext: FromRef<S>,
     {
         HttpServiceBuilder::new(path_root, state)

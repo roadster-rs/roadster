@@ -11,7 +11,7 @@ use axum_core::extract::FromRef;
 #[cfg_attr(test, mockall::automock(type Error = crate::error::Error;))]
 pub trait Initializer<S>: Send
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     type Error: Send + Sync + std::error::Error;

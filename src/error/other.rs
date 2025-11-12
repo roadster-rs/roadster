@@ -14,7 +14,7 @@ pub enum OtherError {
     Message(String),
 
     #[error(transparent)]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+    Other(#[from] Box<dyn Send + Sync + std::error::Error>),
 }
 
 impl From<anyhow::Error> for Error {
@@ -23,8 +23,8 @@ impl From<anyhow::Error> for Error {
     }
 }
 
-impl From<Box<dyn std::error::Error + Send + Sync>> for Error {
-    fn from(value: Box<dyn std::error::Error + Send + Sync>) -> Self {
+impl From<Box<dyn Send + Sync + std::error::Error>> for Error {
+    fn from(value: Box<dyn Send + Sync + std::error::Error>) -> Self {
         Self::Other(OtherError::from(value))
     }
 }

@@ -16,7 +16,7 @@ pub(crate) trait RedisCommands {
 
     async fn zrem<V>(&mut self, key: String, value: V) -> Result<usize, RedisError>
     where
-        V: ToRedisArgs + Send + Sync + 'static;
+        V: 'static + Send + Sync + ToRedisArgs;
 }
 
 #[async_trait]
@@ -32,7 +32,7 @@ impl RedisCommands for PooledConnection<'_, RedisConnectionManager> {
 
     async fn zrem<V>(&mut self, key: String, value: V) -> Result<usize, RedisError>
     where
-        V: ToRedisArgs + Send + Sync + 'static,
+        V: 'static + Send + Sync + ToRedisArgs,
     {
         RedisConnection::zrem(self, key, value).await
     }

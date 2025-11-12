@@ -12,7 +12,6 @@ pub mod timeout;
 pub mod tracing;
 
 use crate::app::context::AppContext;
-use crate::error::RoadsterResult;
 use axum::Router;
 use axum_core::extract::FromRef;
 
@@ -27,12 +26,14 @@ use axum_core::extract::FromRef;
 ///        middleware is installed is the reverse of the order it will run when handling a request.
 ///        Therefore, we install the middleware in the reverse order that we want it to run (this
 ///        is done automatically by Roadster based on [Middleware::priority]).
-#[cfg_attr(test, mockall::automock)]
+#[cfg_attr(test, mockall::automock(type Error = crate::error::Error;))]
 pub trait Middleware<S>: Send
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
+    type Error: Send + Sync + std::error::Error;
+
     fn name(&self) -> String;
     fn enabled(&self, state: &S) -> bool;
     /// Used to determine the order in which the middleware will run when handling a request. Smaller
@@ -52,5 +53,5 @@ where
     /// with priority `-10` will be _installed after_ a middleware with priority `10`, which will
     /// allow the middleware with priority `-10` to _run before_ a middleware with priority `10`.
     fn priority(&self, state: &S) -> i32;
-    fn install(&self, router: Router, state: &S) -> RoadsterResult<Router>;
+    fn install(&self, router: Router, state: &S) -> Result<Router, Self::Error>;
 }

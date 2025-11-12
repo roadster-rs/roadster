@@ -61,14 +61,14 @@ pub enum PgProcessorError {
     InvalidBalanceStrategy(String),
 
     #[error(transparent)]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+    Other(#[from] Box<dyn Send + Sync + std::error::Error>),
 }
 
 #[derive(Clone)]
 #[non_exhaustive]
 pub struct PgProcessor<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     inner: Arc<PgProcessorInner<S>>,
@@ -77,7 +77,7 @@ where
 #[non_exhaustive]
 pub(crate) struct PgProcessorInner<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     state: S,
@@ -88,7 +88,7 @@ where
 
 impl<S> PgProcessor<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     pub(crate) fn new(inner: PgProcessorInner<S>) -> Self {

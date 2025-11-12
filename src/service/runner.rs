@@ -44,7 +44,7 @@ pub(crate) async fn before_run<S>(
     state: &S,
 ) -> RoadsterResult<()>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     for (_, service) in service_registry.services.iter() {
@@ -62,7 +62,7 @@ pub(crate) async fn run<A, S>(
     state: &S,
 ) -> RoadsterResult<()>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     A: 'static + App<S>,
 {
@@ -124,7 +124,7 @@ where
 
 async fn graceful_shutdown_signal<F>(cancellation_token: CancellationToken, app_shutdown_signal: F)
 where
-    F: Future<Output = ()> + Send + 'static,
+    F: 'static + Send + Future<Output = ()>,
 {
     #[allow(clippy::expect_used)]
     let ctrl_c = async {
@@ -166,7 +166,7 @@ async fn cancel_token_on_signal_received<F>(
     cancellation_token: CancellationToken,
 ) -> RoadsterResult<()>
 where
-    F: Future<Output = ()> + Send + 'static,
+    F: 'static + Send + Future<Output = ()>,
 {
     shutdown_signal.await;
     cancellation_token.cancel();

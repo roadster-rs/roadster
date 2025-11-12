@@ -145,9 +145,11 @@ fn parse_methods(methods: &[String]) -> RoadsterResult<Vec<Method>> {
 pub struct CorsMiddleware;
 impl<S> Middleware<S> for CorsMiddleware
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
+    type Error = crate::error::Error;
+
     fn name(&self) -> String {
         "cors".to_string()
     }
@@ -176,7 +178,7 @@ where
             .priority
     }
 
-    fn install(&self, router: Router, state: &S) -> RoadsterResult<Router> {
+    fn install(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
         let context = AppContext::from_ref(state);
         let config = &context.config().service.http.custom.middleware.cors.custom;
         let layer = match config.preset {

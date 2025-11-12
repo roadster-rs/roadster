@@ -68,7 +68,7 @@ pub struct CommonConfig {
 impl CommonConfig {
     pub fn enabled<S>(&self, state: &S) -> bool
     where
-        S: Clone + Send + Sync + 'static,
+        S: 'static + Send + Sync + Clone,
         AppContext: FromRef<S>,
     {
         self.enable.unwrap_or(

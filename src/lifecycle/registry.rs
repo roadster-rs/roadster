@@ -22,7 +22,7 @@ pub enum LifecycleHandlerRegistryError {
     AlreadyRegistered(String),
 
     #[error(transparent)]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+    Other(#[from] Box<dyn Send + Sync + std::error::Error>),
 }
 
 /// Registry for the app's [`AppLifecycleHandler`]s.
@@ -59,9 +59,9 @@ pub enum LifecycleHandlerRegistryError {
 /// ```
 pub struct LifecycleHandlerRegistry<A, S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
-    A: App<S> + 'static,
+    A: 'static + App<S>,
 {
     state: S,
     handlers: BTreeMap<String, Box<dyn AppLifecycleHandler<A, S, Error = crate::error::Error>>>,
@@ -69,9 +69,9 @@ where
 
 impl<A, S> LifecycleHandlerRegistry<A, S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
-    A: App<S> + 'static,
+    A: 'static + App<S>,
 {
     pub(crate) fn new(state: &S) -> Self {
         Self {
@@ -144,9 +144,9 @@ type OnShutdownFn<S> = Box<
 
 pub(crate) struct AppLifecycleHandlerWrapper<A, S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
-    A: App<S> + 'static,
+    A: 'static + App<S>,
 {
     name: String,
     enabled_fn: EnabledFn<S>,
@@ -159,9 +159,9 @@ where
 
 impl<A, S> AppLifecycleHandlerWrapper<A, S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
-    A: App<S> + 'static,
+    A: 'static + App<S>,
 {
     pub(crate) fn new<H>(handler: H) -> Self
     where
@@ -231,9 +231,9 @@ where
 #[async_trait]
 impl<A, S> AppLifecycleHandler<A, S> for AppLifecycleHandlerWrapper<A, S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
-    A: App<S> + 'static,
+    A: 'static + App<S>,
 {
     type Error = crate::error::Error;
 

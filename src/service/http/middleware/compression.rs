@@ -3,8 +3,6 @@ use crate::service::http::middleware::Middleware;
 use axum::Router;
 use axum_core::extract::FromRef;
 use serde_derive::{Deserialize, Serialize};
-
-use crate::error::RoadsterResult;
 use tower_http::compression::CompressionLayer;
 use tower_http::decompression::RequestDecompressionLayer;
 use validator::Validate;
@@ -22,9 +20,11 @@ pub struct RequestDecompressionConfig {}
 pub struct ResponseCompressionMiddleware;
 impl<S> Middleware<S> for ResponseCompressionMiddleware
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
+    type Error = crate::error::Error;
+
     fn name(&self) -> String {
         "response-compression".to_string()
     }
@@ -53,7 +53,7 @@ where
             .priority
     }
 
-    fn install(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
+    fn install(&self, router: Router, _state: &S) -> Result<Router, Self::Error> {
         let router = router.layer(CompressionLayer::new());
 
         Ok(router)
@@ -63,9 +63,11 @@ where
 pub struct RequestDecompressionMiddleware;
 impl<S> Middleware<S> for RequestDecompressionMiddleware
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
+    type Error = crate::error::Error;
+
     fn name(&self) -> String {
         "request-decompression".to_string()
     }
@@ -94,7 +96,7 @@ where
             .priority
     }
 
-    fn install(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
+    fn install(&self, router: Router, _state: &S) -> Result<Router, Self::Error> {
         let router = router.layer(RequestDecompressionLayer::new());
 
         Ok(router)

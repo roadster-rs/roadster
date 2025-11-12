@@ -27,11 +27,11 @@ use std::sync::Arc;
 use tracing::info;
 
 #[cfg(feature = "open-api")]
-type ApiDocs = Box<dyn Fn(TransformOpenApi) -> TransformOpenApi + Send>;
+type ApiDocs = Box<dyn Send + Fn(TransformOpenApi) -> TransformOpenApi>;
 
 pub struct HttpServiceBuilder<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     state: S,
@@ -40,13 +40,13 @@ where
     api_router: ApiRouter<S>,
     #[cfg(feature = "open-api")]
     api_docs: ApiDocs,
-    middleware: BTreeMap<String, Box<dyn Middleware<S>>>,
+    middleware: BTreeMap<String, Box<dyn Middleware<S, Error = crate::error::Error>>>,
     initializers: BTreeMap<String, Box<dyn Initializer<S, Error = crate::error::Error>>>,
 }
 
 impl<S> HttpServiceBuilder<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     pub fn new(path_root: Option<&str>, state: &S) -> Self {
@@ -136,7 +136,7 @@ where
 
     pub fn middleware<T>(mut self, middleware: T) -> RoadsterResult<Self>
     where
-        T: Middleware<S> + 'static,
+        T: 'static + Send + Sync + Middleware<S>,
     {
         if !middleware.enabled(&self.state) {
             return Ok(self);
@@ -144,7 +144,7 @@ where
         let name = middleware.name();
         if self
             .middleware
-            .insert(name.clone(), Box::new(middleware))
+            .insert(name.clone(), Box::new(MiddlewareWrapper::new(middleware)))
             .is_some()
         {
             return Err(crate::error::other::OtherError::Message(format!(
@@ -159,7 +159,7 @@ where
 #[async_trait]
 impl<S> ServiceBuilder<S, HttpService> for HttpServiceBuilder<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     type Error = crate::error::Error;
@@ -257,7 +257,7 @@ type RouterAndStateFn<S> =
 
 pub(crate) struct InitializerWrapper<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     name: String,
@@ -271,7 +271,7 @@ where
 
 impl<S> InitializerWrapper<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     pub(crate) fn new<T>(initializer: T) -> Self
@@ -339,7 +339,7 @@ where
 #[async_trait]
 impl<S> Initializer<S> for InitializerWrapper<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     type Error = crate::error::Error;
@@ -370,6 +370,79 @@ where
 
     fn before_serve(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
         (self.before_serve_fn)(router, state)
+    }
+}
+
+pub(crate) struct MiddlewareWrapper<S>
+where
+    S: 'static + Send + Sync + Clone,
+    AppContext: FromRef<S>,
+{
+    name: String,
+    enabled_fn: EnabledFn<S>,
+    priority_fn: PriorityFn<S>,
+    install_fn: RouterAndStateFn<S>,
+}
+
+impl<S> MiddlewareWrapper<S>
+where
+    S: 'static + Send + Sync + Clone,
+    AppContext: FromRef<S>,
+{
+    pub(crate) fn new<T>(middleware: T) -> Self
+    where
+        T: 'static + Send + Sync + Middleware<S>,
+    {
+        let name = middleware.name();
+        let middleware = Arc::new(middleware);
+        let enabled_fn: EnabledFn<S> = {
+            let middleware = middleware.clone();
+            Box::new(move |state| middleware.enabled(state))
+        };
+        let priority_fn: PriorityFn<S> = {
+            let middleware = middleware.clone();
+            Box::new(move |state| middleware.priority(state))
+        };
+        let install_fn: RouterAndStateFn<S> = {
+            let middleware = middleware.clone();
+            Box::new(move |router, state| {
+                let router = middleware
+                    .install(router, state)
+                    .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
+                Ok(router)
+            })
+        };
+        Self {
+            name,
+            enabled_fn,
+            priority_fn,
+            install_fn,
+        }
+    }
+}
+
+#[async_trait]
+impl<S> Middleware<S> for MiddlewareWrapper<S>
+where
+    S: 'static + Send + Sync + Clone,
+    AppContext: FromRef<S>,
+{
+    type Error = crate::error::Error;
+
+    fn name(&self) -> String {
+        self.name.clone()
+    }
+
+    fn enabled(&self, state: &S) -> bool {
+        (self.enabled_fn)(state)
+    }
+
+    fn priority(&self, state: &S) -> i32 {
+        (self.priority_fn)(state)
+    }
+
+    fn install(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
+        (self.install_fn)(router, state)
     }
 }
 

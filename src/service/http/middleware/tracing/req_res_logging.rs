@@ -60,9 +60,11 @@ pub struct RequestResponseLoggingConfig {
 pub struct RequestResponseLoggingMiddleware;
 impl<S> Middleware<S> for RequestResponseLoggingMiddleware
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
+    type Error = crate::error::Error;
+
     fn name(&self) -> String {
         "request-response-logging".to_string()
     }
@@ -91,7 +93,7 @@ where
             .priority
     }
 
-    fn install(&self, router: Router, state: &S) -> RoadsterResult<Router> {
+    fn install(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
         let max_len = AppContext::from_ref(state)
             .config()
             .service
@@ -124,7 +126,7 @@ async fn log_req_res_bodies<S>(
     max_len: i32,
 ) -> Result<impl IntoResponse, Response>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     let context = AppContext::from_ref(&state);

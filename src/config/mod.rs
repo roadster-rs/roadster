@@ -146,7 +146,7 @@ pub struct ConfigOverrideSource {
 }
 
 impl Source for ConfigOverrideSource {
-    fn clone_into_box(&self) -> Box<dyn Source + Send + Sync> {
+    fn clone_into_box(&self) -> Box<dyn Send + Sync + Source> {
         Box::new(self.clone())
     }
 
@@ -161,9 +161,9 @@ impl Source for ConfigOverrideSource {
 #[non_exhaustive]
 pub struct AppConfigOptions {
     #[builder(field)]
-    pub config_sources: Vec<Box<dyn Source + Send + Sync>>,
+    pub config_sources: Vec<Box<dyn Send + Sync + Source>>,
     #[builder(field)]
-    pub async_config_sources: Vec<Box<dyn AsyncSource + Send>>,
+    pub async_config_sources: Vec<Box<dyn Send + AsyncSource>>,
     pub environment: Environment,
     #[builder(into)]
     pub config_dir: Option<PathBuf>,
@@ -172,18 +172,18 @@ pub struct AppConfigOptions {
 impl<S: app_config_options_builder::State> AppConfigOptionsBuilder<S> {
     pub(crate) fn config_sources(
         mut self,
-        config_sources: Vec<Box<dyn Source + Send + Sync>>,
+        config_sources: Vec<Box<dyn Send + Sync + Source>>,
     ) -> Self {
         self.config_sources = config_sources;
         self
     }
 
-    pub fn add_source(mut self, source: impl Source + Send + Sync + 'static) -> Self {
+    pub fn add_source(mut self, source: impl 'static + Send + Sync + Source) -> Self {
         self.config_sources.push(Box::new(source));
         self
     }
 
-    pub fn add_source_boxed(mut self, source: Box<dyn Source + Send + Sync>) -> Self {
+    pub fn add_source_boxed(mut self, source: Box<dyn Send + Sync + Source>) -> Self {
         self.config_sources.push(source);
         self
     }
@@ -191,18 +191,18 @@ impl<S: app_config_options_builder::State> AppConfigOptionsBuilder<S> {
     #[allow(dead_code)]
     pub(crate) fn async_config_sources(
         mut self,
-        async_config_sources: Vec<Box<dyn AsyncSource + Send>>,
+        async_config_sources: Vec<Box<dyn Send + AsyncSource>>,
     ) -> Self {
         self.async_config_sources = async_config_sources;
         self
     }
 
-    pub fn add_async_source(mut self, source: impl AsyncSource + Send + 'static) -> Self {
+    pub fn add_async_source(mut self, source: impl 'static + Send + AsyncSource) -> Self {
         self.async_config_sources.push(Box::new(source));
         self
     }
 
-    pub fn add_async_source_boxed(mut self, source: Box<dyn AsyncSource + Send>) -> Self {
+    pub fn add_async_source_boxed(mut self, source: Box<dyn Send + AsyncSource>) -> Self {
         self.async_config_sources.push(source);
         self
     }
@@ -457,10 +457,10 @@ fn config_env_dir_recursive(
 }
 
 #[derive(Debug)]
-struct BoxedSource(Box<dyn Source + Send + Sync>);
+struct BoxedSource(Box<dyn Send + Sync + Source>);
 
 impl Source for BoxedSource {
-    fn clone_into_box(&self) -> Box<dyn Source + Send + Sync> {
+    fn clone_into_box(&self) -> Box<dyn Send + Sync + Source> {
         self.0.clone_into_box()
     }
 
@@ -470,7 +470,7 @@ impl Source for BoxedSource {
 }
 
 #[derive(Debug)]
-struct BoxedAsyncSource(Option<Box<dyn AsyncSource + Send + Sync>>);
+struct BoxedAsyncSource(Option<Box<dyn Send + Sync + AsyncSource>>);
 
 #[async_trait::async_trait]
 impl AsyncSource for BoxedAsyncSource {

@@ -17,7 +17,7 @@ pub enum HealthCheckRegistryError {
     AlreadyRegistered(String),
 
     #[error(transparent)]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+    Other(#[from] Box<dyn Send + Sync + std::error::Error>),
 }
 
 /// Registry for [`HealthCheck`]s that will be run in the app.
@@ -39,7 +39,7 @@ impl HealthCheckRegistry {
 
     pub fn register<H>(&mut self, health_check: H) -> RoadsterResult<()>
     where
-        H: HealthCheck + 'static,
+        H: 'static + HealthCheck,
     {
         self.register_wrapped(HealthCheckWrapper::new(health_check))
     }

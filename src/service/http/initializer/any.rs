@@ -3,7 +3,7 @@ use crate::service::http::initializer::Initializer;
 use axum::Router;
 use axum_core::extract::FromRef;
 
-type ApplyFn<S, E> = Box<dyn Send + Sync + Fn(Router, &S) -> Result<Router, E> + Send>;
+type ApplyFn<S, E> = Box<dyn Send + Sync + Fn(Router, &S) -> Result<Router, E>>;
 
 /// An [`Initializer`] that can be applied without creating a separate `struct`.
 ///
@@ -29,7 +29,7 @@ type ApplyFn<S, E> = Box<dyn Send + Sync + Fn(Router, &S) -> Result<Router, E> +
 #[derive(bon::Builder)]
 pub struct AnyInitializer<S, E>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     E: Send + Sync + std::error::Error,
 {
@@ -45,7 +45,7 @@ where
 
 impl<S, E, BS> AnyInitializerBuilder<S, E, BS>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     E: Send + Sync + std::error::Error,
     BS: any_initializer_builder::State,
@@ -73,7 +73,7 @@ pub enum Stage {
 
 impl<S, E> Initializer<S> for AnyInitializer<S, E>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     E: Send + Sync + std::error::Error,
 {

@@ -13,8 +13,8 @@ use std::panic::{AssertUnwindSafe, resume_unwind};
 #[non_exhaustive]
 pub struct TestAppState<A, S>
 where
-    A: App<S> + 'static,
-    S: Clone + Send + Sync + 'static,
+    A: 'static + App<S>,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     pub app: A,
@@ -35,9 +35,9 @@ pub async fn run_test<A, S>(
     test_fn: impl std::ops::AsyncFnOnce(&TestAppState<A, S>),
 ) -> RoadsterResult<()>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
-    A: App<S> + Send + Sync + 'static,
+    A: 'static + Send + Sync + App<S>,
 {
     let result = run_test_with_result(app, options, async move |app| -> Result<(), Infallible> {
         test_fn(app).await;
@@ -67,9 +67,9 @@ pub async fn run_test_with_result<A, S, T, E>(
     test_fn: T,
 ) -> Result<(), (Option<crate::error::Error>, Option<E>)>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
-    A: App<S> + Send + Sync + 'static,
+    A: 'static + Send + Sync + App<S>,
     T: std::ops::AsyncFnOnce(&TestAppState<A, S>) -> Result<(), E>,
     E: std::error::Error,
 {
@@ -149,8 +149,8 @@ where
 /// in your test.
 pub async fn test_state<A, S>(app: A, config: AppConfig) -> RoadsterResult<S>
 where
-    A: App<S> + 'static,
-    S: Clone + Send + Sync + 'static,
+    A: 'static + App<S>,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     let state = prepare::build_state(&app, config).await?;

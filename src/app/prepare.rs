@@ -23,8 +23,8 @@ use std::path::PathBuf;
 #[non_exhaustive]
 pub struct PreparedApp<A, S>
 where
-    A: App<S> + 'static,
-    S: Clone + Send + Sync + 'static,
+    A: 'static + App<S>,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     #[cfg(feature = "cli")]
@@ -40,8 +40,8 @@ where
 #[non_exhaustive]
 pub struct PreparedAppCli<A, S>
 where
-    A: App<S> + 'static,
-    S: Clone + Send + Sync + 'static,
+    A: 'static + App<S>,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     #[cfg(feature = "cli")]
@@ -63,7 +63,7 @@ pub struct PrepareOptions {
     /// specific app config fields for tests (e.g., using the [`ConfigOverrideSource`]), but it
     /// can also be used to provide other custom config sources outside of tests.
     #[builder(field)]
-    pub config_sources: Vec<Box<dyn config::Source + Send + Sync>>,
+    pub config_sources: Vec<Box<dyn Send + Sync + config::Source>>,
 
     pub env: Option<Environment>,
 
@@ -80,7 +80,7 @@ pub struct PrepareOptions {
 impl<S: prepare_options_builder::State> PrepareOptionsBuilder<S> {
     pub fn config_sources(
         mut self,
-        config_sources: Vec<Box<dyn config::Source + Send + Sync>>,
+        config_sources: Vec<Box<dyn Send + Sync + config::Source>>,
     ) -> Self {
         self.config_sources.extend(config_sources);
         self
@@ -88,14 +88,14 @@ impl<S: prepare_options_builder::State> PrepareOptionsBuilder<S> {
 
     pub fn add_config_source(
         mut self,
-        source: impl config::Source + Send + Sync + 'static,
+        source: impl 'static + Send + Sync + config::Source,
     ) -> Self {
         self.config_sources.push(Box::new(source));
         self
     }
     pub fn add_config_source_boxed(
         mut self,
-        source: Box<dyn config::Source + Send + Sync>,
+        source: Box<dyn Send + Sync + config::Source>,
     ) -> Self {
         self.config_sources.push(source);
         self
@@ -138,9 +138,9 @@ impl PrepareOptions {
 /// 4. Starting any services
 pub async fn prepare<A, S>(app: A, options: PrepareOptions) -> RoadsterResult<PreparedApp<A, S>>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
-    A: App<S> + Send + Sync + 'static,
+    A: 'static + Send + Sync + App<S>,
 {
     prepare_from_cli_and_state(build_cli_and_state(app, options).await?).await
 }
@@ -153,9 +153,9 @@ pub(crate) async fn build_cli_and_state<A, S>(
     options: PrepareOptions,
 ) -> RoadsterResult<CliAndState<A, S>>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
-    A: App<S> + Send + Sync + 'static,
+    A: 'static + Send + Sync + App<S>,
 {
     #[cfg(feature = "cli")]
     let (roadster_cli, app_cli) = if options.parse_cli {
@@ -236,9 +236,9 @@ where
 /// Utility method to build the app's state object.
 pub(crate) async fn build_state<A, S>(app: &A, config: AppConfig) -> RoadsterResult<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
-    A: App<S> + Send + Sync + 'static,
+    A: 'static + Send + Sync + App<S>,
 {
     #[cfg(not(test))]
     let metadata = app
@@ -269,9 +269,9 @@ pub(crate) async fn prepare_from_cli_and_state<A, S>(
     cli_and_state: CliAndState<A, S>,
 ) -> RoadsterResult<PreparedApp<A, S>>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
-    A: App<S> + Send + Sync + 'static,
+    A: 'static + Send + Sync + App<S>,
 {
     let CliAndState {
         app,
@@ -318,8 +318,8 @@ where
 #[non_exhaustive]
 pub struct PreparedAppWithoutCli<A, S>
 where
-    A: App<S> + 'static,
-    S: Clone + Send + Sync + 'static,
+    A: 'static + App<S>,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     pub app: A,
@@ -335,9 +335,9 @@ pub(crate) async fn prepare_without_cli<A, S>(
     state: S,
 ) -> RoadsterResult<PreparedAppWithoutCli<A, S>>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
-    A: App<S> + Send + Sync + 'static,
+    A: 'static + Send + Sync + App<S>,
 {
     let context = AppContext::from_ref(&state);
 
@@ -375,8 +375,8 @@ where
 #[non_exhaustive]
 pub(crate) struct CliAndState<A, S>
 where
-    A: App<S> + 'static,
-    S: Clone + Send + Sync + 'static,
+    A: 'static + App<S>,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     pub app: A,

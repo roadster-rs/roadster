@@ -56,19 +56,19 @@ use std::sync::Arc;
 #[async_trait]
 pub trait App<S>: Send + Sync + Sized
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     type Error: Send + Sync + std::error::Error;
     #[cfg(feature = "cli")]
-    type Cli: clap::Args + RunCommand<Self, S> + Send + Sync;
+    type Cli: Send + Sync + clap::Args + RunCommand<Self, S>;
     #[cfg(not(feature = "cli"))]
     type Cli;
 
     fn async_config_sources(
         &self,
         #[allow(unused_variables)] environment: &Environment,
-    ) -> Result<Vec<Box<dyn config::AsyncSource + Send + Sync>>, Self::Error> {
+    ) -> Result<Vec<Box<dyn Send + Sync + config::AsyncSource>>, Self::Error> {
         Ok(vec![])
     }
 

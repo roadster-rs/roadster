@@ -16,7 +16,7 @@ pub(crate) const NAME: &str = "worker-postgres";
 #[non_exhaustive]
 pub struct PgWorkerService<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     pub(crate) processor: PgProcessor<S>,
@@ -25,7 +25,7 @@ where
 #[async_trait]
 impl<S> Service<S> for PgWorkerService<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     type Error = crate::error::Error;
@@ -56,7 +56,7 @@ where
 
 pub(crate) fn enabled<S>(context: &AppContext, processor: &PgProcessor<S>) -> bool
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     let config = &context.config().service.worker.pg;

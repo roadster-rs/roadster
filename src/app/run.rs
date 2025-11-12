@@ -11,9 +11,9 @@ use tracing::{error, info, warn};
 /// Run the [`App`]
 pub async fn run<A, S>(app: A) -> RoadsterResult<()>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
-    A: App<S> + Send + Sync + 'static,
+    A: 'static + Send + Sync + App<S>,
 {
     let cli_and_state =
         prepare::build_cli_and_state(app, PrepareOptions::builder().build()).await?;
@@ -28,8 +28,8 @@ where
 /// Run a [`PreparedApp`] that was previously created by [`prepare`]
 pub async fn run_prepared<A, S>(prepared: PreparedApp<A, S>) -> RoadsterResult<()>
 where
-    A: App<S> + 'static,
-    S: Clone + Send + Sync + 'static,
+    A: 'static + App<S>,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     #[cfg(feature = "cli")]
@@ -84,8 +84,8 @@ where
 /// (they should have been handled already).
 async fn run_prepared_without_cli<A, S>(prepared: PreparedAppWithoutCli<A, S>) -> RoadsterResult<()>
 where
-    A: App<S> + 'static,
-    S: Clone + Send + Sync + 'static,
+    A: 'static + App<S>,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     before_app(&prepared).await?;
@@ -106,8 +106,8 @@ pub(crate) async fn before_app<A, S>(
     prepared_app: &PreparedAppWithoutCli<A, S>,
 ) -> RoadsterResult<()>
 where
-    A: App<S> + 'static,
-    S: Clone + Send + Sync + 'static,
+    A: 'static + App<S>,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     if prepared_app.service_registry.services.is_empty() {
@@ -149,8 +149,8 @@ pub async fn after_app<A, S>(
     state: &S,
 ) -> RoadsterResult<()>
 where
-    A: App<S> + 'static,
-    S: Clone + Send + Sync + 'static,
+    A: 'static + App<S>,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     info!("Shutting down");

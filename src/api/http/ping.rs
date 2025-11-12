@@ -21,7 +21,7 @@ const TAG: &str = "Ping";
 
 pub fn routes<S>(parent: &str, state: &S) -> Router<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     let context = AppContext::from_ref(state);
@@ -36,7 +36,7 @@ where
 #[cfg(feature = "open-api")]
 pub fn api_routes<S>(parent: &str, state: &S) -> ApiRouter<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     let context = AppContext::from_ref(state);

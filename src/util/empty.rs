@@ -11,7 +11,7 @@ pub struct Empty;
 #[async_trait::async_trait]
 impl<S> crate::api::cli::RunCommand<crate::app::RoadsterApp<S, Empty>, S> for Empty
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     crate::app::context::AppContext: axum_core::extract::FromRef<S>,
 {
     type Error = std::convert::Infallible;

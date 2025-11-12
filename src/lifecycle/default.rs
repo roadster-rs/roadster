@@ -8,9 +8,9 @@ pub fn default_lifecycle_handlers<A, S>(
     state: &S,
 ) -> BTreeMap<String, Box<dyn AppLifecycleHandler<A, S, Error = crate::error::Error>>>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
-    A: App<S> + 'static,
+    A: 'static + App<S>,
 {
     let lifecycle_handlers: Vec<Box<dyn AppLifecycleHandler<A, S, Error = crate::error::Error>>> = vec![
         #[cfg(feature = "db-sql")]

@@ -10,7 +10,7 @@ pub enum TonicError {
     ServerReflection(#[from] tonic_reflection::server::Error),
 
     #[error(transparent)]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+    Other(#[from] Box<dyn Send + Sync + std::error::Error>),
 }
 
 impl From<tonic::transport::Error> for Error {
