@@ -26,7 +26,7 @@ impl GrpcService {
 #[async_trait]
 impl<S> Service<S> for GrpcService
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     type Error = crate::error::Error;

@@ -24,7 +24,7 @@ pub enum ExtensionRegistryError {
     Downcast(String),
 
     #[error(transparent)]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+    Other(#[from] Box<dyn Send + Sync + std::error::Error>),
 }
 
 /// Registry of custom context to include in the [`crate::app::context::AppContext`].
@@ -47,7 +47,7 @@ pub enum ExtensionRegistryError {
 /// ```
 #[derive(Default)]
 pub struct ExtensionRegistry {
-    extensions: BTreeMap<TypeId, Box<dyn Any + Send + Sync>>,
+    extensions: BTreeMap<TypeId, Box<dyn Send + Sync + Any>>,
 }
 
 impl ExtensionRegistry {

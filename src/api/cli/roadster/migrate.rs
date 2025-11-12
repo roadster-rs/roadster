@@ -21,7 +21,7 @@ pub struct MigrateArgs {
 #[async_trait]
 impl<A, S> RunRoadsterCommand<A, S> for MigrateArgs
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     A: App<S>,
 {
@@ -47,7 +47,7 @@ pub enum MigrateCommand {
 #[async_trait]
 impl<A, S> RunRoadsterCommand<A, S> for MigrateCommand
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     A: App<S>,
 {
@@ -93,7 +93,7 @@ fn is_destructive(command: &MigrateCommand) -> bool {
 // Todo: reduce duplication
 async fn migrate_up<A, S>(cli: &CliState<A, S>, args: &UpArgs) -> RoadsterResult<()>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     A: App<S>,
 {
@@ -121,7 +121,7 @@ where
 // Todo: reduce duplication
 async fn migrate_down<A, S>(cli: &CliState<A, S>, args: &DownArgs) -> RoadsterResult<()>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     A: App<S>,
 {
@@ -148,7 +148,7 @@ where
 
 async fn print_status<A, S>(cli: &CliState<A, S>) -> RoadsterResult<()>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     A: App<S>,
 {

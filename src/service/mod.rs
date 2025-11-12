@@ -36,10 +36,10 @@ pub mod worker;
 #[async_trait]
 pub trait Service<S>: Send + Sync
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
-    type Error: std::error::Error + Send + Sync;
+    type Error: Send + Sync + std::error::Error;
 
     /// The name of the service.
     fn name(&self) -> String;
@@ -78,7 +78,7 @@ where
 #[async_trait]
 pub trait ServiceBuilder<S, Srvc>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     Srvc: Service<S>,
 {

@@ -44,14 +44,14 @@ pub enum SidekiqProcessorError {
     NoQueue(String),
 
     #[error(transparent)]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+    Other(#[from] Box<dyn Send + Sync + std::error::Error>),
 }
 
 #[derive(Clone)]
 #[non_exhaustive]
 pub struct SidekiqProcessor<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     pub(crate) inner: Arc<SidekiqProcessorInner<S>>,
@@ -59,7 +59,7 @@ where
 
 pub(crate) struct WorkerData<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     pub(crate) worker_wrapper: WorkerWrapper<S>,
@@ -70,7 +70,7 @@ where
 #[non_exhaustive]
 pub(crate) struct SidekiqProcessorInner<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     pub(crate) state: S,
@@ -81,7 +81,7 @@ where
 
 impl<S> SidekiqProcessor<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     pub(crate) fn new(inner: SidekiqProcessorInner<S>) -> Self {

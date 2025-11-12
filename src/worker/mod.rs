@@ -28,12 +28,12 @@ pub(crate) mod job;
 #[async_trait]
 pub trait Worker<S, Args>: Send + Sync
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
 {
-    type Error: std::error::Error + Send + Sync;
-    type Enqueuer: Enqueuer + Send + Sync;
+    type Error: Send + Sync + std::error::Error;
+    type Enqueuer: Send + Sync + Enqueuer;
 
     /// The name of the worker. This will be encoded in the job data when it's enqueued the backing
     /// database (Redis/Postgres), and used to identify which type should handle a job when it's
@@ -159,7 +159,7 @@ type OnCompleteFn =
 #[cfg(any(feature = "worker-pg", feature = "worker-sidekiq"))]
 pub(crate) struct WorkerWrapper<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     inner: std::sync::Arc<WorkerWrapperInner<S>>,
@@ -168,7 +168,7 @@ where
 #[cfg(any(feature = "worker-pg", feature = "worker-sidekiq"))]
 pub(crate) struct WorkerWrapperInner<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     name: String,
@@ -185,7 +185,7 @@ where
 #[cfg(any(feature = "worker-pg", feature = "worker-sidekiq"))]
 impl<S> WorkerWrapper<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     fn new<W, Args, E>(
@@ -196,7 +196,7 @@ where
     where
         W: 'static + Worker<S, Args, Error = E>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
-        E: 'static + std::error::Error + Send + Sync,
+        E: 'static + Send + Sync + std::error::Error,
     {
         use std::any::Any;
 
@@ -396,7 +396,7 @@ mod tests {
         ) -> Result<(), Self::Error>
         where
             W: 'static + Worker<S, Args, Error = E>,
-            S: Clone + Send + Sync + 'static,
+            S: 'static + Send + Sync + Clone,
             AppContext: FromRef<S>,
             Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
             ArgsRef: Send + Sync + Borrow<Args> + Serialize,
@@ -411,7 +411,7 @@ mod tests {
         ) -> Result<(), Self::Error>
         where
             W: 'static + Worker<S, Args, Error = E>,
-            S: Clone + Send + Sync + 'static,
+            S: 'static + Send + Sync + Clone,
             AppContext: FromRef<S>,
             Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
             ArgsRef: Send + Sync + Borrow<Args> + Serialize,
@@ -425,7 +425,7 @@ mod tests {
         ) -> Result<(), Self::Error>
         where
             W: 'static + Worker<S, Args, Error = E>,
-            S: Clone + Send + Sync + 'static,
+            S: 'static + Send + Sync + Clone,
             AppContext: FromRef<S>,
             Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
             ArgsRef: Send + Sync + Borrow<Args> + Serialize,
@@ -440,7 +440,7 @@ mod tests {
         ) -> Result<(), Self::Error>
         where
             W: 'static + Worker<S, Args, Error = E>,
-            S: Clone + Send + Sync + 'static,
+            S: 'static + Send + Sync + Clone,
             AppContext: FromRef<S>,
             Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
             ArgsRef: Send + Sync + Borrow<Args> + Serialize,

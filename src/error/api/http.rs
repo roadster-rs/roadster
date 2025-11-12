@@ -125,7 +125,7 @@ pub struct HttpError {
     /// to the user.
     #[source]
     #[serde(skip)]
-    pub source: Option<Box<dyn std::error::Error + Send + Sync>>,
+    pub source: Option<Box<dyn Send + Sync + std::error::Error>>,
 }
 
 impl Display for HttpError {
@@ -163,7 +163,7 @@ impl HttpError {
         }
     }
 
-    pub fn source(self, source: impl std::error::Error + Send + Sync + 'static) -> Self {
+    pub fn source(self, source: impl 'static + Send + Sync + std::error::Error) -> Self {
         Self {
             source: Some(Box::new(source)),
             ..self

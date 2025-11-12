@@ -22,7 +22,7 @@ pub enum AxumError {
     TypedHeaderRejection(#[from] axum_extra::typed_header::TypedHeaderRejection),
 
     #[error(transparent)]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+    Other(#[from] Box<dyn Send + Sync + std::error::Error>),
 }
 
 impl From<axum::http::Error> for Error {

@@ -1,5 +1,4 @@
 use crate::app::context::AppContext;
-use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
 use axum::extract::{FromRef, Request};
 use axum::http::header::ETAG;
@@ -19,9 +18,11 @@ pub struct EtagConfig {}
 pub struct EtagMiddleware;
 impl<S> Middleware<S> for EtagMiddleware
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
+    type Error = crate::error::Error;
+
     fn name(&self) -> String {
         "etag".to_string()
     }
@@ -50,7 +51,7 @@ where
             .priority
     }
 
-    fn install(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
+    fn install(&self, router: Router, _state: &S) -> Result<Router, Self::Error> {
         let router = router.layer(middleware::from_fn(etag_middleware));
 
         Ok(router)

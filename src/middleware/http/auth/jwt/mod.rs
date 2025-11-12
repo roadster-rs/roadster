@@ -44,7 +44,7 @@ pub struct Jwt<C = Claims> {
 
 impl<S, C> FromRequestParts<S> for Jwt<C>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     C: for<'de> serde::Deserialize<'de> + Clone,
 {
@@ -82,7 +82,7 @@ pub struct JwtCsrf<C = Claims> {
 
 impl<S, C> FromRequestParts<S> for JwtCsrf<C>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     C: for<'de> serde::Deserialize<'de> + Clone,
 {
@@ -115,7 +115,7 @@ async fn extract_from_request_parts_maybe_cookie<S, C>(
     allow_extract_from_cookie: bool,
 ) -> RoadsterResult<JwtCsrf<C>>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     C: for<'de> serde::Deserialize<'de> + Clone,
 {
@@ -166,7 +166,7 @@ fn token_from_cookies(cookie_name: &str, cookies: CookieJar) -> Option<String> {
 
 pub fn decode_auth_token<S, C>(state: &S, token: &str) -> RoadsterResult<Jwt<C>>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     C: for<'de> serde::Deserialize<'de> + Clone,
 {

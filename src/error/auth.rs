@@ -16,7 +16,7 @@ pub enum AuthError {
     Bearer(#[from] axum_extra::headers::authorization::InvalidBearerToken),
 
     #[error(transparent)]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+    Other(#[from] Box<dyn Send + Sync + std::error::Error>),
 }
 
 #[cfg(feature = "jwt")]

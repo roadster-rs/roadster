@@ -7,7 +7,7 @@ pub enum PgmqError {
     Pgmq(#[from] pgmq::PgmqError),
 
     #[error(transparent)]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+    Other(#[from] Box<dyn Send + Sync + std::error::Error>),
 }
 
 impl From<pgmq::PgmqError> for Error {

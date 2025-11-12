@@ -1,5 +1,4 @@
 use crate::app::context::AppContext;
-use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
 use axum::Router;
 use axum_core::extract::FromRef;
@@ -29,9 +28,11 @@ impl Default for TimeoutConfig {
 pub struct TimeoutMiddleware;
 impl<S> Middleware<S> for TimeoutMiddleware
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
+    type Error = crate::error::Error;
+
     fn name(&self) -> String {
         "timeout".to_string()
     }
@@ -60,7 +61,7 @@ where
             .priority
     }
 
-    fn install(&self, router: Router, state: &S) -> RoadsterResult<Router> {
+    fn install(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
         let context = AppContext::from_ref(state);
         let timeout = &context
             .config()

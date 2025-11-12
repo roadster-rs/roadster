@@ -1,5 +1,4 @@
 use crate::app::context::AppContext;
-use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
 use axum::Router;
 use axum_core::extract::FromRef;
@@ -15,9 +14,11 @@ pub struct CatchPanicConfig {}
 pub struct CatchPanicMiddleware;
 impl<S> Middleware<S> for CatchPanicMiddleware
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
+    type Error = crate::error::Error;
+
     fn name(&self) -> String {
         "catch-panic".to_string()
     }
@@ -46,7 +47,7 @@ where
             .priority
     }
 
-    fn install(&self, router: Router, _state: &S) -> RoadsterResult<Router> {
+    fn install(&self, router: Router, _state: &S) -> Result<Router, Self::Error> {
         let router = router.layer(CatchPanicLayer::new());
 
         Ok(router)

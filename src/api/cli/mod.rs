@@ -15,9 +15,9 @@ pub mod roadster;
 #[non_exhaustive]
 pub struct CliState<A, S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
-    A: App<S> + Sync + 'static,
+    A: 'static + Sync + App<S>,
 {
     pub roadster_cli: RoadsterCli,
     pub app_cli: A::Cli,
@@ -32,7 +32,7 @@ where
 #[async_trait]
 pub trait RunCommand<A, S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     A: App<S> + Sync,
 {
@@ -52,7 +52,7 @@ where
 
 pub(crate) fn parse_cli<A, S, I, T>(args: I) -> RoadsterResult<(RoadsterCli, A::Cli)>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     A: App<S>,
     I: IntoIterator<Item = T>,
@@ -99,7 +99,7 @@ where
 
 pub(crate) async fn handle_cli<A, S>(cli: &CliState<A, S>) -> RoadsterResult<bool>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     A: App<S>,
 {
@@ -120,7 +120,7 @@ where
 #[cfg(test)]
 pub struct TestCli<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     _state: std::marker::PhantomData<S>,
@@ -130,14 +130,14 @@ where
 mockall::mock! {
     pub TestCli<S>
     where
-        S: Clone + Send + Sync + 'static,
+        S: 'static + Send + Sync + Clone,
         AppContext: FromRef<S>,
     {}
 
     #[async_trait]
     impl<S> RunCommand<MockApp<S>, S> for TestCli<S>
     where
-        S: Clone + Send + Sync + 'static,
+        S: 'static + Send + Sync + Clone,
         AppContext: FromRef<S>,
     {
         type Error = std::convert::Infallible;
@@ -147,7 +147,7 @@ mockall::mock! {
 
     impl<S> clap::FromArgMatches for TestCli<S>
     where
-        S: Clone + Send + Sync + 'static,
+        S: 'static + Send + Sync + Clone,
         AppContext: FromRef<S>,
     {
         fn from_arg_matches(matches: &clap::ArgMatches) -> Result<Self, clap::Error>;
@@ -156,7 +156,7 @@ mockall::mock! {
 
     impl<S> clap::Args for TestCli<S>
     where
-        S: Clone + Send + Sync + 'static,
+        S: 'static + Send + Sync + Clone,
         AppContext: FromRef<S>,
     {
         fn augment_args(cmd: clap::Command) -> clap::Command;
@@ -165,7 +165,7 @@ mockall::mock! {
 
     impl<S> Clone for TestCli<S>
     where
-        S: Clone + Send + Sync + 'static,
+        S: 'static + Send + Sync + Clone,
         AppContext: FromRef<S>,
     {
         fn clone(&self) -> Self;

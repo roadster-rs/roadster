@@ -14,9 +14,9 @@ pub struct DbMigrationLifecycleHandler;
 #[async_trait]
 impl<A, S> AppLifecycleHandler<A, S> for DbMigrationLifecycleHandler
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
-    A: App<S> + 'static,
+    A: 'static + App<S>,
 {
     type Error = crate::error::Error;
 

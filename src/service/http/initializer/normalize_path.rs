@@ -16,7 +16,7 @@ pub struct NormalizePathInitializer;
 
 impl<S> Initializer<S> for NormalizePathInitializer
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     type Error = crate::error::Error;

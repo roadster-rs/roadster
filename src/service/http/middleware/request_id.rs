@@ -1,5 +1,4 @@
 use crate::app::context::AppContext;
-use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
 use axum::Router;
 use axum::http::HeaderName;
@@ -47,9 +46,11 @@ pub struct PropagateRequestIdConfig {
 pub struct SetRequestIdMiddleware;
 impl<S> Middleware<S> for SetRequestIdMiddleware
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
+    type Error = crate::error::Error;
+
     fn name(&self) -> String {
         "set-request-id".to_string()
     }
@@ -78,7 +79,7 @@ where
             .priority
     }
 
-    fn install(&self, router: Router, state: &S) -> RoadsterResult<Router> {
+    fn install(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
         let context = AppContext::from_ref(state);
         let header_name = &context
             .config()
@@ -103,9 +104,11 @@ where
 pub struct PropagateRequestIdMiddleware;
 impl<S> Middleware<S> for PropagateRequestIdMiddleware
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
+    type Error = crate::error::Error;
+
     fn name(&self) -> String {
         "propagate-request-id".to_string()
     }
@@ -134,7 +137,7 @@ where
             .priority
     }
 
-    fn install(&self, router: Router, state: &S) -> RoadsterResult<Router> {
+    fn install(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
         let context = AppContext::from_ref(state);
         let header_name = &context
             .config()

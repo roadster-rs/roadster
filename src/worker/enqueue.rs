@@ -13,7 +13,7 @@ pub trait Enqueuer {
     async fn enqueue<W, S, Args, ArgsRef, E>(state: &S, args: ArgsRef) -> Result<(), Self::Error>
     where
         W: 'static + Worker<S, Args, Error = E>,
-        S: Clone + Send + Sync + 'static,
+        S: 'static + Send + Sync + Clone,
         AppContext: FromRef<S>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
         // ArgsRef allows the method to take either an owned or borrowed value
@@ -26,7 +26,7 @@ pub trait Enqueuer {
     ) -> Result<(), Self::Error>
     where
         W: 'static + Worker<S, Args, Error = E>,
-        S: Clone + Send + Sync + 'static,
+        S: 'static + Send + Sync + Clone,
         AppContext: FromRef<S>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
         ArgsRef: Send + Sync + Borrow<Args> + Serialize;
@@ -37,7 +37,7 @@ pub trait Enqueuer {
     ) -> Result<(), Self::Error>
     where
         W: 'static + Worker<S, Args, Error = E>,
-        S: Clone + Send + Sync + 'static,
+        S: 'static + Send + Sync + Clone,
         AppContext: FromRef<S>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
         ArgsRef: Send + Sync + Borrow<Args> + Serialize;
@@ -49,7 +49,7 @@ pub trait Enqueuer {
     ) -> Result<(), Self::Error>
     where
         W: 'static + Worker<S, Args, Error = E>,
-        S: Clone + Send + Sync + 'static,
+        S: 'static + Send + Sync + Clone,
         AppContext: FromRef<S>,
         Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
         ArgsRef: Send + Sync + Borrow<Args> + Serialize;
@@ -61,7 +61,7 @@ pub(crate) fn queue_from_worker<W, S, Args, E>(
 ) -> Result<String, crate::error::worker::EnqueueError>
 where
     W: 'static + Worker<S, Args, Error = E>,
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
 {
@@ -94,7 +94,7 @@ pub(crate) async fn enqueue<W, S, Args, ArgsRef, E, F>(
 ) -> crate::error::RoadsterResult<()>
 where
     W: 'static + Worker<S, Args, Error = E>,
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
     ArgsRef: Send + Sync + Borrow<Args> + Serialize,
@@ -129,7 +129,7 @@ pub(crate) async fn enqueue_batch<W, S, Args, ArgsRef, E, F>(
 ) -> crate::error::RoadsterResult<()>
 where
     W: 'static + Worker<S, Args, Error = E>,
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
     ArgsRef: Send + Sync + Borrow<Args> + Serialize,
@@ -189,7 +189,7 @@ pub(crate) mod test {
         ) -> Result<(), Self::Error>
         where
             W: 'static + Worker<S, Args, Error = E>,
-            S: Clone + Send + Sync + 'static,
+            S: 'static + Send + Sync + Clone,
             AppContext: FromRef<S>,
             Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
             ArgsRef: Send + Sync + Borrow<Args> + Serialize,
@@ -204,7 +204,7 @@ pub(crate) mod test {
         ) -> Result<(), Self::Error>
         where
             W: 'static + Worker<S, Args, Error = E>,
-            S: Clone + Send + Sync + 'static,
+            S: 'static + Send + Sync + Clone,
             AppContext: FromRef<S>,
             Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
             ArgsRef: Send + Sync + Borrow<Args> + Serialize,
@@ -218,7 +218,7 @@ pub(crate) mod test {
         ) -> Result<(), Self::Error>
         where
             W: 'static + Worker<S, Args, Error = E>,
-            S: Clone + Send + Sync + 'static,
+            S: 'static + Send + Sync + Clone,
             AppContext: FromRef<S>,
             Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
             ArgsRef: Send + Sync + Borrow<Args> + Serialize,
@@ -233,7 +233,7 @@ pub(crate) mod test {
         ) -> Result<(), Self::Error>
         where
             W: 'static + Worker<S, Args, Error = E>,
-            S: Clone + Send + Sync + 'static,
+            S: 'static + Send + Sync + Clone,
             AppContext: FromRef<S>,
             Args: Send + Sync + Serialize + for<'de> Deserialize<'de>,
             ArgsRef: Send + Sync + Borrow<Args> + Serialize,

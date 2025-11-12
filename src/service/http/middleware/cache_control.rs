@@ -1,5 +1,4 @@
 use crate::app::context::AppContext;
-use crate::error::RoadsterResult;
 use crate::service::http::middleware::Middleware;
 use axum::Router;
 use axum::http::header::{CACHE_CONTROL, CONTENT_TYPE};
@@ -44,9 +43,11 @@ pub struct ContentTypeConfig {
 pub struct CacheControlMiddleware;
 impl<S> Middleware<S> for CacheControlMiddleware
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
+    type Error = crate::error::Error;
+
     fn name(&self) -> String {
         "cache-control".to_string()
     }
@@ -76,7 +77,7 @@ where
             .priority
     }
 
-    fn install(&self, router: Router, state: &S) -> RoadsterResult<Router> {
+    fn install(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
         let state = state.clone();
         let layer = SetResponseHeaderLayer::if_not_present(
             CACHE_CONTROL,

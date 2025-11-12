@@ -7,7 +7,7 @@ pub enum TokioError {
     Timeout(#[from] tokio::time::error::Elapsed),
 
     #[error(transparent)]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+    Other(#[from] Box<dyn Send + Sync + std::error::Error>),
 }
 
 impl From<tokio::time::error::Elapsed> for Error {

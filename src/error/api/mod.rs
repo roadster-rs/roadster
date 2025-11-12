@@ -17,7 +17,7 @@ pub enum ApiError {
     Http(HttpError),
 
     #[error(transparent)]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+    Other(#[from] Box<dyn Send + Sync + std::error::Error>),
 }
 
 #[cfg(feature = "http")]

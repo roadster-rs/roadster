@@ -29,7 +29,7 @@ use std::sync::{Arc, Mutex};
 type StateBuilder<S> = dyn Send + Sync + Fn(AppContext) -> RoadsterResult<S>;
 type TracingInitializer = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<()>;
 type AsyncConfigSourceProvider =
-    dyn Send + Sync + Fn(&Environment) -> RoadsterResult<Box<dyn AsyncSource + Send + Sync>>;
+    dyn Send + Sync + Fn(&Environment) -> RoadsterResult<Box<dyn Send + Sync + AsyncSource>>;
 type MetadataProvider = dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<AppMetadata>;
 type ContextExtensionProviders = Vec<
     Box<
@@ -95,10 +95,10 @@ type GracefulShutdownSignalProvider<S> =
 /// Inner state shared between both the [`RoadsterApp`] and [`RoadsterAppBuilder`].
 struct Inner<
     S,
-    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync = Empty,
+    #[cfg(feature = "cli")] Cli: 'static + Send + Sync + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> = Empty,
     #[cfg(not(feature = "cli"))] Cli: 'static = Empty,
 > where
-    S: 'static + Clone + Send + Sync,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     state_provider: Option<Box<StateBuilder<S>>>,
@@ -141,11 +141,11 @@ struct Inner<
 
 impl<
     S,
-    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
+    #[cfg(feature = "cli")] Cli: 'static + Send + Sync + clap::Args + RunCommand<RoadsterApp<S, Cli>, S>,
     #[cfg(not(feature = "cli"))] Cli: 'static,
 > Inner<S, Cli>
 where
-    S: 'static + Clone + Send + Sync,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     fn new() -> Self {
@@ -199,7 +199,7 @@ where
         + Fn(
             &Environment,
         )
-            -> RoadsterResult<Box<dyn AsyncSource + Send + Sync>>,
+            -> RoadsterResult<Box<dyn Send + Sync + AsyncSource>>,
     ) {
         self.async_config_source_providers
             .push(Box::new(async_config_source_provider));
@@ -489,14 +489,14 @@ where
 
 pub struct RoadsterApp<
     S,
-    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync = Empty,
+    #[cfg(feature = "cli")] Cli: 'static + Send + Sync + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> = Empty,
     #[cfg(not(feature = "cli"))] Cli: 'static = Empty,
 > where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     inner: Inner<S, Cli>,
-    async_config_sources: Mutex<Vec<Box<dyn AsyncSource + Send + Sync>>>,
+    async_config_sources: Mutex<Vec<Box<dyn Send + Sync + AsyncSource>>>,
     #[cfg(feature = "db-sea-orm")]
     sea_orm_migrator: Mutex<Option<Box<dyn Migrator<S>>>>,
     #[cfg(feature = "db-diesel")]
@@ -528,14 +528,14 @@ pub struct RoadsterApp<
 
 pub struct RoadsterAppBuilder<
     S,
-    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync = Empty,
+    #[cfg(feature = "cli")] Cli: 'static + Send + Sync + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> = Empty,
     #[cfg(not(feature = "cli"))] Cli: 'static = Empty,
 > where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     inner: Inner<S, Cli>,
-    async_config_sources: Vec<Box<dyn AsyncSource + Send + Sync>>,
+    async_config_sources: Vec<Box<dyn Send + Sync + AsyncSource>>,
     #[cfg(feature = "db-sea-orm")]
     sea_orm_migrator: Option<Box<dyn Migrator<S>>>,
     #[cfg(feature = "db-diesel")]
@@ -562,11 +562,11 @@ pub struct RoadsterAppBuilder<
 
 impl<
     S,
-    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
+    #[cfg(feature = "cli")] Cli: 'static + Send + Sync + clap::Args + RunCommand<RoadsterApp<S, Cli>, S>,
     #[cfg(not(feature = "cli"))] Cli: 'static,
 > RoadsterApp<S, Cli>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     /// Create a new [`RoadsterAppBuilder`] to use to build the [`RoadsterApp`].
@@ -587,11 +587,11 @@ where
 
 impl<
     S,
-    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
+    #[cfg(feature = "cli")] Cli: 'static + Send + Sync + clap::Args + RunCommand<RoadsterApp<S, Cli>, S>,
     #[cfg(not(feature = "cli"))] Cli: 'static,
 > Default for RoadsterAppBuilder<S, Cli>
 where
-    S: 'static + Clone + Send + Sync,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     fn default() -> Self {
@@ -601,11 +601,11 @@ where
 
 impl<
     S,
-    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
+    #[cfg(feature = "cli")] Cli: 'static + Send + Sync + clap::Args + RunCommand<RoadsterApp<S, Cli>, S>,
     #[cfg(not(feature = "cli"))] Cli: 'static,
 > RoadsterAppBuilder<S, Cli>
 where
-    S: 'static + Clone + Send + Sync,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     pub fn new() -> Self {
@@ -635,7 +635,7 @@ where
 
     /// Add an async config source ([`AsyncSource`]). Useful to load configs/secrets from an
     /// external service, e.g., AWS or GCS secrets manager services.
-    pub fn add_async_config_source(mut self, source: impl AsyncSource + Send + 'static) -> Self {
+    pub fn add_async_config_source(mut self, source: impl 'static + Send + AsyncSource) -> Self {
         self.async_config_sources.push(Box::new(source));
         self
     }
@@ -647,7 +647,7 @@ where
         source_provider: impl 'static
         + Send
         + Sync
-        + Fn(&Environment) -> RoadsterResult<Box<dyn AsyncSource + Send + Sync>>,
+        + Fn(&Environment) -> RoadsterResult<Box<dyn Send + Sync + AsyncSource>>,
     ) -> Self {
         self.inner.add_async_config_source_provider(source_provider);
         self
@@ -943,8 +943,8 @@ where
     ) -> Self
     where
         C: 'static
-            + diesel::connection::Connection
             + Send
+            + diesel::connection::Connection
             + diesel_migrations::MigrationHarness<C::Backend>,
     {
         self.diesel_migrator = Some(Box::new(
@@ -960,7 +960,7 @@ where
     /// to the provided migrator, so multiple SeaORM or Diesel migrators should not be provided
     /// via this method.
     #[cfg(feature = "db-sql")]
-    pub fn add_migrator(mut self, migrator: impl Migrator<S> + 'static) -> Self {
+    pub fn add_migrator(mut self, migrator: impl 'static + Migrator<S>) -> Self {
         self.migrators.push(Box::new(migrator));
         self
     }
@@ -1117,11 +1117,11 @@ where
 #[async_trait]
 impl<
     S,
-    #[cfg(feature = "cli")] Cli: 'static + clap::Args + RunCommand<RoadsterApp<S, Cli>, S> + Send + Sync,
+    #[cfg(feature = "cli")] Cli: 'static + Send + Sync + clap::Args + RunCommand<RoadsterApp<S, Cli>, S>,
     #[cfg(not(feature = "cli"))] Cli: 'static,
 > App<S> for RoadsterApp<S, Cli>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     type Error = crate::error::Error;
@@ -1130,13 +1130,13 @@ where
     fn async_config_sources(
         &self,
         environment: &Environment,
-    ) -> RoadsterResult<Vec<Box<dyn AsyncSource + Send + Sync>>> {
+    ) -> RoadsterResult<Vec<Box<dyn Send + Sync + AsyncSource>>> {
         let mut async_config_sources = self
             .async_config_sources
             .lock()
             .map_err(crate::error::Error::from)?;
 
-        let mut sources: Vec<Box<dyn AsyncSource + Send + Sync>> = Default::default();
+        let mut sources: Vec<Box<dyn Send + Sync + AsyncSource>> = Default::default();
         for source in async_config_sources.drain(..) {
             sources.push(source);
         }

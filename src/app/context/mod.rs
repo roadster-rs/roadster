@@ -52,7 +52,7 @@ impl AppContext {
         #[cfg_attr(test, allow(unused_variables))] extension_registry: ExtensionRegistry,
     ) -> RoadsterResult<Self>
     where
-        S: Clone + Send + Sync + 'static,
+        S: 'static + Send + Sync + Clone,
         AppContext: FromRef<S>,
         A: 'static + App<S>,
     {

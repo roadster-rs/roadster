@@ -37,7 +37,7 @@ pub async fn health_check<S>(
     duration: Option<Duration>,
 ) -> RoadsterResult<HeathCheckResponse>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     let context = AppContext::from_ref(state);
@@ -50,7 +50,7 @@ pub(crate) async fn health_check_with_checks<S>(
     duration: Option<Duration>,
 ) -> RoadsterResult<HeathCheckResponse>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     if let Some(duration) = duration.as_ref() {

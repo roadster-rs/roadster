@@ -20,7 +20,7 @@ pub enum MutexError {
     Poison((MutexType, MutexErrMsg)),
 
     #[error(transparent)]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+    Other(#[from] Box<dyn Send + Sync + std::error::Error>),
 }
 
 impl<T> From<PoisonError<T>> for Error {

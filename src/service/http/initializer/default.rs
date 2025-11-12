@@ -8,7 +8,7 @@ pub fn default_initializers<S>(
     state: &S,
 ) -> BTreeMap<String, Box<dyn Initializer<S, Error = crate::error::Error>>>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     let initializers: Vec<Box<dyn Initializer<S, Error = crate::error::Error>>> =

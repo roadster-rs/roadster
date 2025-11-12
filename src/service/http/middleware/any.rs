@@ -36,27 +36,26 @@ type ApplyFn<S> = Box<dyn Fn(Router, &S) -> RoadsterResult<Router> + Send>;
 #[non_exhaustive]
 pub struct AnyMiddleware<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     #[builder(into)]
     name: String,
     enabled: Option<bool>,
     priority: Option<i32>,
-    // #[builder(setter(transform = |a: impl Fn(Router, &S) -> RoadsterResult<Router> + Send + 'static| to_box_fn(a) ))]
     #[builder(setters(vis = "", name = apply_internal))]
     apply: ApplyFn<S>,
 }
 
 impl<S, BS> AnyMiddlewareBuilder<S, BS>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     BS: any_middleware_builder::State,
 {
     pub fn apply(
         self,
-        apply_fn: impl Fn(Router, &S) -> RoadsterResult<Router> + Send + 'static,
+        apply_fn: impl 'static + Send + Fn(Router, &S) -> RoadsterResult<Router>,
     ) -> AnyMiddlewareBuilder<S, any_middleware_builder::SetApply<BS>>
     where
         BS::Apply: any_middleware_builder::IsUnset,
@@ -67,9 +66,11 @@ where
 
 impl<S> Middleware<S> for AnyMiddleware<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
+    type Error = crate::error::Error;
+
     fn name(&self) -> String {
         self.name.clone()
     }
@@ -121,7 +122,7 @@ where
             .unwrap_or_default()
     }
 
-    fn install(&self, router: Router, state: &S) -> RoadsterResult<Router> {
+    fn install(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
         (self.apply)(router, state)
     }
 }

@@ -18,12 +18,14 @@ use crate::service::http::middleware::tracing::req_res_logging::RequestResponseL
 use axum_core::extract::FromRef;
 use std::collections::BTreeMap;
 
-pub fn default_middleware<S>(state: &S) -> BTreeMap<String, Box<dyn Middleware<S>>>
+pub fn default_middleware<S>(
+    state: &S,
+) -> BTreeMap<String, Box<dyn Middleware<S, Error = crate::error::Error>>>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
-    let middleware: Vec<Box<dyn Middleware<S>>> = vec![
+    let middleware: Vec<Box<dyn Middleware<S, Error = crate::error::Error>>> = vec![
         Box::new(SensitiveRequestHeadersMiddleware),
         Box::new(SensitiveResponseHeadersMiddleware),
         Box::new(SetRequestIdMiddleware),

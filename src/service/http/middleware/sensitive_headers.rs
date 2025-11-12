@@ -65,9 +65,11 @@ pub struct SensitiveResponseHeadersConfig {
 pub struct SensitiveRequestHeadersMiddleware;
 impl<S> Middleware<S> for SensitiveRequestHeadersMiddleware
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
+    type Error = crate::error::Error;
+
     fn name(&self) -> String {
         "sensitive-request-headers".to_string()
     }
@@ -95,7 +97,7 @@ where
             .common
             .priority
     }
-    fn install(&self, router: Router, state: &S) -> RoadsterResult<Router> {
+    fn install(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
         let headers = AppContext::from_ref(state)
             .config()
             .service
@@ -116,9 +118,11 @@ where
 pub struct SensitiveResponseHeadersMiddleware;
 impl<S> Middleware<S> for SensitiveResponseHeadersMiddleware
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
+    type Error = crate::error::Error;
+
     fn name(&self) -> String {
         "sensitive-response-headers".to_string()
     }
@@ -147,7 +151,7 @@ where
             .priority
     }
 
-    fn install(&self, router: Router, state: &S) -> RoadsterResult<Router> {
+    fn install(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
         let headers = AppContext::from_ref(state)
             .config()
             .service

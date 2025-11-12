@@ -52,7 +52,7 @@ pub enum MigrationStatus {
 #[async_trait]
 pub trait Migrator<S>: Send + Sync
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     /// Apply pending migrations. Returns the number of migrations that were successfully

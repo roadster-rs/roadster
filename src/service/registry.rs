@@ -35,13 +35,13 @@ pub enum ServiceRegistryError {
     Downcast(String),
 
     #[error(transparent)]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+    Other(#[from] Box<dyn Send + Sync + std::error::Error>),
 }
 
 /// Registry for [`Service`]s that will be run in the app.
 pub struct ServiceRegistry<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     pub(crate) state: S,
@@ -51,7 +51,7 @@ where
 
 impl<S> ServiceRegistry<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     pub(crate) fn new(state: &S) -> Self {
@@ -66,7 +66,7 @@ where
     /// the service will not be registered.
     pub fn register_service<Srvc>(&mut self, service: Srvc) -> RoadsterResult<()>
     where
-        Srvc: Service<S> + 'static,
+        Srvc: 'static + Service<S>,
     {
         self.register_wrapped(ServiceWrapper::new(service))
     }
@@ -176,7 +176,7 @@ prepared.service_registry.invoke(async |service: &HttpService| {
     )]
     pub async fn invoke<Srvc, F, R>(&self, invoke: F) -> RoadsterResult<R>
     where
-        Srvc: Service<S> + 'static,
+        Srvc: 'static + Service<S>,
         F: AsyncFnOnce(&Srvc) -> R,
     {
         let service_wrapper = self
@@ -221,7 +221,7 @@ type RunFn<S> = Box<
 /// their [`Service::Error`] associated types.
 pub(crate) struct ServiceWrapper<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     type_id: TypeId,
@@ -229,28 +229,28 @@ where
     enabled_fn: EnabledFn<S>,
     before_run_fn: BeforeRunFn<S>,
     run_fn: RunFn<S>,
-    inner: Arc<Mutex<Option<Box<dyn Any + Send + Sync>>>>,
+    inner: Arc<Mutex<Option<Box<dyn Send + Sync + Any>>>>,
 }
 
 impl<S> ServiceWrapper<S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     pub(crate) fn new<Srvc>(service: Srvc) -> Self
     where
-        Srvc: Any + Send + Sync + Service<S> + 'static,
+        Srvc: 'static + Send + Sync + Any + Service<S>,
     {
         let type_id = service.type_id();
         let name = service.name();
         /*
         For some reason, we need to explicitly annotate the type here. If we don't, Rust
-        complains about the value inside the `Box` not being compatible with the `Any + Send + Sync`
+        complains about the value inside the `Box` not being compatible with the `Send + Sync + Any`
         trait bounds when trying to assign the value to the `ServiceWrapper#inner` field. This is
         also why we need to downcast in the method wrappers below (we don't have a handle to a
         `Service` instance, just an `Any`.
          */
-        let inner: Arc<Mutex<Option<Box<dyn Any + Send + Sync>>>> =
+        let inner: Arc<Mutex<Option<Box<dyn Send + Sync + Any>>>> =
             Arc::new(Mutex::new(Some(Box::new(service))));
         let enabled_fn: EnabledFn<S> = {
             let inner = inner.clone();

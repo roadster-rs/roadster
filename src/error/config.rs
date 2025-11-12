@@ -7,7 +7,7 @@ pub enum ConfigError {
     Config(#[from] config::ConfigError),
 
     #[error(transparent)]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+    Other(#[from] Box<dyn Send + Sync + std::error::Error>),
 }
 
 impl From<config::ConfigError> for Error {

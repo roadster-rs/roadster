@@ -13,7 +13,7 @@ pub enum SerdeError {
     TomlSerialize(#[from] toml::ser::Error),
 
     #[error(transparent)]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+    Other(#[from] Box<dyn Send + Sync + std::error::Error>),
 }
 
 impl From<serde_json::Error> for Error {

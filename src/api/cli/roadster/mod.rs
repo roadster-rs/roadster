@@ -31,7 +31,7 @@ pub mod print_config;
 #[async_trait]
 pub(crate) trait RunRoadsterCommand<A, S>
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     A: App<S>,
 {
@@ -78,7 +78,7 @@ impl RoadsterCli {
 #[async_trait]
 impl<A, S> RunRoadsterCommand<A, S> for RoadsterCli
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     A: App<S>,
 {
@@ -104,7 +104,7 @@ pub enum RoadsterCommand {
 #[async_trait]
 impl<A, S> RunRoadsterCommand<A, S> for RoadsterCommand
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     A: App<S>,
 {
@@ -125,7 +125,7 @@ pub struct RoadsterArgs {
 #[async_trait]
 impl<A, S> RunRoadsterCommand<A, S> for RoadsterArgs
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     A: App<S>,
 {
@@ -137,7 +137,7 @@ where
 #[async_trait]
 impl<A, S> RunRoadsterCommand<A, S> for RoadsterSubCommand
 where
-    S: Clone + Send + Sync + 'static,
+    S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
     A: App<S>,
 {
