@@ -27,7 +27,7 @@ use std::sync::Arc;
 use tracing::info;
 
 #[cfg(feature = "open-api")]
-type ApiDocs = Box<dyn Fn(TransformOpenApi) -> TransformOpenApi + Send>;
+type ApiDocs = Box<dyn Send + Fn(TransformOpenApi) -> TransformOpenApi>;
 
 pub struct HttpServiceBuilder<S>
 where

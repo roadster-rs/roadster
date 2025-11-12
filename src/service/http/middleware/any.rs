@@ -4,7 +4,7 @@ use crate::service::http::middleware::Middleware;
 use axum::Router;
 use axum_core::extract::FromRef;
 
-type ApplyFn<S> = Box<dyn Fn(Router, &S) -> RoadsterResult<Router> + Send>;
+type ApplyFn<S> = Box<dyn Send + Sync + Fn(Router, &S) -> RoadsterResult<Router>>;
 
 /// A [`Middleware`] that can be applied without creating a separate `struct`. Useful to easily
 /// apply a middleware that's based on a function, for example.
@@ -55,7 +55,7 @@ where
 {
     pub fn apply(
         self,
-        apply_fn: impl 'static + Send + Fn(Router, &S) -> RoadsterResult<Router>,
+        apply_fn: impl 'static + Send + Sync + Fn(Router, &S) -> RoadsterResult<Router>,
     ) -> AnyMiddlewareBuilder<S, any_middleware_builder::SetApply<BS>>
     where
         BS::Apply: any_middleware_builder::IsUnset,

@@ -163,7 +163,7 @@ pub struct AppConfigOptions {
     #[builder(field)]
     pub config_sources: Vec<Box<dyn Send + Sync + Source>>,
     #[builder(field)]
-    pub async_config_sources: Vec<Box<dyn AsyncSource + Send>>,
+    pub async_config_sources: Vec<Box<dyn Send + AsyncSource>>,
     pub environment: Environment,
     #[builder(into)]
     pub config_dir: Option<PathBuf>,
@@ -191,7 +191,7 @@ impl<S: app_config_options_builder::State> AppConfigOptionsBuilder<S> {
     #[allow(dead_code)]
     pub(crate) fn async_config_sources(
         mut self,
-        async_config_sources: Vec<Box<dyn AsyncSource + Send>>,
+        async_config_sources: Vec<Box<dyn Send + AsyncSource>>,
     ) -> Self {
         self.async_config_sources = async_config_sources;
         self
@@ -202,7 +202,7 @@ impl<S: app_config_options_builder::State> AppConfigOptionsBuilder<S> {
         self
     }
 
-    pub fn add_async_source_boxed(mut self, source: Box<dyn AsyncSource + Send>) -> Self {
+    pub fn add_async_source_boxed(mut self, source: Box<dyn Send + AsyncSource>) -> Self {
         self.async_config_sources.push(source);
         self
     }
