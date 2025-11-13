@@ -122,7 +122,7 @@ where
             .unwrap_or_default()
     }
 
-    fn install(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
+    fn install(&self, state: &S, router: Router) -> Result<Router, Self::Error> {
         (self.apply)(router, state)
     }
 }

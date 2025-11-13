@@ -472,8 +472,8 @@ where
 
     async fn health_checks(
         &self,
-        registry: &mut HealthCheckRegistry,
         state: &S,
+        registry: &mut HealthCheckRegistry,
     ) -> RoadsterResult<()> {
         for health_check in self.health_checks.iter() {
             registry.register_arc(health_check.clone())?;
@@ -1339,7 +1339,7 @@ where
     }
 
     #[cfg(feature = "db-sql")]
-    fn migrators(&self, registry: &mut MigratorRegistry<S>, state: &S) -> RoadsterResult<()> {
+    fn migrators(&self, state: &S, registry: &mut MigratorRegistry<S>) -> RoadsterResult<()> {
         #[cfg(feature = "db-sea-orm")]
         {
             let mut sea_orm_migrator = self
@@ -1376,8 +1376,8 @@ where
 
     async fn lifecycle_handlers(
         &self,
-        registry: &mut LifecycleHandlerRegistry<Self, S>,
         state: &S,
+        registry: &mut LifecycleHandlerRegistry<Self, S>,
     ) -> RoadsterResult<()> {
         {
             let mut lifecycle_handlers = self
@@ -1397,13 +1397,13 @@ where
 
     async fn health_checks(
         &self,
-        registry: &mut HealthCheckRegistry,
         state: &S,
+        registry: &mut HealthCheckRegistry,
     ) -> RoadsterResult<()> {
-        self.inner.health_checks(registry, state).await
+        self.inner.health_checks(state, registry).await
     }
 
-    async fn services(&self, registry: &mut ServiceRegistry<S>, state: &S) -> RoadsterResult<()> {
+    async fn services(&self, state: &S, registry: &mut ServiceRegistry<S>) -> RoadsterResult<()> {
         {
             let mut services = self.services.lock().map_err(crate::error::Error::from)?;
             for service in services.drain(..) {

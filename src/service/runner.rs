@@ -40,8 +40,8 @@ pub(crate) async fn health_checks(
 
 #[instrument(skip_all)]
 pub(crate) async fn before_run<S>(
-    service_registry: &ServiceRegistry<S>,
     state: &S,
+    service_registry: &ServiceRegistry<S>,
 ) -> RoadsterResult<()>
 where
     S: 'static + Send + Sync + Clone,
@@ -58,8 +58,8 @@ where
 
 pub(crate) async fn run<A, S>(
     app: A,
-    service_registry: ServiceRegistry<S>,
     state: &S,
+    service_registry: ServiceRegistry<S>,
 ) -> RoadsterResult<()>
 where
     S: 'static + Send + Sync + Clone,

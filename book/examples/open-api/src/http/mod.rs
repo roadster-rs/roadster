@@ -14,7 +14,7 @@ use tracing::instrument;
 const BASE: &str = "/api";
 
 pub fn http_service(state: &AppContext) -> HttpServiceBuilder<AppContext> {
-    HttpServiceBuilder::new(Some(BASE), state)
+    HttpServiceBuilder::new(state, Some(BASE))
         // Create your routes as an `ApiRouter` in order to include it in the OpenAPI schema.
         .api_router(
             ApiRouter::new()

@@ -19,7 +19,7 @@ use tracing::instrument;
 #[cfg(feature = "open-api")]
 const TAG: &str = "Ping";
 
-pub fn routes<S>(parent: &str, state: &S) -> Router<S>
+pub fn routes<S>(state: &S, parent: &str) -> Router<S>
 where
     S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
@@ -34,7 +34,7 @@ where
 }
 
 #[cfg(feature = "open-api")]
-pub fn api_routes<S>(parent: &str, state: &S) -> ApiRouter<S>
+pub fn api_routes<S>(state: &S, parent: &str) -> ApiRouter<S>
 where
     S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,

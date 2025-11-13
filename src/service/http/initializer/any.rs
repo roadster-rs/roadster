@@ -130,7 +130,7 @@ where
             .unwrap_or_default()
     }
 
-    fn after_router(&self, router: Router, _state: &S) -> Result<Router, Self::Error> {
+    fn after_router(&self, _state: &S, router: Router) -> Result<Router, Self::Error> {
         if let Stage::AfterRouter = self.stage {
             (self.apply)(router, _state)
         } else {
@@ -138,7 +138,7 @@ where
         }
     }
 
-    fn before_middleware(&self, router: Router, _state: &S) -> Result<Router, Self::Error> {
+    fn before_middleware(&self, _state: &S, router: Router) -> Result<Router, Self::Error> {
         if let Stage::BeforeMiddleware = self.stage {
             (self.apply)(router, _state)
         } else {
@@ -146,7 +146,7 @@ where
         }
     }
 
-    fn after_middleware(&self, router: Router, _state: &S) -> Result<Router, Self::Error> {
+    fn after_middleware(&self, _state: &S, router: Router) -> Result<Router, Self::Error> {
         if let Stage::AfterMiddleware = self.stage {
             (self.apply)(router, _state)
         } else {
@@ -154,7 +154,7 @@ where
         }
     }
 
-    fn before_serve(&self, router: Router, _state: &S) -> Result<Router, Self::Error> {
+    fn before_serve(&self, _state: &S, router: Router) -> Result<Router, Self::Error> {
         if let Stage::BeforeServe = self.stage {
             (self.apply)(router, _state)
         } else {

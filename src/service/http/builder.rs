@@ -49,12 +49,12 @@ where
     S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
-    pub fn new(path_root: Option<&str>, state: &S) -> Self {
+    pub fn new(state: &S, path_root: Option<&str>) -> Self {
         // Normally, enabling a feature shouldn't remove things. In this case, however, we don't
         // want to include the default routes in the axum::Router if the `open-api` features is
         // enabled. Otherwise, we'll get a route conflict when the two routers are merged.
         #[cfg(not(feature = "open-api"))]
-        let router = default_routes(path_root.unwrap_or_default(), state);
+        let router = default_routes(state, path_root.unwrap_or_default());
         #[cfg(feature = "open-api")]
         let router = Router::<S>::new();
 
@@ -65,7 +65,7 @@ where
             state: state.clone(),
             router,
             #[cfg(feature = "open-api")]
-            api_router: default_api_routes(path_root.unwrap_or_default(), state),
+            api_router: default_api_routes(state, path_root.unwrap_or_default()),
             #[cfg(feature = "open-api")]
             api_docs: Box::new(move |api| {
                 let api = api
@@ -200,14 +200,14 @@ where
             .iter()
             .try_fold(router, |router, initializer| {
                 info!(http_initializer.name=%initializer.name(), "Running Initializer::after_router");
-                initializer.after_router(router, state)
+                initializer.after_router(state, router)
             })?;
 
         let router = initializers
             .iter()
             .try_fold(router, |router, initializer| {
                 info!(http_initializer.name=%initializer.name(), "Running Initializer::before_middleware");
-                initializer.before_middleware(router, state)
+                initializer.before_middleware(state, router)
             })?;
 
         info!(
@@ -222,21 +222,21 @@ where
             .rev()
             .try_fold(router, |router, middleware| {
                 info!(http_middleware.name=%middleware.name(), "Installing middleware");
-                middleware.install(router, state)
+                middleware.install(state, router)
             })?;
 
         let router = initializers
             .iter()
             .try_fold(router, |router, initializer| {
                 info!(http_initializer.name=%initializer.name(), "Running Initializer::after_middleware");
-                initializer.after_middleware(router, state)
+                initializer.after_middleware(state, router)
             })?;
 
         let router = initializers
             .iter()
             .try_fold(router, |router, initializer| {
                 info!(http_initializer.name=%initializer.name(), "Running Initializer::before_serve");
-                initializer.before_serve(router, state)
+                initializer.before_serve(state, router)
             })?;
 
         let service = HttpService {
@@ -253,7 +253,7 @@ type EnabledFn<S> = Box<dyn Send + Sync + for<'a> Fn(&'a S) -> bool>;
 type PriorityFn<S> = Box<dyn Send + Sync + for<'a> Fn(&'a S) -> i32>;
 
 type RouterAndStateFn<S> =
-    Box<dyn Send + Sync + for<'a> Fn(Router, &'a S) -> RoadsterResult<Router>>;
+    Box<dyn Send + Sync + for<'a> Fn(&'a S, Router) -> RoadsterResult<Router>>;
 
 pub(crate) struct InitializerWrapper<S>
 where
@@ -290,36 +290,36 @@ where
         };
         let after_router_fn: RouterAndStateFn<S> = {
             let initializer = initializer.clone();
-            Box::new(move |router, state| {
+            Box::new(move |state, router| {
                 let router = initializer
-                    .after_router(router, state)
+                    .after_router(state, router)
                     .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
                 Ok(router)
             })
         };
         let before_middleware_fn: RouterAndStateFn<S> = {
             let initializer = initializer.clone();
-            Box::new(move |router, state| {
+            Box::new(move |state, router| {
                 let router = initializer
-                    .before_middleware(router, state)
+                    .before_middleware(state, router)
                     .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
                 Ok(router)
             })
         };
         let after_middleware_fn: RouterAndStateFn<S> = {
             let initializer = initializer.clone();
-            Box::new(move |router, state| {
+            Box::new(move |state, router| {
                 let router = initializer
-                    .after_middleware(router, state)
+                    .after_middleware(state, router)
                     .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
                 Ok(router)
             })
         };
         let before_serve_fn: RouterAndStateFn<S> = {
             let initializer = initializer.clone();
-            Box::new(move |router, state| {
+            Box::new(move |state, router| {
                 let router = initializer
-                    .before_serve(router, state)
+                    .before_serve(state, router)
                     .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
                 Ok(router)
             })
@@ -356,20 +356,20 @@ where
         (self.priority_fn)(state)
     }
 
-    fn after_router(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
-        (self.after_router_fn)(router, state)
+    fn after_router(&self, state: &S, router: Router) -> Result<Router, Self::Error> {
+        (self.after_router_fn)(state, router)
     }
 
-    fn before_middleware(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
-        (self.before_middleware_fn)(router, state)
+    fn before_middleware(&self, state: &S, router: Router) -> Result<Router, Self::Error> {
+        (self.before_middleware_fn)(state, router)
     }
 
-    fn after_middleware(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
-        (self.after_middleware_fn)(router, state)
+    fn after_middleware(&self, state: &S, router: Router) -> Result<Router, Self::Error> {
+        (self.after_middleware_fn)(state, router)
     }
 
-    fn before_serve(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
-        (self.before_serve_fn)(router, state)
+    fn before_serve(&self, state: &S, router: Router) -> Result<Router, Self::Error> {
+        (self.before_serve_fn)(state, router)
     }
 }
 
@@ -405,9 +405,9 @@ where
         };
         let install_fn: RouterAndStateFn<S> = {
             let middleware = middleware.clone();
-            Box::new(move |router, state| {
+            Box::new(move |state, router| {
                 let router = middleware
-                    .install(router, state)
+                    .install(state, router)
                     .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
                 Ok(router)
             })
@@ -441,8 +441,8 @@ where
         (self.priority_fn)(state)
     }
 
-    fn install(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
-        (self.install_fn)(router, state)
+    fn install(&self, state: &S, router: Router) -> Result<Router, Self::Error> {
+        (self.install_fn)(state, router)
     }
 }
 

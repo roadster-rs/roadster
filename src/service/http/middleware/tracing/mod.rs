@@ -84,7 +84,7 @@ where
             .priority
     }
 
-    fn install(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
+    fn install(&self, state: &S, router: Router) -> Result<Router, Self::Error> {
         let context = AppContext::from_ref(state);
         let middleware_config = &context.config().service.http.custom.middleware;
         let request_id_header_name = &middleware_config.set_request_id.custom.common.header_name;

@@ -47,7 +47,7 @@ where
             .priority
     }
 
-    fn install(&self, router: Router, _state: &S) -> Result<Router, Self::Error> {
+    fn install(&self, _state: &S, router: Router) -> Result<Router, Self::Error> {
         let router = router.layer(CatchPanicLayer::new());
 
         Ok(router)

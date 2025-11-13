@@ -17,7 +17,7 @@ fn build_app() -> App {
         .add_service_provider(move |registry, state| {
             Box::pin(async move {
                 registry
-                    .register_builder(HttpService::builder(Some("/api"), state))
+                    .register_builder(HttpService::builder(state, Some("/api")))
                     .await?;
                 Ok(())
             })

@@ -124,7 +124,7 @@ pub fn build_app() -> App {
             Box::pin(async {
                 registry
                     .register_builder(
-                        HttpService::builder(Some(BASE), state).api_router(http::routes(BASE)),
+                        HttpService::builder(state, Some(BASE)).api_router(http::routes(BASE)),
                     )
                     .await?;
                 Ok(())

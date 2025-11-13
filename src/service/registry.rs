@@ -150,7 +150,7 @@ let app: App = RoadsterApp::builder()
     .state_provider(|state| Ok(state))
     .add_service_provider(|registry, state| Box::pin(async  {
         registry.register_builder(
-            HttpService::builder(Some("/api"), state)
+            HttpService::builder(state, Some("/api"))
         ).await?;
         Ok(())
     }))

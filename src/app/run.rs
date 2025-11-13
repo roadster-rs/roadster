@@ -91,12 +91,12 @@ where
     before_app(&prepared).await?;
 
     let result =
-        crate::service::runner::run(prepared.app, prepared.service_registry, &prepared.state).await;
+        crate::service::runner::run(prepared.app, &prepared.state, prepared.service_registry).await;
     if let Err(err) = result {
         error!("An error occurred in the app: {err}");
     }
 
-    after_app(&prepared.lifecycle_handler_registry, &prepared.state).await?;
+    after_app(&prepared.state, &prepared.lifecycle_handler_registry).await?;
 
     Ok(())
 }
@@ -138,15 +138,15 @@ where
         );
         handler.before_services(prepared_app).await?
     }
-    crate::service::runner::before_run(&prepared_app.service_registry, &prepared_app.state).await?;
+    crate::service::runner::before_run(&prepared_app.state, &prepared_app.service_registry).await?;
 
     Ok(())
 }
 
 /// Run the app's teardown logic.
 pub async fn after_app<A, S>(
-    lifecycle_handler_registry: &LifecycleHandlerRegistry<A, S>,
     state: &S,
+    lifecycle_handler_registry: &LifecycleHandlerRegistry<A, S>,
 ) -> RoadsterResult<()>
 where
     A: 'static + App<S>,

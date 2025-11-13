@@ -77,7 +77,7 @@ where
             .priority
     }
 
-    fn install(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
+    fn install(&self, state: &S, router: Router) -> Result<Router, Self::Error> {
         let state = state.clone();
         let layer = SetResponseHeaderLayer::if_not_present(
             CACHE_CONTROL,

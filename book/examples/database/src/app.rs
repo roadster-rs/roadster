@@ -24,8 +24,8 @@ impl App<AppContext> for MyApp {
 
     fn migrators(
         &self,
-        registry: &mut MigratorRegistry<AppContext>,
         _state: &AppContext,
+        registry: &mut MigratorRegistry<AppContext>,
     ) -> Result<(), Self::Error> {
         registry.register_sea_orm_migrator(Migrator)?;
         Ok(())

@@ -33,32 +33,32 @@ where
 
     fn after_router(
         &self,
-        router: Router,
         #[allow(unused_variables)] state: &S,
+        router: Router,
     ) -> Result<Router, Self::Error> {
         Ok(router)
     }
 
     fn before_middleware(
         &self,
-        router: Router,
         #[allow(unused_variables)] state: &S,
+        router: Router,
     ) -> Result<Router, Self::Error> {
         Ok(router)
     }
 
     fn after_middleware(
         &self,
-        router: Router,
         #[allow(unused_variables)] state: &S,
+        router: Router,
     ) -> Result<Router, Self::Error> {
         Ok(router)
     }
 
     fn before_serve(
         &self,
-        router: Router,
         #[allow(unused_variables)] state: &S,
+        router: Router,
     ) -> Result<Router, Self::Error> {
         Ok(router)
     }

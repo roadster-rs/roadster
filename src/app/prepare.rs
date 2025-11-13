@@ -344,24 +344,24 @@ where
     #[cfg(feature = "db-sql")]
     let migrator_registry = {
         let mut migrator_registry = MigratorRegistry::new();
-        app.migrators(&mut migrator_registry, &state)
+        app.migrators(&state, &mut migrator_registry)
             .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
         migrator_registry
     };
 
     let mut lifecycle_handler_registry = LifecycleHandlerRegistry::new(&state);
-    app.lifecycle_handlers(&mut lifecycle_handler_registry, &state)
+    app.lifecycle_handlers(&state, &mut lifecycle_handler_registry)
         .await
         .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
 
     let mut health_check_registry = HealthCheckRegistry::new(&context);
-    app.health_checks(&mut health_check_registry, &state)
+    app.health_checks(&state, &mut health_check_registry)
         .await
         .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
     context.set_health_checks(health_check_registry)?;
 
     let mut service_registry = ServiceRegistry::new(&state);
-    app.services(&mut service_registry, &state)
+    app.services(&state, &mut service_registry)
         .await
         .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
 

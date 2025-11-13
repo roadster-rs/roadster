@@ -18,7 +18,7 @@ const BASE: &str = "/api";
 /// Set up the [`HttpServiceBuilder`]. This will then be registered with the
 /// [`roadster::service::registry::ServiceRegistry`].
 pub fn http_service(state: &AppContext) -> HttpServiceBuilder<AppContext> {
-    HttpServiceBuilder::new(Some(BASE), state)
+    HttpServiceBuilder::new(state, Some(BASE))
         // Multiple routers can be registered and they will all be merged together using the
         // `axum::Router::merge` method.
         .router(Router::new().route(&build_path(BASE, "/example_a"), get(example_a)))

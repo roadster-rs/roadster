@@ -97,7 +97,7 @@ where
             .common
             .priority
     }
-    fn install(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
+    fn install(&self, state: &S, router: Router) -> Result<Router, Self::Error> {
         let headers = AppContext::from_ref(state)
             .config()
             .service
@@ -151,7 +151,7 @@ where
             .priority
     }
 
-    fn install(&self, router: Router, state: &S) -> Result<Router, Self::Error> {
+    fn install(&self, state: &S, router: Router) -> Result<Router, Self::Error> {
         let headers = AppContext::from_ref(state)
             .config()
             .service

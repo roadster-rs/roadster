@@ -42,7 +42,7 @@ pub fn build_app() -> RoadsterApp<AppState> {
 
                 registry
                     .register_builder(
-                        HttpService::builder(Some(BASE), &state).router(leptos_routes(&state)),
+                        HttpService::builder(&state, Some(BASE)).router(leptos_routes(&state)),
                     )
                     .await?;
 

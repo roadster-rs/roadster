@@ -57,16 +57,16 @@ impl RoadsterApp<AppState> for App {
 
     fn migrators(
         &self,
-        registry: &mut MigratorRegistry<AppState>,
         _state: &AppState,
+        registry: &mut MigratorRegistry<AppState>,
     ) -> Result<(), Self::Error> {
         registry.register_sea_orm_migrator(Migrator)
     }
 
     async fn health_checks(
         &self,
-        registry: &mut HealthCheckRegistry,
         state: &AppState,
+        registry: &mut HealthCheckRegistry,
     ) -> Result<(), Self::Error> {
         registry.register(ExampleHealthCheck::new(state))?;
         Ok(())
@@ -74,8 +74,8 @@ impl RoadsterApp<AppState> for App {
 
     async fn lifecycle_handlers(
         &self,
-        registry: &mut LifecycleHandlerRegistry<Self, AppState>,
         _state: &AppState,
+        registry: &mut LifecycleHandlerRegistry<Self, AppState>,
     ) -> Result<(), Self::Error> {
         registry.register(ExampleLifecycleHandler)?;
         Ok(())
@@ -83,12 +83,12 @@ impl RoadsterApp<AppState> for App {
 
     async fn services(
         &self,
-        registry: &mut ServiceRegistry<AppState>,
         state: &AppState,
+        registry: &mut ServiceRegistry<AppState>,
     ) -> Result<(), Self::Error> {
         registry
             .register_builder(
-                HttpService::builder(Some(BASE), state)
+                HttpService::builder(state, Some(BASE))
                     .api_router(http::routes(BASE))
                     .initializer(
                         AnyInitializer::<AppState, Infallible>::builder()
