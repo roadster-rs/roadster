@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0-alpha.2](https://github.com/roadster-rs/roadster/compare/roadster-v0.9.0-alpha.1...roadster-v0.9.0-alpha.2) - 2025-11-13
+
+### Added
+
+- [**breaking**] Allow `Migrator` trait to return custom errors ([#935](https://github.com/roadster-rs/roadster/pull/935))
+- [**breaking**] Allow `http::Middleware` trait to return custom errors ([#933](https://github.com/roadster-rs/roadster/pull/933))
+- [**breaking**] Allow `http::Initializer` trait to return custom errors ([#932](https://github.com/roadster-rs/roadster/pull/932))
+- [**breaking**] Allow `AppLifecycleHandler` trait to return custom errors ([#931](https://github.com/roadster-rs/roadster/pull/931))
+- [**breaking**] Allow `HealthCheck` trait to return custom errors ([#930](https://github.com/roadster-rs/roadster/pull/930))
+
+### Other
+
+- [**breaking**] Rearrange method params to put state as first param ([#936](https://github.com/roadster-rs/roadster/pull/936))
+
 ## [0.9.0-alpha.1](https://github.com/roadster-rs/roadster/compare/roadster-v0.9.0-alpha...roadster-v0.9.0-alpha.1) - 2025-11-10
 
 ### Added
