@@ -53,5 +53,5 @@ where
     /// with priority `-10` will be _installed after_ a middleware with priority `10`, which will
     /// allow the middleware with priority `-10` to _run before_ a middleware with priority `10`.
     fn priority(&self, state: &S) -> i32;
-    fn install(&self, router: Router, state: &S) -> Result<Router, Self::Error>;
+    fn install(&self, state: &S, router: Router) -> Result<Router, Self::Error>;
 }

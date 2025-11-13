@@ -26,7 +26,7 @@ pub mod ping;
 /// const BASE: &str = "/api";
 ///
 /// async fn http_service(state: &AppContext) -> HttpServiceBuilder<AppContext> {
-///     HttpServiceBuilder::new(Some(BASE), state)
+///     HttpServiceBuilder::new(state, Some(BASE))
 ///         .router(example_a::routes(BASE))
 ///         .router(example_b::routes(BASE))
 /// }
@@ -76,25 +76,25 @@ pub fn build_path(parent: &str, child: &str) -> String {
     path
 }
 
-pub fn default_routes<S>(parent: &str, state: &S) -> Router<S>
+pub fn default_routes<S>(state: &S, parent: &str) -> Router<S>
 where
     S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     Router::new()
-        .merge(ping::routes(parent, state))
-        .merge(health::routes(parent, state))
+        .merge(ping::routes(state, parent))
+        .merge(health::routes(state, parent))
 }
 
 #[cfg(feature = "open-api")]
-pub fn default_api_routes<S>(parent: &str, state: &S) -> ApiRouter<S>
+pub fn default_api_routes<S>(state: &S, parent: &str) -> ApiRouter<S>
 where
     S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
     ApiRouter::new()
-        .merge(ping::api_routes(parent, state))
-        .merge(health::api_routes(parent, state))
+        .merge(ping::api_routes(state, parent))
+        .merge(health::api_routes(state, parent))
         // The docs route is only available when using Aide
-        .merge(docs::routes(parent, state))
+        .merge(docs::routes(state, parent))
 }

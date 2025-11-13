@@ -16,7 +16,7 @@ const BASE: &str = "/api";
 /// Set up the [`HttpServiceBuilder`]. This will then be registered with the
 /// [`roadster::service::registry::ServiceRegistry`].
 pub async fn http_service(state: &AppContext) -> RoadsterResult<HttpServiceBuilder<AppContext>> {
-    HttpServiceBuilder::new(Some(BASE), state)
+    HttpServiceBuilder::new(state, Some(BASE))
         .api_router(ApiRouter::new().api_route(
             &build_path(BASE, "/example_b"),
             get_with(example_b::example_b_get, example_b::example_b_get_docs),

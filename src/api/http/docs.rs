@@ -12,7 +12,7 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 /// This API is only available when using Aide.
-pub fn routes<S>(parent: &str, state: &S) -> ApiRouter<S>
+pub fn routes<S>(state: &S, parent: &str) -> ApiRouter<S>
 where
     S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,

@@ -72,12 +72,12 @@ where
 
 impl HttpService {
     /// Create a new [HttpServiceBuilder].
-    pub fn builder<S>(path_root: Option<&str>, state: &S) -> HttpServiceBuilder<S>
+    pub fn builder<S>(state: &S, path_root: Option<&str>) -> HttpServiceBuilder<S>
     where
         S: 'static + Send + Sync + Clone,
         AppContext: FromRef<S>,
     {
-        HttpServiceBuilder::new(path_root, state)
+        HttpServiceBuilder::new(state, path_root)
     }
 
     pub fn router(&self) -> &Router {

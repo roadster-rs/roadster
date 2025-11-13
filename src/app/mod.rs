@@ -209,16 +209,16 @@ where
     #[cfg(feature = "db-sql")]
     fn migrators(
         &self,
-        #[allow(unused_variables)] registry: &mut MigratorRegistry<S>,
         #[allow(unused_variables)] state: &S,
+        #[allow(unused_variables)] registry: &mut MigratorRegistry<S>,
     ) -> Result<(), Self::Error> {
         Ok(())
     }
 
     async fn lifecycle_handlers(
         &self,
-        #[allow(unused_variables)] registry: &mut LifecycleHandlerRegistry<Self, S>,
         #[allow(unused_variables)] state: &S,
+        #[allow(unused_variables)] registry: &mut LifecycleHandlerRegistry<Self, S>,
     ) -> Result<(), Self::Error> {
         Ok(())
     }
@@ -226,8 +226,8 @@ where
     /// Provide the [`crate::health::check::HealthCheck`]s to use throughout the app.
     async fn health_checks(
         &self,
-        #[allow(unused_variables)] registry: &mut HealthCheckRegistry,
         #[allow(unused_variables)] state: &S,
+        #[allow(unused_variables)] registry: &mut HealthCheckRegistry,
     ) -> Result<(), Self::Error> {
         Ok(())
     }
@@ -235,8 +235,8 @@ where
     /// Provide the [`crate::service::Service`]s to run in the app.
     async fn services(
         &self,
-        #[allow(unused_variables)] registry: &mut ServiceRegistry<S>,
         #[allow(unused_variables)] state: &S,
+        #[allow(unused_variables)] registry: &mut ServiceRegistry<S>,
     ) -> Result<(), Self::Error> {
         Ok(())
     }
@@ -244,7 +244,7 @@ where
     /// Override to provide a custom shutdown signal. Roadster provides some default shutdown
     /// signals, but it may be desirable to provide a custom signal in order to, e.g., shutdown the
     /// server when a particular API is called.
-    async fn graceful_shutdown_signal(self: Arc<Self>, _state: &S) {
+    async fn graceful_shutdown_signal(self: Arc<Self>, #[allow(unused_variables)] state: &S) {
         let _output: () = future::pending().await;
     }
 }

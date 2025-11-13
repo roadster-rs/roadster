@@ -113,7 +113,7 @@ where
     tracing::debug!("Test complete");
 
     let after_app_result =
-        run::after_app(&prepared.lifecycle_handler_registry, &prepared.state).await;
+        run::after_app(&prepared.state, &prepared.lifecycle_handler_registry).await;
 
     let test_result = if let Some(test_panic) = test_panic {
         match test_panic {
