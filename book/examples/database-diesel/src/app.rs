@@ -3,7 +3,7 @@ use diesel_migrations::{EmbeddedMigrations, embed_migrations};
 use roadster::app::App;
 use roadster::app::context::AppContext;
 use roadster::config::AppConfig;
-use roadster::db::migration::diesel::DieselMigrator;
+use roadster::db::migration::registry::MigratorRegistry;
 
 pub struct MyApp;
 
@@ -26,10 +26,10 @@ impl App<AppContext> for MyApp {
 
     fn migrators(
         &self,
+        registry: &mut MigratorRegistry<AppContext>,
         _state: &AppContext,
-    ) -> Result<Vec<Box<dyn roadster::db::migration::Migrator<AppContext>>>, Self::Error> {
-        Ok(vec![Box::new(
-            DieselMigrator::<roadster::db::DieselPgConn>::new(MIGRATIONS),
-        )])
+    ) -> Result<(), Self::Error> {
+        registry.register_diesel_migrator::<roadster::db::DieselPgConn>(MIGRATIONS)?;
+        Ok(())
     }
 }

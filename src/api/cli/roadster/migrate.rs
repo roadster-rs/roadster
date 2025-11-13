@@ -98,7 +98,7 @@ where
     A: App<S>,
 {
     let mut total_steps_run = 0;
-    for migrator in cli.migrators.iter() {
+    for migrator in cli.migrator_registry.migrators().iter() {
         let remaining_steps = args
             .steps
             .map(|steps| steps.saturating_sub(total_steps_run));
@@ -126,7 +126,7 @@ where
     A: App<S>,
 {
     let mut total_steps_run = 0;
-    for migrator in cli.migrators.iter().rev() {
+    for migrator in cli.migrator_registry.migrators().iter().rev() {
         let remaining_steps = args
             .steps
             .map(|steps| steps.saturating_sub(total_steps_run));
@@ -153,7 +153,7 @@ where
     A: App<S>,
 {
     let mut migrations: Vec<MigrationInfo> = Vec::new();
-    for migrator in cli.migrators.iter() {
+    for migrator in cli.migrator_registry.migrators().iter() {
         migrations.extend(migrator.status(&cli.state).await?);
     }
     let migrations = migrations

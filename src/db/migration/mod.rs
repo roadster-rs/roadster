@@ -4,7 +4,6 @@
 //! Additionally, some utilities are provided to create some common column types.
 
 use crate::app::context::AppContext;
-use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use serde_derive::Serialize;
@@ -12,6 +11,7 @@ use strum_macros::{EnumString, IntoStaticStr};
 
 #[cfg(feature = "db-diesel")]
 pub mod diesel;
+pub mod registry;
 #[cfg(feature = "db-sea-orm")]
 pub mod sea_orm;
 
@@ -48,21 +48,23 @@ pub enum MigrationStatus {
     Pending,
 }
 
-#[cfg_attr(test, mockall::automock)]
+#[cfg_attr(test, mockall::automock(type Error = crate::error::Error;))]
 #[async_trait]
 pub trait Migrator<S>: Send + Sync
 where
     S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
+    type Error: Send + Sync + std::error::Error;
+
     /// Apply pending migrations. Returns the number of migrations that were successfully
     /// applied.
-    async fn up(&self, state: &S, args: &UpArgs) -> RoadsterResult<usize>;
+    async fn up(&self, state: &S, args: &UpArgs) -> Result<usize, Self::Error>;
 
     /// Roll back previous applied migrations. Returns the number of migrations that were
     /// successfully rolled back.
-    async fn down(&self, state: &S, args: &DownArgs) -> RoadsterResult<usize>;
+    async fn down(&self, state: &S, args: &DownArgs) -> Result<usize, Self::Error>;
 
     /// Get the status of all migrations in this [`Migrator`].
-    async fn status(&self, state: &S) -> RoadsterResult<Vec<MigrationInfo>>;
+    async fn status(&self, state: &S) -> Result<Vec<MigrationInfo>, Self::Error>;
 }

@@ -28,6 +28,8 @@ pub mod tracing;
 pub mod worker;
 
 use crate::app::context::extension::ExtensionRegistryError;
+#[cfg(feature = "db-sql")]
+use crate::db::migration::registry::MigratorRegistryError;
 use crate::error::api::ApiError;
 use crate::error::auth::AuthError;
 #[cfg(feature = "http")]
@@ -149,6 +151,10 @@ pub enum Error {
 
     #[error(transparent)]
     ExtensionRegistry(#[from] ExtensionRegistryError),
+
+    #[cfg(feature = "db-sql")]
+    #[error(transparent)]
+    MigratorRegistry(#[from] MigratorRegistryError),
 
     #[error(transparent)]
     Mutex(#[from] MutexError),

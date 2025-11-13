@@ -36,7 +36,7 @@ use crate::app::metadata::AppMetadata;
 use crate::config::AppConfig;
 use crate::config::environment::Environment;
 #[cfg(feature = "db-sql")]
-use crate::db::migration::Migrator;
+use crate::db::migration::registry::MigratorRegistry;
 use crate::health::check::registry::HealthCheckRegistry;
 use crate::lifecycle::registry::LifecycleHandlerRegistry;
 use crate::service::registry::ServiceRegistry;
@@ -206,15 +206,13 @@ where
     /// See the following for more details regarding [`FromRef`]: <https://docs.rs/axum/0.7.5/axum/extract/trait.FromRef.html>
     async fn provide_state(&self, context: AppContext) -> Result<S, Self::Error>;
 
-    /// Note: SeaORM and Diesel migrations expect all of the applied migrations to be available
-    /// to the provided migrator, so multiple SeaORM or Diesel migrators should not be provided
-    /// via this method.
     #[cfg(feature = "db-sql")]
     fn migrators(
         &self,
+        #[allow(unused_variables)] registry: &mut MigratorRegistry<S>,
         #[allow(unused_variables)] state: &S,
-    ) -> Result<Vec<Box<dyn Migrator<S>>>, Self::Error> {
-        Ok(Default::default())
+    ) -> Result<(), Self::Error> {
+        Ok(())
     }
 
     async fn lifecycle_handlers(

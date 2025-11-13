@@ -41,7 +41,7 @@ where
                 app: prepared.app,
                 state: prepared.state,
                 #[cfg(feature = "db-sql")]
-                migrators: prepared.migrators,
+                migrator_registry: prepared.migrator_registry,
                 service_registry: prepared.service_registry,
             };
             if crate::api::cli::handle_cli(&cli).await? {
@@ -51,7 +51,7 @@ where
                 app: cli.app,
                 state: cli.state,
                 #[cfg(feature = "db-sql")]
-                migrators: cli.migrators,
+                migrator_registry: cli.migrator_registry,
                 service_registry: cli.service_registry,
                 lifecycle_handler_registry: prepared.lifecycle_handler_registry,
             }
@@ -60,7 +60,7 @@ where
                 app: prepared.app,
                 state: prepared.state,
                 #[cfg(feature = "db-sql")]
-                migrators: prepared.migrators,
+                migrator_registry: prepared.migrator_registry,
                 service_registry: prepared.service_registry,
                 lifecycle_handler_registry: prepared.lifecycle_handler_registry,
             }
@@ -72,7 +72,7 @@ where
         app: prepared.app,
         state: prepared.state,
         #[cfg(feature = "db-sql")]
-        migrators: prepared.migrators,
+        migrator_registry: prepared.migrator_registry,
         service_registry: prepared.service_registry,
         lifecycle_handler_registry: prepared.lifecycle_handler_registry,
     };

@@ -8,6 +8,8 @@ use crate::config::AppConfig;
 use crate::config::environment::Environment;
 #[cfg(feature = "db-sql")]
 use crate::db::migration::Migrator;
+#[cfg(feature = "db-sql")]
+use crate::db::migration::registry::{MigratorRegistry, MigratorWrapper};
 use crate::error::RoadsterResult;
 use crate::health::check::HealthCheck;
 use crate::health::check::registry::{HealthCheckRegistry, HealthCheckWrapper};
@@ -72,7 +74,8 @@ type DieselAsyncConnectionCustomizer<C> =
 type DieselAsyncConnectionCustomizerProvider<C> =
     dyn Send + Sync + Fn(&AppConfig) -> RoadsterResult<DieselAsyncConnectionCustomizer<C>>;
 #[cfg(feature = "db-sql")]
-type MigratorProvider<S> = dyn Send + Sync + Fn(&S) -> RoadsterResult<Box<dyn Migrator<S>>>;
+type MigratorProvider<S> =
+    Box<dyn Send + Sync + Fn(&mut MigratorRegistry<S>, &S) -> RoadsterResult<()>>;
 type LifecycleHandlers<A, S> = Vec<AppLifecycleHandlerWrapper<A, S>>;
 type LifecycleHandlerProviders<A, S> =
     Vec<Box<dyn Send + Sync + Fn(&mut LifecycleHandlerRegistry<A, S>, &S) -> RoadsterResult<()>>>;
@@ -131,7 +134,7 @@ struct Inner<
     #[cfg(feature = "worker-pg")]
     worker_pg_sqlx_pool_options_provider: Option<Box<SqlxPgPoolOptionsProvider>>,
     #[cfg(feature = "db-sql")]
-    migrator_providers: Vec<Box<MigratorProvider<S>>>,
+    migrator_providers: Vec<MigratorProvider<S>>,
     health_checks: Vec<Arc<HealthCheckWrapper>>,
     health_check_providers: HealthCheckProviders<S>,
     graceful_shutdown_signal_provider: GracefulShutdownSignalProvider<S>,
@@ -368,7 +371,10 @@ where
     #[cfg(feature = "db-sql")]
     fn add_migrator_provider(
         &mut self,
-        migrator_provider: impl 'static + Send + Sync + Fn(&S) -> RoadsterResult<Box<dyn Migrator<S>>>,
+        migrator_provider: impl 'static
+        + Send
+        + Sync
+        + Fn(&mut MigratorRegistry<S>, &S) -> RoadsterResult<()>,
     ) {
         self.migrator_providers.push(Box::new(migrator_provider))
     }
@@ -498,11 +504,11 @@ pub struct RoadsterApp<
     inner: Inner<S, Cli>,
     async_config_sources: Mutex<Vec<Box<dyn Send + Sync + AsyncSource>>>,
     #[cfg(feature = "db-sea-orm")]
-    sea_orm_migrator: Mutex<Option<Box<dyn Migrator<S>>>>,
+    sea_orm_migrator: Mutex<Option<MigratorWrapper<S>>>,
     #[cfg(feature = "db-diesel")]
-    diesel_migrator: Mutex<Option<Box<dyn Migrator<S>>>>,
+    diesel_migrator: Mutex<Option<MigratorWrapper<S>>>,
     #[cfg(feature = "db-sql")]
-    migrators: Mutex<Vec<Box<dyn Migrator<S>>>>,
+    migrators: Mutex<Vec<MigratorWrapper<S>>>,
     #[cfg(feature = "db-diesel-postgres-pool")]
     diesel_pg_connection_customizer:
         Mutex<Option<DieselConnectionCustomizer<crate::db::DieselPgConn>>>,
@@ -537,11 +543,11 @@ pub struct RoadsterAppBuilder<
     inner: Inner<S, Cli>,
     async_config_sources: Vec<Box<dyn Send + Sync + AsyncSource>>,
     #[cfg(feature = "db-sea-orm")]
-    sea_orm_migrator: Option<Box<dyn Migrator<S>>>,
+    sea_orm_migrator: Option<MigratorWrapper<S>>,
     #[cfg(feature = "db-diesel")]
-    diesel_migrator: Option<Box<dyn Migrator<S>>>,
+    diesel_migrator: Option<MigratorWrapper<S>>,
     #[cfg(feature = "db-sql")]
-    migrators: Vec<Box<dyn Migrator<S>>>,
+    migrators: Vec<MigratorWrapper<S>>,
     #[cfg(feature = "db-diesel-postgres-pool")]
     diesel_pg_connection_customizer: Option<DieselConnectionCustomizer<crate::db::DieselPgConn>>,
     #[cfg(feature = "db-diesel-mysql-pool")]
@@ -925,7 +931,7 @@ where
         mut self,
         migrator: impl 'static + Sync + sea_orm_migration::MigratorTrait,
     ) -> Self {
-        self.sea_orm_migrator = Some(Box::new(
+        self.sea_orm_migrator = Some(MigratorWrapper::new(
             crate::db::migration::sea_orm::SeaOrmMigrator::new(migrator),
         ));
         self
@@ -947,7 +953,7 @@ where
             + diesel::connection::Connection
             + diesel_migrations::MigrationHarness<C::Backend>,
     {
-        self.diesel_migrator = Some(Box::new(
+        self.diesel_migrator = Some(MigratorWrapper::new(
             crate::db::migration::diesel::DieselMigrator::<C>::new(migrator),
         ));
         self
@@ -961,7 +967,7 @@ where
     /// via this method.
     #[cfg(feature = "db-sql")]
     pub fn add_migrator(mut self, migrator: impl 'static + Migrator<S>) -> Self {
-        self.migrators.push(Box::new(migrator));
+        self.migrators.push(MigratorWrapper::new(migrator));
         self
     }
 
@@ -977,7 +983,10 @@ where
     #[cfg(feature = "db-sql")]
     pub fn add_migrator_provider(
         mut self,
-        migrator_provider: impl 'static + Send + Sync + Fn(&S) -> RoadsterResult<Box<dyn Migrator<S>>>,
+        migrator_provider: impl 'static
+        + Send
+        + Sync
+        + Fn(&mut MigratorRegistry<S>, &S) -> RoadsterResult<()>,
     ) -> Self {
         self.inner.add_migrator_provider(migrator_provider);
         self
@@ -1330,9 +1339,7 @@ where
     }
 
     #[cfg(feature = "db-sql")]
-    fn migrators(&self, state: &S) -> RoadsterResult<Vec<Box<dyn Migrator<S>>>> {
-        let mut result = Vec::new();
-
+    fn migrators(&self, registry: &mut MigratorRegistry<S>, state: &S) -> RoadsterResult<()> {
         #[cfg(feature = "db-sea-orm")]
         {
             let mut sea_orm_migrator = self
@@ -1340,7 +1347,7 @@ where
                 .lock()
                 .map_err(crate::error::Error::from)?;
             if let Some(sea_orm_migrator) = sea_orm_migrator.take() {
-                result.push(sea_orm_migrator);
+                registry.register_wrapped(sea_orm_migrator)?;
             }
         }
 
@@ -1351,20 +1358,20 @@ where
                 .lock()
                 .map_err(crate::error::Error::from)?;
             if let Some(diesel_migrator) = diesel_migrator.take() {
-                result.push(diesel_migrator);
+                registry.register_wrapped(diesel_migrator)?;
             }
         }
 
         let mut migrators = self.migrators.lock().map_err(crate::error::Error::from)?;
         for migrator in migrators.drain(..) {
-            result.push(migrator);
+            registry.register_wrapped(migrator)?;
         }
 
         for migrator_provider in self.inner.migrator_providers.iter() {
-            result.push(migrator_provider(state)?);
+            migrator_provider(registry, state)?;
         }
 
-        Ok(result)
+        Ok(())
     }
 
     async fn lifecycle_handlers(

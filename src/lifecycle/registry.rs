@@ -185,7 +185,7 @@ where
                     handler
                         .before_health_checks(prepared)
                         .await
-                        .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
+                        .map_err(|err| LifecycleHandlerRegistryError::Other(Box::new(err)))?;
                     Ok(())
                 })
             })
@@ -198,7 +198,7 @@ where
                     handler
                         .before_services(prepared)
                         .await
-                        .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
+                        .map_err(|err| LifecycleHandlerRegistryError::Other(Box::new(err)))?;
                     Ok(())
                 })
             })
@@ -211,7 +211,7 @@ where
                     handler
                         .on_shutdown(state)
                         .await
-                        .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
+                        .map_err(|err| LifecycleHandlerRegistryError::Other(Box::new(err)))?;
                     Ok(())
                 })
             })

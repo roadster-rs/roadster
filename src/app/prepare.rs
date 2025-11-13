@@ -7,7 +7,7 @@ use crate::app::context::AppContext;
 use crate::config::environment::Environment;
 use crate::config::{AppConfig, AppConfigOptions, ConfigOverrideSource};
 #[cfg(feature = "db-sql")]
-use crate::db::migration::Migrator;
+use crate::db::migration::registry::MigratorRegistry;
 use crate::error::RoadsterResult;
 use crate::health::check::registry::HealthCheckRegistry;
 use crate::lifecycle::registry::LifecycleHandlerRegistry;
@@ -32,7 +32,7 @@ where
     pub app: A,
     pub state: S,
     #[cfg(feature = "db-sql")]
-    pub migrators: Vec<Box<dyn Migrator<S>>>,
+    pub migrator_registry: MigratorRegistry<S>,
     pub service_registry: ServiceRegistry<S>,
     pub lifecycle_handler_registry: LifecycleHandlerRegistry<A, S>,
 }
@@ -286,7 +286,7 @@ where
         app,
         state,
         #[cfg(feature = "db-sql")]
-        migrators,
+        migrator_registry,
         service_registry,
         lifecycle_handler_registry,
     } = prepare_without_cli(app, state).await?;
@@ -308,7 +308,7 @@ where
         cli,
         app,
         #[cfg(feature = "db-sql")]
-        migrators,
+        migrator_registry,
         state,
         service_registry,
         lifecycle_handler_registry,
@@ -325,7 +325,7 @@ where
     pub app: A,
     pub state: S,
     #[cfg(feature = "db-sql")]
-    pub migrators: Vec<Box<dyn Migrator<S>>>,
+    pub migrator_registry: MigratorRegistry<S>,
     pub service_registry: ServiceRegistry<S>,
     pub lifecycle_handler_registry: LifecycleHandlerRegistry<A, S>,
 }
@@ -342,9 +342,12 @@ where
     let context = AppContext::from_ref(&state);
 
     #[cfg(feature = "db-sql")]
-    let migrators = app
-        .migrators(&state)
-        .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
+    let migrator_registry = {
+        let mut migrator_registry = MigratorRegistry::new();
+        app.migrators(&mut migrator_registry, &state)
+            .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
+        migrator_registry
+    };
 
     let mut lifecycle_handler_registry = LifecycleHandlerRegistry::new(&state);
     app.lifecycle_handlers(&mut lifecycle_handler_registry, &state)
@@ -366,7 +369,7 @@ where
         app,
         state,
         #[cfg(feature = "db-sql")]
-        migrators,
+        migrator_registry,
         service_registry,
         lifecycle_handler_registry,
     })
