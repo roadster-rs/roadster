@@ -2,7 +2,7 @@ use crate::migrator::Migrator;
 use roadster::app::App;
 use roadster::app::context::AppContext;
 use roadster::config::AppConfig;
-use roadster::db::migration::sea_orm::SeaOrmMigrator;
+use roadster::db::migration::registry::MigratorRegistry;
 use sea_orm::prelude::async_trait::async_trait;
 
 pub struct MyApp;
@@ -24,8 +24,10 @@ impl App<AppContext> for MyApp {
 
     fn migrators(
         &self,
+        registry: &mut MigratorRegistry<AppContext>,
         _state: &AppContext,
-    ) -> Result<Vec<Box<dyn roadster::db::migration::Migrator<AppContext>>>, Self::Error> {
-        Ok(vec![Box::new(SeaOrmMigrator::new(Migrator))])
+    ) -> Result<(), Self::Error> {
+        registry.register_sea_orm_migrator(Migrator)?;
+        Ok(())
     }
 }

@@ -102,7 +102,7 @@ impl HealthCheckWrapper {
                 let result = health_check
                     .check()
                     .await
-                    .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
+                    .map_err(|err| HealthCheckRegistryError::Other(Box::new(err)))?;
                 Ok(result)
             })
         });

@@ -82,7 +82,7 @@ where
         app: prepared.app,
         state: prepared.state,
         #[cfg(feature = "db-sql")]
-        migrators: prepared.migrators,
+        migrator_registry: prepared.migrator_registry,
         service_registry: prepared.service_registry,
         lifecycle_handler_registry: prepared.lifecycle_handler_registry,
     };

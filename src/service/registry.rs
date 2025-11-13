@@ -1,6 +1,5 @@
 use crate::app::context::AppContext;
 use crate::error::RoadsterResult;
-use crate::error::other::OtherError;
 use crate::service::{Service, ServiceBuilder};
 use axum_core::extract::FromRef;
 use std::any::{Any, TypeId, type_name};
@@ -87,7 +86,7 @@ where
         let service = builder
             .build(&self.state)
             .await
-            .map_err(|err| crate::error::other::OtherError::Other(Box::new(err)))?;
+            .map_err(|err| ServiceRegistryError::Other(Box::new(err)))?;
 
         self.register_wrapped(ServiceWrapper::new(service))
     }
@@ -286,7 +285,7 @@ where
                     inner
                         .before_run(state)
                         .await
-                        .map_err(|err| OtherError::Other(Box::new(err)))?;
+                        .map_err(|err| ServiceRegistryError::Other(Box::new(err)))?;
                     Ok(())
                 })
             })
@@ -309,7 +308,7 @@ where
                     inner
                         .run(state, cancellation_token)
                         .await
-                        .map_err(|err| OtherError::Other(Box::new(err)))?;
+                        .map_err(|err| ServiceRegistryError::Other(Box::new(err)))?;
                     Ok(())
                 })
             })

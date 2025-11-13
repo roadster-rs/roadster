@@ -3,6 +3,8 @@ use crate::app::App;
 #[cfg(test)]
 use crate::app::MockApp;
 use crate::app::context::AppContext;
+#[cfg(feature = "db-sql")]
+use crate::db::migration::registry::MigratorRegistry;
 use crate::error::RoadsterResult;
 use crate::service::registry::ServiceRegistry;
 use async_trait::async_trait;
@@ -24,7 +26,7 @@ where
     pub app: A,
     pub state: S,
     #[cfg(feature = "db-sql")]
-    pub migrators: Vec<Box<dyn crate::db::migration::Migrator<S>>>,
+    pub migrator_registry: MigratorRegistry<S>,
     pub service_registry: ServiceRegistry<S>,
 }
 
@@ -265,7 +267,7 @@ mod tests {
             app_cli,
             app,
             #[cfg(feature = "db-sql")]
-            migrators: Default::default(),
+            migrator_registry: MigratorRegistry::new(),
             service_registry: ServiceRegistry::new(&context),
             state: context,
         };

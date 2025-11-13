@@ -1,6 +1,5 @@
 use crate::app::context::AppContext;
 use crate::db::migration::{DownArgs, MigrationInfo, MigrationStatus, Migrator, UpArgs};
-use crate::error::RoadsterResult;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use sea_orm_migration::MigratorTrait;
@@ -57,8 +56,10 @@ where
     AppContext: FromRef<S>,
     M: Send + Sync + MigratorTrait,
 {
+    type Error = crate::error::Error;
+
     #[tracing::instrument(skip_all)]
-    async fn up(&self, state: &S, args: &UpArgs) -> crate::error::RoadsterResult<usize> {
+    async fn up(&self, state: &S, args: &UpArgs) -> Result<usize, Self::Error> {
         let context = crate::app::context::AppContext::from_ref(state);
         let pending = M::get_pending_migrations(context.sea_orm()).await?;
 
@@ -75,7 +76,7 @@ where
     }
 
     #[tracing::instrument(skip_all)]
-    async fn down(&self, state: &S, args: &DownArgs) -> RoadsterResult<usize> {
+    async fn down(&self, state: &S, args: &DownArgs) -> Result<usize, Self::Error> {
         let context = crate::app::context::AppContext::from_ref(state);
         let applied = M::get_applied_migrations(context.sea_orm()).await?;
 
@@ -92,7 +93,7 @@ where
     }
 
     #[tracing::instrument(skip_all)]
-    async fn status(&self, state: &S) -> RoadsterResult<Vec<MigrationInfo>> {
+    async fn status(&self, state: &S) -> Result<Vec<MigrationInfo>, Self::Error> {
         let context = crate::app::context::AppContext::from_ref(state);
 
         let migrations = M::get_migration_with_status(context.sea_orm())

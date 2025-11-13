@@ -14,7 +14,7 @@ use roadster::app::App as RoadsterApp;
 use roadster::app::context::AppContext;
 use roadster::app::metadata::AppMetadata;
 use roadster::config::AppConfig;
-use roadster::db::migration::sea_orm::SeaOrmMigrator;
+use roadster::db::migration::registry::MigratorRegistry;
 use roadster::health::check::registry::HealthCheckRegistry;
 use roadster::lifecycle::registry::LifecycleHandlerRegistry;
 use roadster::service::function::service::FunctionService;
@@ -57,9 +57,10 @@ impl RoadsterApp<AppState> for App {
 
     fn migrators(
         &self,
+        registry: &mut MigratorRegistry<AppState>,
         _state: &AppState,
-    ) -> Result<Vec<Box<dyn roadster::db::migration::Migrator<AppState>>>, Self::Error> {
-        Ok(vec![Box::new(SeaOrmMigrator::new(Migrator))])
+    ) -> Result<(), Self::Error> {
+        registry.register_sea_orm_migrator(Migrator)
     }
 
     async fn health_checks(

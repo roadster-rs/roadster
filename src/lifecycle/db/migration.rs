@@ -50,7 +50,7 @@ where
         &self,
         prepared_app: &PreparedAppWithoutCli<A, S>,
     ) -> Result<(), Self::Error> {
-        for migrator in prepared_app.migrators.iter() {
+        for migrator in prepared_app.migrator_registry.migrators().iter() {
             migrator
                 .up(&prepared_app.state, &UpArgs::builder().build())
                 .await?;
