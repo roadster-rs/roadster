@@ -205,7 +205,7 @@ axum = "0.8.4"
 axum-extra = "0.12.1"
 tower-http = "0.6.2"
 tower = "0.5.2"
-schemars = "1.0.0"
+schemars = "1.0.4"
 mime = "0.3.17"
 http-body-util = { version = "0.1.2" }
 
