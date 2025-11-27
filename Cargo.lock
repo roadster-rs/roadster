@@ -42,9 +42,9 @@ dependencies = [
 
 [[package]]
 name = "aide"
-version = "0.15.1"
+version = "0.16.0-alpha.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6966317188cdfe54c58c0900a195d021294afb3ece9b7073d09e4018dbb1e3a2"
+checksum = "dc156b16d6d8e9bb84a7cba8b93fc399c0654bfbb927832ea7ab326d5d6895e2"
 dependencies = [
  "aide-macros",
  "axum",
@@ -52,7 +52,7 @@ dependencies = [
  "cfg-if",
  "http",
  "indexmap 2.12.0",
- "schemars 0.9.0",
+ "schemars 1.1.0",
  "serde",
  "serde_json",
  "serde_qs 0.14.0",
@@ -64,9 +64,9 @@ dependencies = [
 
 [[package]]
 name = "aide-macros"
-version = "0.15.0"
+version = "0.16.0-alpha.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f2a08f14808f3c46f3e3004b727bace64af44c3c5996d0480a14d3852b1b25a"
+checksum = "60f009ff19ed0a5aa8953d8c71d243e1bf115663caf48135edb037939431fc14"
 dependencies = [
  "darling 0.20.11",
  "proc-macro2",
@@ -199,7 +199,7 @@ dependencies = [
  "cron",
  "roadster",
  "rusty-sidekiq",
- "schemars 0.9.0",
+ "schemars 1.1.0",
  "sea-orm",
  "serde",
  "tokio",
@@ -1772,7 +1772,7 @@ dependencies = [
  "leptos",
  "lettre",
  "roadster",
- "schemars 0.9.0",
+ "schemars 1.1.0",
  "sendgrid",
  "serde",
  "tokio-util",
@@ -2016,7 +2016,7 @@ dependencies = [
  "prost 0.14.1",
  "roadster",
  "rusty-sidekiq",
- "schemars 0.9.0",
+ "schemars 1.1.0",
  "sea-orm",
  "sendgrid",
  "serde",
@@ -3786,7 +3786,7 @@ dependencies = [
  "axum",
  "roadster",
  "rusty-sidekiq",
- "schemars 0.9.0",
+ "schemars 1.1.0",
  "serde",
  "tokio-util",
  "tracing",
@@ -4139,7 +4139,7 @@ dependencies = [
  "config",
  "cron",
  "roadster",
- "schemars 0.9.0",
+ "schemars 1.1.0",
  "sea-orm",
  "serde",
  "tokio",
@@ -5131,7 +5131,7 @@ dependencies = [
  "rstest",
  "rustc_version",
  "rusty-sidekiq",
- "schemars 0.9.0",
+ "schemars 1.1.0",
  "sea-orm",
  "sea-orm-migration",
  "sendgrid",
@@ -5178,7 +5178,7 @@ dependencies = [
  "lettre",
  "roadster",
  "rusty-sidekiq",
- "schemars 0.9.0",
+ "schemars 1.1.0",
  "sendgrid",
  "serde",
  "tokio",
@@ -5455,9 +5455,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4cd191f9397d57d581cddd31014772520aa448f65ef991055d7f61582c65165f"
 dependencies = [
  "dyn-clone",
- "indexmap 2.12.0",
  "ref-cast",
- "schemars_derive",
  "serde",
  "serde_json",
 ]
@@ -5469,16 +5467,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9558e172d4e8533736ba97870c4b2cd63f84b382a3d6eb063da41b91cce17289"
 dependencies = [
  "dyn-clone",
+ "indexmap 2.12.0",
  "ref-cast",
+ "schemars_derive",
  "serde",
  "serde_json",
 ]
 
 [[package]]
 name = "schemars_derive"
-version = "0.9.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5016d94c77c6d32f0b8e08b781f7dc8a90c2007d4e77472cc2807bc10a8438fe"
+checksum = "301858a4023d78debd2353c7426dc486001bddc91ae31a76fb1f55132f7e2633"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6018,7 +6018,7 @@ dependencies = [
  "prost 0.14.1",
  "roadster",
  "rusty-sidekiq",
- "schemars 0.9.0",
+ "schemars 1.1.0",
  "serde",
  "tokio-util",
  "tonic 0.14.2",
