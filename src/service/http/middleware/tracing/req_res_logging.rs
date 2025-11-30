@@ -14,7 +14,7 @@ use http_body_util::BodyExt;
 use mime::Mime;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::{DisplayFromStr, serde_as};
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 use std::str::FromStr;
 use tracing::debug;
 use validator::Validate;
@@ -244,14 +244,18 @@ async fn log_body(body: Body, max_len: i32, is_req: bool) -> Result<Bytes, Respo
         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response())?
         .to_bytes();
 
+    let body = axum::Json::<HashMap<String, serde_json::Value>>::from_bytes(bytes.as_ref())
+        .ok()
+        .and_then(|axum::Json(value)| serde_json::to_string(&value).ok())
+        .unwrap_or_else(|| format!("{bytes:?}"));
+
     let body = if max_len == 0 {
-        TRUNCATED_STR.to_string()
-    } else if max_len < 0 || bytes.len() <= max_len as usize {
-        format!("{bytes:?}")
+        TRUNCATED_STR
+    } else if max_len < 0 || body.len() <= max_len as usize {
+        &body
     } else {
         assert!(max_len > 0);
-        let slice = bytes.slice(0..(max_len as usize));
-        format!("{slice:?}{TRUNCATED_STR}")
+        body.get(0..(max_len as usize)).unwrap_or_default()
     };
 
     if is_req {
