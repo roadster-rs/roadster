@@ -1,15 +1,17 @@
 use crate::api::http::build_path;
 use crate::app::context::AppContext;
+use aide::axum::routing::get_with;
 use aide::axum::{ApiRouter, IntoApiResponse};
 use aide::openapi::OpenApi;
 use aide::redoc::Redoc;
 use aide::scalar::Scalar;
 use axum::response::IntoResponse;
-use axum::routing::get;
 use axum::{Extension, Json};
 use axum_core::extract::FromRef;
 use std::ops::Deref;
 use std::sync::Arc;
+
+const TAG: &str = "Docs";
 
 /// This API is only available when using Aide.
 pub fn routes<S>(state: &S, parent: &str) -> ApiRouter<S>
@@ -25,25 +27,36 @@ where
         return router;
     }
 
-    let router = router.route(&open_api_schema_path, get(docs_get));
+    let router = router.api_route(
+        &open_api_schema_path,
+        get_with(docs_get, |op| {
+            op.tag(TAG).description("The OpenAPI schema as JSON")
+        }),
+    );
 
     let router = if scalar_enabled(&context) {
-        router.route(
+        router.api_route(
             &build_path(parent, scalar_route(&context)),
-            get(Scalar::new(&open_api_schema_path)
-                .with_title(&context.config().app.name)
-                .axum_handler()),
+            get_with(
+                Scalar::new(&open_api_schema_path)
+                    .with_title(&context.config().app.name)
+                    .axum_handler(),
+                |op| op.tag(TAG).description("Scalar OpenAPI explorer"),
+            ),
         )
     } else {
         router
     };
 
     if redoc_enabled(&context) {
-        router.route(
+        router.api_route(
             &build_path(parent, redoc_route(&context)),
-            get(Redoc::new(&open_api_schema_path)
-                .with_title(&context.config().app.name)
-                .axum_handler()),
+            get_with(
+                Redoc::new(&open_api_schema_path)
+                    .with_title(&context.config().app.name)
+                    .axum_handler(),
+                |op| op.tag(TAG).description("Redoc OpenAPI explorer"),
+            ),
         )
     } else {
         router
