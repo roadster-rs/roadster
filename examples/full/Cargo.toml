@@ -11,7 +11,7 @@ default = ["grpc"]
 grpc = ["roadster/grpc", "dep:tonic", "dep:tonic-reflection", "dep:tonic-prost-build", "dep:prost"]
 
 [dependencies]
-roadster = { version = "0.9.0-alpha.2", path = "../..", features = ["worker-sidekiq", "db-sea-orm", "email-smtp", "email-sendgrid", "config-yml", "otel-grpc"] }
+roadster = { version = "0.9.0-alpha.3", path = "../..", features = ["worker-sidekiq", "db-sea-orm", "email-smtp", "email-sendgrid", "config-yml", "otel-grpc"] }
 tokio = { workspace = true }
 tokio-util = { workspace = true }
 anyhow = { workspace = true }
@@ -47,7 +47,7 @@ uuid = { workspace = true, features = ["v7"] }
 chrono = { workspace = true, features = ["serde"] }
 
 [dev-dependencies]
-roadster = { version = "0.9.0-alpha.2", path = "../..", features = ["testing-mocks"] }
+roadster = { version = "0.9.0-alpha.3", path = "../..", features = ["testing-mocks"] }
 tokio = { workspace = true, features = ["test-util"] }
 tower-util = { workspace = true }
 

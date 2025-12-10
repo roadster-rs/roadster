@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0-alpha.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.9.0-alpha.2...roadster-v0.9.0-alpha.3) - 2025-12-10
+
+### Added
+
+- Allow providing `api_docs` fn without wrapping in a Box ([#941](https://github.com/roadster-rs/roadster/pull/941))
+- Register docs routes as Aide routes ([#940](https://github.com/roadster-rs/roadster/pull/940))
+- Improve request/response payload debug trace events ([#939](https://github.com/roadster-rs/roadster/pull/939))
+
+### Other
+
+- [**breaking**] Update `aide` and `schemars` to their next breaking versions ([#938](https://github.com/roadster-rs/roadster/pull/938))
+
 ## [0.9.0-alpha.2](https://github.com/roadster-rs/roadster/compare/roadster-v0.9.0-alpha.1...roadster-v0.9.0-alpha.2) - 2025-11-13
 
 ### Added
