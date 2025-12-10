@@ -1,13 +1,11 @@
 use crate::api::http::build_path;
 use crate::app::context::AppContext;
+use aide::axum::routing::get_with;
 use aide::axum::{ApiRouter, IntoApiResponse};
 use aide::openapi::OpenApi;
 use aide::redoc::Redoc;
 use aide::scalar::Scalar;
 use axum::response::IntoResponse;
-// use axum::routing::get;
-use aide::axum::routing::{get, get_with};
-use aide::transform::TransformOperation;
 use axum::{Extension, Json};
 use axum_core::extract::FromRef;
 use std::ops::Deref;
@@ -133,10 +131,6 @@ fn api_schema_route(context: &AppContext) -> &str {
         .default_routes
         .api_schema
         .route
-}
-
-fn docs_openapi_docs(op: TransformOperation) -> TransformOperation {
-    op.tag(TAG)
 }
 
 #[cfg(test)]
