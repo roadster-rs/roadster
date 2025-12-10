@@ -108,8 +108,11 @@ where
     }
 
     #[cfg(feature = "open-api")]
-    pub fn api_docs(mut self, api_docs: ApiDocs) -> Self {
-        self.api_docs = api_docs;
+    pub fn api_docs(
+        mut self,
+        api_docs: impl 'static + Send + Fn(TransformOpenApi) -> TransformOpenApi,
+    ) -> Self {
+        self.api_docs = Box::new(api_docs);
         self
     }
 
