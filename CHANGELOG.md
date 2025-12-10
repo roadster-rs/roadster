@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Allow providing `api_docs` fn without wrapping in a Box ([#941](https://github.com/roadster-rs/roadster/pull/941))
+- [**breaking**] Allow providing `api_docs` fn without wrapping in a Box ([#941](https://github.com/roadster-rs/roadster/pull/941))
 - Register docs routes as Aide routes ([#940](https://github.com/roadster-rs/roadster/pull/940))
 - Improve request/response payload debug trace events ([#939](https://github.com/roadster-rs/roadster/pull/939))
 
