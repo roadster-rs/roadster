@@ -9,11 +9,23 @@ use axum_core::extract::FromRef;
 use clap::Parser;
 use itertools::Itertools;
 use serde_derive::Serialize;
+use tabled::settings::themes::ColumnNames;
+use tabled::settings::{Margin, Style};
+use tabled::{Table, Tabled};
 use tracing::info;
 
 #[derive(Debug, Parser, Serialize)]
 #[non_exhaustive]
 pub struct ListRoutesArgs {}
+
+#[derive(Tabled, bon::Builder)]
+#[tabled(rename_all = "Upper Title Case")]
+struct Route {
+    #[builder(into)]
+    method: String,
+    #[builder(into)]
+    path: String,
+}
 
 #[async_trait]
 impl<A, S> RunRoadsterCommand<A, S> for ListRoutesArgs
@@ -28,12 +40,16 @@ where
             .invoke(async |srvc: &HttpService| {
                 srvc.list_routes()
                     .into_iter()
-                    .map(|(path, method)| format!("[{method}]\t{path}"))
-                    .join("\n\t")
+                    .map(|(path, method)| Route::builder().method(method).path(path).build())
+                    .collect_vec()
             })
             .await?;
 
-        info!("API routes:\n\t{routes}");
+        let mut table = Table::builder(routes).build();
+        table.with(Style::blank());
+        table.with(Margin::new(4, 0, 1, 1));
+
+        info!("API routes:\n{table}");
 
         Ok(true)
     }
