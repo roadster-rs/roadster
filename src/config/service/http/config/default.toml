@@ -77,8 +77,11 @@ route = "_health"
 [service.http.default-routes.api-schema]
 route = "_docs/api.json"
 
-[service.http.default-routes.scalar]
+[service.http.default-routes.swagger]
 route = "_docs"
+
+[service.http.default-routes.scalar]
+route = "_docs/scalar"
 
 [service.http.default-routes.redoc]
 route = "_docs/redoc"

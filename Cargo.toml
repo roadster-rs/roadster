@@ -86,7 +86,7 @@ axum = { workspace = true, features = ["macros"], optional = true }
 axum-extra = { workspace = true, features = ["typed-header", "cookie"], optional = true }
 tower = { workspace = true, optional = true }
 tower-http = { workspace = true, features = ["trace", "timeout", "request-id", "util", "normalize-path", "sensitive-headers", "catch-panic", "compression-full", "decompression-full", "limit", "cors", "set-header"], optional = true }
-aide = { workspace = true, features = ["axum", "axum-json", "axum-query", "redoc", "scalar", "macros"], optional = true }
+aide = { workspace = true, features = ["axum", "axum-json", "axum-query", "redoc", "scalar", "swagger", "macros"], optional = true }
 schemars = { workspace = true, optional = true }
 http-body-util = { workspace = true, optional = true }
 mime = { workspace = true, optional = true }

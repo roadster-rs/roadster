@@ -5,6 +5,7 @@ use aide::axum::{ApiRouter, IntoApiResponse};
 use aide::openapi::OpenApi;
 use aide::redoc::Redoc;
 use aide::scalar::Scalar;
+use aide::swagger::Swagger;
 use axum::response::IntoResponse;
 use axum::{Extension, Json};
 use axum_core::extract::FromRef;
@@ -33,6 +34,20 @@ where
             op.tag(TAG).description("The OpenAPI schema as JSON")
         }),
     );
+
+    let router = if swagger_enabled(&context) {
+        router.api_route(
+            &build_path(parent, swagger_route(&context)),
+            get_with(
+                Swagger::new(&open_api_schema_path)
+                    .with_title(&context.config().app.name)
+                    .axum_handler(),
+                |op| op.tag(TAG).description("Swagger UI API explorer"),
+            ),
+        )
+    } else {
+        router
+    };
 
     let router = if scalar_enabled(&context) {
         router.api_route(
@@ -65,6 +80,28 @@ where
 
 async fn docs_get(Extension(api): Extension<Arc<OpenApi>>) -> impl IntoApiResponse {
     Json(api.deref()).into_response()
+}
+
+fn swagger_enabled(context: &AppContext) -> bool {
+    context
+        .config()
+        .service
+        .http
+        .custom
+        .default_routes
+        .swagger
+        .enabled(context)
+}
+
+fn swagger_route(context: &AppContext) -> &str {
+    &context
+        .config()
+        .service
+        .http
+        .custom
+        .default_routes
+        .swagger
+        .route
 }
 
 fn scalar_enabled(context: &AppContext) -> bool {
