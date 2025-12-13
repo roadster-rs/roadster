@@ -26,6 +26,10 @@ pub struct DefaultRoutes {
 
     #[cfg(feature = "open-api")]
     #[validate(nested)]
+    pub swagger: DefaultRouteConfig,
+
+    #[cfg(feature = "open-api")]
+    #[validate(nested)]
     pub scalar: DefaultRouteConfig,
 
     #[cfg(feature = "open-api")]

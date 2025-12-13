@@ -5,6 +5,7 @@ use aide::axum::{ApiRouter, IntoApiResponse};
 use aide::openapi::OpenApi;
 use aide::redoc::Redoc;
 use aide::scalar::Scalar;
+use aide::swagger::Swagger;
 use axum::response::IntoResponse;
 use axum::{Extension, Json};
 use axum_core::extract::FromRef;
@@ -33,6 +34,20 @@ where
             op.tag(TAG).description("The OpenAPI schema as JSON")
         }),
     );
+
+    let router = if swagger_enabled(&context) {
+        router.api_route(
+            &build_path(parent, swagger_route(&context)),
+            get_with(
+                Swagger::new(&open_api_schema_path)
+                    .with_title(&context.config().app.name)
+                    .axum_handler(),
+                |op| op.tag(TAG).description("Swagger UI API explorer"),
+            ),
+        )
+    } else {
+        router
+    };
 
     let router = if scalar_enabled(&context) {
         router.api_route(
@@ -65,6 +80,28 @@ where
 
 async fn docs_get(Extension(api): Extension<Arc<OpenApi>>) -> impl IntoApiResponse {
     Json(api.deref()).into_response()
+}
+
+fn swagger_enabled(context: &AppContext) -> bool {
+    context
+        .config()
+        .service
+        .http
+        .custom
+        .default_routes
+        .swagger
+        .enabled(context)
+}
+
+fn swagger_route(context: &AppContext) -> &str {
+    &context
+        .config()
+        .service
+        .http
+        .custom
+        .default_routes
+        .swagger
+        .route
 }
 
 fn scalar_enabled(context: &AppContext) -> bool {
@@ -147,6 +184,40 @@ mod tests {
     #[case(true, None, Some("/foo".to_string()), true)]
     #[case(false, Some(true), None, true)]
     #[cfg_attr(coverage_nightly, coverage(off))]
+    fn swagger(
+        #[case] default_enable: bool,
+        #[case] enable: Option<bool>,
+        #[case] route: Option<String>,
+        #[case] enabled: bool,
+    ) {
+        let mut config = AppConfig::test(None).unwrap();
+        config.service.http.custom.default_routes.default_enable = default_enable;
+        config.service.http.custom.default_routes.swagger.enable = enable;
+        if let Some(route) = route.as_ref() {
+            config
+                .service
+                .http
+                .custom
+                .default_routes
+                .swagger
+                .route
+                .clone_from(route);
+        }
+        let context = AppContext::test(Some(config), None, None).unwrap();
+
+        assert_eq!(swagger_enabled(&context), enabled);
+        assert_eq!(
+            swagger_route(&context),
+            route.unwrap_or_else(|| "_docs".to_string())
+        );
+    }
+
+    #[rstest]
+    #[case(false, None, None, false)]
+    #[case(false, Some(false), None, false)]
+    #[case(true, None, Some("/foo".to_string()), true)]
+    #[case(false, Some(true), None, true)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn scalar(
         #[case] default_enable: bool,
         #[case] enable: Option<bool>,
@@ -171,7 +242,7 @@ mod tests {
         assert_eq!(scalar_enabled(&context), enabled);
         assert_eq!(
             scalar_route(&context),
-            route.unwrap_or_else(|| "_docs".to_string())
+            route.unwrap_or_else(|| "_docs/scalar".to_string())
         );
     }
 
