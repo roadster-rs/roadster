@@ -184,6 +184,40 @@ mod tests {
     #[case(true, None, Some("/foo".to_string()), true)]
     #[case(false, Some(true), None, true)]
     #[cfg_attr(coverage_nightly, coverage(off))]
+    fn swagger(
+        #[case] default_enable: bool,
+        #[case] enable: Option<bool>,
+        #[case] route: Option<String>,
+        #[case] enabled: bool,
+    ) {
+        let mut config = AppConfig::test(None).unwrap();
+        config.service.http.custom.default_routes.default_enable = default_enable;
+        config.service.http.custom.default_routes.swagger.enable = enable;
+        if let Some(route) = route.as_ref() {
+            config
+                .service
+                .http
+                .custom
+                .default_routes
+                .swagger
+                .route
+                .clone_from(route);
+        }
+        let context = AppContext::test(Some(config), None, None).unwrap();
+
+        assert_eq!(swagger_enabled(&context), enabled);
+        assert_eq!(
+            swagger_route(&context),
+            route.unwrap_or_else(|| "_docs".to_string())
+        );
+    }
+
+    #[rstest]
+    #[case(false, None, None, false)]
+    #[case(false, Some(false), None, false)]
+    #[case(true, None, Some("/foo".to_string()), true)]
+    #[case(false, Some(true), None, true)]
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn scalar(
         #[case] default_enable: bool,
         #[case] enable: Option<bool>,
@@ -208,7 +242,7 @@ mod tests {
         assert_eq!(scalar_enabled(&context), enabled);
         assert_eq!(
             scalar_route(&context),
-            route.unwrap_or_else(|| "_docs".to_string())
+            route.unwrap_or_else(|| "_docs/swagger".to_string())
         );
     }
 
