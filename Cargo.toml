@@ -49,7 +49,7 @@ email-sendgrid = ["email", "dep:sendgrid"]
 jwt = ["dep:jsonwebtoken"]
 jwt-ietf = ["jwt"]
 jwt-openid = ["jwt"]
-cli = ["dep:clap"]
+cli = ["dep:clap", "dep:tabled"]
 otel = ["dep:opentelemetry", "dep:opentelemetry_sdk", "dep:opentelemetry-otlp", "dep:tracing-opentelemetry"]
 otel-grpc = ["otel", "opentelemetry-otlp/grpc-tonic"]
 grpc = ["dep:tonic", "dep:tonic-reflection"]
@@ -127,6 +127,7 @@ jsonwebtoken = { workspace = true, optional = true, features = ["rust_crypto"] }
 
 # CLI
 clap = { workspace = true, features = ["derive", "string"], optional = true }
+tabled = { workspace = true, optional = true }
 
 # gRPC
 tonic = { workspace = true, optional = true }
@@ -225,6 +226,7 @@ sendgrid = "0.24.0"
 
 # CLI
 clap = { version = "4.3.0", features = ["derive"] }
+tabled = { version = "0.20.0" }
 
 # Auth
 jsonwebtoken = { version = "10.1.0" }
