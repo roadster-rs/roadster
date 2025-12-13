@@ -242,7 +242,7 @@ mod tests {
         assert_eq!(scalar_enabled(&context), enabled);
         assert_eq!(
             scalar_route(&context),
-            route.unwrap_or_else(|| "_docs/swagger".to_string())
+            route.unwrap_or_else(|| "_docs/scalar".to_string())
         );
     }
 
