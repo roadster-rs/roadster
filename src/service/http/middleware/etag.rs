@@ -81,10 +81,10 @@ where
     let response_headers = response.headers();
     let response_etag = etag_value_from_headers(response_headers);
 
-    if let Some((request_etag, response_etag)) = request_etag.zip(response_etag) {
-        if request_etag == response_etag {
-            return StatusCode::NOT_MODIFIED.into_response();
-        }
+    if let Some((request_etag, response_etag)) = request_etag.zip(response_etag)
+        && request_etag == response_etag
+    {
+        return StatusCode::NOT_MODIFIED.into_response();
     }
 
     response
