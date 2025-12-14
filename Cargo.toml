@@ -255,7 +255,7 @@ sqlx = { version = "0.8.5", features = ["postgres"] }
 # Testing
 insta = { version = "1.39.0", features = ["toml", "filters"] }
 rstest = { version = "0.26.1", default-features = false }
-testcontainers-modules = { version = "0.14.0" }
+testcontainers-modules = { version = "0.13.0" }
 mockall = "0.14.0"
 tower-util = "0.3.1"
 
