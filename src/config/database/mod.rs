@@ -148,10 +148,10 @@ impl From<&Database> for sea_orm::ConnectOptions {
             .min_connections(database.pool_config.min_connections)
             .max_connections(database.pool_config.max_connections);
 
-        if let Some(level) = database.statement_log_config.statement_log_level.as_ref() {
-            if let Ok(level) = log::LevelFilter::from_str(level) {
-                options.sqlx_logging_level(level);
-            }
+        if let Some(level) = database.statement_log_config.statement_log_level.as_ref()
+            && let Ok(level) = log::LevelFilter::from_str(level)
+        {
+            options.sqlx_logging_level(level);
         }
 
         if let Some((level, duration)) = database
@@ -164,10 +164,9 @@ impl From<&Database> for sea_orm::ConnectOptions {
                     .slow_statement_duration_threshold
                     .as_ref(),
             )
+            && let Ok(level) = log::LevelFilter::from_str(level)
         {
-            if let Ok(level) = log::LevelFilter::from_str(level) {
-                options.sqlx_slow_statements_logging_settings(level, *duration);
-            }
+            options.sqlx_slow_statements_logging_settings(level, *duration);
         }
 
         options.sqlx_logging(database.statement_log_config.enable_statement_logging);

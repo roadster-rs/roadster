@@ -93,6 +93,7 @@ impl<S: prepare_options_builder::State> PrepareOptionsBuilder<S> {
         self.config_sources.push(Box::new(source));
         self
     }
+
     pub fn add_config_source_boxed(
         mut self,
         source: Box<dyn Send + Sync + config::Source>,

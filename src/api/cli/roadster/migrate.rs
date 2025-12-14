@@ -102,10 +102,10 @@ where
         let remaining_steps = args
             .steps
             .map(|steps| steps.saturating_sub(total_steps_run));
-        if let Some(remaining) = remaining_steps {
-            if remaining == 0 {
-                return Ok(());
-            }
+        if let Some(remaining) = remaining_steps
+            && remaining == 0
+        {
+            return Ok(());
         }
         let steps_run = migrator
             .up(
@@ -130,10 +130,10 @@ where
         let remaining_steps = args
             .steps
             .map(|steps| steps.saturating_sub(total_steps_run));
-        if let Some(remaining) = remaining_steps {
-            if remaining == 0 {
-                return Ok(());
-            }
+        if let Some(remaining) = remaining_steps
+            && remaining == 0
+        {
+            return Ok(());
         }
         let steps_run = migrator
             .down(

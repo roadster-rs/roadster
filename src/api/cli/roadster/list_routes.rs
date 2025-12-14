@@ -9,7 +9,6 @@ use axum_core::extract::FromRef;
 use clap::Parser;
 use itertools::Itertools;
 use serde_derive::Serialize;
-use tabled::settings::themes::ColumnNames;
 use tabled::settings::{Margin, Style};
 use tabled::{Table, Tabled};
 use tracing::info;
