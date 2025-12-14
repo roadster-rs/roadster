@@ -14,16 +14,19 @@ use axum::response::{IntoResponse, Response};
 pub enum ApiError {
     #[cfg(feature = "http")]
     #[error(transparent)]
-    Http(HttpError),
+    Http(HttpError<serde_json::Value>),
 
     #[error(transparent)]
     Other(#[from] Box<dyn Send + Sync + std::error::Error>),
 }
 
 #[cfg(feature = "http")]
-impl From<HttpError> for Error {
-    fn from(value: HttpError) -> Self {
-        Self::Api(ApiError::Http(value))
+impl<T> From<HttpError<T>> for Error
+where
+    T: serde::Serialize,
+{
+    fn from(value: HttpError<T>) -> Self {
+        Self::Api(ApiError::Http(value.details_serialized()))
     }
 }
 

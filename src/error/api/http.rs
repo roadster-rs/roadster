@@ -4,6 +4,7 @@ use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use serde_derive::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
+use tracing::error;
 
 /// Error type representing an HTTP API error. This is generally expected to be returned explicitly
 /// by your application logic.
@@ -107,7 +108,7 @@ use std::fmt::{Display, Formatter};
 #[derive(Debug, Error, Serialize, Deserialize)]
 #[cfg_attr(feature = "open-api", derive(aide::OperationIo, schemars::JsonSchema))]
 #[non_exhaustive]
-pub struct HttpError {
+pub struct HttpError<T = ()> {
     /// The HTTP status code for the error.
     ///
     /// When this error is converted to an HTTP response, this field is set as the HTTP response
@@ -115,11 +116,10 @@ pub struct HttpError {
     #[serde(skip)]
     pub status: StatusCode,
     /// Basic description of the error that occurred.
-    // Todo: auto-redact sensitive data
     pub error: Option<String>,
-    /// Additional details for the error.
-    // Todo: auto-redact sensitive data
-    pub details: Option<String>,
+    /// Additional details for the error. This will be serialized and sent in the response
+    /// to the user.
+    pub details: Option<T>,
     /// The original error. This can be logged to help with debugging, but it is omitted
     /// from the response body/payload to avoid exposing sensitive details from the stacktrace
     /// to the user.
@@ -128,13 +128,64 @@ pub struct HttpError {
     pub source: Option<Box<dyn Send + Sync + std::error::Error>>,
 }
 
-impl Display for HttpError {
+impl<T> Display for HttpError<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "Http Error {} - {:?}", self.status, self.error)
     }
 }
 
 impl HttpError {
+    // Common 4xx errors
+
+    /// Helper method to create an error with status code [`StatusCode::BAD_REQUEST`]
+    pub fn bad_request() -> Self {
+        Self::new(StatusCode::BAD_REQUEST)
+    }
+
+    /// Helper method to create an error with status code [`StatusCode::UNAUTHORIZED`]
+    pub fn unauthorized() -> Self {
+        Self::new(StatusCode::UNAUTHORIZED)
+    }
+
+    /// Helper method to create an error with status code [`StatusCode::FORBIDDEN`]
+    pub fn forbidden() -> Self {
+        Self::new(StatusCode::FORBIDDEN)
+    }
+
+    /// Helper method to create an error with status code [`StatusCode::NOT_FOUND`]
+    pub fn not_found() -> Self {
+        Self::new(StatusCode::NOT_FOUND)
+    }
+
+    /// Helper method to create an error with status code [`StatusCode::GONE`]
+    pub fn gone() -> Self {
+        Self::new(StatusCode::GONE)
+    }
+
+    /// Helper method to create an error with status code [`StatusCode::UNPROCESSABLE_ENTITY`]
+    pub fn unprocessable_entity() -> Self {
+        Self::new(StatusCode::UNPROCESSABLE_ENTITY)
+    }
+
+    /// Helper method to create an error with status code [`StatusCode::UNPROCESSABLE_ENTITY`]
+    pub fn unprocessable_content() -> Self {
+        Self::unprocessable_entity()
+    }
+
+    // Common 5xx errors
+
+    /// Helper method to create an error with status code [`StatusCode::INTERNAL_SERVER_ERROR`]
+    pub fn internal_server_error() -> Self {
+        Self::new(StatusCode::INTERNAL_SERVER_ERROR)
+    }
+
+    /// Helper method to create an error with status code [`StatusCode::NOT_IMPLEMENTED`]
+    pub fn not_implemented() -> Self {
+        Self::new(StatusCode::NOT_IMPLEMENTED)
+    }
+}
+
+impl<T> HttpError<T> {
     pub fn new(status: StatusCode) -> Self {
         Self {
             status,
@@ -144,11 +195,6 @@ impl HttpError {
         }
     }
 
-    /// Utility method to convert this [HttpError] into an [enum@Error].
-    pub fn to_err(self) -> Error {
-        self.into()
-    }
-
     pub fn error(self, error: impl ToString) -> Self {
         Self {
             error: Some(error.to_string()),
@@ -156,10 +202,15 @@ impl HttpError {
         }
     }
 
-    pub fn details(self, details: impl ToString) -> Self {
-        Self {
-            details: Some(details.to_string()),
-            ..self
+    pub fn details<T2>(self, details: T2) -> HttpError<T2>
+    where
+        T2: serde::Serialize,
+    {
+        HttpError {
+            details: Some(details),
+            error: self.error,
+            status: self.status,
+            source: self.source,
         }
     }
 
@@ -169,39 +220,34 @@ impl HttpError {
             ..self
         }
     }
+}
 
-    // Common 4xx errors
-
-    /// Helper method to create an error with status code [StatusCode::BAD_REQUEST]
-    pub fn bad_request() -> Self {
-        Self::new(StatusCode::BAD_REQUEST)
+impl<T> HttpError<T>
+where
+    T: serde::Serialize,
+{
+    /// Utility method to convert this [`HttpError`] into an [enum@Error].
+    pub fn to_err(self) -> Error {
+        self.into()
     }
 
-    /// Helper method to create an error with status code [StatusCode::UNAUTHORIZED]
-    pub fn unauthorized() -> Self {
-        Self::new(StatusCode::UNAUTHORIZED)
-    }
-
-    /// Helper method to create an error with status code [StatusCode::FORBIDDEN]
-    pub fn forbidden() -> Self {
-        Self::new(StatusCode::FORBIDDEN)
-    }
-
-    /// Helper method to create an error with status code [StatusCode::NOT_FOUND]
-    pub fn not_found() -> Self {
-        Self::new(StatusCode::NOT_FOUND)
-    }
-
-    /// Helper method to create an error with status code [StatusCode::GONE]
-    pub fn gone() -> Self {
-        Self::new(StatusCode::GONE)
-    }
-
-    // Common 5xx errors
-
-    /// Helper method to create an error with status code [StatusCode::INTERNAL_SERVER_ERROR]
-    pub fn internal_server_error() -> Self {
-        Self::new(StatusCode::INTERNAL_SERVER_ERROR)
+    pub(crate) fn details_serialized(self) -> HttpError<serde_json::Value> {
+        let details =
+            self.details
+                .as_ref()
+                .and_then(|details| match serde_json::to_value(details) {
+                    Ok(details) => Some(details),
+                    Err(err) => {
+                        error!("Unable to serialize error details: {err}");
+                        None
+                    }
+                });
+        HttpError {
+            details,
+            error: self.error,
+            status: self.status,
+            source: self.source,
+        }
     }
 }
 
@@ -213,11 +259,14 @@ impl From<StatusCode> for HttpError {
 
 impl From<StatusCode> for Error {
     fn from(value: StatusCode) -> Self {
-        HttpError::new(value).into()
+        HttpError::<serde_json::Value>::new(value).into()
     }
 }
 
-impl IntoResponse for HttpError {
+impl<T> IntoResponse for HttpError<T>
+where
+    T: serde::Serialize + Display,
+{
     fn into_response(self) -> Response {
         let status = self.status;
         let mut res = Json(self).into_response();
