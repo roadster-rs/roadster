@@ -265,7 +265,7 @@ impl From<StatusCode> for Error {
 
 impl<T> IntoResponse for HttpError<T>
 where
-    T: serde::Serialize + Display,
+    T: serde::Serialize,
 {
     fn into_response(self) -> Response {
         let status = self.status;
