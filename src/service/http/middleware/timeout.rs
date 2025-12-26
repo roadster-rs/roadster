@@ -1,6 +1,7 @@
 use crate::app::context::AppContext;
 use crate::service::http::middleware::Middleware;
 use axum::Router;
+use axum::http::StatusCode;
 use axum_core::extract::FromRef;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::serde_as;
@@ -10,19 +11,13 @@ use validator::Validate;
 
 #[serde_as]
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case", default)]
+#[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct TimeoutConfig {
     #[serde_as(as = "serde_with::DurationMilliSeconds")]
     pub timeout: Duration,
-}
-
-impl Default for TimeoutConfig {
-    fn default() -> Self {
-        Self {
-            timeout: Duration::from_secs(10),
-        }
-    }
+    #[serde(with = "http_serde::status_code")]
+    pub status_code: StatusCode,
 }
 
 pub struct TimeoutMiddleware;
@@ -63,17 +58,19 @@ where
 
     fn install(&self, state: &S, router: Router) -> Result<Router, Self::Error> {
         let context = AppContext::from_ref(state);
-        let timeout = &context
+        let config = &context
             .config()
             .service
             .http
             .custom
             .middleware
             .timeout
-            .custom
-            .timeout;
+            .custom;
 
-        let router = router.layer(TimeoutLayer::new(*timeout));
+        let status_code = config.status_code;
+        let timeout = config.timeout;
+
+        let router = router.layer(TimeoutLayer::with_status_code(status_code, timeout));
 
         Ok(router)
     }
