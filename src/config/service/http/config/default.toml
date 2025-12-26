@@ -45,6 +45,7 @@ priority = -9960
 [service.http.middleware.timeout]
 priority = 0
 timeout = 10000
+status-code = 408
 
 [service.http.middleware.size-limit]
 priority = -9970

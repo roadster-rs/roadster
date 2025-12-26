@@ -16,7 +16,7 @@ rust-version = "1.88"
 [features]
 default = ["open-api", "jwt-ietf", "cli", "otel"]
 
-http = ["dep:axum", "dep:axum-extra", "dep:tower", "dep:tower-http", "dep:http-body-util", "dep:mime"]
+http = ["dep:axum", "dep:axum-extra", "dep:tower", "dep:tower-http", "dep:http-body-util", "dep:mime", "dep:http-serde"]
 open-api = ["http", "dep:aide", "dep:schemars"]
 
 worker = ["dep:rand", "dep:num_cpus", "dep:cron", "uuid/v7"]
@@ -90,6 +90,7 @@ aide = { workspace = true, features = ["axum", "axum-json", "axum-query", "redoc
 schemars = { workspace = true, optional = true }
 http-body-util = { workspace = true, optional = true }
 mime = { workspace = true, optional = true }
+http-serde = { workspace = true, optional = true }
 
 # DB - SeaORM
 sea-orm = { workspace = true, features = ["debug-print", "runtime-tokio-rustls", "sqlx-postgres", "macros"], optional = true }
@@ -204,11 +205,12 @@ aide = { version = "0.16.0-alpha.1", features = ["axum"] }
 axum-core = "0.5.2"
 axum = "0.8.4"
 axum-extra = "0.12.1"
-tower-http = "0.6.2"
+tower-http = "0.6.7"
 tower = "0.5.2"
 schemars = "1.0.4"
 mime = "0.3.17"
 http-body-util = { version = "0.1.2" }
+http-serde = "2.0.0"
 
 # DB - SeaORM
 sea-orm = { version = "1.1.15" }
