@@ -58,17 +58,20 @@ where
             let config = &context.config().service.worker.sidekiq.custom.common;
 
             let num_workers = config.num_workers.to_usize().ok_or_else(|| {
-                crate::error::other::OtherError::Message(format!(
-                    "Unable to convert num_workers `{}` to usize",
-                    context
-                        .config()
-                        .service
-                        .worker
-                        .sidekiq
-                        .custom
-                        .common
-                        .num_workers
-                ))
+                crate::error::other::OtherError::Message(
+                    format!(
+                        "Unable to convert num_workers `{}` to usize",
+                        context
+                            .config()
+                            .service
+                            .worker
+                            .sidekiq
+                            .custom
+                            .common
+                            .num_workers
+                    )
+                    .into(),
+                )
             })?;
 
             let processor_config = ::sidekiq::ProcessorConfig::default()

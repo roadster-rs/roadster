@@ -1,26 +1,14 @@
 use crate::error::Error;
+use std::borrow::Cow;
 
 #[derive(Debug, Error)]
 #[non_exhaustive]
 pub enum OtherError {
-    #[error(transparent)]
-    #[deprecated(
-        since = "0.7.3",
-        note = "`anyhow` is no longer used internally. This enum variant will be removed in the next semver breaking release."
-    )]
-    Anyhow(#[from] anyhow::Error),
-
     #[error("{0}")]
-    Message(String),
+    Message(Cow<'static, str>),
 
     #[error(transparent)]
     Other(#[from] Box<dyn Send + Sync + std::error::Error>),
-}
-
-impl From<anyhow::Error> for Error {
-    fn from(value: anyhow::Error) -> Self {
-        Self::Other(OtherError::from(value))
-    }
 }
 
 impl From<Box<dyn Send + Sync + std::error::Error>> for Error {

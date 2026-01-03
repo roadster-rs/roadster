@@ -465,7 +465,7 @@ where
 
     async fn provide_state(&self, context: AppContext) -> RoadsterResult<S> {
         let state_provider = self.state_provider.as_ref().ok_or_else(|| {
-            crate::error::other::OtherError::Message("State builder missing".to_string())
+            crate::error::other::OtherError::Message("State builder missing".into())
         })?;
         state_provider(context)
     }

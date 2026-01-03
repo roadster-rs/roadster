@@ -31,10 +31,10 @@ pub(crate) async fn health_checks(
         Ok(())
     } else {
         let names = error_responses.iter().map(|(name, _)| name).collect_vec();
-        Err(
-            crate::error::other::OtherError::Message(format!("Health checks failed: {names:?}"))
-                .into(),
+        Err(crate::error::other::OtherError::Message(
+            format!("Health checks failed: {names:?}").into(),
         )
+        .into())
     }
 }
 

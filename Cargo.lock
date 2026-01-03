@@ -5098,7 +5098,6 @@ name = "roadster"
 version = "0.9.0-alpha.3"
 dependencies = [
  "aide",
- "anyhow",
  "async-trait",
  "axum",
  "axum-core",

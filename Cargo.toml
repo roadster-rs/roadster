@@ -145,7 +145,6 @@ testcontainers-modules = { workspace = true, features = ["postgres", "mysql", "r
 mockall = { workspace = true, optional = true }
 
 # Others
-anyhow = { workspace = true }
 serde = { workspace = true }
 serde_derive = { workspace = true }
 serde_json = { workspace = true }

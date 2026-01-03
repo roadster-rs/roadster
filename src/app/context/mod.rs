@@ -999,9 +999,7 @@ fn temporary_test_db_name(
     } else {
         std::thread::current()
             .name()
-            .ok_or_else(|| {
-                crate::error::other::OtherError::Message("Thread name missing".to_owned())
-            })?
+            .ok_or_else(|| crate::error::other::OtherError::Message("Thread name missing".into()))?
             .to_string()
     };
     let mut mod_path = thread_name
@@ -1035,7 +1033,7 @@ fn temporary_test_db_name(
     let start_index = name_len.saturating_sub(MAX_DB_NAME_LENGTH);
     let test_name_truncated = test_name.get(start_index..test_name.len()).ok_or_else(|| {
         crate::error::other::OtherError::Message(
-            "Invalid indexes used to truncate test name".to_owned(),
+            "Invalid indexes used to truncate test name".into(),
         )
     })?;
     Ok(format!("{prefix}/{test_name_truncated}/{suffix}"))
@@ -1242,9 +1240,7 @@ impl AppContextInner {
 
     fn set_health_checks(&self, health_checks: HealthCheckRegistry) -> RoadsterResult<()> {
         self.health_checks.set(health_checks).map_err(|_| {
-            crate::error::other::OtherError::Message(
-                "Unable to set health check registry".to_owned(),
-            )
+            crate::error::other::OtherError::Message("Unable to set health check registry".into())
         })?;
 
         Ok(())

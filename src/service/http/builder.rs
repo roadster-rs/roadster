@@ -129,9 +129,9 @@ where
             .insert(name.clone(), Box::new(InitializerWrapper::new(initializer)))
             .is_some()
         {
-            return Err(crate::error::other::OtherError::Message(format!(
-                "Initializer `{name}` was already registered"
-            ))
+            return Err(crate::error::other::OtherError::Message(
+                format!("Initializer `{name}` was already registered").into(),
+            )
             .into());
         }
         Ok(self)
@@ -150,9 +150,9 @@ where
             .insert(name.clone(), Box::new(MiddlewareWrapper::new(middleware)))
             .is_some()
         {
-            return Err(crate::error::other::OtherError::Message(format!(
-                "Middleware `{name}` was already registered"
-            ))
+            return Err(crate::error::other::OtherError::Message(
+                format!("Middleware `{name}` was already registered").into(),
+            )
             .into());
         }
         Ok(self)

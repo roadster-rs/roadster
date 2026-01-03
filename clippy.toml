@@ -9,5 +9,9 @@ disallowed-macros = [
     { path = "anyhow::anyhow", reason = "Instead, either define a new error variant or use `crate::error::other::OtherError`" },
 ]
 
+disallowed-types = [
+    { path = "anyhow::Result", reason = "Instead, either define a new error variant or use `crate::error::other::OtherError`" }
+]
+
 allow-unwrap-in-tests = true
 allow-expect-in-tests = true

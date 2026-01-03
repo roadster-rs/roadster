@@ -27,9 +27,12 @@ async fn health() {
                 .await??;
 
             if response.status() != StatusCode::OK {
-                return Err(anyhow!(
-                    "Health checks failed: {:?}",
-                    to_bytes(response.into_body(), usize::MAX).await
+                return Err(roadster::error::other::OtherError::Message(
+                    format!(
+                        "Health checks failed: {:?}",
+                        to_bytes(response.into_body(), usize::MAX).await
+                    )
+                    .into(),
                 )
                 .into());
             }
