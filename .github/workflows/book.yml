@@ -23,7 +23,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  MDBOOK_VERSION: 0.4.40
+  MDBOOK_VERSION: 0.5.2
 
 jobs:
   test-book:
