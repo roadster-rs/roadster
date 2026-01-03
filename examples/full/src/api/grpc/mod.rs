@@ -6,7 +6,7 @@ use crate::app_state::AppState;
 use tonic::transport::Server;
 use tonic::transport::server::Router;
 
-pub fn routes(_state: &AppState) -> anyhow::Result<Router> {
+pub fn routes(_state: &AppState) -> roadster::error::RoadsterResult<Router> {
     let reflection_service = tonic_reflection::server::Builder::configure()
         .register_encoded_file_descriptor_set(hello_world::FILE_DESCRIPTOR_SET)
         .build_v1()?;

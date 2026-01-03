@@ -52,9 +52,9 @@ pub fn build_app() -> RoadsterApp<AppState> {
         .build()
 }
 
-fn leptos_config(context: &AppContext) -> anyhow::Result<ConfFile> {
-    let mut config =
-        get_configuration(Some("./examples/leptos-ssr/Cargo.toml")).map_err(|e| anyhow!(e))?;
+fn leptos_config(context: &AppContext) -> roadster::error::RoadsterResult<ConfFile> {
+    let mut config = leptos_config(&context)
+        .map_err(|err| roadster::error::other::OtherError::Message(err.to_string().into()))?;
     config.leptos_options.site_addr = context.config().service.http.custom.address.socket_addr()?;
     config.leptos_options.env = match context.config().environment {
         Environment::Production => Env::PROD,
