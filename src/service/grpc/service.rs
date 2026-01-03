@@ -52,9 +52,9 @@ where
         self.router
             .into_inner()
             .map_err(|e| {
-                crate::error::other::OtherError::Message(format!(
-                    "Unable to start GrpcService, mutex was poisoned: {e}"
-                ))
+                crate::error::other::OtherError::Message(
+                    format!("Unable to start GrpcService, mutex was poisoned: {e}").into(),
+                )
             })?
             .serve_with_shutdown(
                 server_addr.parse()?,

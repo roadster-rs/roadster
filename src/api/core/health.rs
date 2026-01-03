@@ -426,7 +426,7 @@ async fn ping_smtp(
         Ok(())
     } else {
         Err(
-            crate::error::other::OtherError::Message("Not connected to the SMTP server".to_owned())
+            crate::error::other::OtherError::Message("Not connected to the SMTP server".into())
                 .into(),
         )
     }
@@ -484,10 +484,10 @@ async fn ping_redis(
     if pong == msg {
         Ok((acquire_conn_latency, ping_latency))
     } else {
-        Err(crate::error::other::OtherError::Message(
-            "Ping response does not match input.".to_owned(),
+        Err(
+            crate::error::other::OtherError::Message("Ping response does not match input.".into())
+                .into(),
         )
-        .into())
     }
 }
 
