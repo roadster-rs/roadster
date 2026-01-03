@@ -542,7 +542,7 @@ mod tests {
         let mut check = MockHealthCheck::default();
         check.expect_name().return_const("example".to_string());
         check.expect_check().return_once(move || {
-            Err(crate::error::other::OtherError::Message("Error".to_owned()).into())
+            Err(crate::error::other::OtherError::Message("Error".into()).into())
         });
 
         // Act

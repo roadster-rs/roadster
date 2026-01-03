@@ -230,7 +230,7 @@ mod tests {
         axum::http::StatusCode::BAD_REQUEST.into()
     )]
     #[case(
-        crate::error::api::ApiError::Other(Box::new(crate::error::other::OtherError::Message("error".to_owned()))).into()
+        crate::error::api::ApiError::Other(Box::new(crate::error::other::OtherError::Message("error".into()))).into()
     )]
     #[cfg(feature = "http")]
     #[cfg_attr(coverage_nightly, coverage(off))]
