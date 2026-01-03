@@ -28,10 +28,9 @@ impl HealthCheck for ExampleHealthCheck {
 
     async fn check(&self) -> Result<CheckResponse, Self::Error> {
         // Upgrade the `AppContext` in order to use it
-        let _context = self
-            .context
-            .upgrade()
-            .ok_or_else(|| anyhow!("Could not upgrade AppContextWeak"))?;
+        let _context = self.context.upgrade().ok_or_else(|| {
+            roadster::error::other::OtherError::Message("Could not upgrade AppContextWeak".into())
+        })?;
 
         Ok(CheckResponse::builder()
             .status(Status::Ok)

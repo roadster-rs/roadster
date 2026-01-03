@@ -76,7 +76,7 @@ where
 
         let limit = limit.ok_or_else(|| {
             crate::error::other::OtherError::Message(
-                "Unable to convert bytes from u64 to usize".to_owned(),
+                "Unable to convert bytes from u64 to usize".into(),
             )
         })?;
 

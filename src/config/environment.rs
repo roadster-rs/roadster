@@ -43,9 +43,9 @@ impl Environment {
 
         // Get the stage, and validate it by parsing to the Environment enum
         let environment = env::var(ENV_VAR_WITH_PREFIX).map_err(|_| {
-            crate::error::other::OtherError::Message(format!(
-                "Env var `{ENV_VAR_WITH_PREFIX}` not defined."
-            ))
+            crate::error::other::OtherError::Message(
+                format!("Env var `{ENV_VAR_WITH_PREFIX}` not defined.").into(),
+            )
         })?;
         let environment = Self::from_str_impl(&environment, true);
         println!("Using environment from `{ENV_VAR_WITH_PREFIX}` env var: {environment:?}");
