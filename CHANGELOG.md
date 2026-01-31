@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0-alpha.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.9.0-alpha.3...roadster-v0.9.0-alpha.4) - 2026-01-31
+
+### Added
+
+- Allow configuring compression middleware ([#951](https://github.com/roadster-rs/roadster/pull/951))
+- Allow configuring the status code of the timeout middleware ([#947](https://github.com/roadster-rs/roadster/pull/947))
+- [**breaking**] Allow providing a serializable value for `HttpError#details` ([#945](https://github.com/roadster-rs/roadster/pull/945))
+- Use `tabled` to list http routes ([#944](https://github.com/roadster-rs/roadster/pull/944))
+- [**breaking**] Use Swagger UI as the default API explorer ([#943](https://github.com/roadster-rs/roadster/pull/943))
+
+### Fixed
+
+- Remove unnecessary trait bound on `impl IntoResponse for HttpError` ([#946](https://github.com/roadster-rs/roadster/pull/946))
+
+### Other
+
+- [**breaking**] Update deps & resolve breaking changes from `sendgrid` crate ([#952](https://github.com/roadster-rs/roadster/pull/952))
+- [**breaking**] Remove deprecated `anyhow` usage from error enum ([#949](https://github.com/roadster-rs/roadster/pull/949))
+
 ## [0.9.0-alpha.3](https://github.com/roadster-rs/roadster/compare/roadster-v0.9.0-alpha.2...roadster-v0.9.0-alpha.3) - 2025-12-10
 
 ### Added

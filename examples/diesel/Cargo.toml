@@ -7,7 +7,7 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-roadster = { version = "0.9.0-alpha.3", path = "../..", features = ["db-diesel-postgres-pool-async"] }
+roadster = { version = "0.9.0-alpha.4", path = "../..", features = ["db-diesel-postgres-pool-async"] }
 tokio = { workspace = true }
 tokio-util = { workspace = true }
 anyhow = { workspace = true }
@@ -42,7 +42,7 @@ chrono = { workspace = true, features = ["serde"] }
 fake = { workspace = true }
 
 [dev-dependencies]
-roadster = { version = "0.9.0-alpha.3", path = "../..", default-features = false, features = ["testing"] }
+roadster = { version = "0.9.0-alpha.4", path = "../..", default-features = false, features = ["testing"] }
 tokio = { workspace = true, features = ["test-util"] }
 tower-util = { workspace = true }
 
