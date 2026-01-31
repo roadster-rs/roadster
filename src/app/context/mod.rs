@@ -425,7 +425,7 @@ impl AppContext {
 
     /// Get the Sendgrid client. Used to send emails via Sendgrid's Mail Send API.
     #[cfg(feature = "email-sendgrid")]
-    pub fn sendgrid(&self) -> &sendgrid::v3::Sender {
+    pub fn sendgrid(&self) -> &sendgrid::v3::Sender<'static> {
         self.inner.sendgrid()
     }
 
@@ -765,15 +765,15 @@ impl Provide<lettre::SmtpTransport> for AppContext {
 }
 
 #[cfg(feature = "email-sendgrid")]
-impl ProvideRef<sendgrid::v3::Sender> for AppContext {
-    fn provide(&self) -> &sendgrid::v3::Sender {
+impl ProvideRef<sendgrid::v3::Sender<'static>> for AppContext {
+    fn provide(&self) -> &sendgrid::v3::Sender<'static> {
         self.sendgrid()
     }
 }
 
 #[cfg(feature = "email-sendgrid")]
-impl Provide<sendgrid::v3::Sender> for AppContext {
-    fn provide(&self) -> sendgrid::v3::Sender {
+impl Provide<sendgrid::v3::Sender<'static>> for AppContext {
+    fn provide(&self) -> sendgrid::v3::Sender<'static> {
         self.sendgrid().clone()
     }
 }
@@ -1201,7 +1201,7 @@ struct AppContextInner {
     #[cfg(feature = "email-smtp")]
     smtp: lettre::SmtpTransport,
     #[cfg(feature = "email-sendgrid")]
-    sendgrid: sendgrid::v3::Sender,
+    sendgrid: sendgrid::v3::Sender<'static>,
     extension_registry: ExtensionRegistry,
 }
 
@@ -1297,7 +1297,7 @@ impl AppContextInner {
     }
 
     #[cfg(feature = "email-sendgrid")]
-    fn sendgrid(&self) -> &sendgrid::v3::Sender {
+    fn sendgrid(&self) -> &sendgrid::v3::Sender<'static> {
         &self.sendgrid
     }
 
