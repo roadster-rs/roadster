@@ -208,7 +208,7 @@ http-body = "1.0.0"
 axum-core = "0.5.2"
 axum = "0.8.4"
 axum-extra = "0.12.1"
-tower-http = "0.6.7"
+tower-http = "0.6.8"
 tower = "0.5.2"
 schemars = "1.0.4"
 mime = "0.3.17"
@@ -227,7 +227,7 @@ r2d2 = { version = "0.8.4" }
 
 # Email
 lettre = { version = "0.11.0", default-features = false, features = ["smtp-transport", "pool", "rustls-tls", "hostname", "builder"] }
-sendgrid = "0.24.0"
+sendgrid = "0.26.0"
 
 # CLI
 clap = { version = "4.3.0", features = ["derive"] }
@@ -268,9 +268,9 @@ tower-util = "0.3.1"
 tokio = { version = "1.47.0" }
 # For CancellationToken
 tokio-util = { version = "0.7.10" }
-anyhow = "1.0.86"
-serde = { version = "1.0.194", features = ["derive"] }
-serde_derive = "1.0.194"
+anyhow = "1.0.100"
+serde = { version = "1.0.220", features = ["derive"] }
+serde_derive = "1.0.220"
 serde_json = "1.0.127"
 serde_with = { version = "3.7.0", features = ["macros", "chrono_0_4"] }
 strum = "0.27.0"
@@ -280,16 +280,16 @@ url = { version = "2.5.0", features = ["serde"] }
 futures = "0.3.31"
 futures-core = "0.3.31"
 byte-unit = { version = "5.0.0", features = ["serde"] }
-convert_case = "0.10.0"
+convert_case = "0.11.0"
 const_format = "0.2.33"
 num-traits = "0.2.18"
 validator = { version = "0.20.0", features = ["derive"] }
 cfg-if = "1.0.0"
-vergen = { version = "9.0.0" }
-vergen-gitcl = { version = "1.0.0" }
-reqwest = { version = "0.12.8", default-features = false, features = ["rustls-tls", "charset", "http2", "macos-system-configuration"] }
+vergen = { version = "9.1.0" }
+vergen-gitcl = { version = "9.0.0" }
+reqwest = { version = "0.13.0", default-features = false, features = ["rustls", "charset", "http2"] }
 itertools = "0.14.0"
-cargo-manifest = "0.19.1"
+cargo-manifest = "0.20.0"
 bon = "3.1.0"
 rand = "0.9.0"
 thiserror = "2.0.12"

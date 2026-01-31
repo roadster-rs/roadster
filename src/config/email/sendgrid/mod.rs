@@ -45,8 +45,8 @@ pub struct Sendgrid {
     pub https_only: bool,
 }
 
-impl From<&Email> for Message {
-    fn from(value: &Email) -> Self {
+impl<'a> From<&'a Email> for Message<'a> {
+    fn from(value: &'a Email) -> Self {
         let message = Message::new(mailbox_to_email(&value.from)).set_mail_settings(
             MailSettings::new()
                 .set_sandbox_mode(SandboxMode::new().set_enable(value.sendgrid.sandbox)),
@@ -59,8 +59,8 @@ impl From<&Email> for Message {
     }
 }
 
-fn mailbox_to_email(mailbox: &Mailbox) -> sendgrid::v3::Email {
-    let email = sendgrid::v3::Email::new(mailbox.email.to_string());
+fn mailbox_to_email(mailbox: &'_ Mailbox) -> sendgrid::v3::Email<'_> {
+    let email = sendgrid::v3::Email::new(mailbox.email.as_ref());
     if let Some(name) = mailbox.name.as_ref() {
         email.set_name(name)
     } else {
@@ -68,12 +68,12 @@ fn mailbox_to_email(mailbox: &Mailbox) -> sendgrid::v3::Email {
     }
 }
 
-impl TryFrom<&Sendgrid> for Sender {
+impl<'a> TryFrom<&Sendgrid> for Sender<'a> {
     type Error = reqwest::Error;
 
     fn try_from(value: &Sendgrid) -> Result<Self, Self::Error> {
         let client = Client::builder().https_only(value.https_only).build()?;
-        Ok(Sender::new(value.api_key.clone(), Some(client)))
+        Ok(Sender::new(value.api_key.as_ref(), Some(client)))
     }
 }
 
