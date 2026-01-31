@@ -49,7 +49,7 @@ async fn send_email(state: &AppContext, user: &User) -> RoadsterResult<()> {
         .set_subject("Please confirm your email address")
         .add_dynamic_template_data_json(&EmailTemplateArgs { verify_url })?;
 
-    let message = Message::new(Email::new(state.config().email.from.email.to_string()))
+    let message = Message::new(Email::new(state.config().email.from.email.as_ref()))
         .set_template_id(TEMPLATE_ID)
         .add_personalization(personalization);
 
