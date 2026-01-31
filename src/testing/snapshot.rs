@@ -36,7 +36,7 @@ pub struct TestCaseConfig {
     /// # Examples
     ///
     /// ## [`TestCase`] description for `rstest` cases
-    /// ```rust
+    /// ```rust,no_run
     /// #[cfg(test)]
     /// mod tests {
     ///     use insta::assert_snapshot;
@@ -59,7 +59,7 @@ pub struct TestCaseConfig {
     /// ```
     ///
     /// ## [`TestCase`] with manually set description
-    /// ```rust
+    /// ```rust,no_run
     /// #[cfg(test)]
     /// mod tests {
     ///     use insta::assert_snapshot;
@@ -132,7 +132,7 @@ pub struct TestCaseConfig {
     /// # Examples
     ///
     /// ## Auto bind to scope
-    /// ```rust
+    /// ```rust,no_run
     /// #[cfg(test)]
     /// mod tests {
     ///     use insta::assert_snapshot;
@@ -148,7 +148,7 @@ pub struct TestCaseConfig {
     /// ```
     ///
     /// ## Manually bind [`Settings`] scope
-    /// ```rust
+    /// ```rust,no_run
     /// #[cfg(test)]
     /// mod tests {
     ///     use insta::assert_snapshot;
