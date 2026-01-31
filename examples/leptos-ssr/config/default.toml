@@ -21,3 +21,7 @@ port = 3000
 
 [service.http.middleware.request-response-logging]
 content-types-res = ["application/json"]
+
+[service.http.middleware.response-compression]
+# Don't compress wasm responses. Instead, leptos will pre-compress its wasm files when building in release mode.
+not-for-content-types = ["application/wasm"]

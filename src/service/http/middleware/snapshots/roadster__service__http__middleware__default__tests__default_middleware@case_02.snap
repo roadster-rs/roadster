@@ -11,6 +11,7 @@ expression: middleware
     'request-body-size-limit',
     'request-decompression',
     'request-response-logging',
+    'response-compression',
     'sensitive-request-headers',
     'sensitive-response-headers',
     'set-request-id',

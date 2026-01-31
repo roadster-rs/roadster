@@ -5119,6 +5119,8 @@ dependencies = [
  "diesel_migrations",
  "dotenvy",
  "futures",
+ "http",
+ "http-body",
  "http-body-util",
  "http-serde",
  "insta",

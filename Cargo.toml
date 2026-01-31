@@ -81,6 +81,8 @@ log = { workspace = true, optional = true }
 # HTTP APIs
 # `axum-core` is not optional because we use the `FromRef` trait pretty extensively, even in parts of
 # the code that wouldn't otherwise need `axum`.
+http = { workspace = true }
+http-body = { workspace = true }
 axum-core = { workspace = true }
 axum = { workspace = true, features = ["macros"], optional = true }
 axum-extra = { workspace = true, features = ["typed-header", "cookie"], optional = true }
@@ -201,6 +203,8 @@ tracing-opentelemetry = { version = "0.32.0", features = ["metrics"] }
 
 # HTTP APIs
 aide = { version = "0.16.0-alpha.1", features = ["axum"] }
+http = "1.1.0"
+http-body = "1.0.0"
 axum-core = "0.5.2"
 axum = "0.8.4"
 axum-extra = "0.12.1"

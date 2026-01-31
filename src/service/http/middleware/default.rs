@@ -2,7 +2,9 @@ use crate::app::context::AppContext;
 use crate::service::http::middleware::Middleware;
 use crate::service::http::middleware::cache_control::CacheControlMiddleware;
 use crate::service::http::middleware::catch_panic::CatchPanicMiddleware;
-use crate::service::http::middleware::compression::RequestDecompressionMiddleware;
+use crate::service::http::middleware::compression::{
+    RequestDecompressionMiddleware, ResponseCompressionMiddleware,
+};
 use crate::service::http::middleware::cors::CorsMiddleware;
 use crate::service::http::middleware::etag::EtagMiddleware;
 use crate::service::http::middleware::request_id::{
@@ -32,6 +34,7 @@ where
         Box::new(PropagateRequestIdMiddleware),
         Box::new(TracingMiddleware),
         Box::new(CatchPanicMiddleware),
+        Box::new(ResponseCompressionMiddleware),
         Box::new(RequestDecompressionMiddleware),
         Box::new(TimeoutMiddleware),
         Box::new(RequestBodyLimitMiddleware),
