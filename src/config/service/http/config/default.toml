@@ -28,7 +28,7 @@ priority = -9980
 priority = 0
 
 [service.http.middleware.response-compression]
-priority = 9900
+priority = 0
 min-size-bytes = 32
 level = "default"
 not-for-content-types = []
@@ -67,7 +67,7 @@ limit = "5 MB"
 priority = -9950
 
 [service.http.middleware.request-response-logging]
-priority = 0
+priority = 9900
 max-len = 1000
 
 # Initializers
