@@ -270,7 +270,7 @@ mod tests {
     }
 
     #[rstest]
-    #[case(None, 0)]
+    #[case(None, 9900)]
     #[case(Some(1234), 1234)]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn response_compression_priority(

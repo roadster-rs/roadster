@@ -28,7 +28,7 @@ priority = -9980
 priority = 0
 
 [service.http.middleware.response-compression]
-priority = 0
+priority = 9900
 min-size-bytes = 32
 level = "default"
 not-for-content-types = []
