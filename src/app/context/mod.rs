@@ -178,7 +178,7 @@ impl AppContext {
             let sendgrid = sendgrid::v3::Sender::try_from(&config.email.sendgrid)?;
 
             #[cfg(feature = "worker-pg")]
-            let pgmq_queue = {
+            let pgmqext = {
                 #[allow(unused_variables)]
                 let pool: Option<sqlx::Pool<sqlx::Postgres>> = None;
 
@@ -254,7 +254,7 @@ impl AppContext {
                     }
                 };
 
-                pgmq::PGMQueue::new_with_pool(pool).await
+                pgmq::PGMQueueExt::new_with_pool(pool).await
             };
 
             let inner = AppContextInner {
@@ -286,7 +286,7 @@ impl AppContext {
                 #[cfg(all(feature = "worker-sidekiq", feature = "test-containers"))]
                 sidekiq_redis_test_container,
                 #[cfg(feature = "worker-pg")]
-                pgmq_queue,
+                pgmqext,
                 #[cfg(feature = "email-smtp")]
                 smtp,
                 #[cfg(feature = "email-sendgrid")]
@@ -413,7 +413,7 @@ impl AppContext {
     }
 
     #[cfg(feature = "worker-pg")]
-    pub fn pgmq(&self) -> &pgmq::PGMQueue {
+    pub fn pgmq(&self) -> &pgmq::PGMQueueExt {
         self.inner.pgmq()
     }
 
@@ -846,15 +846,15 @@ impl Provide<Option<RedisFetch>> for AppContext {
 }
 
 #[cfg(feature = "worker-pg")]
-impl ProvideRef<pgmq::PGMQueue> for AppContext {
-    fn provide(&self) -> &pgmq::PGMQueue {
+impl ProvideRef<pgmq::PGMQueueExt> for AppContext {
+    fn provide(&self) -> &pgmq::PGMQueueExt {
         self.pgmq()
     }
 }
 
 #[cfg(feature = "worker-pg")]
-impl Provide<pgmq::PGMQueue> for AppContext {
-    fn provide(&self) -> pgmq::PGMQueue {
+impl Provide<pgmq::PGMQueueExt> for AppContext {
+    fn provide(&self) -> pgmq::PGMQueueExt {
         self.pgmq().clone()
     }
 }
@@ -1197,7 +1197,7 @@ struct AppContextInner {
         >,
     >,
     #[cfg(feature = "worker-pg")]
-    pgmq_queue: pgmq::PGMQueue,
+    pgmqext: pgmq::PGMQueueExt,
     #[cfg(feature = "email-smtp")]
     smtp: lettre::SmtpTransport,
     #[cfg(feature = "email-sendgrid")]
@@ -1287,8 +1287,8 @@ impl AppContextInner {
     }
 
     #[cfg(feature = "worker-pg")]
-    fn pgmq(&self) -> &pgmq::PGMQueue {
-        &self.pgmq_queue
+    fn pgmq(&self) -> &pgmq::PGMQueueExt {
+        &self.pgmqext
     }
 
     #[cfg(feature = "email-smtp")]

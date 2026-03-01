@@ -19,3 +19,6 @@ enable-statement-logging = false
 [periodic]
 enable = false
 stale-cleanup = 'auto-clean-stale'
+
+[pgmq]
+install = false

@@ -22,6 +22,9 @@ open-api = ["http", "dep:aide", "dep:schemars"]
 worker = ["dep:rand", "dep:num_cpus", "dep:cron", "uuid/v7"]
 worker-sidekiq = ["worker", "dep:rusty-sidekiq", "dep:bb8"]
 worker-pg = ["worker", "db-sql", "dep:pgmq", "dep:sqlx", "sea-orm?/sqlx-postgres", "dep:log"]
+# The same as `worker-pg`, but enables the `pgmq/install-sql` feature to allow using the SQL-only installation
+# method of `pgmq` from the rust crate.
+worker-pg-install = ["worker-pg", "pgmq/install-sql"]
 
 db-sql = []
 db-sea-orm = ["db-sql", "dep:sea-orm", "dep:sea-orm-migration", "dep:log"]
@@ -254,7 +257,7 @@ rusty-sidekiq = { version = "0.13.1", default-features = false }
 bb8 = { version = "0.9.0" }
 num_cpus = { version = "1.13.0" }
 ## Postgres queue
-pgmq = "0.31.0"
+pgmq = "0.32.0"
 sqlx = { version = "0.8.5", features = ["postgres"] }
 
 # Testing
@@ -296,7 +299,7 @@ thiserror = "2.0.12"
 uuid = { version = "1.11.0", features = ["v4", "serde"] }
 chrono = { version = "0.4.34", features = ["serde"] }
 async-trait = "0.1.81"
-regex = "1.11.2"
+regex = "1.12.3"
 cron = { version = "0.15.0", features = ["serde"] }
 log = "0.4.27"
 derive_more = "2.0.0"
