@@ -699,6 +699,9 @@ where
             }
 
             let delay = periodic_next_run_delay(&job.periodic.schedule, None);
+            // Todo: Should `vt` be a delay or a timestamp value here?
+            // Todo: Ideally, `pgmq` would allow passing a datetime value instead of an integer
+            // Todo: Double check other `vt`/`delay` parameters passed to `pgmq`
             let vt = (Utc::now() + delay).timestamp().try_into().unwrap_or_else(|_| {
                 error!(
                     job.id = %job.metadata.id,
