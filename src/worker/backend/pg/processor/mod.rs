@@ -699,10 +699,8 @@ where
             }
 
             let delay = periodic_next_run_delay(&job.periodic.schedule, None);
-            // Todo: Should `vt` be a delay or a timestamp value here?
-            // Todo: Ideally, `pgmq` would allow passing a datetime value instead of an integer
-            // Todo: Double check other `vt`/`delay` parameters passed to `pgmq`
-            let vt = (Utc::now() + delay).timestamp().try_into().unwrap_or_else(|_| {
+            // Todo: Ideally, `pgmq` would allow passing a duration/datetime value instead of an integer
+            let vt = delay.as_secs().try_into().unwrap_or_else(|_| {
                 error!(
                     job.id = %job.metadata.id,
                     job.msg_id = msg.msg_id,
@@ -786,7 +784,7 @@ where
         read_count: i32,
         delay: Duration,
     ) {
-        let vt = (Utc::now() + delay).timestamp().try_into().unwrap_or_else(|_| {
+        let vt = delay.as_secs().try_into().unwrap_or_else(|_| {
             error!(
                 job.id = optional_trace_field(job_metadata.map(|meta| meta.id)),
                 job.msg_id = msg_id,
