@@ -143,7 +143,7 @@ where
         context.pgmq().create(PERIODIC_QUEUE_NAME).await?;
         // Create a unique index on the periodic job hash. This ensures we don't enqueue duplicate
         // periodic jobs.
-        sqlx::query!(
+        sqlx::query(
             r#"CREATE UNIQUE INDEX IF NOT EXISTS roadster_periodic_hash_idx ON pgmq.q_periodic USING btree ((message->'periodic'->'hash'))"#
         ).execute(&context.pgmq().connection).await?;
 
@@ -172,10 +172,10 @@ where
                         serde_json::Value::Number(serde_json::Number::from(job.periodic.hash))
                     })
                     .collect_vec();
-                let result = sqlx::query!(
+                let result = sqlx::query(
                     r#"DELETE FROM pgmq.q_periodic where message->'periodic'->'hash' != ALL($1)"#,
-                    current_job_hashes.as_slice()
                 )
+                .bind(current_job_hashes.as_slice())
                 .execute(&context.pgmq().connection)
                 .await?;
                 info!(
