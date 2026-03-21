@@ -142,7 +142,8 @@ where
             .pgmq
             .install;
         if install {
-            context.pgmq().install_sql().await?;
+            // Todo: uncomment
+            // context.pgmq().install_sql().await?;
         }
         Ok(())
     }
@@ -210,14 +211,7 @@ where
             let delay = periodic_next_run_delay(&job.periodic.schedule, None);
             let result = context
                 .pgmq()
-                .send_delay(
-                    PERIODIC_QUEUE_NAME,
-                    job,
-                    delay
-                        .as_secs()
-                        .try_into()
-                        .map_err(|err| PgProcessorError::Other(Box::new(err)))?,
-                )
+                .send_delay(PERIODIC_QUEUE_NAME, job, delay)
                 .await;
 
             match result {
@@ -250,18 +244,7 @@ where
 
         let default_worker_config = &context.config().service.worker.worker_config;
         let default_max_duration = default_worker_config.max_duration;
-        let default_view_timeout = default_max_duration
-            .unwrap_or_else(|| Duration::from_mins(10))
-            .as_secs()
-            .try_into();
-        let default_view_timeout = match default_view_timeout {
-            Ok(default_view_timeout) => default_view_timeout,
-            Err(err) => {
-                error!("Unable to convert duration to seconds: {}", err);
-                cancellation_token.cancel();
-                return;
-            }
-        };
+        let default_view_timeout = default_max_duration.unwrap_or_else(|| Duration::from_mins(10));
 
         if !shared_queues.is_empty() {
             let total_worker_tasks = worker_config.common.num_workers;
@@ -317,7 +300,7 @@ where
         total_worker_tasks: u32,
         queues: Vec<String>,
         default_max_duration: Option<Duration>,
-        default_view_timeout: i32,
+        default_view_timeout: Duration,
     ) {
         let num_queues = queues.len();
         let queue_name = if num_queues == 1 {
@@ -541,7 +524,7 @@ where
     async fn process_periodic(
         self,
         cancellation_token: CancellationToken,
-        default_view_timeout: i32,
+        default_view_timeout: Duration,
     ) {
         let context = AppContext::from_ref(&self.inner.state);
         let default_enqueue_config = &context.config().service.worker.enqueue_config;
@@ -699,20 +682,8 @@ where
             }
 
             let delay = periodic_next_run_delay(&job.periodic.schedule, None);
-            // Todo: Ideally, `pgmq` would allow passing a duration/datetime value instead of an integer
-            let vt = delay.as_secs().try_into().unwrap_or_else(|_| {
-                error!(
-                    job.id = %job.metadata.id,
-                    job.msg_id = msg.msg_id,
-                    job.read_count = msg.read_ct,
-                    worker.name = worker.inner.name,
-                    worker.queue.name = queue,
-                    "Unable to convert timestamp to i32 as expected by `vt` parameter, setting to the max"
-                );
-                i32::MAX
-            });
             if let Err(err) = pgmq
-                .set_vt::<serde_json::Value>(PERIODIC_QUEUE_NAME, msg.msg_id, vt)
+                .set_vt::<serde_json::Value>(PERIODIC_QUEUE_NAME, msg.msg_id, delay)
                 .await
             {
                 error!(
@@ -784,19 +755,8 @@ where
         read_count: i32,
         delay: Duration,
     ) {
-        let vt = delay.as_secs().try_into().unwrap_or_else(|_| {
-            error!(
-                job.id = optional_trace_field(job_metadata.map(|meta| meta.id)),
-                job.msg_id = msg_id,
-                job.read_count = read_count,
-                worker.queue.name = queue.name,
-                worker.name = job_metadata.map(|metadata| &metadata.worker_name),
-                "Unable to convert timestamp to i32 as expected by `vt` parameter, setting to the max"
-            );
-            i32::MAX
-        });
         if let Err(err) = pgmq
-            .set_vt::<serde_json::Value>(&queue.name, msg_id, vt)
+            .set_vt::<serde_json::Value>(&queue.name, msg_id, delay)
             .await
         {
             error!(

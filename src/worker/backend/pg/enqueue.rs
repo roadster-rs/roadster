@@ -60,15 +60,11 @@ impl Enqueuer for PgEnqueuer {
             args,
             async move |state, queue, job: Job| -> RoadsterResult<()> {
                 let context = AppContext::from_ref(state);
-                let delay = delay
-                    .as_secs()
-                    .try_into()
-                    .map_err(|err| WorkerError::Other(Box::new(err)))?;
                 let msg_id = context.pgmq().send_delay(queue, &job, delay).await?;
                 debug!(
                     job.id = %job.metadata.id,
                     job.msg_id = msg_id,
-                    job.delay = delay,
+                    job.delay = delay.as_secs(),
                     "Job enqueued"
                 );
                 Ok(())
@@ -129,20 +125,16 @@ impl Enqueuer for PgEnqueuer {
             async move |state, queue, jobs: Vec<Job>| -> RoadsterResult<()> {
                 let context = AppContext::from_ref(state);
                 // Todo: Restore enqueuing batch with a single DB call
-                let delay = delay
-                    .as_secs()
-                    .try_into()
-                    .map_err(|err| WorkerError::Other(Box::new(err)))?;
                 for job in jobs.iter() {
                     let msg_id = context.pgmq().send_delay(queue, &job, delay).await?;
                     debug!(
                         job.id = %job.metadata.id,
                         job.msg_id = msg_id,
-                        job.delay = delay,
+                        job.delay = delay.as_secs(),
                         "Job enqueued"
                     )
                 }
-                debug!(count = jobs.len(), delay = delay, "Jobs enqueued");
+                debug!(count = jobs.len(), delay = delay.as_secs(), "Jobs enqueued");
                 Ok(())
             },
         )
