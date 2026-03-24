@@ -142,8 +142,7 @@ where
             .pgmq
             .install;
         if install {
-            // Todo: uncomment
-            // context.pgmq().install_sql().await?;
+            context.pgmq().install_sql_from_embedded().await?;
         }
         Ok(())
     }
