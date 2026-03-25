@@ -221,7 +221,7 @@ sea-orm-migration = { version = "1.1.15" }
 
 # DB - Diesel
 diesel = { version = "2.3.3" }
-diesel-async = { version = "0.7.3" }
+diesel-async = { version = "0.8.0" }
 diesel_migrations = { version = "2.3.0" }
 r2d2 = { version = "0.8.4" }
 
@@ -260,7 +260,7 @@ sqlx = { version = "0.8.5", features = ["postgres"] }
 # Testing
 insta = { version = "1.39.0", features = ["toml", "filters"] }
 rstest = { version = "0.26.1", default-features = false }
-testcontainers-modules = { version = "0.14.0" }
+testcontainers-modules = { version = "0.15.0" }
 mockall = "0.14.0"
 tower-util = "0.3.1"
 
