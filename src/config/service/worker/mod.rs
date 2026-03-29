@@ -299,6 +299,18 @@ mod deserialize_tests {
         stale-cleanup = "auto-clean-all"
         "#
     )]
+    #[case(
+        r#"
+        [sidekiq]
+        num-workers = 8
+        [sidekiq.redis]
+        uri = "redis://localhost:6379"
+        [pg]
+        num-workers = 8
+        [pg.install]
+        enable = true
+        "#
+    )]
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn deserialize_tests(_case: TestCase, #[case] config: &str) {
         let worker_service_config: WorkerServiceConfig = toml::from_str(config).unwrap();

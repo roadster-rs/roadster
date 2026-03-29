@@ -316,6 +316,9 @@ impl AppConfig {
                     # on varying hardware.
                     num-workers = 16
 
+                    [service.worker.pg.install]
+                    enable = true
+
                     [email.from]
                     email = "no-reply@example.com"
 

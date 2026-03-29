@@ -21,6 +21,10 @@ pub struct PgWorkerServiceConfig {
     #[serde(default)]
     #[validate(nested)]
     pub periodic: Periodic,
+
+    #[serde(default)]
+    #[validate(nested)]
+    pub install: Install,
 }
 
 #[skip_serializing_none]
@@ -70,6 +74,16 @@ pub struct Periodic {
     pub stale_cleanup: StaleCleanUpBehavior,
 }
 
+#[derive(Default, Debug, Clone, Validate, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct Install {
+    /// Whether to install `PGMQ` using the SQL-only installation method during app startup.
+    #[serde(default = "default_true")]
+    #[cfg(feature = "worker-pg-install")]
+    pub enable: bool,
+}
+
 impl From<DbPoolConfig> for sqlx::pool::PoolOptions<sqlx::Postgres> {
     fn from(value: DbPoolConfig) -> Self {
         Self::from(&value)
@@ -111,6 +125,7 @@ pub struct QueueFetchConfig {
     test,
     feature = "worker-sidekiq",
     feature = "worker-pg",
+    feature = "worker-pg-install",
     feature = "db-diesel-pool-async"
 ))]
 mod deserialize_tests {
@@ -158,6 +173,14 @@ mod deserialize_tests {
         min-connections = 5
         max-connections = 6
         test-on-checkout = true
+        "#
+    )]
+    #[case(
+        r#"
+        [database]
+        max-connections = 1
+        [install]
+        enable = true
         "#
     )]
     #[cfg_attr(coverage_nightly, coverage(off))]

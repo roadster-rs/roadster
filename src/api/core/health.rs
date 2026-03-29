@@ -192,7 +192,7 @@ pub(crate) async fn worker_pg_health(
 #[cfg(feature = "worker-pg")]
 #[instrument(skip_all)]
 async fn ping_worker_pg(
-    pgmq: &pgmq::PGMQueue,
+    pgmq: &pgmq::PGMQueueExt,
     duration: Option<Duration>,
 ) -> RoadsterResult<(Duration, Duration)> {
     use sqlx::Connection;

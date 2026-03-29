@@ -3,7 +3,6 @@ source: src/config/service/worker/mod.rs
 expression: worker_service_config
 ---
 [enqueue-config]
-queue = 'default'
 
 [worker-config]
 
@@ -34,4 +33,4 @@ enable = false
 stale-cleanup = 'auto-clean-stale'
 
 [pg.install]
-enable = false
+enable = true
