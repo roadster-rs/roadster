@@ -97,16 +97,17 @@ impl Enqueuer for SidekiqEnqueuer {
                 let context = AppContext::from_ref(state);
                 // Todo: update `sidekiq` to return the job ids?
                 // Todo: update `sidekiq` to batch enqueue?
-                for job in jobs {
+                for job in jobs.iter() {
                     ::sidekiq::perform_async(
                         context.redis_enqueue(),
                         job.metadata.worker_name.to_owned(),
                         queue.to_owned(),
-                        &job,
+                        job,
                     )
                     .await?;
                     debug!(job.id = %job.metadata.id, "Job enqueued");
                 }
+                debug!(count = jobs.len(), "Jobs enqueued");
                 Ok(())
             },
         )
@@ -133,17 +134,18 @@ impl Enqueuer for SidekiqEnqueuer {
                 let context = AppContext::from_ref(state);
                 // Todo: update `sidekiq` to return the job ids?
                 // Todo: update `sidekiq` to batch enqueue?
-                for job in jobs {
+                for job in jobs.iter() {
                     ::sidekiq::perform_in(
                         context.redis_enqueue(),
                         delay,
                         job.metadata.worker_name.to_owned(),
                         queue.to_owned(),
-                        &job,
+                        job,
                     )
                     .await?;
                     debug!(job.id = %job.metadata.id, job.delay = delay.as_secs(), "Job enqueued");
                 }
+                debug!(count = jobs.len(), delay = delay.as_secs(), "Jobs enqueued");
                 Ok(())
             },
         )

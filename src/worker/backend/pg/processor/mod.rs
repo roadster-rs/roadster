@@ -17,7 +17,7 @@ use builder::PgProcessorBuilder;
 use chrono::{DateTime, TimeDelta, Utc};
 use cron::Schedule;
 use itertools::Itertools;
-use pgmq::{PGMQueue, PgmqError};
+use pgmq::{PGMQueueExt, PgmqError};
 use sqlx::Error;
 use sqlx::error::ErrorKind;
 use std::cmp::{Ordering, max};
@@ -121,8 +121,29 @@ where
             .into());
         }
 
+        #[cfg(feature = "worker-pg-install")]
+        self.install_pgmq().await?;
+
         self.initialize_queues().await?;
-        self.initialize_periodic(state).await?;
+        self.initialize_periodic().await?;
+        Ok(())
+    }
+
+    #[cfg(feature = "worker-pg-install")]
+    async fn install_pgmq(&self) -> RoadsterResult<()> {
+        let context = AppContext::from_ref(&self.inner.state);
+        let install = context
+            .config()
+            .service
+            .worker
+            .pg
+            .custom
+            .custom
+            .install
+            .enable;
+        if install {
+            context.pgmq().install_sql_from_embedded().await?;
+        }
         Ok(())
     }
 
@@ -136,8 +157,8 @@ where
     }
 
     /// Initialize the periodic queue tables and enqueue the periodic jobs in the queue.
-    async fn initialize_periodic(&self, state: &S) -> RoadsterResult<()> {
-        let context = AppContext::from_ref(state);
+    async fn initialize_periodic(&self) -> RoadsterResult<()> {
+        let context = AppContext::from_ref(&self.inner.state);
 
         // Create the queue's tables
         context.pgmq().create(PERIODIC_QUEUE_NAME).await?;
@@ -159,7 +180,7 @@ where
         match periodic_config.stale_cleanup {
             StaleCleanUpBehavior::Manual => {}
             StaleCleanUpBehavior::AutoCleanAll => {
-                let rows_affected = context.pgmq().purge(PERIODIC_QUEUE_NAME).await?;
+                let rows_affected = context.pgmq().purge_queue(PERIODIC_QUEUE_NAME).await?;
                 info!(
                     count = rows_affected,
                     "Deleted all previously registered periodic jobs"
@@ -189,7 +210,7 @@ where
             let delay = periodic_next_run_delay(&job.periodic.schedule, None);
             let result = context
                 .pgmq()
-                .send_delay(PERIODIC_QUEUE_NAME, job, delay.as_secs())
+                .send_delay(PERIODIC_QUEUE_NAME, job, delay)
                 .await;
 
             match result {
@@ -220,6 +241,10 @@ where
         let dedicated_queues = &worker_config.common.queue_config;
         let shared_queues = self.shared_queues(context.config());
 
+        let default_worker_config = &context.config().service.worker.worker_config;
+        let default_max_duration = default_worker_config.max_duration;
+        let default_view_timeout = default_max_duration.unwrap_or_else(|| Duration::from_secs(600));
+
         if !shared_queues.is_empty() {
             let total_worker_tasks = worker_config.common.num_workers;
             for worker_num in 0..total_worker_tasks {
@@ -228,6 +253,8 @@ where
                     worker_num + 1,
                     total_worker_tasks,
                     shared_queues.clone(),
+                    default_max_duration,
+                    default_view_timeout,
                 ));
             }
         }
@@ -240,12 +267,17 @@ where
                     worker_num + 1,
                     total_worker_tasks,
                     vec![queue.to_owned()],
+                    default_max_duration,
+                    default_view_timeout,
                 ));
             }
         }
 
         if worker_config.custom.periodic.enable && !self.inner.periodic_workers.is_empty() {
-            join_set.spawn(self.clone().process_periodic(cancellation_token.clone()));
+            join_set.spawn(
+                self.clone()
+                    .process_periodic(cancellation_token.clone(), default_view_timeout),
+            );
         }
 
         while let Some(result) = join_set.join_next().await {
@@ -266,6 +298,8 @@ where
         worker_task_num: u32,
         total_worker_tasks: u32,
         queues: Vec<String>,
+        default_max_duration: Option<Duration>,
+        default_view_timeout: Duration,
     ) {
         let num_queues = queues.len();
         let queue_name = if num_queues == 1 {
@@ -283,11 +317,6 @@ where
             .collect();
 
         let context = AppContext::from_ref(&self.inner.state);
-        let default_worker_config = &context.config().service.worker.worker_config;
-        let default_max_duration = default_worker_config.max_duration;
-        let default_view_timeout = default_max_duration
-            .as_ref()
-            .and_then(|duration| duration.as_secs().try_into().ok());
 
         let empty_delay = context
             .config()
@@ -491,14 +520,13 @@ where
         }
     }
 
-    async fn process_periodic(self, cancellation_token: CancellationToken) {
+    async fn process_periodic(
+        self,
+        cancellation_token: CancellationToken,
+        default_view_timeout: Duration,
+    ) {
         let context = AppContext::from_ref(&self.inner.state);
         let default_enqueue_config = &context.config().service.worker.enqueue_config;
-        let default_worker_config = &context.config().service.worker.worker_config;
-        let default_max_duration = default_worker_config.max_duration;
-        let default_view_timeout = default_max_duration
-            .as_ref()
-            .and_then(|duration| duration.as_secs().try_into().ok());
 
         let empty_delay = context
             .config()
@@ -654,7 +682,7 @@ where
 
             let delay = periodic_next_run_delay(&job.periodic.schedule, None);
             if let Err(err) = pgmq
-                .set_vt::<serde_json::Value>(PERIODIC_QUEUE_NAME, msg.msg_id, Utc::now() + delay)
+                .set_vt::<serde_json::Value>(PERIODIC_QUEUE_NAME, msg.msg_id, delay)
                 .await
             {
                 error!(
@@ -689,7 +717,7 @@ where
     #[allow(clippy::too_many_arguments)]
     async fn retry(
         &self,
-        pgmq: &PGMQueue,
+        pgmq: &PGMQueueExt,
         queue: &QueueItem,
         job_metadata: Option<&JobMetadata>,
         msg_id: i64,
@@ -719,7 +747,7 @@ where
     #[instrument(skip_all)]
     async fn update_job_view_timeout(
         &self,
-        pgmq: &PGMQueue,
+        pgmq: &PGMQueueExt,
         queue: &QueueItem,
         job_metadata: Option<&JobMetadata>,
         msg_id: i64,
@@ -727,7 +755,7 @@ where
         delay: Duration,
     ) {
         if let Err(err) = pgmq
-            .set_vt::<serde_json::Value>(&queue.name, msg_id, Utc::now() + delay)
+            .set_vt::<serde_json::Value>(&queue.name, msg_id, delay)
             .await
         {
             error!(
@@ -744,7 +772,7 @@ where
     #[instrument(skip_all)]
     async fn job_completed(
         &self,
-        pgmq: &PGMQueue,
+        pgmq: &PGMQueueExt,
         queue: &QueueItem,
         job_metadata: Option<&JobMetadata>,
         msg_id: i64,

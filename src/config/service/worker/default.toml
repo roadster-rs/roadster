@@ -15,6 +15,9 @@ backoff-strategy = "exponential"
 success-action = "delete"
 failure-action = "archive"
 
+[service.worker.pg.install]
+enable = true
+
 [service.worker.pg.queue-fetch-config]
 error-delay = 10000
 empty-delay = 10000

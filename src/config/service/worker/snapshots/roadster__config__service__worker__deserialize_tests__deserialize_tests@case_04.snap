@@ -32,3 +32,6 @@ balance-strategy = 'round-robin'
 [pg.periodic]
 enable = false
 stale-cleanup = 'auto-clean-stale'
+
+[pg.install]
+enable = false
