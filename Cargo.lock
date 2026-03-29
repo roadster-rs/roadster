@@ -4191,6 +4191,8 @@ dependencies = [
 [[package]]
 name = "pgmq"
 version = "0.33.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aff21df1dfa18749cd6b2141444b43a62a140c9c4bdbbe6742ada4dcbc180cf9"
 dependencies = [
  "chrono",
  "futures-util",
