@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0-alpha.5](https://github.com/roadster-rs/roadster/compare/roadster-v0.9.0-alpha.4...roadster-v0.9.0-alpha.5) - 2026-03-30
+
+### Fixed
+
+- Adjust res compression to enable logging before compression (2) ([#956](https://github.com/roadster-rs/roadster/pull/956))
+- Adjust res compression to enable logging before compression ([#955](https://github.com/roadster-rs/roadster/pull/955))
+
+### Other
+
+- [**breaking**] Migrate from `pgmq::PGMQueue` to `pgmq::PGMQueueExt` ([#961](https://github.com/roadster-rs/roadster/pull/961))
+- Ignore some rust advisories that are due to transitive deps ([#960](https://github.com/roadster-rs/roadster/pull/960))
+- Remove compile-time checks of sqlx queries ([#959](https://github.com/roadster-rs/roadster/pull/959))
+
 ## [0.9.0-alpha.4](https://github.com/roadster-rs/roadster/compare/roadster-v0.9.0-alpha.3...roadster-v0.9.0-alpha.4) - 2026-01-31
 
 ### Added
