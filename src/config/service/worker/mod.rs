@@ -163,6 +163,7 @@ mod tests {
     test,
     feature = "worker-sidekiq",
     feature = "worker-pg",
+    feature = "worker-pg-install",
     feature = "db-diesel-pool-async"
 ))]
 mod deserialize_tests {
