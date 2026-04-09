@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0-alpha.6](https://github.com/roadster-rs/roadster/compare/roadster-v0.9.0-alpha.5...roadster-v0.9.0-alpha.6) - 2026-04-09
+
+### Added
+
+- Restore "send batch" functionality for PG-backed worker ([#964](https://github.com/roadster-rs/roadster/pull/964))
+
+### Other
+
+- Fix powerset tests ([#963](https://github.com/roadster-rs/roadster/pull/963))
+
 ## [0.9.0-alpha.5](https://github.com/roadster-rs/roadster/compare/roadster-v0.9.0-alpha.4...roadster-v0.9.0-alpha.5) - 2026-03-30
 
 ### Fixed
