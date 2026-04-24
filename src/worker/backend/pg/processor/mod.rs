@@ -11,7 +11,7 @@ use crate::worker::backend::pg::periodic_job::PeriodicJob;
 use crate::worker::backend::pg::{failure_action, retry_delay, success_action};
 use crate::worker::backend::shared_queues;
 use crate::worker::config::CompletedAction;
-use crate::worker::job::{Job, JobMetadata};
+use crate::worker::job::{Job, JobMetadata, JobState};
 use axum_core::extract::FromRef;
 use builder::PgProcessorBuilder;
 use chrono::{DateTime, TimeDelta, Utc};
@@ -479,37 +479,68 @@ where
                     .handle(&self.inner.state, &job.metadata, job.args)
                     .await;
 
-                if let Err(err) = result {
-                    error!(
-                        job.id = %job.metadata.id,
-                        job.msg_id = msg.msg_id,
-                        job.read_count = msg.read_ct,
-                        worker.queue.name = queue.name,
-                        worker.name = job.metadata.worker_name,
-                        "An error occurred while handling a job: {err}"
-                    );
-                    self.retry(
-                        pgmq,
-                        &queue,
-                        Some(&job.metadata),
-                        msg.msg_id,
-                        msg.read_ct,
-                        context.config(),
-                        Some(worker),
-                    )
-                    .await;
-                } else {
-                    let action =
-                        success_action(context.config(), worker.inner.worker_config.pg.as_ref());
-                    self.job_completed(
-                        pgmq,
-                        &queue,
-                        Some(&job.metadata),
-                        msg.msg_id,
-                        msg.read_ct,
-                        action,
-                    )
-                    .await;
+                match result {
+                    Ok(job_state) => {
+                        debug!(
+                            job.id = %job.metadata.id,
+                            job.msg_id = msg.msg_id,
+                            job.read_count = msg.read_ct,
+                            job.state = job_state.to_string(),
+                            worker.queue.name = queue.name,
+                            worker.name = job.metadata.worker_name,
+                            "Job run completed"
+                        );
+
+                        match job_state {
+                            JobState::Done => {
+                                let action = success_action(
+                                    context.config(),
+                                    worker.inner.worker_config.pg.as_ref(),
+                                );
+                                self.job_completed(
+                                    pgmq,
+                                    &queue,
+                                    Some(&job.metadata),
+                                    msg.msg_id,
+                                    msg.read_ct,
+                                    action,
+                                )
+                                .await;
+                            }
+                            JobState::Retry => {
+                                self.retry(
+                                    pgmq,
+                                    &queue,
+                                    Some(&job.metadata),
+                                    msg.msg_id,
+                                    msg.read_ct,
+                                    context.config(),
+                                    Some(worker),
+                                )
+                                .await;
+                            }
+                        }
+                    }
+                    Err(err) => {
+                        error!(
+                            job.id = %job.metadata.id,
+                            job.msg_id = msg.msg_id,
+                            job.read_count = msg.read_ct,
+                            worker.queue.name = queue.name,
+                            worker.name = job.metadata.worker_name,
+                            "An error occurred while handling a job: {err}"
+                        );
+                        self.retry(
+                            pgmq,
+                            &queue,
+                            Some(&job.metadata),
+                            msg.msg_id,
+                            msg.read_ct,
+                            context.config(),
+                            Some(worker),
+                        )
+                        .await;
+                    }
                 }
 
                 #[cfg(feature = "bench")]
