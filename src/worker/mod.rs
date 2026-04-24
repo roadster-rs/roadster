@@ -12,6 +12,7 @@ use crate::worker::config::{EnqueueConfig, WorkerConfig};
 use crate::worker::enqueue::Enqueuer;
 #[cfg(any(feature = "worker-sidekiq", feature = "worker-pg"))]
 use crate::worker::job::JobMetadata;
+use crate::worker::job::JobState;
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
 use cron::Schedule;
@@ -127,7 +128,7 @@ where
         Ok(())
     }
 
-    async fn handle(&self, state: &S, args: Args) -> Result<(), Self::Error>;
+    async fn handle(&self, state: &S, args: Args) -> Result<impl Into<JobState>, Self::Error>;
 
     /// This is a "private" API that's only intended for usage in Roadster's internal benchmarking suite.
     /// This method does not follow any semver guarantees.
@@ -144,7 +145,7 @@ type WorkerFn<S> = Box<
             &'a S,
             serde_json::Value,
         ) -> std::pin::Pin<
-            Box<dyn 'a + Send + Future<Output = crate::error::RoadsterResult<()>>>,
+            Box<dyn 'a + Send + Future<Output = crate::error::RoadsterResult<JobState>>>,
         >,
 >;
 
@@ -219,7 +220,7 @@ where
                             .map_err(crate::error::worker::DequeueError::Serde)?;
 
                         match worker.clone().handle(state, args).await {
-                            Ok(_) => Ok(()),
+                            Ok(job_state) => Ok(job_state.into()),
                             Err(err) => Err(crate::error::Error::from(
                                 crate::error::worker::WorkerError::Handle(W::name(), Box::new(err)),
                             )),
@@ -242,7 +243,7 @@ where
         state: &S,
         job_metadata: &JobMetadata,
         args: serde_json::Value,
-    ) -> crate::error::RoadsterResult<()> {
+    ) -> crate::error::RoadsterResult<JobState> {
         use futures::FutureExt;
         use tracing::Instrument;
 

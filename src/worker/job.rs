@@ -46,6 +46,21 @@ impl From<u64> for JobId {
     }
 }
 
+#[derive(
+    Debug, Copy, Clone, derive_more::Display, serde::Serialize, serde::Deserialize, Eq, PartialEq,
+)]
+#[non_exhaustive]
+pub enum JobState {
+    Done,
+    Retry,
+}
+
+impl From<()> for JobState {
+    fn from(_value: ()) -> Self {
+        Self::Done
+    }
+}
+
 // Todo: Not sure if this should be public yet.
 #[cfg(any(feature = "worker-sidekiq", feature = "worker-pg"))]
 pub(crate) fn periodic_hash<H: std::hash::Hasher>(

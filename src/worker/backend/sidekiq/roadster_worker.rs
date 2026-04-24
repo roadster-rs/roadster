@@ -1,5 +1,5 @@
 use crate::app::context::AppContext;
-use crate::worker::job::Job;
+use crate::worker::job::{Job, JobState};
 use crate::worker::{Worker, WorkerWrapper};
 use async_trait::async_trait;
 use axum_core::extract::FromRef;
@@ -132,10 +132,21 @@ where
     }
 
     async fn perform(&self, job: Job) -> sidekiq::Result<()> {
-        self.inner
+        let job_state = self
+            .inner
             .handle(&self.state, &job.metadata, job.args)
             .await
             .map_err(|err| sidekiq::Error::Any(Box::new(err)))?;
+
+        match job_state {
+            JobState::Done => {}
+            JobState::Retry => {
+                return Err(sidekiq::Error::Message(format!(
+                    "Job successful with state: `{job_state}`"
+                )));
+            }
+        }
+
         Ok(())
     }
 }
