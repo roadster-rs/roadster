@@ -128,7 +128,7 @@ check: check-fmt check-no-features check-default-features check-all-features che
 validate-codecov-config:
     curl -X POST --data-binary @codecov.yml https://codecov.io/validate
 
-# Start docker dependencies used by examples for local development
+# Start container dependencies used by examples for local development using docker
 docker:
     docker run -d --name redis -p 6379:6379 redis:8.2.2-alpine || true
     docker start redis || true
@@ -139,7 +139,26 @@ docker:
     docker run -d --name grafana -p 4000:3000 -p 4317:4317 -p 4318:4318 --rm -ti grafana/otel-lgtm:0.11.10 || true
     docker start grafana || true
 
-clean: coverage-clean
+# Start container dependencies used by examples for local development using podman
+podman:
+    podman run -d --name redis -p 6379:6379 redis:8.2.2-alpine || true
+    podman start redis || true
+    podman run -d --name mailpit -p 8025:8025 -p 1025:1025 axllent/mailpit:v1.27.10 || true
+    podman start mailpit || true
+    podman run -d --name pg-roadster -p 5432:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=example_dev -e POSTGRES_PASSWORD=roadster postgres:18.0-alpine3.22 || true
+    podman start pg-roadster || true
+    podman run -d --name grafana -p 4000:3000 -p 4317:4317 -p 4318:4318 --rm -ti grafana/otel-lgtm:0.11.10 || true
+    podman start grafana || true
+
+# Clear all local docker data in order to refresh the local dev environment
+docker-clean:
+    docker ps -q | xargs docker kill; docker ps -aq | xargs docker rm -vf; docker images -aq | xargs docker rmi -f; docker volume ls -q | xargs docker volume rm -f; yes | docker system prune -a --volumes
+
+# Clear all local podman data in order to refresh the local dev environment
+podman-clean:
+    podman ps -q | xargs podman kill; podman ps -aq | xargs podman rm -vf; podman images -aq | xargs podman rmi -f; xargs podman volume rm -f --all; yes | podman system prune -a --volumes
+
+clean: coverage-clean docker-clean podman-clean
     cargo clean
 
 install_libpq := if os() == "macos" { "brew install libpq && brew link --force libpq" } else { "" }
