@@ -150,15 +150,7 @@ podman:
     podman run -d --name grafana -p 4000:3000 -p 4317:4317 -p 4318:4318 --rm -ti grafana/otel-lgtm:0.11.10 || true
     podman start grafana || true
 
-# Clear all local docker data in order to refresh the local dev environment
-docker-clean:
-    docker ps -q | xargs docker kill; docker ps -aq | xargs docker rm -vf; docker images -aq | xargs docker rmi -f; docker volume ls -q | xargs docker volume rm -f; yes | docker system prune -a --volumes
-
-# Clear all local podman data in order to refresh the local dev environment
-podman-clean:
-    podman ps -q | xargs podman kill; podman ps -aq | xargs podman rm -vf; podman images -aq | xargs podman rmi -f; xargs podman volume rm -f --all; yes | podman system prune -a --volumes
-
-clean: coverage-clean docker-clean podman-clean
+clean: coverage-clean
     cargo clean
 
 install_libpq := if os() == "macos" { "brew install libpq && brew link --force libpq" } else { "" }
