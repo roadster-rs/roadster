@@ -163,10 +163,16 @@ where
         // Create the queue's tables
         context.pgmq().create(PERIODIC_QUEUE_NAME).await?;
         // Create a unique index on the periodic job hash. This ensures we don't enqueue duplicate
-        // periodic jobs.
+        // periodic jobs. Acquire a queue lock in order to avoid multiple processes attempting
+        // to create the index at the same time.
+        let mut txn = context
+            .pgmq()
+            .acquire_queue_lock(PERIODIC_QUEUE_NAME)
+            .await?;
         sqlx::query(
             r#"CREATE UNIQUE INDEX IF NOT EXISTS roadster_periodic_hash_idx ON pgmq.q_periodic USING btree ((message->'periodic'->'hash'))"#
-        ).execute(&context.pgmq().connection).await?;
+        ).execute(&mut *txn).await?;
+        txn.commit().await?;
 
         let periodic_config = &context.config().service.worker.pg.custom.custom.periodic;
 
