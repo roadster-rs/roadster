@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0-alpha.7](https://github.com/roadster-rs/roadster/compare/roadster-v0.9.0-alpha.6...roadster-v0.9.0-alpha.7) - 2026-04-27
+
+### Added
+
+- Acquire lock on PGMQ periodic queue when creating unique index ([#971](https://github.com/roadster-rs/roadster/pull/971))
+- Allow retrying worker job without returning an error ([#968](https://github.com/roadster-rs/roadster/pull/968))
+
+### Other
+
+- Remove `docker-clean` and `podman-clean` commands from justfile ([#970](https://github.com/roadster-rs/roadster/pull/970))
+- Add justfile scripts to use podman instead of docker ([#969](https://github.com/roadster-rs/roadster/pull/969))
+
 ## [0.9.0-alpha.6](https://github.com/roadster-rs/roadster/compare/roadster-v0.9.0-alpha.5...roadster-v0.9.0-alpha.6) - 2026-04-09
 
 ### Added
