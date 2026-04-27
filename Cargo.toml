@@ -257,7 +257,7 @@ rusty-sidekiq = { version = "0.13.1", default-features = false }
 bb8 = { version = "0.9.0" }
 num_cpus = { version = "1.13.0" }
 ## Postgres queue
-pgmq = "0.33.3"
+pgmq = "0.33.4"
 sqlx = { version = "0.8.5", features = ["postgres"] }
 
 # Testing
