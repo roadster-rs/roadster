@@ -184,7 +184,7 @@ dependencies = [
  "cfg-if",
  "clap",
  "config",
- "cron 0.16.0",
+ "cron",
  "roadster",
  "rusty-sidekiq",
  "schemars 1.2.1",
@@ -1275,17 +1275,6 @@ checksum = "6b50826342786a51a89e2da3a28f1c32b06e387201bc2d19791f622c673706b1"
 dependencies = [
  "cast",
  "itertools 0.10.5",
-]
-
-[[package]]
-name = "cron"
-version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5877d3fbf742507b66bc2a1945106bd30dd8504019d596901ddd012a4dd01740"
-dependencies = [
- "chrono",
- "once_cell",
- "winnow 0.6.26",
 ]
 
 [[package]]
@@ -4419,7 +4408,7 @@ dependencies = [
  "cfg-if",
  "clap",
  "config",
- "cron 0.16.0",
+ "cron",
  "roadster",
  "schemars 1.2.1",
  "sea-orm",
@@ -5444,7 +5433,7 @@ dependencies = [
  "config",
  "const_format",
  "convert_case 0.11.0",
- "cron 0.16.0",
+ "cron",
  "derive_more",
  "diesel",
  "diesel-async",
@@ -6364,7 +6353,7 @@ dependencies = [
  "aide",
  "async-trait",
  "axum",
- "cron 0.15.0",
+ "cron",
  "prost",
  "roadster",
  "rusty-sidekiq",
@@ -8555,15 +8544,6 @@ name = "windows_x86_64_msvc"
 version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6bbff5f0aada427a1e5a6da5f1f98158182f26556f345ac9e04d36d0ebed650"
-
-[[package]]
-name = "winnow"
-version = "0.6.26"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e90edd2ac1aa278a5c4599b1d89cf03074b610800f866d4026dc199d7929a28"
-dependencies = [
- "memchr",
-]
 
 [[package]]
 name = "winnow"
