@@ -9,25 +9,18 @@ expression: worker_service_config
 [sidekiq]
 num-workers = 8
 balance-strategy = 'round-robin'
-
 [sidekiq.queue-config]
-
 [sidekiq.redis]
 uri = 'redis://[Sensitive]'
-
 [sidekiq.redis.enqueue-pool]
-
 [sidekiq.redis.fetch-pool]
-
 [sidekiq.periodic]
 stale-cleanup = 'auto-clean-stale'
 
 [pg]
 num-workers = 8
 balance-strategy = 'round-robin'
-
 [pg.queue-config]
-
 [pg.database]
 uri = 'postgres://[Sensitive]'
 temporary-test-db = false
@@ -42,10 +35,8 @@ max-connections = 2
 test-on-checkout = false
 retry-connection = false
 enable-statement-logging = false
-
 [pg.periodic]
 enable = false
 stale-cleanup = 'auto-clean-stale'
-
 [pg.install]
 enable = false

@@ -4,10 +4,8 @@ expression: sidekiq
 ---
 [redis]
 uri = 'redis://[Sensitive]'
-
 [redis.enqueue-pool]
 max-connections = 1
-
 [redis.fetch-pool]
 max-connections = 2
 

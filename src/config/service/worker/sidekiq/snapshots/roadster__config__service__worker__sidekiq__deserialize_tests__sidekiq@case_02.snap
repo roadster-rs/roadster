@@ -4,10 +4,8 @@ expression: sidekiq
 ---
 [redis]
 uri = 'redis://[Sensitive]'
-
 [redis.enqueue-pool]
 min-idle = 1
-
 [redis.fetch-pool]
 min-idle = 2
 

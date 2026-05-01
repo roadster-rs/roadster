@@ -7,6 +7,5 @@ allow_dangerous = false
 
 [command]
 type = 'Roadster'
-
 [command.command]
 type = 'ListRoutes'
