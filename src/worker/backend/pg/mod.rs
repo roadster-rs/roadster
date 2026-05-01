@@ -2,7 +2,7 @@
 
 use crate::config::AppConfig;
 use crate::worker::config::{BackoffStrategy, CompletedAction, PgWorkerConfig, RetryConfig};
-use rand::Rng;
+use rand::RngExt;
 use std::cmp::min;
 use std::sync::OnceLock;
 use std::time::Duration;
