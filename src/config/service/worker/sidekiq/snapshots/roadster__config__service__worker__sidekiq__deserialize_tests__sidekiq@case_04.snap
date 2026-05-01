@@ -4,9 +4,7 @@ expression: sidekiq
 ---
 [redis]
 uri = 'redis://[Sensitive]'
-
 [redis.enqueue-pool]
-
 [redis.fetch-pool]
 
 [periodic]

@@ -4,7 +4,6 @@ expression: auth
 ---
 [jwt]
 secret = 'foo'
-
 [jwt.claims]
 audience = []
 required-claims = []

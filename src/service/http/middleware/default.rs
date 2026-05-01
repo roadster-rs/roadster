@@ -56,7 +56,7 @@ mod tests {
     use crate::app::context::AppContext;
     use crate::config::AppConfig;
     use crate::testing::snapshot::TestCase;
-    use insta::assert_toml_snapshot;
+    use insta::assert_json_snapshot;
     use itertools::Itertools;
     use rstest::{fixture, rstest};
 
@@ -92,6 +92,6 @@ mod tests {
         let middleware = middleware.keys().collect_vec();
 
         // Assert
-        assert_toml_snapshot!(middleware);
+        assert_json_snapshot!(middleware);
     }
 }

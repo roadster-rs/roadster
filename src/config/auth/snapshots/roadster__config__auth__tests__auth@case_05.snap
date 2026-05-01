@@ -5,7 +5,6 @@ expression: auth
 [jwt]
 cookie-name = 'authorization'
 secret = 'foo'
-
 [jwt.claims]
 audience = []
 required-claims = []

@@ -93,7 +93,7 @@ mod tests {
     use crate::config::AppConfig;
     use crate::testing::snapshot::TestCase;
     use bb8::Pool;
-    use insta::assert_toml_snapshot;
+    use insta::assert_json_snapshot;
     use itertools::Itertools;
     use rstest::{fixture, rstest};
     use sidekiq::RedisConnectionManager;
@@ -124,6 +124,6 @@ mod tests {
         let health_checks = health_checks.keys().collect_vec();
 
         // Assert
-        assert_toml_snapshot!(health_checks);
+        assert_json_snapshot!(health_checks);
     }
 }
