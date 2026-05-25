@@ -198,11 +198,11 @@ dotenvy = "0.15.7"
 # Tracing
 tracing = { version = "0.1.40", features = ["async-await"] }
 tracing-subscriber = { version = "0.3.17", features = ["env-filter", "json"] }
-opentelemetry-semantic-conventions = "0.31.0"
-opentelemetry = { version = "0.31.0", features = ["trace", "metrics", "logs"] }
-opentelemetry_sdk = { version = "0.31.0", features = ["tokio", "rt-tokio", "metrics", "logs", "trace"] }
-opentelemetry-otlp = { version = "0.31.0", features = ["metrics", "trace", "logs"] }
-tracing-opentelemetry = { version = "0.32.0", features = ["metrics"] }
+opentelemetry-semantic-conventions = "0.32.0"
+opentelemetry = { version = "0.32.0", features = ["trace", "metrics", "logs"] }
+opentelemetry_sdk = { version = "0.32.0", features = ["tokio", "rt-tokio", "metrics", "logs", "trace"] }
+opentelemetry-otlp = { version = "0.32.0", features = ["metrics", "trace", "logs"] }
+tracing-opentelemetry = { version = "0.33.0", features = ["metrics"] }
 
 # HTTP APIs
 aide = { version = "0.16.0-alpha.1", features = ["axum"] }
@@ -253,7 +253,7 @@ prost = { version = "0.14.1" }
 # Workers
 ## Sidekiq
 # The default `rss-stats` feature has a dependency that currently can't be satisfied on macos (memchr: ~2.3)
-rusty-sidekiq = { version = "0.13.1", default-features = false }
+rusty-sidekiq = { version = "0.14.0", default-features = false }
 bb8 = { version = "0.9.0" }
 num_cpus = { version = "1.13.0" }
 ## Postgres queue
