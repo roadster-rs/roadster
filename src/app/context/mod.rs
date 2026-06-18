@@ -39,6 +39,13 @@ impl AppContextWeak {
     }
 }
 
+#[cfg(all(
+    not(test),
+    any(feature = "db-sql", feature = "worker-pg"),
+    feature = "testing"
+))]
+static TMP_TEST_DB_TIMESTAMP: OnceLock<chrono::DateTime<chrono::Utc>> = OnceLock::new();
+
 impl AppContext {
     // This method isn't used when running tests; only the mocked version is used.
     #[cfg_attr(test, allow(dead_code))]
@@ -69,7 +76,7 @@ impl AppContext {
             let sidekiq_redis_test_container = sidekiq_redis_test_container(&mut config).await?;
 
             #[cfg(all(any(feature = "db-sql", feature = "worker-pg"), feature = "testing"))]
-            let timestamp = chrono::Utc::now();
+            let timestamp = *TMP_TEST_DB_TIMESTAMP.get_or_init(chrono::Utc::now);
 
             #[cfg(all(any(feature = "db-sql", feature = "worker-pg"), feature = "testing"))]
             let temporary_test_db = create_temporary_test_db(&mut config, timestamp).await?;
