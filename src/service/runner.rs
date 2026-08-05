@@ -47,7 +47,7 @@ where
     S: 'static + Send + Sync + Clone,
     AppContext: FromRef<S>,
 {
-    for (_, service) in service_registry.services.iter() {
+    for service in service_registry.services.values() {
         let name = service.name();
         info!(service.name = name, "Running service::before_run");
         service.before_run(state).await?;

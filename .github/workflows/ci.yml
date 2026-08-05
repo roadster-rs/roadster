@@ -198,11 +198,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: EmbarkStudios/cargo-deny-action@76cd80eb775d7bbbd2d80292136d74d39e1b4918
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25
         with:
           command: check
           arguments: "--all-features --locked"
-          command-arguments: "-A duplicate advisories ban sources"
+          command-arguments: "-A duplicate advisories bans sources"
 
   # https://doc.rust-lang.org/cargo/guide/continuous-integration.html#verifying-rust-version
   msrv:
