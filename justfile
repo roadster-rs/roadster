@@ -86,9 +86,11 @@ check-fmt:
 check-typos:
     typos
 
-pre-commit: check-fmt
+pre-commit: check-fmt check-typos
 
-pre-push: check-fmt
+# compatable
+
+pre-push: check-fmt check-typos
 
 check-no-features:
     cargo nextest run --no-default-features --no-fail-fast --locked
