@@ -40,6 +40,7 @@ jobs:
           - 1025:1025
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dtolnay/rust-toolchain@70dec6087f2cb6bab9fbac4da23160afbe848e91
       - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       # protoc is needed to build examples that have grpc enabled
@@ -54,6 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dtolnay/rust-toolchain@70dec6087f2cb6bab9fbac4da23160afbe848e91
       - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - uses: taiki-e/install-action@d31232495ad76f47aad66e3501e47780b49f0f3e
@@ -68,6 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dtolnay/rust-toolchain@70dec6087f2cb6bab9fbac4da23160afbe848e91
       - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - uses: taiki-e/install-action@d31232495ad76f47aad66e3501e47780b49f0f3e
@@ -100,6 +103,7 @@ jobs:
       features: ${{ join(fromJson(needs.generate_feature_matrix.outputs.data).powersets[ matrix.index ], ' ') }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dtolnay/rust-toolchain@70dec6087f2cb6bab9fbac4da23160afbe848e91
       - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - uses: taiki-e/install-action@d31232495ad76f47aad66e3501e47780b49f0f3e
@@ -133,6 +137,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dtolnay/rust-toolchain@70dec6087f2cb6bab9fbac4da23160afbe848e91
       - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - uses: taiki-e/install-action@d31232495ad76f47aad66e3501e47780b49f0f3e
@@ -147,6 +152,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dtolnay/rust-toolchain@70dec6087f2cb6bab9fbac4da23160afbe848e91
       - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - uses: taiki-e/install-action@d31232495ad76f47aad66e3501e47780b49f0f3e
@@ -167,6 +173,9 @@ jobs:
       features: ${{ join(fromJson(needs.generate_feature_matrix.outputs.data).powersets[ matrix.index ], ' ') }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dtolnay/rust-toolchain@70dec6087f2cb6bab9fbac4da23160afbe848e91
+        with:
+          components: clippy
       - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - uses: taiki-e/install-action@d31232495ad76f47aad66e3501e47780b49f0f3e
@@ -198,6 +207,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dtolnay/rust-toolchain@70dec6087f2cb6bab9fbac4da23160afbe848e91
       - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25
         with:
           command: check
@@ -210,6 +220,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dtolnay/rust-toolchain@70dec6087f2cb6bab9fbac4da23160afbe848e91
       - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - uses: taiki-e/install-action@d31232495ad76f47aad66e3501e47780b49f0f3e
@@ -224,6 +235,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dtolnay/rust-toolchain@70dec6087f2cb6bab9fbac4da23160afbe848e91
       - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - uses: taiki-e/install-action@d31232495ad76f47aad66e3501e47780b49f0f3e
@@ -236,6 +248,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dtolnay/rust-toolchain@70dec6087f2cb6bab9fbac4da23160afbe848e91
+        with:
+          components: rustfmt
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - name: Formatting
         run: cargo fmt --all --check
@@ -245,6 +260,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dtolnay/rust-toolchain@70dec6087f2cb6bab9fbac4da23160afbe848e91
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
       - uses: taiki-e/install-action@d31232495ad76f47aad66e3501e47780b49f0f3e
         with:
