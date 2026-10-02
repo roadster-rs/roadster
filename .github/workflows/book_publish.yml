@@ -33,8 +33,6 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - name: Update Rust
-        run: rustup update
       - uses: taiki-e/install-action@d31232495ad76f47aad66e3501e47780b49f0f3e
         with:
           tool: mdbook
