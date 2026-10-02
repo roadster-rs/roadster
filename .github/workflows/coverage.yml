@@ -14,7 +14,7 @@ concurrency:
 jobs:
   coverage:
     name: Collect test coverage
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     env:
       # The `coverage_nightly` cfg value is not recognized, so we need to allow unknown
       # cfg values in order to have the build succeed.

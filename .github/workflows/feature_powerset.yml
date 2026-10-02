@@ -26,7 +26,7 @@ concurrency:
 jobs:
   # https://stackoverflow.com/questions/63014786/how-to-schedule-a-github-actions-nightly-build-but-run-it-only-when-there-where
   check_trigger:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     name: Check trigger
     outputs:
       should_run1: ${{ steps.schedule_trigger.outputs.should_run }}
@@ -51,7 +51,7 @@ jobs:
   generate_powerset:
     needs: check_trigger
     if: ${{ needs.check_trigger.outputs.should_run1 == 'true' || needs.check_trigger.outputs.should_run2 == 'true' || github.event_name == 'workflow_dispatch' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
       data: ${{ steps.build_data.outputs.data }}
     steps:
@@ -75,7 +75,7 @@ jobs:
   powerset_test:
     name: Powerset Tests
     needs: generate_powerset
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     strategy:
       max-parallel: 10
       matrix:
@@ -108,7 +108,7 @@ jobs:
   powerset_check:
     name: Powerset Check
     needs: generate_powerset
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     strategy:
       max-parallel: 10
       matrix:
@@ -134,7 +134,7 @@ jobs:
   powerset_clippy:
     name: Powerset Clippy
     needs: generate_powerset
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     strategy:
       max-parallel: 10
       matrix:
