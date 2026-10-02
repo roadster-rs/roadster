@@ -161,7 +161,7 @@ pub struct TestCaseConfig {
     ///         assert_snapshot!("snapshot_value");
     ///
     ///         case.settings.bind(|| {
-    ///             // This snapshot will have suffix `@test` (extracted from the curren thread name)
+    ///             // This snapshot will have suffix `@test` (extracted from the current thread name)
     ///             assert_snapshot!("snapshot_value_2");
     ///         });
     ///     }
