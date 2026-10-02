@@ -27,7 +27,7 @@ jobs:
   build-and-deploy-book:
     # Only if the book tests ran successfully on `main`
     if: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

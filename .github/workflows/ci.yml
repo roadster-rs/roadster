@@ -17,7 +17,7 @@ concurrency:
 jobs:
   test-examples:
     name: Test examples
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     services:
       postgres:
         image: postgres:18.0-alpine3.22
@@ -51,7 +51,7 @@ jobs:
 
   test-private:
     name: Test private
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
@@ -65,7 +65,7 @@ jobs:
 
   test-bench:
     name: Test benches
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
@@ -78,7 +78,7 @@ jobs:
         run: just test-bench
 
   generate_feature_matrix:
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     outputs:
       data: ${{ steps.build_data.outputs.data }}
     steps:
@@ -91,7 +91,7 @@ jobs:
 
   test_matrix:
     needs: generate_feature_matrix
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     strategy:
       max-parallel: 10
       matrix:
@@ -124,13 +124,13 @@ jobs:
   test:
     name: Tests
     needs: test_matrix
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     steps:
       - run: echo Success
 
   doc_test:
     name: Doc tests
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
@@ -144,7 +144,7 @@ jobs:
 
   check:
     name: Check
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
@@ -158,7 +158,7 @@ jobs:
 
   clippy_matrix:
     needs: generate_feature_matrix
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     strategy:
       max-parallel: 10
       matrix:
@@ -189,13 +189,13 @@ jobs:
   clippy:
     name: Clippy
     needs: clippy_matrix
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     steps:
       - run: echo Success
 
   deny:
     name: Deny
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25
@@ -207,7 +207,7 @@ jobs:
   # https://doc.rust-lang.org/cargo/guide/continuous-integration.html#verifying-rust-version
   msrv:
     name: Check MSRV
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
@@ -221,7 +221,7 @@ jobs:
   # https://doc.rust-lang.org/cargo/guide/continuous-integration.html#verifying-rust-version
   minimal_direct_deps:
     name: Direct dep min version check
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: rui314/setup-mold@7344740a9418dcdcb481c7df83d9fbd1d5072d7d
@@ -233,7 +233,7 @@ jobs:
 
   check_formatting:
     name: Formatting
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
@@ -242,7 +242,7 @@ jobs:
 
   check_docs:
     name: Docs
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
