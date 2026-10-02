@@ -43,7 +43,7 @@ struct EmailTemplateArgs {
 
 /// Send the verification email to the user.
 async fn send_email(state: &AppContext, user: &User) -> RoadsterResult<()> {
-    let verify_url = "https://exaple.com?verify=1234".to_string();
+    let verify_url = "https://example.com?verify=1234".to_string();
 
     let personalization = Personalization::new(Email::new(&user.email))
         .set_subject("Please confirm your email address")

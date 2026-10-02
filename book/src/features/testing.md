@@ -10,8 +10,8 @@ a fully initialized app.
 ## Snapshot utilities
 
 [`insta`](https://docs.rs/insta) is a popular crate that enables writing snapshot tests. `insta` allows configuring some
-settings for how snapshots are generated. Roadster provides some default settings via the `TestCase` struct, which
-in turn can be customized via the `TestCaseConfig` struct. `TestCase` automatically applies the configured `insta`
+settings for how snapshots are generated. Roadster provides some default settings via the `TestCase` struct, which in
+turn can be customized via the `TestCaseConfig` struct. `TestCase` automatically applies the configured `insta`
 settings to the current `insta` test context when it's created.
 
 ### Redacting sensitive or dynamic fields
@@ -85,14 +85,14 @@ Generates the following snapshot files:
 A majority of an app's test coverage may come from small, targeted unit tests. These are generally faster to run and
 easier to write because they test, for example, only a specific function's behavior and use fake/mock data for
 everything else. However, an app will usually want some level of end-to-end (E2E) testing, where entire API endpoints
-are tested via their request and response. An app may also want to write tests that interact with an actual DB, such
-as testing the ORM's model for a table in the DB.
+are tested via their request and response. An app may also want to write tests that interact with an actual DB, such as
+testing the ORM's model for a table in the DB.
 
 For these cases, Roadster provides the [`run_test`](https://docs.rs/roadster/0.7.0-beta/roadster/app/fn.run_test.html)
-and [`run_test_with_result`](https://docs.rs/roadster/0.7.0-beta/roadster/app/fn.run_test_with_result.html) methods
-to run a test with a fully initialized app. Both methods will initialize the app before running the provided test
-closure, and tear down the app when the test closure completes. Note, however, that if the test closure panics, the
-app may not be torn down. If it's vital that the app is town down on test failure, either set the `testing.catch-panic`
+and [`run_test_with_result`](https://docs.rs/roadster/0.7.0-beta/roadster/app/fn.run_test_with_result.html) methods to
+run a test with a fully initialized app. Both methods will initialize the app before running the provided test closure,
+and tear down the app when the test closure completes. Note, however, that if the test closure panics, the app may not
+be torn down. If it's vital that the app is town down on test failure, either set the `testing.catch-panic`
 config to `true`, or use `run_test_with_result` and take care not to panic inside the test closure.
 
 ```rust,ignore
@@ -125,7 +125,7 @@ The temporary DB connection is made available via the normal DB connection metho
 When using the `run_test*` methods, Roadster allows creating a temporary DB for testing. If enabled, Roadster will
 create a new DB for each test using the original DB connection details. If the `database.temporary-test-db-clean-up`
 config is set to `true`, the temporary DB will be deleted when the test completes. Note, however, that if the closure
-passed to the `run_test*` method(s) panics, the DB will not be deleted.
+passed to the `run_test*` method (s) panics, the DB will not be deleted.
 
 Note: This feature is only supported on Postgres and Mysql at the moment.
 
@@ -146,8 +146,8 @@ connection is made available via the normal DB connection methods on the `AppCon
 
 Note that compared to the temporary DB solution discussed above, test containers have an additional performance hit due
 to the operations needed to initialize a new docker container for each test container instance. This means that this is
-the slowest option for ensuring tests are isolated. However, this solution supports other resources that your tests
-may need to interact with besides just databases (e.g. Redis and SMPT servers).
+the slowest option for ensuring tests are isolated. However, this solution supports other resources that your tests may
+need to interact with besides just databases (e.g. Redis and SMTP servers).
 
 #### Examples
 

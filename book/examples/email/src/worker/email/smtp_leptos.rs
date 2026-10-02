@@ -40,7 +40,7 @@ impl Worker<AppContext, EmailConfirmationHtmlArgs> for EmailConfirmationHtml {
 
 /// Send the verification email to the user.
 async fn send_email(state: &AppContext, user: &User) -> RoadsterResult<()> {
-    let verify_url = "https://exaple.com?verify=1234";
+    let verify_url = "https://example.com?verify=1234";
 
     let body = body(&user.name, verify_url);
 

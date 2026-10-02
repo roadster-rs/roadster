@@ -631,7 +631,7 @@ This release also includes the following non-breaking changes:
 
 - Add `AnyMiddleware` to minimize boilerplate for Axum
   middleware ([#472](https://github.com/roadster-rs/roadster/pull/472))
-- Add `AnyIntializer` to minimize boilerplate for Axum Router
+- Add `AnyInitializer` to minimize boilerplate for Axum Router
   initializers ([#475](https://github.com/roadster-rs/roadster/pull/475))
 
 ### Other
@@ -1253,7 +1253,7 @@ The main feature included in this release is support for sending emails via SMTP
 - Add log of label name
 - Use uniq job output names
 - Fix error in feature_powerset.yml
-- Allow triggering the feature powerset check by adding a lable to a pr
+- Allow triggering the feature powerset check by adding a label to a pr
 - Add missing cfg for the `open-api` feature
 - Fix a powerset build error
 - Add `Swatinem/rust-cache@v2` to cache rust builds
@@ -1328,7 +1328,7 @@ The main feature included in this release is support for sending emails via SMTP
 - Add request id middleware
 - Allow middleware installers to return a result
 - Enable adding middleware and provide defaults
-- Require custom state to be convertable to AppContext
+- Require custom state to be convertible to AppContext
 - Add default _ping route
 - Enable defining routes using Axum or Aide routers
 - Use From trait instead of a custom trait

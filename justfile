@@ -83,9 +83,12 @@ format:
 check-fmt:
     cargo fmt --all --check
 
-pre-commit: check-fmt
+check-typos:
+    typos
 
-pre-push: check-fmt
+pre-commit: check-fmt check-typos
+
+pre-push: check-fmt check-typos
 
 check-no-features:
     cargo nextest run --no-default-features --no-fail-fast --locked
@@ -157,5 +160,5 @@ install_libpq := if os() == "macos" { "brew install libpq && brew link --force l
 
 # Initialize a new installation of the repo (e.g., install deps)
 init:
-    cargo binstall cargo-nextest cargo-llvm-cov sea-orm-cli cargo-insta cargo-minimal-versions cargo-hack mdbook cargo-deny diesel_cli cargo-interactive-update
+    cargo binstall cargo-nextest cargo-llvm-cov sea-orm-cli cargo-insta cargo-minimal-versions cargo-hack mdbook cargo-deny diesel_cli cargo-interactive-update typos-cli
     {{ install_libpq }}

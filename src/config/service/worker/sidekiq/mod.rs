@@ -150,7 +150,7 @@ mod deserialize_tests {
     #[case(BalanceStrategy::RoundRobin)]
     #[case(BalanceStrategy::None)]
     #[cfg_attr(coverage_nightly, coverage(off))]
-    fn balance_strat_to_sidekiq_balance_strat(#[case] strategy: BalanceStrategy) {
+    fn balance_strategy_to_sidekiq_balance_strategy(#[case] strategy: BalanceStrategy) {
         let sidekiq_strategy: SidekiqBalanceStrategy = strategy.clone().into();
         match sidekiq_strategy {
             SidekiqBalanceStrategy::RoundRobin => {
