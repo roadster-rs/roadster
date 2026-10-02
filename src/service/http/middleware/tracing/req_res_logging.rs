@@ -119,6 +119,7 @@ const TRUNCATED_STR: &str = "[truncated according to the `service.http.middlewar
 const CONTENT_TYPE_OMITTED_STR: &str = "[omitted according to the `service.http.middleware.request-response-logging.content_types*` configs]";
 
 // https://github.com/tokio-rs/axum/blob/main/examples/consume-body-in-extractor-or-middleware/src/main.rs
+#[allow(clippy::result_large_err)]
 async fn log_req_res_bodies<S>(
     state: S,
     request: Request,
@@ -236,6 +237,7 @@ fn should_log_content_type(
     }
 }
 
+#[allow(clippy::result_large_err)]
 async fn log_body(body: Body, max_len: i32, is_req: bool) -> Result<Bytes, Response> {
     // This only works if the body is not a long-running stream
     let bytes = body
