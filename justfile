@@ -88,8 +88,6 @@ check-typos:
 
 pre-commit: check-fmt check-typos
 
-# compatable
-
 pre-push: check-fmt check-typos
 
 check-no-features:
