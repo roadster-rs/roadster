@@ -3,8 +3,8 @@
 #![deny(clippy::unwrap_used)]
 #![deny(clippy::expect_used)]
 // Ignore the warning that the `coverage_nightly` cfg is not recognized.
-#![cfg_attr(test, allow(unexpected_cfgs))]
-#![cfg_attr(rustc_unstable, feature(coverage))]
+// #![cfg_attr(test, allow(unexpected_cfgs))]
+// #![cfg_attr(rustc_unstable, feature(coverage_attribute))]
 
 pub mod api;
 pub mod app;
