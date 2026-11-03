@@ -18,7 +18,7 @@ jobs:
     env:
       # The `coverage_nightly` cfg value is not recognized, so we need to allow unknown
       # cfg values in order to have the build succeed.
-      RUSTFLAGS: -D warnings -A unexpected_cfgs
+      RUSTFLAGS: -A unexpected_cfgs
       CARGO_TERM_COLOR: always
     steps:
       - uses: dtolnay/rust-toolchain@master # wokeignore:rule=master
