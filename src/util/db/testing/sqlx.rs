@@ -1,11 +1,11 @@
 use crate::error::RoadsterResult;
 use sqlx::postgres::PgConnectOptions;
-use sqlx::{ConnectOptions, PgConnection};
+use sqlx::{AssertSqlSafe, ConnectOptions, PgConnection};
 use url::Url;
 
 pub async fn create_database(uri: &Url, db_name: &str) -> RoadsterResult<()> {
     let mut connection = connection(uri).await?;
-    sqlx::query(&create_database_statement(db_name))
+    sqlx::query(AssertSqlSafe(create_database_statement(db_name)))
         .execute(&mut connection)
         .await?;
     Ok(())
@@ -13,7 +13,7 @@ pub async fn create_database(uri: &Url, db_name: &str) -> RoadsterResult<()> {
 
 pub async fn drop_database(uri: &Url, db_name: &str) -> RoadsterResult<()> {
     let mut connection = connection(uri).await?;
-    sqlx::query(&drop_database_statement(db_name))
+    sqlx::query(AssertSqlSafe(drop_database_statement(db_name)))
         .execute(&mut connection)
         .await?;
     Ok(())

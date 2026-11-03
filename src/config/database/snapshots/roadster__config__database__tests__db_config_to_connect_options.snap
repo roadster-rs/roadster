@@ -14,21 +14,29 @@ ConnectOptions {
         1s,
     ),
     idle_timeout: Some(
-        3s,
+        Some(
+            3s,
+        ),
     ),
     acquire_timeout: Some(
         2s,
     ),
     max_lifetime: Some(
-        4s,
+        Some(
+            4s,
+        ),
     ),
     sqlx_logging: false,
+    record_stmt_in_spans: true,
     sqlx_logging_level: Info,
     sqlx_slow_statements_logging_level: Off,
     sqlx_slow_statements_logging_threshold: 1s,
     sqlcipher_key: None,
     schema_search_path: None,
+    application_name: None,
+    statement_timeout: None,
     test_before_acquire: true,
+    test_before_acquire_if_idle_for: None,
     connect_lazy: true,
     ..
 }

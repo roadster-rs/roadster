@@ -382,24 +382,22 @@ where
                 deserialization errors (aside from those due to corrupted date, which should be
                 rare). Then, we can separately handle any deserialization errors ourselves.
                  */
-                let msg = match pgmq
-                    .read::<serde_json::Value>(&queue.name, default_view_timeout)
-                    .await
-                {
-                    Ok(Some(msg)) => msg,
-                    Ok(None) => {
-                        queue.next_fetch = Utc::now() + empty_delay;
-                        continue;
-                    }
-                    Err(err) => {
-                        error!(
-                            worker.queue.name = queue.name,
-                            "An error occurred while reading from pgmq: {err}"
-                        );
-                        queue.next_fetch = Utc::now() + error_delay;
-                        continue;
-                    }
-                };
+                let msg: pgmq::Message<serde_json::Value> =
+                    match pgmq.read(&queue.name, default_view_timeout).await {
+                        Ok(Some(msg)) => msg,
+                        Ok(None) => {
+                            queue.next_fetch = Utc::now() + empty_delay;
+                            continue;
+                        }
+                        Err(err) => {
+                            error!(
+                                worker.queue.name = queue.name,
+                                "An error occurred while reading from pgmq: {err}"
+                            );
+                            queue.next_fetch = Utc::now() + error_delay;
+                            continue;
+                        }
+                    };
 
                 let job: Job = match serde_json::from_value(msg.message) {
                     Ok(job) => job,
@@ -617,24 +615,22 @@ where
             deserialization errors (aside from those due to corrupted date, which should be
             rare). Then, we can separately handle any deserialization errors ourselves.
              */
-            let msg = match pgmq
-                .read::<serde_json::Value>(PERIODIC_QUEUE_NAME, default_view_timeout)
-                .await
-            {
-                Ok(Some(msg)) => msg,
-                Ok(None) => {
-                    next_fetch = Utc::now() + empty_delay;
-                    continue;
-                }
-                Err(err) => {
-                    error!(
-                        worker.queue.name = PERIODIC_QUEUE_NAME,
-                        "An error occurred while reading from pgmq: {err}"
-                    );
-                    next_fetch = Utc::now() + error_delay;
-                    continue;
-                }
-            };
+            let msg: pgmq::Message<serde_json::Value> =
+                match pgmq.read(PERIODIC_QUEUE_NAME, default_view_timeout).await {
+                    Ok(Some(msg)) => msg,
+                    Ok(None) => {
+                        next_fetch = Utc::now() + empty_delay;
+                        continue;
+                    }
+                    Err(err) => {
+                        error!(
+                            worker.queue.name = PERIODIC_QUEUE_NAME,
+                            "An error occurred while reading from pgmq: {err}"
+                        );
+                        next_fetch = Utc::now() + error_delay;
+                        continue;
+                    }
+                };
 
             let job: PeriodicJob = match serde_json::from_value(msg.message) {
                 Ok(job) => job,
@@ -719,7 +715,11 @@ where
 
             let delay = periodic_next_run_delay(&job.periodic.schedule, None);
             if let Err(err) = pgmq
-                .set_vt::<serde_json::Value>(PERIODIC_QUEUE_NAME, msg.msg_id, delay)
+                .set_vt::<serde_json::Value, serde_json::Value>(
+                    PERIODIC_QUEUE_NAME,
+                    msg.msg_id,
+                    delay,
+                )
                 .await
             {
                 error!(
@@ -792,7 +792,7 @@ where
         delay: Duration,
     ) {
         if let Err(err) = pgmq
-            .set_vt::<serde_json::Value>(&queue.name, msg_id, delay)
+            .set_vt::<serde_json::Value, serde_json::Value>(&queue.name, msg_id, delay)
             .await
         {
             error!(

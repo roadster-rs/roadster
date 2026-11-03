@@ -14,7 +14,7 @@ use validator::Validate;
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct ResponseCompressionConfig {
-    pub min_size_bytes: u16,
+    pub min_size_bytes: u64,
     pub level: CompressionLevel,
     /// Additional content types that should not be compressed in addition to the ones
     /// specified by [`tower_http::compression::DefaultPredicate`].

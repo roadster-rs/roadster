@@ -6,7 +6,7 @@ use url::Url;
 pub async fn create_database(uri: &Url, db_name: &str) -> RoadsterResult<()> {
     let conn = connection(uri).await?;
     let statement = create_database_statement(conn.get_database_backend(), db_name);
-    conn.execute(statement).await?;
+    conn.execute_raw(statement).await?;
     conn.close().await?;
     Ok(())
 }
@@ -14,7 +14,7 @@ pub async fn create_database(uri: &Url, db_name: &str) -> RoadsterResult<()> {
 pub async fn drop_database(uri: &Url, db_name: &str) -> RoadsterResult<()> {
     let conn = connection(uri).await?;
     let statement = drop_database_statement(conn.get_database_backend(), db_name);
-    conn.execute(statement).await?;
+    conn.execute_raw(statement).await?;
     conn.close().await?;
     Ok(())
 }

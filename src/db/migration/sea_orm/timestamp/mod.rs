@@ -60,7 +60,7 @@ pub async fn exec_create_update_timestamp_function<C: IntoIden>(
 ) -> Result<(), DbErr> {
     let statement = create_update_timestamp_function(manager, timestamp_column);
     if let Some(statement) = statement {
-        manager.get_connection().execute(statement).await?;
+        manager.get_connection().execute_raw(statement).await?;
     }
 
     Ok(())
@@ -112,7 +112,7 @@ pub async fn exec_create_update_timestamp_function_dep_column<C: IntoIden, D: In
     let statement =
         create_update_timestamp_function_dep_column(manager, timestamp_column, dep_column);
     if let Some(statement) = statement {
-        manager.get_connection().execute(statement).await?;
+        manager.get_connection().execute_raw(statement).await?;
     }
 
     Ok(())
@@ -254,7 +254,7 @@ pub async fn exec_drop_update_timestamp_function<C: IntoIden>(
 ) -> Result<(), DbErr> {
     let statement = drop_update_timestamp_function(manager, timestamp_column);
     if let Some(statement) = statement {
-        manager.get_connection().execute(statement).await?;
+        manager.get_connection().execute_raw(statement).await?;
     }
 
     Ok(())
@@ -327,7 +327,7 @@ pub async fn exec_create_update_timestamp_trigger<T: IntoTableRef + IntoIden, C:
 ) -> Result<(), DbErr> {
     let statement = create_update_timestamp_trigger(manager, table, timestamp_column);
     if let Some(statement) = statement {
-        manager.get_connection().execute(statement).await?;
+        manager.get_connection().execute_raw(statement).await?;
     }
 
     Ok(())
@@ -417,7 +417,7 @@ pub async fn exec_drop_update_timestamp_trigger<T: IntoTableRef + IntoIden, C: I
 ) -> Result<(), DbErr> {
     let statement = drop_update_timestamp_trigger(manager, table, timestamp_column);
     if let Some(statement) = statement {
-        manager.get_connection().execute(statement).await?;
+        manager.get_connection().execute_raw(statement).await?;
     }
 
     Ok(())

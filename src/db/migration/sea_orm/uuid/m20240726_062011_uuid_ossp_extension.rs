@@ -14,7 +14,7 @@ impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
             .get_connection()
-            .execute(create_uuid_ossp_extension())
+            .execute_raw(create_uuid_ossp_extension())
             .await?;
 
         Ok(())
@@ -23,7 +23,7 @@ impl MigrationTrait for Migration {
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
             .get_connection()
-            .execute(drop_uuid_ossp_extension())
+            .execute_raw(drop_uuid_ossp_extension())
             .await?;
 
         Ok(())
