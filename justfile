@@ -137,7 +137,7 @@ docker:
     docker start redis || true
     docker run -d --name mailpit -p 8025:8025 -p 1025:1025 axllent/mailpit:v1.27.10 || true
     docker start mailpit || true
-    docker run -d --name pg-roadster -p 5432:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=example_dev -e POSTGRES_PASSWORD=roadster postgres:18.0-alpine3.22 || true
+    docker run -d --name pg-roadster -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_DB=postgres -e POSTGRES_PASSWORD=postgres postgres:18.0-alpine3.22 || true
     docker start pg-roadster || true
     docker run -d --name grafana -p 4000:3000 -p 4317:4317 -p 4318:4318 --rm -ti grafana/otel-lgtm:0.11.10 || true
     docker start grafana || true
@@ -148,7 +148,7 @@ podman:
     podman start redis || true
     podman run -d --name mailpit -p 8025:8025 -p 1025:1025 axllent/mailpit:v1.27.10 || true
     podman start mailpit || true
-    podman run -d --name pg-roadster -p 5432:5432 -e POSTGRES_USER=roadster -e POSTGRES_DB=example_dev -e POSTGRES_PASSWORD=roadster postgres:18.0-alpine3.22 || true
+    podman run -d --name pg-roadster -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_DB=postgres -e POSTGRES_PASSWORD=postgres postgres:18.0-alpine3.22 || true
     podman start pg-roadster || true
     podman run -d --name grafana -p 4000:3000 -p 4317:4317 -p 4318:4318 --rm -ti grafana/otel-lgtm:0.11.10 || true
     podman start grafana || true

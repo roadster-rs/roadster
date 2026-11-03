@@ -9,7 +9,7 @@ license = "MIT OR Apache-2.0"
 keywords = ["web", "framework"]
 categories = ["web-programming", "web-programming::http-server"]
 # Determined using `cargo msrv` -- https://github.com/foresterre/cargo-msrv
-rust-version = "1.88"
+rust-version = "1.89"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -198,11 +198,11 @@ dotenvy = "0.15.7"
 # Tracing
 tracing = { version = "0.1.43", features = ["async-await"] }
 tracing-subscriber = { version = "0.3.22", features = ["env-filter", "json"] }
-opentelemetry-semantic-conventions = "0.32.0"
-opentelemetry = { version = "0.32.0", features = ["trace", "metrics", "logs"] }
-opentelemetry_sdk = { version = "0.32.0", features = ["tokio", "rt-tokio", "metrics", "logs", "trace"] }
-opentelemetry-otlp = { version = "0.32.0", features = ["metrics", "trace", "logs"] }
-tracing-opentelemetry = { version = "0.33.0", features = ["metrics"] }
+opentelemetry-semantic-conventions = "0.33.1"
+opentelemetry = { version = "0.33.1", features = ["trace", "metrics", "logs"] }
+opentelemetry_sdk = { version = "0.33.1", features = ["tokio", "rt-tokio", "metrics", "logs", "trace"] }
+opentelemetry-otlp = { version = "0.33.1", features = ["metrics", "trace", "logs"] }
+tracing-opentelemetry = { version = "0.34.0", features = ["metrics"] }
 
 # HTTP APIs
 aide = { version = "0.16.0-alpha.1", features = ["axum"] }
@@ -211,7 +211,7 @@ http-body = "1.0.0"
 axum-core = "0.5.2"
 axum = "0.8.4"
 axum-extra = "0.12.1"
-tower-http = "0.6.8"
+tower-http = "0.7.1"
 tower = "0.5.2"
 schemars = "1.0.4"
 mime = "0.3.17"
@@ -219,8 +219,8 @@ http-body-util = { version = "0.1.2" }
 http-serde = "2.0.0"
 
 # DB - SeaORM
-sea-orm = { version = "1.1.15" }
-sea-orm-migration = { version = "1.1.15" }
+sea-orm = { version = "2.0.4" }
+sea-orm-migration = { version = "2.0.4" }
 
 # DB - Diesel
 diesel = { version = "2.3.9" }
@@ -234,10 +234,10 @@ sendgrid = "0.27.0"
 
 # CLI
 clap = { version = "4.3.0", features = ["derive"] }
-tabled = { version = "0.20.0" }
+tabled = { version = "0.22.0" }
 
 # Auth
-jsonwebtoken = { version = "10.1.0" }
+jsonwebtoken = { version = "11.1.0" }
 
 # gRPC
 tonic = { version = "0.14.2" }
@@ -253,28 +253,28 @@ prost = { version = "0.14.1" }
 # Workers
 ## Sidekiq
 # The default `rss-stats` feature has a dependency that currently can't be satisfied on macos (memchr: ~2.3)
-rusty-sidekiq = { version = "0.14.0", default-features = false }
+rusty-sidekiq = { version = "0.15.2", default-features = false }
 bb8 = { version = "0.9.0" }
 num_cpus = { version = "1.13.0" }
 ## Postgres queue
-pgmq = "0.33.4"
-sqlx = { version = "0.8.5", features = ["postgres"] }
+pgmq = "0.34.0-alpha.7"
+sqlx = { version = "0.9.0", features = ["postgres"] }
 
 # Testing
 insta = { version = "1.39.0", features = ["toml", "filters"] }
-rstest = { version = "0.26.1", default-features = false }
+rstest = { version = "0.28.0", default-features = false }
 testcontainers-modules = { version = "0.15.0" }
-mockall = "0.14.0"
+mockall = "0.15.0"
 tower-util = "0.3.1"
 
 # Others
 tokio = { version = "1.47.0" }
 # For CancellationToken
 tokio-util = { version = "0.7.10" }
-anyhow = "1.0.100"
-serde = { version = "1.0.225", features = ["derive"] }
-serde_derive = "1.0.225"
-serde_json = "1.0.127"
+anyhow = "1.0.104"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_derive = "1.0.228"
+serde_json = "1.0.144"
 serde_with = { version = "3.7.0", features = ["macros", "chrono_0_4"] }
 strum = "0.28.0"
 strum_macros = "0.28.0"
@@ -283,24 +283,24 @@ url = { version = "2.5.0", features = ["serde"] }
 futures = "0.3.31"
 futures-core = "0.3.31"
 byte-unit = { version = "5.0.0", features = ["serde"] }
-convert_case = "0.11.0"
+convert_case = "0.12.0"
 const_format = "0.2.33"
 num-traits = "0.2.18"
-validator = { version = "0.20.0", features = ["derive"] }
+validator = { version = "0.21.0", features = ["derive"] }
 cfg-if = "1.0.0"
-vergen = { version = "9.1.0" }
-vergen-gitcl = { version = "9.0.0" }
+vergen = { version = "10.0.3" }
+vergen-gitcl = { version = "10.0.3" }
 reqwest = { version = "0.13.1", default-features = false, features = ["rustls", "charset", "http2"] }
-itertools = "0.14.0"
+itertools = "0.15.0"
 cargo-manifest = "0.21.0"
-bon = "3.1.0"
-rand = "0.10.0"
-thiserror = "2.0.12"
-uuid = { version = "1.11.0", features = ["v4", "serde"] }
-chrono = { version = "0.4.34", features = ["serde"] }
-async-trait = "0.1.81"
+bon = "3.9.3"
+rand = "0.10.1"
+thiserror = "2.0.18"
+uuid = { version = "1.27.0", features = ["v4", "serde"] }
+chrono = { version = "0.4.40", features = ["serde"] }
+async-trait = "0.1.89"
 regex = "1.12.3"
-cron = { version = "0.16.0", features = ["serde"] }
+cron = { version = "0.17.0", features = ["serde"] }
 log = "0.4.27"
 derive_more = "2.0.0"
 

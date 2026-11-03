@@ -24,9 +24,9 @@ jobs:
         ports:
           - 5432:5432
         env:
-          POSTGRES_DB: example_dev
-          POSTGRES_PASSWORD: roadster
-          POSTGRES_USER: roadster
+          POSTGRES_DB: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
       redis:
         image: redis:8.2.2-alpine

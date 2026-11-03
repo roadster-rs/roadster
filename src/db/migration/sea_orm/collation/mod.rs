@@ -44,7 +44,7 @@ pub async fn exec_create_case_insensitive_collation(
 ) -> Result<(), DbErr> {
     let statement = create_case_insensitive_collation(manager);
     if let Some(statement) = statement {
-        manager.get_connection().execute(statement).await?;
+        manager.get_connection().execute_raw(statement).await?;
     }
 
     Ok(())
@@ -106,7 +106,7 @@ pub async fn exec_drop_case_insensitive_collation(
 ) -> Result<(), DbErr> {
     let statement = drop_case_insensitive_collation(manager);
     if let Some(statement) = statement {
-        manager.get_connection().execute(statement).await?;
+        manager.get_connection().execute_raw(statement).await?;
     }
 
     Ok(())

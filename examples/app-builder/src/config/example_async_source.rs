@@ -22,7 +22,7 @@ impl AsyncSource for ExampleAsyncSource {
         */
         config.insert(
             "database.uri".into(),
-            "postgres://roadster:roadster@localhost:5432/example_dev".into(),
+            "postgres://postgres:postgres@localhost:5432/postgres".into(),
         );
 
         /*

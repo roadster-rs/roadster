@@ -13,7 +13,7 @@ impl MigrationTrait for Migration {
         let transaction = db.begin().await?;
 
         for statement in up_statements(manager.get_database_backend()) {
-            transaction.execute(statement).await?;
+            transaction.execute_raw(statement).await?;
         }
 
         transaction.commit().await?;
@@ -26,7 +26,7 @@ impl MigrationTrait for Migration {
         let transaction = db.begin().await?;
 
         for statement in down_statements(manager.get_database_backend()) {
-            transaction.execute(statement).await?;
+            transaction.execute_raw(statement).await?;
         }
 
         transaction.commit().await?;

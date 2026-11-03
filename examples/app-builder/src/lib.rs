@@ -67,7 +67,7 @@ pub fn build_app() -> App {
     #[cfg(feature = "db-sea-orm")]
     let builder = {
         let mut db_conn_options =
-            sea_orm::ConnectOptions::new("postgres://roadster:roadster@localhost:5432/example_dev");
+            sea_orm::ConnectOptions::new("postgres://postgres:postgres@localhost:5432/postgres");
         db_conn_options.connect_lazy(true);
         builder
             .sea_orm_conn_options(db_conn_options)

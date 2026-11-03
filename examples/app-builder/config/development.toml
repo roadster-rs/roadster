@@ -13,7 +13,7 @@ secret = "secret-dev"
 [database]
 # For the purposes of this example, the db uri is set in
 # app-builder/src/config/example_async_source.rs
-#uri = "postgres://roadster:roadster@localhost:5432/example_dev"
+#uri = "postgres://postgres:postgres@localhost:5432/postgres"
 
 [service.worker.sidekiq]
 num-workers = 2
