@@ -569,7 +569,7 @@ dependencies = [
  "axum",
  "roadster",
  "tracing",
- "uuid 1.29.0",
+ "uuid",
 ]
 
 [[package]]
@@ -1890,7 +1890,7 @@ dependencies = [
  "sqlite-wasm-rs",
  "time",
  "url",
- "uuid 0.8.2",
+ "uuid",
 ]
 
 [[package]]
@@ -2144,7 +2144,7 @@ dependencies = [
  "serde",
  "tokio-util",
  "tracing",
- "uuid 1.29.0",
+ "uuid",
 ]
 
 [[package]]
@@ -2378,7 +2378,7 @@ dependencies = [
  "tonic-reflection",
  "tower-util",
  "tracing",
- "uuid 1.29.0",
+ "uuid",
  "vergen",
  "vergen-gitcl",
 ]
@@ -3619,7 +3619,7 @@ dependencies = [
  "rustc_version",
  "server_fn_macro",
  "syn 3.0.9",
- "uuid 1.29.0",
+ "uuid",
 ]
 
 [[package]]
@@ -4138,7 +4138,7 @@ dependencies = [
  "sha1 0.10.7",
  "sha2 0.10.9",
  "thiserror 2.0.21",
- "uuid 1.29.0",
+ "uuid",
 ]
 
 [[package]]
@@ -5794,7 +5794,7 @@ dependencies = [
  "tracing-opentelemetry",
  "tracing-subscriber",
  "url",
- "uuid 1.29.0",
+ "uuid",
  "validator",
 ]
 
@@ -5824,7 +5824,7 @@ dependencies = [
  "tonic-build",
  "tower-util",
  "tracing",
- "uuid 1.29.0",
+ "uuid",
  "vergen",
  "vergen-gitcl",
 ]
@@ -6194,7 +6194,7 @@ dependencies = [
  "time",
  "tracing",
  "url",
- "uuid 1.29.0",
+ "uuid",
  "web-time",
 ]
 
@@ -6273,7 +6273,7 @@ dependencies = [
  "sea-query-derive",
  "serde_json",
  "time",
- "uuid 1.29.0",
+ "uuid",
 ]
 
 [[package]]
@@ -6884,7 +6884,7 @@ dependencies = [
  "tokio-stream",
  "tracing",
  "url",
- "uuid 1.29.0",
+ "uuid",
  "webpki-roots",
 ]
 
@@ -6954,7 +6954,7 @@ dependencies = [
  "thiserror 2.0.21",
  "time",
  "tracing",
- "uuid 1.29.0",
+ "uuid",
 ]
 
 [[package]]
@@ -6992,7 +6992,7 @@ dependencies = [
  "thiserror 2.0.21",
  "time",
  "tracing",
- "uuid 1.29.0",
+ "uuid",
  "whoami",
 ]
 
@@ -7020,7 +7020,7 @@ dependencies = [
  "time",
  "tracing",
  "url",
- "uuid 1.29.0",
+ "uuid",
 ]
 
 [[package]]
@@ -7317,7 +7317,7 @@ dependencies = [
  "insta",
  "roadster",
  "rstest",
- "uuid 1.29.0",
+ "uuid",
 ]
 
 [[package]]
@@ -7811,7 +7811,7 @@ dependencies = [
  "tower-service",
  "tracing",
  "url",
- "uuid 1.29.0",
+ "uuid",
 ]
 
 [[package]]
@@ -8126,12 +8126,6 @@ name = "utf_types"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3a3b425286980a367278453f3b6d28cdcb134b574e5a35824a6ff5eebad50bb6"
-
-[[package]]
-name = "uuid"
-version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc5cf98d8186244414c848017f0e2676b3fcb46807f6668a97dfe67359a3c4b7"
 
 [[package]]
 name = "uuid"
