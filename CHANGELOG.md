@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0-alpha.9](https://github.com/roadster-rs/roadster/compare/roadster-v0.9.0-alpha.8...roadster-v0.9.0-alpha.9) - 2026-11-04
+
+### Added
+
+- Use a static timestamp value in tmp test DB names ([#977](https://github.com/roadster-rs/roadster/pull/977))
+
+### Other
+
+- [**breaking**] Update dependencies and resolve breaking changes ([#981](https://github.com/roadster-rs/roadster/pull/981))
+- Add CI check to catch typos and resolve existing typos ([#980](https://github.com/roadster-rs/roadster/pull/980))
+- Add `rust-toolchain` file ([#979](https://github.com/roadster-rs/roadster/pull/979))
+- Update cargo-deny in CI and update `ban` -> `bans` ([#978](https://github.com/roadster-rs/roadster/pull/978))
+- Update tracing and rusty-sidekiq dependencies ([#976](https://github.com/roadster-rs/roadster/pull/976))
+
 ## [0.9.0-alpha.8](https://github.com/roadster-rs/roadster/compare/roadster-v0.9.0-alpha.7...roadster-v0.9.0-alpha.8) - 2026-05-01
 
 ### Other
