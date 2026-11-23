@@ -71,7 +71,6 @@ feature-depth = 1
 # output a note when they are encountered.
 ignore = [
     { id = "RUSTSEC-2023-0071", reason = "Transitive dependency; need other dependencies to resolve first." },
-    { id = "RUSTSEC-2026-0173", reason = "Transitive dependency; need other dependencies to resolve first." },
     { id = "RUSTSEC-2024-0436", reason = "Transitive dependency; need other dependencies to resolve first." },
     { id = "RUSTSEC-2026-0387", reason = "Transitive dependency; need other dependencies to resolve first." },
     #"RUSTSEC-0000-0000",
